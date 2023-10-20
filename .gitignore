@@ -1,0 +1,15 @@
+# Build directories
+out/
+bin/
+bin-lib/
+build/
+
+# IDE directories
+.vs/
+.idea/
+
+# CMake directories and files
+cmake-build-*/
+CMakeSettings.json
+
+TODO.md

@@ -1,0 +1,62 @@
+#ifndef OTTERENGINE_EVENTSYSTEM_H
+#define OTTERENGINE_EVENTSYSTEM_H
+
+#include <queue>
+#include <unordered_map>
+
+#include "Core/Defines.h"
+#include "Core/Types.h"
+
+#include "Core/Events/Event.h"
+#include "Core/Events/EventAction.h"
+#include "Core/Events/WindowEvents.h"
+#include "Core/Events/KeyboardEvents.h"
+#include "Core/Events/MouseEvents.h"
+
+namespace Otter
+{
+    class EventSystem final
+    {
+        using Event = Internal::Event;
+        using EventType = Internal::EventType;
+        using EventAction = Internal::EventAction;
+
+    public:
+        OTR_DISABLE_OBJECT_COPIES(EventSystem)
+        OTR_DISABLE_OBJECT_MOVES(EventSystem)
+
+        [[nodiscard]] OTR_INLINE static EventSystem* GetInstance()
+        {
+            static EventSystem instance;
+            return &instance;
+        }
+
+        void Initialise();
+        void Shutdown();
+
+        template<typename TEvent, typename... TArgs>
+        OTR_INLINE void Schedule(TArgs&& ... args)
+        {
+            m_Events.push(TEvent(std::forward<TArgs>(args)...));
+        }
+
+        void Process();
+
+    private:
+        OTR_WITH_DEFAULT_CONSTRUCTOR(EventSystem)
+
+        // TODO: Replace with a custom queue.
+        // TODO: Replace with a priority queue.
+        std::queue<Event> m_Events;
+
+        // TODO: Replace with a custom map.
+        std::unordered_map<EventType, Shared<EventAction>> m_Listeners;
+
+        template<typename TEvent = Event, typename TActionArg = const TEvent&>
+        void AddListener(EventType type, const Action<TActionArg>& action);
+        void RemoveAllListeners();
+        void ClearEvents();
+    };
+}
+
+#endif //OTTERENGINE_EVENTSYSTEM_H
