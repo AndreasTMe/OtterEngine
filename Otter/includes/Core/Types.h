@@ -2,7 +2,6 @@
 #define OTTERENGINE_TYPES_H
 
 #include "Core/Types/Types.Base.h"
-#include "Core/Types/Types.Delegates.h"
 #include "Core/Types/Types.EventCategory.h"
 #include "Core/Types/Types.EventType.h"
 #include "Core/Types/Types.KeyCode.h"

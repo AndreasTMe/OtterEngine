@@ -1,6 +1,8 @@
 #ifndef OTTERENGINE_APPLICATION_H
 #define OTTERENGINE_APPLICATION_H
 
+#include <vector>
+
 #include "Core/Defines.h"
 #include "Core/Layers.h"
 
@@ -9,23 +11,22 @@ namespace Otter
     class Application
     {
     public:
-        virtual ~Application() = default;
+        virtual ~Application()
+        {
+            for (auto* layer: m_Layers)
+                Layer::Delete(layer);
+        }
 
         void Run();
 
     protected:
         Application() = default;
 
-        template<typename... TLayers>
-        void CaptureLayersInOrder(Layer* first, TLayers&& ... layers)
-        {
-            static bool hasCapturedLayers = false;
-            OTR_INTERNAL_ASSERT_MSG(!hasCapturedLayers, "Layers have already been captured!")
+        // TODO: Add functionality for adding/removing layers.
 
-            // Capture layers
-
-            hasCapturedLayers = true;
-        }
+    private:
+        // TODO: Replace with a custom list.
+        std::vector<Layer*> m_Layers;
     };
 
     Application* CreateApplication();

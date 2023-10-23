@@ -46,14 +46,14 @@ namespace Otter
             auto type = event.GetEventType();
 
             if (m_Listeners.find(type) != m_Listeners.end())
-                m_Listeners[type]->Invoke(event);
+                m_Listeners[type]->ReverseInvoke(event);
 
             m_Events.pop();
         }
     }
 
     template<typename TEvent, typename TActionArg>
-    void EventSystem::AddListener(EventType type, const Action<TActionArg>& action)
+    void EventSystem::AddListener(EventType type, const Func<bool, TActionArg>& action)
     {
         OTR_INTERNAL_ASSERT_MSG(type != Internal::EventType::None, "Event type cannot be None")
         OTR_INTERNAL_ASSERT_MSG(type != Internal::EventType::Max, "Event type cannot be Max")

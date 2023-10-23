@@ -93,11 +93,15 @@ namespace Otter::Internal
         GlobalActions::OnWindowClose += [&](const WindowCloseEvent& event)
         {
             m_IsRunning = false;
+
+            return true;
         };
         GlobalActions::OnWindowResize += [&](const WindowResizeEvent& event)
         {
             m_Width  = event.GetWidth();
             m_Height = event.GetHeight();
+
+            return true;
         };
 
         // TODO: Add functionality for the rest of the window events

@@ -6,6 +6,7 @@
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
+#include "Core/Delegates.h"
 
 #include "Core/Events/Event.h"
 #include "Core/Events/EventAction.h"
@@ -53,7 +54,7 @@ namespace Otter
         std::unordered_map<EventType, Shared<EventAction>> m_Listeners;
 
         template<typename TEvent = Event, typename TActionArg = const TEvent&>
-        void AddListener(EventType type, const Action<TActionArg>& action);
+        void AddListener(EventType type, const Func<bool, TActionArg>& action);
         void RemoveAllListeners();
         void ClearEvents();
     };

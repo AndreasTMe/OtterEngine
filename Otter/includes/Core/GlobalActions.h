@@ -15,22 +15,22 @@ namespace Otter
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCInconsistentNamingInspection"
 
-        static Action<const Internal::WindowCloseEvent&>     OnWindowClose;
-        static Action<const Internal::WindowResizeEvent&>    OnWindowResize;
-        static Action<const Internal::WindowMinimizedEvent&> OnWindowMinimized;
-        static Action<const Internal::WindowMaximizedEvent&> OnWindowMaximized;
-        static Action<const Internal::WindowRestoredEvent&>  OnWindowRestored;
-        static Action<const Internal::WindowRefreshEvent&>   OnWindowRefresh;
+        static Func<bool, const Internal::WindowCloseEvent&>     OnWindowClose;
+        static Func<bool, const Internal::WindowResizeEvent&>    OnWindowResize;
+        static Func<bool, const Internal::WindowMinimizedEvent&> OnWindowMinimized;
+        static Func<bool, const Internal::WindowMaximizedEvent&> OnWindowMaximized;
+        static Func<bool, const Internal::WindowRestoredEvent&>  OnWindowRestored;
+        static Func<bool, const Internal::WindowRefreshEvent&>   OnWindowRefresh;
 
-        static Action<const Internal::KeyPressedEvent&>  OnKeyPressed;
-        static Action<const Internal::KeyReleasedEvent&> OnKeyReleased;
-        static Action<const Internal::KeyHoldEvent&>     OnKeyHold;
+        static Func<bool, const Internal::KeyPressedEvent&>  OnKeyPressed;
+        static Func<bool, const Internal::KeyReleasedEvent&> OnKeyReleased;
+        static Func<bool, const Internal::KeyHoldEvent&>     OnKeyHold;
 
-        static Action<const Internal::MouseButtonPressedEvent&>  OnMouseButtonPressed;
-        static Action<const Internal::MouseButtonReleasedEvent&> OnMouseButtonReleased;
-        static Action<const Internal::MouseScrollEvent&>         OnMouseScroll;
-        static Action<const Internal::MouseMovedEvent&>          OnMouseMoved;
-        static Action<const Internal::MouseDraggedEvent&>        OnMouseDragged;
+        static Func<bool, const Internal::MouseButtonPressedEvent&>  OnMouseButtonPressed;
+        static Func<bool, const Internal::MouseButtonReleasedEvent&> OnMouseButtonReleased;
+        static Func<bool, const Internal::MouseScrollEvent&>         OnMouseScroll;
+        static Func<bool, const Internal::MouseMovedEvent&>          OnMouseMoved;
+        static Func<bool, const Internal::MouseDraggedEvent&>        OnMouseDragged;
 
 #pragma clang diagnostic pop
 
