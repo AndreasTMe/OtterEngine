@@ -60,7 +60,7 @@ namespace Otter
     template<typename T>
     OTR_INLINE void Delete(T* ptr)
     {
-        if (!std::is_trivially_destructible<T>::value)
+        if (!std::is_destructible<T>::value)
             ptr->~T();
 
         Memory::GetInstance()->MemoryClear(ptr, sizeof(T));
@@ -79,9 +79,18 @@ namespace Otter
             UInt64 bufferSize  = length * alignedSize;
 
             UnsafeHandle handle = Memory::GetInstance()->Allocate(bufferSize);
-            T* buffer = new(handle.m_Pointer) T();
 
-            return buffer;
+            if (std::is_default_constructible<T>::value)
+            {
+                T* ptrCopy = (T*) handle.m_Pointer;
+                for (UInt64 i = 0; i < length; i++)
+                {
+                    new(ptrCopy) T();
+                    ++ptrCopy;
+                }
+            }
+
+            return (T*) handle.m_Pointer;
         }
 
         template<typename T>
@@ -92,8 +101,7 @@ namespace Otter
             if (!std::is_trivially_destructible<T>::value)
             {
                 T* ptrCopy = ptr;
-                UInt64 lengthCopy = length;
-                while (lengthCopy--)
+                for (UInt64 i = 0; i < length; i++)
                 {
                     ptrCopy->~T();
                     ++ptrCopy;

@@ -97,7 +97,7 @@ namespace Otter
 
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0")
 
-//        void* block = malloc(size);
+        void* block = malloc(size);
 
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Failed to allocate memory")
 
@@ -123,14 +123,18 @@ namespace Otter
     {
         OTR_LOG_FATAL("'Platform::Free' not supported for this platform");
 
-//        OTR_INTERNAL_ASSERT(block != nullptr)
+        OTR_INTERNAL_ASSERT(block != nullptr)
+
+        free(block);
     }
 
     void Platform::MemoryClear(void* block, UInt64 size)
     {
         OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform");
 
-//        OTR_INTERNAL_ASSERT(block != nullptr)
+        OTR_INTERNAL_ASSERT(block != nullptr)
+
+        memset(block, 0, size);
     }
 
     void Platform::Log(const char* message, UInt8 level)

@@ -1,67 +1,68 @@
-#ifndef OTTERENGINE_READONLYSPAN_H
-#define OTTERENGINE_READONLYSPAN_H
+#ifndef OTTERENGINE_READONLYARRAY_H
+#define OTTERENGINE_READONLYARRAY_H
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Logger.h"
+#include "Core/Memory.h"
 
 #include "Core/Collections/Iterators/LinearIterator.h"
 
 namespace Otter
 {
     template<typename T, UInt64 Size>
-    struct Span;
+    struct Array;
 
     template<typename T, UInt64 Size>
-    struct ReadOnlySpan final
+    struct ReadOnlyArray final
     {
     public:
         using ConstIterator = LinearIterator<const T>;
 
-        ReadOnlySpan()
-        {
-            if (std::is_default_constructible<T>::value)
-                for (UInt64 i = 0; i < Size; i++)
-                    m_Data[i] = T();
-        }
-        ~ReadOnlySpan()
-        {
-            if (std::is_destructible<T>::value)
-                for (UInt64 i = 0; i < Size; i++)
-                    m_Data[i].~T();
-        }
+        ReadOnlyArray() { m_Data = Buffer::New<T>(Size); }
+        ~ReadOnlyArray() { Buffer::Delete(m_Data, Size); }
 
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
-        OTR_DISABLE_OBJECT_COPIES(ReadOnlySpan)
-        OTR_DISABLE_OBJECT_MOVES(ReadOnlySpan)
+        OTR_DISABLE_OBJECT_COPIES(ReadOnlyArray)
+        OTR_DISABLE_OBJECT_MOVES(ReadOnlyArray)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        OTR_INLINE explicit ReadOnlySpan(const T& value)
+        OTR_INLINE explicit ReadOnlyArray(const T& value)
         {
+            m_Data = Buffer::New<T>(Size);
+
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = value;
         }
 
         template<typename... Args>
-        OTR_INLINE explicit ReadOnlySpan(const T& value, const Args&& ... args)
-            : m_Data{ value, args... }
+        OTR_INLINE explicit ReadOnlyArray(const T& value, const Args&& ... args)
         {
-            OTR_ASSERT_MSG(sizeof...(Args) < Size, "ReadOnlySpan size is too small")
+            OTR_ASSERT_MSG(sizeof...(Args) < Size, "ReadOnlyArray size is too small")
+
+            m_Data = Buffer::New<T>(Size);
+
+            UInt64 i = 0;
+            m_Data[i++] = value;
+            ([&]()
+            {
+                m_Data[i++] = args;
+            }(), ...);
         }
 
-        OTR_INLINE explicit ReadOnlySpan(const Span<T, Size>& other)
+        OTR_INLINE explicit ReadOnlyArray(const Array<T, Size>& other)
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = other.m_Data[i];
         }
 
-        OTR_INLINE explicit ReadOnlySpan(Span<T, Size>&& other) noexcept
+        OTR_INLINE explicit ReadOnlyArray(Array<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
         }
 
-        OTR_INLINE ReadOnlySpan<T, Size>& operator=(const Span<T, Size>& other)
+        OTR_INLINE ReadOnlyArray<T, Size>& operator=(const Array<T, Size>& other)
         {
             if (this == &other)
                 return *this;
@@ -72,7 +73,7 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE ReadOnlySpan<T, Size>& operator=(Span<T, Size>&& other) noexcept
+        OTR_INLINE ReadOnlyArray<T, Size>& operator=(Array<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
@@ -82,7 +83,7 @@ namespace Otter
 
         OTR_INLINE const T& operator[](UInt64 index) const
         {
-            OTR_ASSERT_MSG(index < Size, "ReadOnlySpan index out of bounds")
+            OTR_ASSERT_MSG(index < Size, "ReadOnlyArray index out of bounds")
             return m_Data[index];
         }
 
@@ -96,13 +97,13 @@ namespace Otter
 }
 
 template<typename OStream, typename T, UInt64 Size>
-OTR_INLINE OStream& operator<<(OStream& os, const Otter::ReadOnlySpan<T, Size>& span)
+OTR_INLINE OStream& operator<<(OStream& os, const Otter::ReadOnlyArray<T, Size>& array)
 {
-    os << "ReadOnlySpan: [";
+    os << "ReadOnlyArray: [";
 
     for (UInt64 i = 0; i < Size; i++)
     {
-        os << span[i];
+        os << array[i];
 
         if (i >= 2)
         {
@@ -119,4 +120,4 @@ OTR_INLINE OStream& operator<<(OStream& os, const Otter::ReadOnlySpan<T, Size>& 
     return os;
 }
 
-#endif //OTTERENGINE_READONLYSPAN_H
+#endif //OTTERENGINE_READONLYARRAY_H

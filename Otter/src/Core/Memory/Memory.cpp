@@ -39,8 +39,10 @@ namespace Otter
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
         UnsafeHandle handle = { };
-        handle.m_Pointer    = m_Allocator.Allocate(size, alignment);
-        handle.m_Size       = size;
+        handle.m_Pointer = m_Allocator.Allocate(size, alignment);
+        handle.m_Size    = size;
+
+        OTR_LOG_DEBUG("Total allocation: {0}/{1} bytes", m_Allocator.GetMemoryUsed(), m_Allocator.GetMemorySize())
 
         return handle;
     }
@@ -57,8 +59,8 @@ namespace Otter
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
         UnsafeHandle newHandle = { };
-        newHandle.m_Pointer    = Platform::Reallocate(handle.m_Pointer, size);
-        newHandle.m_Size       = size;
+        newHandle.m_Pointer = Platform::Reallocate(handle.m_Pointer, size);
+        newHandle.m_Size    = size;
 
         return handle;
     }
@@ -69,6 +71,8 @@ namespace Otter
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Block to be freed must not be null")
 
         m_Allocator.Free(block);
+
+        OTR_LOG_DEBUG("Total allocation: {0}/{1} bytes", m_Allocator.GetMemoryUsed(), m_Allocator.GetMemorySize())
     }
 
     // TODO: Use FreeListAllocator to clear memory

@@ -28,4 +28,7 @@ namespace Otter::Internal
         return 0;
     }
 }
+
+OTR_WITH_TYPENAME(Otter::Internal::LinuxPlatformWindowData)
+
 #endif

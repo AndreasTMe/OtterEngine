@@ -36,7 +36,6 @@ namespace Otter::Internal
 }
 
 OTR_WITH_TYPENAME(Otter::Internal::LinuxPlatform)
-OTR_WITH_TYPENAME(Otter::Internal::LinuxPlatformWindowData)
 
 #endif // OTR_PLATFORM_LINUX
 
