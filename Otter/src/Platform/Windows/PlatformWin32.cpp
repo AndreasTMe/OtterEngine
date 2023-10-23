@@ -20,10 +20,12 @@ namespace Otter::Internal
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCInconsistentNamingInspection"
 
-    Double64      WindowsPlatform::s_ClockFrequency = 0.0;
-    LARGE_INTEGER WindowsPlatform::s_ClockStart     = { 0 };
+    Double64      s_ClockFrequency = 0.0;
+    LARGE_INTEGER s_ClockStart     = { 0 };
 
 #pragma clang diagnostic pop
+
+    UnsafeHandle g_PlatformMemoryHandle;
 
     bool WindowsPlatform::Startup(const char* const title,
                                   UInt16 left,
@@ -31,8 +33,14 @@ namespace Otter::Internal
                                   UInt16 width,
                                   UInt16 height)
     {
-        m_Context = New<PlatformContext>();
-        m_Context->m_Window = New<WindowsPlatformWindowData>();
+        UInt64 platformContextSize    = OTR_ALIGNED_OFFSET(sizeof(PlatformContext), OTR_PLATFORM_MEMORY_ALIGNMENT);
+        UInt64 platformWindowDataSize = OTR_ALIGNED_OFFSET(sizeof(WindowsPlatformWindowData),
+                                                           OTR_PLATFORM_MEMORY_ALIGNMENT);
+
+        g_PlatformMemoryHandle = Unsafe::New(platformContextSize + platformWindowDataSize);
+
+        m_Context = (PlatformContext*) g_PlatformMemoryHandle.m_Pointer;
+        m_Context->m_Window = (WindowsPlatformWindowData*) g_PlatformMemoryHandle.m_Pointer + platformContextSize;
 
         m_Width  = width;
         m_Height = height;
@@ -53,9 +61,7 @@ namespace Otter::Internal
         if (m_Context->m_Window)
         {
             DestroyWindow(((WindowsPlatformWindowData*) m_Context->m_Window)->m_Window);
-
-            Delete((WindowsPlatformWindowData*) m_Context->m_Window);
-            Delete((PlatformContext*) m_Context);
+            Unsafe::Delete(g_PlatformMemoryHandle);
 
             return;
         }

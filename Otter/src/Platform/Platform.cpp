@@ -60,14 +60,6 @@ namespace Otter
         ZeroMemory(block, size);
     }
 
-    void Platform::MemoryCopy(void* dest, const void* src, UInt64 size)
-    {
-        OTR_INTERNAL_ASSERT(dest != nullptr)
-        OTR_INTERNAL_ASSERT(src != nullptr)
-
-        CopyMemory(dest, src, size);
-    }
-
     void Platform::Log(const char* message, UInt8 level)
     {
         OTR_INTERNAL_ASSERT(level < 6)
@@ -139,14 +131,6 @@ namespace Otter
         OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform");
 
 //        OTR_INTERNAL_ASSERT(block != nullptr)
-    }
-
-    void Platform::MemoryCopy(void* dest, const void* src, UInt64 size)
-    {
-        OTR_LOG_FATAL("'Platform::MemoryCopy' not supported for this platform");
-
-//        OTR_INTERNAL_ASSERT(dest != nullptr)
-//        OTR_INTERNAL_ASSERT(src != nullptr)
     }
 
     void Platform::Log(const char* message, UInt8 level)

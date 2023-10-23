@@ -1,0 +1,39 @@
+#ifndef OTTERENGINE_ABSTRACTALLOCATOR_H
+#define OTTERENGINE_ABSTRACTALLOCATOR_H
+
+#include "Core/Defines.h"
+#include "Core/Types.h"
+
+namespace Otter
+{
+    class AbstractAllocator
+    {
+    public:
+        OTR_INLINE AbstractAllocator()
+            : m_Memory(nullptr), m_MemorySize(0), m_MemoryUsed(0)
+        {
+        }
+        OTR_INLINE explicit AbstractAllocator(void* memory, const UInt64& memorySize)
+            : m_Memory(memory), m_MemorySize(memorySize), m_MemoryUsed(0)
+        {
+            OTR_INTERNAL_ASSERT_MSG((m_Memory && m_MemorySize) || (!m_Memory && !m_MemorySize),
+                                    "Memory and memory size must both be valid")
+        }
+        OTR_INLINE virtual ~AbstractAllocator() = default;
+
+        virtual void* Allocate(const UInt64& size, const UInt64& alignment) = 0;
+        virtual void Free(void* block) = 0;
+
+        [[nodiscard]] OTR_INLINE void* GetMemoryUnsafePointer() const { return m_Memory; }
+        [[nodiscard]] OTR_INLINE UInt64 GetMemorySize() const { return m_MemorySize; }
+        [[nodiscard]] OTR_INLINE UInt64 GetMemoryUsed() const { return m_MemoryUsed; }
+        [[nodiscard]] OTR_INLINE UInt64 GetMemoryFree() const { return m_MemorySize - m_MemoryUsed; }
+
+    protected:
+        void* m_Memory;
+        UInt64 m_MemorySize;
+        UInt64 m_MemoryUsed;
+    };
+}
+
+#endif //OTTERENGINE_ABSTRACTALLOCATOR_H

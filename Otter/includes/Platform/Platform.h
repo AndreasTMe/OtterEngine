@@ -38,7 +38,6 @@ namespace Otter
         static void* Reallocate(void* block, UInt64 size);
         static void Free(void* block);
         static void MemoryClear(void* block, UInt64 size);
-        static void MemoryCopy(void* dest, const void* src, UInt64 size);
 
         static void Log(const char* message, UInt8 level);
 

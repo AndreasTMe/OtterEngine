@@ -10,16 +10,28 @@
 namespace Otter
 {
     template<typename T, UInt64 Size>
-    class ReadOnlySpan;
+    struct ReadOnlySpan;
 
     template<typename T, UInt64 Size>
-    class Span
+    struct Span final
     {
     public:
         using Iterator = LinearIterator<T>;
         using ConstIterator = LinearIterator<const T>;
 
-        OTR_WITH_DEFAULT_CONSTRUCTOR(Span)
+        Span()
+        {
+            if (std::is_default_constructible<T>::value)
+                for (UInt64 i = 0; i < Size; i++)
+                    m_Data[i] = T();
+        }
+        ~Span()
+        {
+            if (std::is_destructible<T>::value)
+                for (UInt64 i = 0; i < Size; i++)
+                    m_Data[i].~T();
+        }
+
         OTR_WITH_ITERATOR(Iterator, m_Data, Size)
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
         OTR_DISABLE_HEAP_ALLOCATION

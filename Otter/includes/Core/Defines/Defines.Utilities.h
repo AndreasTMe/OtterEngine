@@ -20,5 +20,6 @@
 #define OTR_IS_POWER_OF_TWO(value) (value > 1 && !(value & (value - 1)))
 
 #define OTR_ALIGNED_OFFSET(value, alignment) ((value + (alignment - 1)) & ~(alignment - 1))
+#define OTR_ALIGNED_PADDING(address, alignment) ((alignment - (address % alignment)) % alignment)
 
 #endif //OTTERENGINE_DEFINES_UTILITIES_H

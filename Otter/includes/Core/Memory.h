@@ -5,23 +5,19 @@
 #include "Core/Types.h"
 #include "Core/Logger.h"
 
+#include "Core/Allocators/FreeListAllocator.h"
+
 namespace Otter
 {
+    struct UnsafeHandle
+    {
+        void* m_Pointer;
+        UInt64 m_Size;
+    };
+
     class Memory
     {
     public:
-        struct Handle
-        {
-            void* m_Pointer;
-
-            template<typename T, typename... TArgs>
-            OTR_INLINE T* As(TArgs... args)
-            {
-                new(m_Pointer) T(args...);
-                return (T*) m_Pointer;
-            }
-        };
-
         OTR_DISABLE_OBJECT_COPIES(Memory)
         OTR_DISABLE_OBJECT_MOVES(Memory)
 
@@ -31,87 +27,108 @@ namespace Otter
             return &instance;
         }
 
-        Handle Allocate(UInt64 size, UInt64 alignment = OTR_DEFAULT_MEMORY_ALIGNMENT);
-        Handle Reallocate(Handle& handle,
-                          UInt64 size,
-                          UInt64 alignment = OTR_DEFAULT_MEMORY_ALIGNMENT);
+        void Initialise();
+        void Shutdown();
+
+        UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        UnsafeHandle Reallocate(UnsafeHandle& handle,
+                                const UInt64& size,
+                                const UInt64& alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
         void Free(void* block);
-        void MemoryClear(void* block, UInt64 size);
-        void MemoryCopy(void* dest, const void* src, UInt64 size);
+        void MemoryClear(void* block, const UInt64& size);
 
-        [[nodiscard]] OTR_INLINE static UInt64 GetTotalAllocation() { return s_TotalAllocation; }
-
-        // TODO: Capture total allocation differently
-        template<typename T>
-        OTR_INLINE static void UpdateTotalAllocation(Size size, bool isAllocating = true)
-        {
-            if (isAllocating)
-                s_TotalAllocation += size;
-            else
-                s_TotalAllocation -= size;
-
-            OTR_LOG_INFO("{0} => Size of {1} bytes\n\t(Total allocation: {2} bytes)",
-                         TypeOf<T>::GetName(),
-                         sizeof(T),
-                         s_TotalAllocation)
-        }
+        [[nodiscard]] OTR_INLINE const UInt64 GetTotalAllocation() { return m_Allocator.GetMemoryUsed(); }
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(Memory)
 
-        static UInt64 s_TotalAllocation;
+        bool              m_HasInitialised = false;
+        FreeListAllocator m_Allocator;
     };
 
     template<typename T, typename... TArgs>
     OTR_INLINE T* New(TArgs&& ... args)
     {
-        Memory::UpdateTotalAllocation<T>(sizeof(T));
+        UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(T), OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-        return Memory::GetInstance()->Allocate(sizeof(T))
-            .As<T>(std::forward<TArgs>(args)...);
+        UnsafeHandle handle = Memory::GetInstance()->Allocate(alignedSize);
+        T* ptr = new(handle.m_Pointer) T(args...);
+
+        return ptr;
     }
 
     template<typename T>
     OTR_INLINE void Delete(T* ptr)
     {
-        Memory::UpdateTotalAllocation<T>(sizeof(T), false);
-
         if (!std::is_trivially_destructible<T>::value)
             ptr->~T();
 
+        Memory::GetInstance()->MemoryClear(ptr, sizeof(T));
         Memory::GetInstance()->Free(ptr);
     }
 
-    template<typename T>
-    OTR_INLINE T* NewBuffer(UInt64 length)
+    class Buffer final
     {
-        OTR_INTERNAL_ASSERT_MSG(length * sizeof(T) > 0, "Buffer length must be greater than 0")
-
-        Memory::UpdateTotalAllocation<T>(length * sizeof(T));
-
-        return Memory::GetInstance()->Allocate(length * sizeof(T))
-            .As<T>();
-    }
-
-    template<typename T>
-    OTR_INLINE void DeleteBuffer(T* ptr, UInt64 length)
-    {
-        OTR_INTERNAL_ASSERT_MSG(length * sizeof(T) > 0, "Buffer length must be greater than 0")
-
-        if (!std::is_trivially_destructible<T>::value)
+    public:
+        template<typename T>
+        OTR_INLINE static T* New(const UInt64& length)
         {
-            T* ptrCopy = ptr;
-            while (length--)
-            {
-                ptrCopy->~T();
-                ++ptrCopy;
-            }
+            OTR_INTERNAL_ASSERT_MSG(length * sizeof(T) > 0, "Buffer length must be greater than 0")
+
+            UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(T), OTR_PLATFORM_MEMORY_ALIGNMENT);
+            UInt64 bufferSize  = length * alignedSize;
+
+            UnsafeHandle handle = Memory::GetInstance()->Allocate(bufferSize);
+            T* buffer = new(handle.m_Pointer) T();
+
+            return buffer;
         }
 
-        Memory::GetInstance()->Free(ptr);
+        template<typename T>
+        OTR_INLINE static void Delete(T* ptr, const UInt64& length)
+        {
+            OTR_INTERNAL_ASSERT_MSG(length * sizeof(T) > 0, "Buffer length must be greater than 0")
 
-        Memory::UpdateTotalAllocation<T>(length * sizeof(T), false);
-    }
+            if (!std::is_trivially_destructible<T>::value)
+            {
+                T* ptrCopy = ptr;
+                UInt64 lengthCopy = length;
+                while (lengthCopy--)
+                {
+                    ptrCopy->~T();
+                    ++ptrCopy;
+                }
+            }
+
+            Memory::GetInstance()->MemoryClear(ptr, length * sizeof(T));
+            Memory::GetInstance()->Free(ptr);
+        }
+    };
+
+    class Unsafe final
+    {
+    public:
+        OTR_INLINE static UnsafeHandle New(const UInt64& size)
+        {
+            OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0 bytes")
+
+            UInt64 alignedSize = OTR_ALIGNED_OFFSET(size, OTR_PLATFORM_MEMORY_ALIGNMENT);
+
+            UnsafeHandle handle{ };
+            handle.m_Pointer = Memory::GetInstance()->Allocate(alignedSize).m_Pointer;
+            handle.m_Size    = alignedSize;
+
+            return handle;
+        }
+
+        OTR_INLINE static void Delete(UnsafeHandle handle)
+        {
+            Memory::GetInstance()->MemoryClear(handle.m_Pointer, handle.m_Size);
+            Memory::GetInstance()->Free(handle.m_Pointer);
+        }
+    };
 }
+
+OTR_WITH_TYPENAME(Otter::UnsafeHandle)
 
 #endif //OTTERENGINE_MEMORY_H

@@ -46,6 +46,6 @@
     #define OTR_MAIN() main(int argc, char** argv)
 #endif
 
-#define OTR_DEFAULT_MEMORY_ALIGNMENT 16
+#define OTR_PLATFORM_MEMORY_ALIGNMENT 8
 
 #endif //OTTERENGINE_DEFINES_PLATFORM_H

@@ -4,45 +4,80 @@
 
 namespace Otter
 {
-    UInt64 Memory::s_TotalAllocation = 0;
-
-    Memory::Handle Memory::Allocate(const UInt64 size, const UInt64 alignment)
+    void Memory::Initialise()
     {
-        OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0 bytes")
+        OTR_INTERNAL_ASSERT_MSG(!m_HasInitialised, "Memory has already been initialised")
 
-        return Memory::Handle{ Platform::Allocate(size) };
+        const UInt64 memorySize = 1_KiB;
+        void* memory = Platform::Allocate(memorySize);
+
+        m_Allocator      = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
+        m_HasInitialised = true;
+
+        OTR_LOG_DEBUG("Memory allocator initialized with {0} bytes", memorySize)
     }
 
-    Memory::Handle Memory::Reallocate(Memory::Handle& handle,
-                                      const UInt64 size,
-                                      const UInt64 alignment)
+    void Memory::Shutdown()
     {
+        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
+
+        void* memoryBlock = m_Allocator.GetMemoryUnsafePointer();
+        if (memoryBlock)
+        {
+            Platform::MemoryClear(memoryBlock, m_Allocator.GetMemorySize());
+            Platform::Free(memoryBlock);
+        }
+
+        m_HasInitialised = false;
+    }
+
+    UnsafeHandle Memory::Allocate(const UInt64& size, const UInt64& alignment)
+    {
+        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
+        OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0 bytes")
+        OTR_INTERNAL_ASSERT_MSG(alignment >= OTR_PLATFORM_MEMORY_ALIGNMENT,
+                                "Allocation alignment must be greater than or equal to the platform alignment")
+
+        UnsafeHandle handle = { };
+        handle.m_Pointer    = m_Allocator.Allocate(size, alignment);
+        handle.m_Size       = size;
+
+        return handle;
+    }
+
+    // TODO: Use FreeListAllocator to reallocate memory
+    UnsafeHandle Memory::Reallocate(UnsafeHandle& handle,
+                                    const UInt64& size,
+                                    const UInt64& alignment)
+    {
+        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
         OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Reallocation handle must not be null")
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Reallocation size must be greater than 0 bytes")
+        OTR_INTERNAL_ASSERT_MSG(alignment >= OTR_PLATFORM_MEMORY_ALIGNMENT,
+                                "Allocation alignment must be greater than or equal to the platform alignment")
 
-        return Memory::Handle{ Platform::Reallocate(handle.m_Pointer, size) };
+        UnsafeHandle newHandle = { };
+        newHandle.m_Pointer    = Platform::Reallocate(handle.m_Pointer, size);
+        newHandle.m_Size       = size;
+
+        return handle;
     }
 
     void Memory::Free(void* block)
     {
+        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Block to be freed must not be null")
 
-        Platform::Free(block);
+        m_Allocator.Free(block);
     }
 
-    void Memory::MemoryClear(void* block, const UInt64 size)
+    // TODO: Use FreeListAllocator to clear memory
+    void Memory::MemoryClear(void* block, const UInt64& size)
     {
+        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Block to be cleared must not be null")
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Clear size must be greater than 0 bytes")
 
         Platform::MemoryClear(block, size);
-    }
-
-    void Memory::MemoryCopy(void* dest, const void* src, const UInt64 size)
-    {
-        OTR_INTERNAL_ASSERT_MSG(src != nullptr, "Source block must not be null")
-        OTR_INTERNAL_ASSERT_MSG(size > 0, "Copy size must be greater than 0 bytes")
-
-        Platform::MemoryCopy(dest, src, size);
     }
 }

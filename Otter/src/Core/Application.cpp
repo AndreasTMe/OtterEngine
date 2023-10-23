@@ -6,7 +6,7 @@ namespace Otter
 {
     void Application::Run()
     {
-        // Initialise memory system;
+        Memory::GetInstance()->Initialise();
 
         auto* platform = Platform::CreatePlatform();
         if (platform->Startup("Otter Engine", 100, 100, 1280, 720))
@@ -30,6 +30,6 @@ namespace Otter
         platform->Shutdown();
         Platform::DestroyPlatform(platform);
 
-        // Shutdown memory system;
+        Memory::GetInstance()->Shutdown();
     }
 }
