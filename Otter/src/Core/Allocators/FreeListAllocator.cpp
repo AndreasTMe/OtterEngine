@@ -51,8 +51,8 @@ namespace Otter
         Remove(foundNode, previousNode);
 
         auto* header = (Header * )((UIntPtr*) foundNode + bodyPadding);
-        header->m_Size = requiredSpace;
-        header->m_Padding    = bodyPadding;
+        header->m_Size    = requiredSpace;
+        header->m_Padding = bodyPadding;
 
         m_MemoryUsed += requiredSpace;
 

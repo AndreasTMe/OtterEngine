@@ -7,6 +7,7 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Delegates.h"
+#include "Core/Collections.h"
 
 #include "Core/Events/Event.h"
 #include "Core/Events/WindowEvents.h"
@@ -36,7 +37,7 @@ namespace Otter
         template<typename TEvent, typename... TArgs>
         OTR_INLINE void Schedule(TArgs&& ... args)
         {
-            m_Events.push(TEvent(std::forward<TArgs>(args)...));
+            m_Events.Push(TEvent(std::forward<TArgs>(args)...));
         }
 
         void Process();
@@ -46,7 +47,7 @@ namespace Otter
 
         // TODO: Replace with a custom queue.
         // TODO: Replace with a priority queue.
-        std::queue<Event> m_Events;
+        Queue<Event> m_Events{ };
 
         // TODO: Replace with a custom map.
         std::unordered_map<EventType, UnsafeHandle> m_Listeners;

@@ -7,6 +7,8 @@
 
 #include "Core/Defines/Defines.Compilation.h"
 
+#define OTR_USING_BASE(BaseType) using base = BaseType;
+
 #define OTR_NAME_OF(value) #value
 
 #define OTR_BIT_STRING(value, length) std::bitset<length>(value)
