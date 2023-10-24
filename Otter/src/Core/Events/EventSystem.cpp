@@ -57,15 +57,15 @@ namespace Otter
 
     void EventSystem::Process()
     {
-        while (!m_Events.empty())
+        while (!m_Events.IsEmpty())
         {
-            Event& event = m_Events.front();
+            const Event& event = m_Events.Peek();
             auto type = event.GetEventType();
 
             if (m_Listeners.find(type) != m_Listeners.end())
                 ((Func<bool, const Event&>*) m_Listeners[type].m_Pointer)->ReverseInvoke(event);
 
-            m_Events.pop();
+            m_Events.TryPop();
         }
     }
 
@@ -85,15 +85,14 @@ namespace Otter
 
     void EventSystem::RemoveAllListeners()
     {
-        for (auto& listener: m_Listeners)
-            Unsafe::Delete(listener.second);
+        for (auto& [_, handle]: m_Listeners)
+            Unsafe::Delete(handle);
 
         m_Listeners.clear();
     }
 
     void EventSystem::ClearEvents()
     {
-        while (!m_Events.empty())
-            m_Events.pop();
+        m_Events.ClearDestructive();
     }
 }
