@@ -9,7 +9,6 @@
 #include "Core/Delegates.h"
 
 #include "Core/Events/Event.h"
-#include "Core/Events/EventAction.h"
 #include "Core/Events/WindowEvents.h"
 #include "Core/Events/KeyboardEvents.h"
 #include "Core/Events/MouseEvents.h"
@@ -20,7 +19,6 @@ namespace Otter
     {
         using Event = Internal::Event;
         using EventType = Internal::EventType;
-        using EventAction = Internal::EventAction;
 
     public:
         OTR_DISABLE_OBJECT_COPIES(EventSystem)
@@ -51,7 +49,7 @@ namespace Otter
         std::queue<Event> m_Events;
 
         // TODO: Replace with a custom map.
-        std::unordered_map<EventType, Shared<EventAction>> m_Listeners;
+        std::unordered_map<EventType, UnsafeHandle> m_Listeners;
 
         template<typename TEvent = Event, typename TActionArg = const TEvent&>
         void AddListener(EventType type, const Func<bool, TActionArg>& action);

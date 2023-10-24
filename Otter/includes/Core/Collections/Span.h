@@ -92,9 +92,6 @@ namespace Otter
             return m_Data[index];
         }
 
-        [[nodiscard]] OTR_INLINE T* GetData() { return m_Data; }
-        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
-
         [[nodiscard]] OTR_INLINE const ReadOnlySpan<T, Size> AsReadOnly() const
         {
             return ReadOnlySpan<T, Size>(*this);

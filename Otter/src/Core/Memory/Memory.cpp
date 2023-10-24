@@ -8,7 +8,7 @@ namespace Otter
     {
         OTR_INTERNAL_ASSERT_MSG(!m_HasInitialised, "Memory has already been initialised")
 
-        const UInt64 memorySize = 1_KiB;
+        const UInt64 memorySize = 2_KiB;
         void* memory = Platform::Allocate(memorySize);
 
         m_Allocator      = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
@@ -33,7 +33,9 @@ namespace Otter
 
     UnsafeHandle Memory::Allocate(const UInt64& size, const UInt64& alignment)
     {
-        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
+        if (!m_HasInitialised)
+            return { };
+
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0 bytes")
         OTR_INTERNAL_ASSERT_MSG(alignment >= OTR_PLATFORM_MEMORY_ALIGNMENT,
                                 "Allocation alignment must be greater than or equal to the platform alignment")
@@ -41,8 +43,6 @@ namespace Otter
         UnsafeHandle handle = { };
         handle.m_Pointer = m_Allocator.Allocate(size, alignment);
         handle.m_Size    = size;
-
-        OTR_LOG_DEBUG("Total allocation: {0}/{1} bytes", m_Allocator.GetMemoryUsed(), m_Allocator.GetMemorySize())
 
         return handle;
     }
@@ -52,7 +52,9 @@ namespace Otter
                                     const UInt64& size,
                                     const UInt64& alignment)
     {
-        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
+        if (!m_HasInitialised)
+            return { };
+
         OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Reallocation handle must not be null")
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Reallocation size must be greater than 0 bytes")
         OTR_INTERNAL_ASSERT_MSG(alignment >= OTR_PLATFORM_MEMORY_ALIGNMENT,
@@ -67,18 +69,24 @@ namespace Otter
 
     void Memory::Free(void* block)
     {
-        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
+        if (!m_HasInitialised)
+            return;
+
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Block to be freed must not be null")
 
         m_Allocator.Free(block);
-
-        OTR_LOG_DEBUG("Total allocation: {0}/{1} bytes", m_Allocator.GetMemoryUsed(), m_Allocator.GetMemorySize())
     }
 
     // TODO: Use FreeListAllocator to clear memory
     void Memory::MemoryClear(void* block, const UInt64& size)
     {
-        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
+        if (!m_HasInitialised)
+        {
+            OTR_LOG_WARNING("Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
+                            " memory functions. Note that there might be some global/static variables that use memory.")
+            return;
+        }
+
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Block to be cleared must not be null")
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Clear size must be greater than 0 bytes")
 

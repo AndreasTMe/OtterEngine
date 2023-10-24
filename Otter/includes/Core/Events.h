@@ -6,8 +6,6 @@
 #include "Core/Events/KeyboardEvents.h"
 #include "Core/Events/MouseEvents.h"
 
-#include "Core/Events/EventAction.h"
-
 #include "Core/Events/EventSystem.h"
 
 #endif //OTTERENGINE_EVENTS_H

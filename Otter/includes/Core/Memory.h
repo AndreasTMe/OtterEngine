@@ -37,7 +37,11 @@ namespace Otter
         void Free(void* block);
         void MemoryClear(void* block, const UInt64& size);
 
-        [[nodiscard]] OTR_INLINE const UInt64 GetTotalAllocation() { return m_Allocator.GetMemoryUsed(); }
+        [[nodiscard]] OTR_INLINE const std::string GetTotalAllocation()
+        {
+            return std::to_string(m_Allocator.GetMemoryUsed()) + " / "
+                   + std::to_string(m_Allocator.GetMemorySize()) + " bytes";
+        }
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(Memory)
@@ -96,9 +100,10 @@ namespace Otter
         template<typename T>
         OTR_INLINE static void Delete(T* ptr, const UInt64& length)
         {
+            OTR_INTERNAL_ASSERT_MSG(ptr != nullptr, "Buffer pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(length * sizeof(T) > 0, "Buffer length must be greater than 0")
 
-            if (!std::is_trivially_destructible<T>::value)
+            if (!std::is_destructible<T>::value)
             {
                 T* ptrCopy = ptr;
                 for (UInt64 i = 0; i < length; i++)
@@ -131,6 +136,9 @@ namespace Otter
 
         OTR_INLINE static void Delete(UnsafeHandle handle)
         {
+            OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Handle pointer must not be null")
+            OTR_INTERNAL_ASSERT_MSG(handle.m_Size > 0, "Handle size must be greater than 0")
+
             Memory::GetInstance()->MemoryClear(handle.m_Pointer, handle.m_Size);
             Memory::GetInstance()->Free(handle.m_Pointer);
         }

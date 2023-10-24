@@ -2,9 +2,9 @@
 #define OTTERENGINE_DELEGATES_H
 
 #include <functional>
-#include <vector>
 
 #include "Core/Defines.h"
+#include "Core/Collections.h"
 
 namespace Otter
 {
@@ -18,6 +18,10 @@ namespace Otter
 
         OTR_INLINE Action(const Action& other) noexcept { m_Functions = other.m_Functions; }
         OTR_INLINE Action(Action&& other) noexcept { m_Functions = std::move(other.m_Functions); }
+        OTR_INLINE explicit Action(Action* other)
+            : Action(*other)
+        {
+        }
 
         OTR_INLINE Action& operator=(const Action& other)
         {
@@ -36,7 +40,7 @@ namespace Otter
             if (!function)
                 return;
 
-            m_Functions.push_back(function);
+            m_Functions.Add(function);
         }
 
 //    OTR_INLINE void operator-=(const Function& function)
@@ -54,10 +58,10 @@ namespace Otter
 
         OTR_INLINE bool operator==(const Action<TArgs...>& other) const
         {
-            if (m_Functions.size() != other.m_Functions.size())
+            if (m_Functions.GetCount() != other.m_Functions.GetCount())
                 return false;
 
-            for (auto i = 0; i < m_Functions.size(); i++)
+            for (auto i = 0; i < m_Functions.GetCount(); i++)
                 if (m_Functions[i].target_type() != other.m_Functions[i].target_type())
                     return false;
 
@@ -69,18 +73,19 @@ namespace Otter
 
         OTR_INLINE virtual void Invoke(TArgs... args)
         {
-            if (m_Functions.empty())
+            if (m_Functions.IsEmpty())
                 return;
 
             for (const auto& function: m_Functions)
                 function(args...);
         }
 
-        OTR_INLINE void Clear() { m_Functions.clear(); }
+        OTR_INLINE void Clear() { m_Functions.Clear(); }
+
+        OTR_INLINE void ClearDestructive() { m_Functions.ClearDestructive(); }
 
     private:
-        // TODO: Replace with a custom list.
-        std::vector<Function> m_Functions;
+        List<Function> m_Functions{ };
     };
 
     template<typename TResult, typename... TArgs>
@@ -93,6 +98,10 @@ namespace Otter
 
         OTR_INLINE Func(const Func& other) noexcept { m_Functions = other.m_Functions; }
         OTR_INLINE Func(Func&& other) noexcept { m_Functions = std::move(other.m_Functions); }
+        OTR_INLINE explicit Func(Func* other)
+            : Func(*other)
+        {
+        }
 
         OTR_INLINE Func& operator=(const Func& other)
         {
@@ -111,7 +120,7 @@ namespace Otter
             if (!function)
                 return;
 
-            m_Functions.push_back(function);
+            m_Functions.Add(function);
         }
 
 //    OTR_INLINE void operator-=(Function& function)
@@ -129,10 +138,10 @@ namespace Otter
 
         OTR_INLINE bool operator==(const Func<TResult, TArgs...>& other) const
         {
-            if (m_Functions.size() != other.m_Functions.size())
+            if (m_Functions.GetCount() != other.m_Functions.GetCount())
                 return false;
 
-            for (auto i = 0; i < m_Functions.size(); i++)
+            for (auto i = 0; i < m_Functions.GetCount(); i++)
                 if (m_Functions[i].target_type() != other.m_Functions[i].target_type())
                     return false;
 
@@ -146,12 +155,12 @@ namespace Otter
         {
             TResult result = TResult();
 
-            if (m_Functions.empty())
+            if (m_Functions.IsEmpty())
                 return result;
 
             result = m_Functions[0](args...);
 
-            for (int i = 1; i < m_Functions.size(); i++)
+            for (int i = 1; i < m_Functions.GetCount(); i++)
                 m_Functions[i](args...);
 
             return result;
@@ -161,22 +170,23 @@ namespace Otter
         {
             TResult result = TResult();
 
-            if (m_Functions.empty())
+            if (m_Functions.IsEmpty())
                 return result;
 
-            result = m_Functions[m_Functions.size() - 1](args...);
+            result = m_Functions[m_Functions.GetCount() - 1](args...);
 
-            for (int i = m_Functions.size() - 2; i >= 0; i--)
+            for (int i = m_Functions.GetCount() - 2; i >= 0; i--)
                 m_Functions[i](args...);
 
             return result;
         }
 
-        OTR_INLINE void Clear() { m_Functions.clear(); }
+        OTR_INLINE void Clear() { m_Functions.Clear(); }
+
+        OTR_INLINE void ClearDestructive() { m_Functions.ClearDestructive(); }
 
     private:
-        // TODO: Replace with a custom list.
-        std::vector<Function> m_Functions;
+        List<Function> m_Functions{ };
     };
 }
 

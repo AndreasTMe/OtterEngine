@@ -1,9 +1,8 @@
 #ifndef OTTERENGINE_APPLICATION_H
 #define OTTERENGINE_APPLICATION_H
 
-#include <vector>
-
 #include "Core/Defines.h"
+#include "Core/Collections.h"
 #include "Core/Layers.h"
 
 namespace Otter
@@ -25,8 +24,7 @@ namespace Otter
         // TODO: Add functionality for adding/removing layers.
 
     private:
-        // TODO: Replace with a custom list.
-        std::vector<Layer*> m_Layers;
+        List<Layer*> m_Layers{ };
     };
 
     Application* CreateApplication();

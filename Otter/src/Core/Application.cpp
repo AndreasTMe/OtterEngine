@@ -13,6 +13,9 @@ namespace Otter
         {
             EventSystem::GetInstance()->Initialise();
 
+            OTR_LOG_DEBUG("Total allocation after system initialisation: {0}",
+                          Memory::GetInstance()->GetTotalAllocation())
+
             while (platform->IsRunning())
             {
                 platform->CaptureWindowEvents();
@@ -26,5 +29,8 @@ namespace Otter
         Platform::DestroyPlatform(platform);
 
         Memory::GetInstance()->Shutdown();
+
+        OTR_LOG_DEBUG("Total allocation after system shutdown: {0}",
+                      Memory::GetInstance()->GetTotalAllocation())
     }
 }

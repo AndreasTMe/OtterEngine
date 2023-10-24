@@ -36,6 +36,23 @@ namespace Otter
     {
         RemoveAllListeners();
         ClearEvents();
+
+        GlobalActions::OnMouseDragged.ClearDestructive();
+        GlobalActions::OnMouseMoved.ClearDestructive();
+        GlobalActions::OnMouseScroll.ClearDestructive();
+        GlobalActions::OnMouseButtonReleased.ClearDestructive();
+        GlobalActions::OnMouseButtonPressed.ClearDestructive();
+
+        GlobalActions::OnKeyHold.ClearDestructive();
+        GlobalActions::OnKeyReleased.ClearDestructive();
+        GlobalActions::OnKeyPressed.ClearDestructive();
+
+        GlobalActions::OnWindowRefresh.ClearDestructive();
+        GlobalActions::OnWindowRestored.ClearDestructive();
+        GlobalActions::OnWindowMaximized.ClearDestructive();
+        GlobalActions::OnWindowMinimized.ClearDestructive();
+        GlobalActions::OnWindowResize.ClearDestructive();
+        GlobalActions::OnWindowClose.ClearDestructive();
     }
 
     void EventSystem::Process()
@@ -46,7 +63,7 @@ namespace Otter
             auto type = event.GetEventType();
 
             if (m_Listeners.find(type) != m_Listeners.end())
-                m_Listeners[type]->ReverseInvoke(event);
+                ((Func<bool, const Event&>*) m_Listeners[type].m_Pointer)->ReverseInvoke(event);
 
             m_Events.pop();
         }
@@ -61,13 +78,15 @@ namespace Otter
         if (m_Listeners.find(type) != m_Listeners.end())
             return;
 
-        m_Listeners[type] = CreateSharedPointer<EventAction>((EventAction * ) & action);
+        UnsafeHandle handle = Unsafe::New(sizeof(Func<bool, const Event&>));
+        handle.m_Pointer = new(handle.m_Pointer) Func<bool, TActionArg>(action);
+        m_Listeners[type] = handle;
     }
 
     void EventSystem::RemoveAllListeners()
     {
         for (auto& listener: m_Listeners)
-            listener.second->Clear();
+            Unsafe::Delete(listener.second);
 
         m_Listeners.clear();
     }

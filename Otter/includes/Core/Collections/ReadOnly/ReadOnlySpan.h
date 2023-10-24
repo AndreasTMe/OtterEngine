@@ -86,10 +86,6 @@ namespace Otter
             return m_Data[index];
         }
 
-        [[nodiscard]] OTR_INLINE const T* Data() const { return m_Data; }
-
-        [[nodiscard]] OTR_INLINE constexpr UInt64 Length() const { return Size; }
-
     private:
         T m_Data[Size];
     };
