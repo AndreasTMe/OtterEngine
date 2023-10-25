@@ -37,7 +37,7 @@ namespace Otter
         template<typename TEvent, typename... TArgs>
         OTR_INLINE void Schedule(TArgs&& ... args)
         {
-            m_Events.Push(TEvent(std::forward<TArgs>(args)...));
+            m_Events.Enqueue(TEvent(std::forward<TArgs>(args)...));
         }
 
         void Process();
@@ -45,7 +45,6 @@ namespace Otter
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(EventSystem)
 
-        // TODO: Replace with a priority queue.
         Queue<Event> m_Events{ };
 
         // TODO: Replace with a custom map.

@@ -57,16 +57,18 @@ namespace Otter
 
     void EventSystem::Process()
     {
-        while (!m_Events.IsEmpty())
+        Event event;
+        while (m_Events.TryPeek(event))
         {
-            const Event& event = m_Events.Peek();
             auto type = event.GetEventType();
 
             if (m_Listeners.find(type) != m_Listeners.end())
                 ((Func<bool, const Event&>*) m_Listeners[type].m_Pointer)->ReverseInvoke(event);
 
-            m_Events.TryPop();
+            m_Events.DequeueUnsafe();
         }
+
+        m_Events.Clear();
     }
 
     template<typename TEvent, typename TActionArg>

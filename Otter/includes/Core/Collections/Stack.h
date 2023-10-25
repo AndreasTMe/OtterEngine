@@ -1,5 +1,5 @@
-#ifndef OTTERENGINE_QUEUE_H
-#define OTTERENGINE_QUEUE_H
+#ifndef OTTERENGINE_STACK_H
+#define OTTERENGINE_STACK_H
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
@@ -10,16 +10,16 @@
 namespace Otter
 {
     template<typename T>
-    class Queue final : public Collection<T>
+    class Stack final : public Collection<T>
     {
         OTR_USING_BASE(Collection<T>)
 
     public:
-        OTR_COLLECTION_CONSTRUCT(Queue)
-        OTR_COLLECTION_COPY(Queue)
-        OTR_COLLECTION_MOVE(Queue)
+        OTR_COLLECTION_CONSTRUCT(Stack)
+        OTR_COLLECTION_COPY(Stack)
+        OTR_COLLECTION_MOVE(Stack)
 
-        OTR_INLINE void Enqueue(const T& item)
+        OTR_INLINE void Push(const T& item)
         {
             if (base::m_Count >= base::m_Capacity)
                 base::Expand();
@@ -27,21 +27,10 @@ namespace Otter
             base::m_Data[base::m_Count++] = item;
         }
 
-        OTR_INLINE void DequeueUnsafe()
-        {
-            if (base::m_Count == 0)
-                return;
-
-            base::m_Count--;
-        }
-
-        OTR_INLINE bool TryDequeue()
+        OTR_INLINE bool TryPop()
         {
             if (base::m_Count == 0)
                 return false;
-
-            for (UInt64 i = 0; i < base::m_Count - 1; i++)
-                base::m_Data[i] = base::m_Data[i + 1];
 
             base::m_Count--;
 
@@ -53,11 +42,11 @@ namespace Otter
             if (base::m_Count == 0)
                 return false;
 
-            item = base::m_Data[0];
+            item = base::m_Data[base::m_Count - 1];
 
             return true;
         }
     };
 }
 
-#endif //OTTERENGINE_QUEUE_H
+#endif //OTTERENGINE_STACK_H

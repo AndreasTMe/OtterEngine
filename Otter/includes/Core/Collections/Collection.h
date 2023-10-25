@@ -40,6 +40,41 @@ namespace Otter
             m_Capacity = capacity;
         }
 
+        OTR_INLINE void Expand()
+        {
+            m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
+
+            T* newData = Buffer::New<T>(m_Capacity);
+
+            for (UInt64 i = 0; i < m_Count; i++)
+                newData[i] = m_Data[i];
+
+            if (m_Count > 0)
+                Buffer::Delete(m_Data, m_Count);
+
+            m_Data = newData;
+        }
+
+        OTR_INLINE void Shrink()
+        {
+            if (m_Capacity == m_Count)
+                return;
+
+            m_Capacity *= 0.66;
+            if (m_Capacity < m_Count)
+                m_Capacity = m_Count;
+
+            T* newData = Buffer::New<T>(m_Capacity);
+
+            for (UInt64 i = m_Count; i > 0; i--)
+                newData[i - 1] = m_Data[i - 1];
+
+            if (m_Count > 0)
+                Buffer::Delete(m_Data, m_Count);
+
+            m_Data = newData;
+        }
+
         OTR_INLINE bool Contains(T item) const
         {
             for (UInt64 i = 0; i < m_Count; i++)

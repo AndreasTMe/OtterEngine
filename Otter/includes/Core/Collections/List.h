@@ -3,10 +3,8 @@
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
-#include "Core/Logger.h"
 #include "Core/Memory.h"
 
-#include "Core/Collections/Iterators/LinearIterator.h"
 #include "Core/Collections/Collection.h"
 
 namespace Otter
@@ -36,18 +34,7 @@ namespace Otter
         OTR_INLINE void Add(T item)
         {
             if (base::m_Count >= base::m_Capacity)
-            {
-                base::m_Capacity = base::m_Capacity == 0 ? 2 : base::m_Capacity * 1.5;
-                T* newData = Buffer::New<T>(base::m_Capacity);
-
-                for (UInt64 i = 0; i < base::m_Count; i++)
-                    newData[i] = base::m_Data[i];
-
-                if (base::m_Count > 0)
-                    Buffer::Delete(base::m_Data, base::m_Count);
-
-                base::m_Data = newData;
-            }
+                base::Expand();
 
             base::m_Data[base::m_Count++] = item;
         }
