@@ -27,12 +27,12 @@ namespace Otter
             base::m_Data[base::m_Count++] = item;
         }
 
-        OTR_INLINE void DequeueUnsafe()
+        OTR_INLINE void Enqueue(T&& item) noexcept
         {
-            if (base::m_Count == 0)
-                return;
+            if (base::m_Count >= base::m_Capacity)
+                base::Expand();
 
-            base::m_Count--;
+            base::m_Data[base::m_Count++] = std::move(item);
         }
 
         OTR_INLINE bool TryDequeue()

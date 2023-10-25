@@ -65,10 +65,8 @@ namespace Otter
             if (m_Listeners.find(type) != m_Listeners.end())
                 ((Func<bool, const Event&>*) m_Listeners[type].m_Pointer)->ReverseInvoke(event);
 
-            m_Events.DequeueUnsafe();
+            m_Events.TryDequeue();
         }
-
-        m_Events.Clear();
     }
 
     template<typename TEvent, typename TActionArg>

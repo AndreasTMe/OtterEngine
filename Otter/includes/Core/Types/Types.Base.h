@@ -33,30 +33,6 @@ typedef std::float64_t  Double64;
 typedef std::float128_t Double128;
 
 template<typename T>
-using Unique = std::unique_ptr<T>;
-
-template<typename T, typename... TArgs>
-constexpr Unique<T> CreateUniquePointer(TArgs&& ... args)
-{
-    return std::make_unique<T>(std::forward<TArgs>(args)...);
-}
-
-template<typename T>
-using Shared = std::shared_ptr<T>;
-
-template<typename T, typename... TArgs>
-constexpr Shared<T> CreateSharedPointer(TArgs&& ... args)
-{
-    return std::make_shared<T>(std::forward<TArgs>(args)...);
-}
-
-template<typename... TArgs>
-struct VariadicArgs
-{
-    static constexpr UInt64 GetSize() { return sizeof...(TArgs); }
-};
-
-template<typename T>
 struct TypeOf
 {
 public:
@@ -72,25 +48,53 @@ public:
     };
 
 OTR_TYPEOF_DEFINITION(void)
+
 OTR_TYPEOF_DEFINITION(bool)
+
 OTR_TYPEOF_DEFINITION(char)
 
 OTR_TYPEOF_DEFINITION(Char8)
+
 OTR_TYPEOF_DEFINITION(Char16)
+
 OTR_TYPEOF_DEFINITION(Char32)
+
 OTR_TYPEOF_DEFINITION(UInt8)
+
 OTR_TYPEOF_DEFINITION(UInt16)
+
 OTR_TYPEOF_DEFINITION(UInt32)
+
 OTR_TYPEOF_DEFINITION(UInt64)
+
 OTR_TYPEOF_DEFINITION(Int8)
+
 OTR_TYPEOF_DEFINITION(Int16)
+
 OTR_TYPEOF_DEFINITION(Int32)
+
 OTR_TYPEOF_DEFINITION(Int64)
+
 OTR_TYPEOF_DEFINITION(Float16)
+
 OTR_TYPEOF_DEFINITION(Float32)
+
 OTR_TYPEOF_DEFINITION(Double64)
+
 OTR_TYPEOF_DEFINITION(Double128)
 
 #undef OTR_TYPEOF_DEFINITION
+
+template<typename... TArgs>
+struct VariadicArgs
+{
+    OTR_INLINE static constexpr UInt64 GetSize() { return sizeof...(TArgs); }
+};
+
+template<typename T>
+[[nodiscard]] OTR_INLINE constexpr UInt64 GetHashCode(const T& value)
+{
+    return std::hash<T>{ }(value);
+}
 
 #endif //OTTERENGINE_TYPES_BASE_H

@@ -3,7 +3,6 @@
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
-#include "Core/Logger.h"
 #include "Core/Memory.h"
 
 #include "Core/Collections/Iterators/LinearIterator.h"
@@ -23,7 +22,7 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        OTR_INLINE void Reserve(UInt64 capacity)
+        OTR_INLINE void Reserve(const UInt64& capacity)
         {
             if (capacity <= m_Capacity)
                 return;
@@ -55,27 +54,16 @@ namespace Otter
             m_Data = newData;
         }
 
-        OTR_INLINE void Shrink()
+        OTR_INLINE bool Contains(const T& item) const
         {
-            if (m_Capacity == m_Count)
-                return;
+            for (UInt64 i = 0; i < m_Count; i++)
+                if (m_Data[i] == item)
+                    return true;
 
-            m_Capacity *= 0.66;
-            if (m_Capacity < m_Count)
-                m_Capacity = m_Count;
-
-            T* newData = Buffer::New<T>(m_Capacity);
-
-            for (UInt64 i = m_Count; i > 0; i--)
-                newData[i - 1] = m_Data[i - 1];
-
-            if (m_Count > 0)
-                Buffer::Delete(m_Data, m_Count);
-
-            m_Data = newData;
+            return false;
         }
 
-        OTR_INLINE bool Contains(T item) const
+        OTR_INLINE bool Contains(T&& item) const noexcept
         {
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)

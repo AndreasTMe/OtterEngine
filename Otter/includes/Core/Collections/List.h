@@ -31,7 +31,7 @@ namespace Otter
             return base::m_Data[index];
         }
 
-        OTR_INLINE void Add(T item)
+        OTR_INLINE void Add(const T& item)
         {
             if (base::m_Count >= base::m_Capacity)
                 base::Expand();
@@ -39,7 +39,15 @@ namespace Otter
             base::m_Data[base::m_Count++] = item;
         }
 
-        OTR_INLINE bool TryRemove(T item)
+        OTR_INLINE void Add(T&& item) noexcept
+        {
+            if (base::m_Count >= base::m_Capacity)
+                base::Expand();
+
+            base::m_Data[base::m_Count++] = std::move(item);
+        }
+
+        OTR_INLINE bool TryRemove(const T& item)
         {
             for (UInt64 i = 0; i < base::m_Count; i++)
                 if (base::m_Data[i] == item)
@@ -48,7 +56,16 @@ namespace Otter
             return false;
         }
 
-        OTR_INLINE bool TryRemoveAt(UInt64 index)
+        OTR_INLINE bool TryRemove(T&& item) noexcept
+        {
+            for (UInt64 i = 0; i < base::m_Count; i++)
+                if (base::m_Data[i] == item)
+                    return TryRemoveAt(i);
+
+            return false;
+        }
+
+        OTR_INLINE bool TryRemoveAt(const UInt64& index)
         {
             if (index >= base::m_Count)
                 return false;

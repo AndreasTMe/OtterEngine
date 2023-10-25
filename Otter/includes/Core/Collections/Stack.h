@@ -27,6 +27,14 @@ namespace Otter
             base::m_Data[base::m_Count++] = item;
         }
 
+        OTR_INLINE void Push(T&& item)
+        {
+            if (base::m_Count >= base::m_Capacity)
+                base::Expand();
+
+            base::m_Data[base::m_Count++] = std::move(item);
+        }
+
         OTR_INLINE bool TryPop()
         {
             if (base::m_Count == 0)
@@ -37,7 +45,7 @@ namespace Otter
             return true;
         }
 
-        OTR_INLINE bool TryPeek(T& item)
+        OTR_INLINE bool TryPeek(const T& item)
         {
             if (base::m_Count == 0)
                 return false;
