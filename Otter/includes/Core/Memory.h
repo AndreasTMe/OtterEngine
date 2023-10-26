@@ -134,7 +134,16 @@ namespace Otter
             return handle;
         }
 
-        OTR_INLINE static void Delete(UnsafeHandle handle)
+        OTR_INLINE static void Delete(const UnsafeHandle& handle)
+        {
+            OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Handle pointer must not be null")
+            OTR_INTERNAL_ASSERT_MSG(handle.m_Size > 0, "Handle size must be greater than 0")
+
+            Memory::GetInstance()->MemoryClear(handle.m_Pointer, handle.m_Size);
+            Memory::GetInstance()->Free(handle.m_Pointer);
+        }
+
+        OTR_INLINE static void Delete(UnsafeHandle&& handle)
         {
             OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Handle pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(handle.m_Size > 0, "Handle size must be greater than 0")
