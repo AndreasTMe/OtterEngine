@@ -17,10 +17,10 @@ namespace Otter
         OTR_DISABLE_OBJECT_COPIES(Logger)
         OTR_DISABLE_OBJECT_MOVES(Logger)
 
-        static Logger* GetBuilder()
+        [[nodiscard]] OTR_INLINE static Logger* GetBuilder()
         {
-            static Logger instance;
-            return &instance;
+            static Logger builder;
+            return &builder;
         }
 
         template<typename... TArgs>

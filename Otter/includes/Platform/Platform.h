@@ -31,7 +31,7 @@ namespace Otter
 
         [[nodiscard]] OTR_INLINE const PlatformContext* GetContext() const { return m_Context; }
 
-        static Platform* CreatePlatform();
+        [[nodiscard]] static Platform* CreatePlatform();
         static void DestroyPlatform(Platform* platform);
 
         static void* Allocate(UInt64 size);

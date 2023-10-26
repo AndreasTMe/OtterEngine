@@ -5,28 +5,28 @@
 #include "Core/Types/Types.Base.h"
 
 #define OTR_WITH_DEFAULT_CONSTRUCTOR(Type)  \
-    OTR_INLINE Type() = default;            \
-    OTR_INLINE ~Type() = default;
+    Type() = default;                       \
+    ~Type() = default;
 
 #define OTR_WITH_DEFAULT_CONSTRUCTOR_AND_VIRTUAL_DESTRUCTOR(Type)   \
-    OTR_INLINE Type() = default;                                    \
-    OTR_INLINE virtual ~Type() = default;
+    Type() = default;                                               \
+    virtual ~Type() = default;
 
 #define OTR_WITH_DEFAULT_CONSTRUCTOR_AND_FINAL_DESTRUCTOR(Type) \
-    OTR_INLINE Type() = default;                                \
-    OTR_INLINE ~Type() final = default;
+    Type() = default;                                           \
+    ~Type() final = default;
 
-#define OTR_WITH_ITERATOR(Iterator, pointer, size)                      \
-    Iterator begin() noexcept { return Iterator(pointer); }             \
-    Iterator end() noexcept { return Iterator(pointer + size); }        \
-    Iterator rbegin() noexcept { return Iterator(pointer + size - 1); } \
-    Iterator rend() noexcept { return Iterator(pointer - 1); }
+#define OTR_WITH_ITERATOR(Iterator, pointer, size)                                  \
+    OTR_INLINE Iterator begin() noexcept { return Iterator(pointer); }              \
+    OTR_INLINE Iterator end() noexcept { return Iterator(pointer + size); }         \
+    OTR_INLINE Iterator rbegin() noexcept { return Iterator(pointer + size - 1); }  \
+    OTR_INLINE Iterator rend() noexcept { return Iterator(pointer - 1); }
 
-#define OTR_WITH_CONST_ITERATOR(Iterator, pointer, size)                        \
-    Iterator begin() const noexcept { return Iterator(pointer); }               \
-    Iterator end() const noexcept { return Iterator(pointer + size); }          \
-    Iterator rbegin() const noexcept { return Iterator(pointer + size - 1); }   \
-    Iterator rend() const noexcept { return Iterator(pointer - 1); }
+#define OTR_WITH_CONST_ITERATOR(Iterator, pointer, size)                                    \
+    OTR_INLINE Iterator begin() const noexcept { return Iterator(pointer); }                \
+    OTR_INLINE Iterator end() const noexcept { return Iterator(pointer + size); }           \
+    OTR_INLINE Iterator rbegin() const noexcept { return Iterator(pointer + size - 1); }    \
+    OTR_INLINE Iterator rend() const noexcept { return Iterator(pointer - 1); }
 
 #define OTR_WITH_TYPENAME(T)                    \
     template<>                                  \

@@ -30,6 +30,8 @@ namespace Otter
         void* block = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Failed to allocate memory")
 
+        ZeroMemory(block, size);
+
         return block;
     }
 

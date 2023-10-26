@@ -21,7 +21,7 @@ namespace Otter
     };
 
     template<typename OStream>
-    OTR_INLINE OStream& operator<<(OStream& os, const Otter::LogLevel& logLevel)
+    OStream& operator<<(OStream& os, const Otter::LogLevel& logLevel)
     {
         switch (logLevel)
         {

@@ -36,32 +36,32 @@ namespace Otter
         OTR_DISABLE_OBJECT_MOVES(ReadOnlySpan)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        OTR_INLINE explicit ReadOnlySpan(const T& value)
+        explicit ReadOnlySpan(const T& value)
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = value;
         }
 
         template<typename... Args>
-        OTR_INLINE explicit ReadOnlySpan(const T& value, const Args&& ... args)
+        explicit ReadOnlySpan(const T& value, const Args&& ... args)
             : m_Data{ value, args... }
         {
-            OTR_ASSERT_MSG(sizeof...(Args) < Size, "ReadOnlySpan size is too small")
+            OTR_ASSERT_MSG(VariadicArgs<Args...>::GetSize() < Size, "ReadOnlySpan size is too small")
         }
 
-        OTR_INLINE explicit ReadOnlySpan(const Span<T, Size>& other)
+        explicit ReadOnlySpan(const Span<T, Size>& other)
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = other.m_Data[i];
         }
 
-        OTR_INLINE explicit ReadOnlySpan(Span<T, Size>&& other) noexcept
+        explicit ReadOnlySpan(Span<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
         }
 
-        OTR_INLINE ReadOnlySpan<T, Size>& operator=(const Span<T, Size>& other)
+        ReadOnlySpan<T, Size>& operator=(const Span<T, Size>& other)
         {
             if (this == &other)
                 return *this;
@@ -72,7 +72,7 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE ReadOnlySpan<T, Size>& operator=(Span<T, Size>&& other) noexcept
+        ReadOnlySpan<T, Size>& operator=(Span<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
@@ -80,7 +80,7 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE const T& operator[](UInt64 index) const
+        const T& operator[](UInt64 index) const
         {
             OTR_ASSERT_MSG(index < Size, "ReadOnlySpan index out of bounds")
             return m_Data[index];
@@ -92,7 +92,7 @@ namespace Otter
 }
 
 template<typename OStream, typename T, UInt64 Size>
-OTR_INLINE OStream& operator<<(OStream& os, const Otter::ReadOnlySpan<T, Size>& span)
+OStream& operator<<(OStream& os, const Otter::ReadOnlySpan<T, Size>& span)
 {
     os << "ReadOnlySpan: [";
 

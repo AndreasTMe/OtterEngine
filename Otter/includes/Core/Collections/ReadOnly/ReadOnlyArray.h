@@ -27,7 +27,7 @@ namespace Otter
         OTR_DISABLE_OBJECT_MOVES(ReadOnlyArray)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        OTR_INLINE explicit ReadOnlyArray(const T& value)
+        explicit ReadOnlyArray(const T& value)
         {
             m_Data = Buffer::New<T>(Size);
 
@@ -36,9 +36,9 @@ namespace Otter
         }
 
         template<typename... Args>
-        OTR_INLINE explicit ReadOnlyArray(const T& value, const Args&& ... args)
+        explicit ReadOnlyArray(const T& value, const Args&& ... args)
         {
-            OTR_ASSERT_MSG(sizeof...(Args) < Size, "ReadOnlyArray size is too small")
+            OTR_ASSERT_MSG(VariadicArgs<Args...>::GetSize() < Size, "ReadOnlyArray size is too small")
 
             m_Data = Buffer::New<T>(Size);
 
@@ -50,19 +50,19 @@ namespace Otter
             }(), ...);
         }
 
-        OTR_INLINE explicit ReadOnlyArray(const Array<T, Size>& other)
+        explicit ReadOnlyArray(const Array<T, Size>& other)
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = other.m_Data[i];
         }
 
-        OTR_INLINE explicit ReadOnlyArray(Array<T, Size>&& other) noexcept
+        explicit ReadOnlyArray(Array<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
         }
 
-        OTR_INLINE ReadOnlyArray<T, Size>& operator=(const Array<T, Size>& other)
+        ReadOnlyArray<T, Size>& operator=(const Array<T, Size>& other)
         {
             if (this == &other)
                 return *this;
@@ -73,7 +73,7 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE ReadOnlyArray<T, Size>& operator=(Array<T, Size>&& other) noexcept
+        ReadOnlyArray<T, Size>& operator=(Array<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
@@ -81,7 +81,7 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE const T& operator[](UInt64 index) const
+        const T& operator[](UInt64 index) const
         {
             OTR_ASSERT_MSG(index < Size, "ReadOnlyArray index out of bounds")
             return m_Data[index];
@@ -93,7 +93,7 @@ namespace Otter
 }
 
 template<typename OStream, typename T, UInt64 Size>
-OTR_INLINE OStream& operator<<(OStream& os, const Otter::ReadOnlyArray<T, Size>& array)
+OStream& operator<<(OStream& os, const Otter::ReadOnlyArray<T, Size>& array)
 {
     os << "ReadOnlyArray: [";
 

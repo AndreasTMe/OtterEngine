@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_ENTRYPOINT_H
 #define OTTERENGINE_ENTRYPOINT_H
 
-#include "Core/Defines.h"
+#include "Core/Defines/Defines.Platform.h"
 #include "Core/Application.h"
 
 int OTR_MAIN()

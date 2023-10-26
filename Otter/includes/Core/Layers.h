@@ -16,10 +16,13 @@ namespace Otter
         OTR_DISABLE_OBJECT_MOVES(Layer)
 
         template<typename T = Layer>
-        OTR_INLINE static Layer* Create(bool isEnabled) { return Otter::New<T>(isEnabled); }
+        [[nodiscard]] static Layer* Create(bool isEnabled)
+        {
+            return Otter::New<T>(isEnabled);
+        }
 
         template<typename T = Layer>
-        OTR_INLINE static void Delete(T* layer)
+        static void Delete(T* layer)
         {
             if (layer)
                 Otter::Delete<T>(layer);
@@ -32,7 +35,7 @@ namespace Otter
         [[nodiscard]] OTR_INLINE bool IsEnabled() const { return m_IsEnabled; }
 
     protected:
-        OTR_INLINE explicit Layer(bool isEnabled = true)
+        explicit Layer(bool isEnabled = true)
             : m_IsEnabled(isEnabled)
         {
         }

@@ -9,13 +9,13 @@ namespace Otter::Internal
     class KeyPressedEvent final : public Event
     {
     public:
-        OTR_INLINE explicit KeyPressedEvent(const KeyCode keyCode)
+        explicit KeyPressedEvent(const KeyCode keyCode)
             : Event(EventType::KeyPressed,
                     static_cast<EventCategory>(EventCategory::Input | EventCategory::Keyboard)),
               m_KeyCode(keyCode)
         {
         }
-        OTR_INLINE ~KeyPressedEvent() final = default;
+        ~KeyPressedEvent() final = default;
 
         [[nodiscard]] OTR_INLINE KeyCode GetKeyCode() const { return m_KeyCode; }
 
@@ -26,13 +26,13 @@ namespace Otter::Internal
     class KeyReleasedEvent final : public Event
     {
     public:
-        OTR_INLINE explicit KeyReleasedEvent(const KeyCode keyCode)
+        explicit KeyReleasedEvent(const KeyCode keyCode)
             : Event(EventType::KeyReleased,
                     static_cast<EventCategory>(EventCategory::Input | EventCategory::Keyboard)),
               m_KeyCode(keyCode)
         {
         }
-        OTR_INLINE ~KeyReleasedEvent() final = default;
+        ~KeyReleasedEvent() final = default;
 
         [[nodiscard]] OTR_INLINE KeyCode GetKeyCode() const { return m_KeyCode; }
 
@@ -43,13 +43,13 @@ namespace Otter::Internal
     class KeyHoldEvent final : public Event
     {
     public:
-        OTR_INLINE explicit KeyHoldEvent(const KeyCode keyCode, const Float32 holdTime)
+        explicit KeyHoldEvent(const KeyCode keyCode, const Float32 holdTime)
             : Event(EventType::KeyHold,
                     static_cast<EventCategory>(EventCategory::Input | EventCategory::Keyboard)),
               m_KeyCode(keyCode), m_HoldTime(holdTime)
         {
         }
-        OTR_INLINE ~KeyHoldEvent() final = default;
+        ~KeyHoldEvent() final = default;
 
         [[nodiscard]] OTR_INLINE KeyCode GetKeyCode() const { return m_KeyCode; }
         [[nodiscard]] OTR_INLINE Float32 GetHoldTime() const { return m_HoldTime; }

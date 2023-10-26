@@ -39,7 +39,7 @@ namespace Otter::Internal
     // File Events (Use 0x60 - 0x70)
     // Log Events (Use 0x70 - 0x80)
 
-    enum class  EventType : UInt8
+    enum class EventType : UInt8
     {
         None = 0x00,
 
@@ -51,7 +51,7 @@ namespace Otter::Internal
     };
 
     template<typename OStream>
-    OTR_INLINE OStream& operator<<(OStream& os, const Otter::Internal::EventType& eventType)
+    OStream& operator<<(OStream& os, const Otter::Internal::EventType& eventType)
     {
         switch (eventType)
         {

@@ -1,156 +1,326 @@
 #ifndef OTTERENGINE_HASHSET_H
 #define OTTERENGINE_HASHSET_H
 
-#include <vector>
-
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Memory.h"
 
 namespace Otter
 {
+    // TODO: Use Prime Numbers for the capacity
+    // TODO: Resize the HashSet to minimise collisions
     template<typename T>
     class HashSet final
     {
     public:
-//        HashSet(const HashSet<T>& other);
-//        HashSet<T>& operator=(const HashSet<T>& other);
-//        HashSet(HashSet<T>&& other) noexcept;
-//        HashSet<T>& operator=(HashSet<T>&& other) noexcept;
+        HashSet() : HashSet(0) { }
+        ~HashSet() { ClearDestructive(); }
 
-//        bool TryGet(T&& item, T& outItem) const noexcept;
-//        bool TryAdd(T&& item) noexcept;
-//        bool TryRemove(T&& item) noexcept;
-//        bool Contains(T&& item) const noexcept;
-
-        HashSet()
+        explicit HashSet(UInt64 capacity)
         {
-            UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(void*), OTR_PLATFORM_MEMORY_ALIGNMENT);
-            m_BucketHandle = Unsafe::New(m_TempSetCapacity * alignedSize);
+            m_Capacity = capacity;
+            m_Buckets  = Buffer::New<Bucket>(m_Capacity);
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+                m_Buckets[i].m_Items = nullptr;
         }
-        ~HashSet()
+
+        explicit HashSet(const HashSet<T>& other)
         {
-            if (m_BucketHandle.m_Pointer)
-                Unsafe::Delete(m_BucketHandle);
+            m_Capacity = other.m_Capacity;
+            m_Count    = other.m_Count;
+            m_Buckets  = Buffer::New<Bucket>(m_Capacity);
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (other.m_Buckets[i].m_Capacity == 0)
+                    continue;
+
+                m_Buckets[i].m_Items    = Buffer::New<BucketItem>(other.m_Buckets[i].m_Capacity);
+                m_Buckets[i].m_Capacity = other.m_Buckets[i].m_Capacity;
+                m_Buckets[i].m_Count    = other.m_Buckets[i].m_Count;
+
+                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
+                    m_Buckets[i].m_Items[j] = other.m_Buckets[i].m_Items[j];
+            }
+        }
+
+        explicit HashSet(HashSet<T>&& other) noexcept
+        {
+            m_Capacity = other.m_Capacity;
+            m_Count    = other.m_Count;
+            m_Buckets  = other.m_Buckets;
+
+            other.m_Capacity = 0;
+            other.m_Count    = 0;
+            other.m_Buckets  = nullptr;
+        }
+
+        HashSet<T>& operator=(const HashSet<T>& other)
+        {
+            if (this == &other)
+                return *this;
+
+            ClearDestructive();
+
+            m_Capacity = other.m_Capacity;
+            m_Count    = other.m_Count;
+            m_Buckets  = Buffer::New<Bucket>(m_Capacity);
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (other.m_Buckets[i].m_Capacity == 0)
+                    continue;
+
+                m_Buckets[i].m_Items    = Buffer::New<BucketItem>(other.m_Buckets[i].m_Capacity);
+                m_Buckets[i].m_Capacity = other.m_Buckets[i].m_Capacity;
+                m_Buckets[i].m_Count    = other.m_Buckets[i].m_Count;
+
+                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
+                    m_Buckets[i].m_Items[j] = other.m_Buckets[i].m_Items[j];
+            }
+
+            return *this;
+        }
+
+        HashSet<T>& operator=(HashSet<T>&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            ClearDestructive();
+
+            m_Capacity = other.m_Capacity;
+            m_Count    = other.m_Count;
+            m_Buckets  = other.m_Buckets;
+
+            other.m_Capacity = 0;
+            other.m_Count    = 0;
+            other.m_Buckets  = nullptr;
+
+            return *this;
         }
 
         bool TryAdd(const T& value)
         {
-            auto index = GetIndex(value);
-            auto* bucket = (Bucket*) m_BucketHandle.m_Pointer;
-            UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(void*), OTR_PLATFORM_MEMORY_ALIGNMENT);
+            UInt64 hash  = GetHashCode(value) & k_31BitMask;
+            UInt64 index = hash % m_Capacity;
 
-            if (!bucket[index].m_Data)
+            if (m_Buckets[index].m_Capacity == 0)
             {
-                auto bucketContentHandle = Unsafe::New(alignedSize * m_TempBucketCapacity);
-
-                bucket[index].m_Data = (T*) bucketContentHandle.m_Pointer;
-                bucket[index].m_Data[0] = value;
-                bucket[index].m_Capacity = bucketContentHandle.m_Size;
-                bucket[index].m_Count    = 1;
+                InitialiseBucketWithItem(&m_Buckets[index], value, hash);
+                m_Count++;
 
                 return true;
             }
 
-            for (UInt64 i = 0; i < bucket[index].m_Count; i++)
-                if (bucket[index].m_Data[i] == value)
-                    return false;
+            if (ExistsInBucket(value, hash, m_Buckets[index]))
+                return false;
 
-            bucket[index].m_Data[bucket[index].m_Count++] = value;
+            if (m_Buckets[index].m_Count >= m_Buckets[index].m_Capacity)
+                ResizeBucket(&m_Buckets[index]);
+
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Data = value;
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Hash = hash;
+            m_Buckets[index].m_Count++;
+
+            m_Count++;
+
             return true;
         }
 
-        bool TryGet(const T& value, T& outValue) const
+        bool TryAdd(T&& value) noexcept
         {
-            auto index = GetIndex(value);
-            auto* bucket = (Bucket*) m_BucketHandle.m_Pointer;
+            UInt64 hash  = GetHashCode(value) & k_31BitMask;
+            UInt64 index = hash % m_Capacity;
 
-            if (!bucket[index].m_Data)
-                return false;
-
-            for (UInt64 i = 0; i < bucket[index].m_Count; i++)
+            if (m_Buckets[index].m_Capacity == 0)
             {
-                if (bucket[index].m_Data[i] == value)
-                {
-                    outValue = bucket[index].m_Data[i];
-                    return true;
-                }
+                InitialiseBucketWithItem(&m_Buckets[index], std::move(value), hash);
+                m_Count++;
+
+                return true;
             }
 
-            return false;
-        }
-
-        bool TryRemove(const T& value)
-        {
-            auto index = GetIndex(value);
-            auto* bucket = (Bucket*) m_BucketHandle.m_Pointer;
-
-            if (!bucket[index].m_Data)
+            if (ExistsInBucket(value, hash, m_Buckets[index]))
                 return false;
 
-            for (UInt64 i = 0; i < bucket[index].m_Count; i++)
-            {
-                if (bucket[index].m_Data[i] == value)
-                {
-                    for (UInt64 j = i; j < bucket[index].m_Count; j++)
-                        bucket[index].m_Data[j] = bucket[index].m_Data[j + 1];
+            if (m_Buckets[index].m_Count >= m_Buckets[index].m_Capacity)
+                ResizeBucket(&m_Buckets[index]);
 
-                    return true;
-                }
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Data = std::move(value);
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Hash = hash;
+            m_Buckets[index].m_Count++;
+
+            m_Count++;
+
+            return true;
+        }
+
+        bool TryGet(const T& value, T& outValue) const { return TryGetInternal(value, outValue); }
+        bool TryGet(T&& value, T& outValue) const noexcept { return TryGetInternal(value, outValue); }
+
+        bool TryRemove(const T& value) { return TryRemoveInternal(value); }
+        bool TryRemove(T&& value) noexcept { return TryRemoveInternal(value); }
+
+        [[nodiscard]] bool Contains(const T& value) const { return ContainsInternal(value); }
+        [[nodiscard]] bool Contains(T&& value) const noexcept { return ContainsInternal(value); }
+
+        void Clear()
+        {
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                    continue;
+
+                m_Buckets[i].m_Count = 0;
             }
 
-            return false;
+            m_Count = 0;
         }
 
-        bool Contains(const T& value) const
+        void ClearDestructive()
         {
-            auto index = GetIndex(value);
-            auto* bucket = (Bucket*) m_BucketHandle.m_Pointer;
+            if (!m_Buckets)
+                return;
 
-            if (!bucket[index].m_Data)
-                return false;
-
-            for (UInt64 i = 0; i < bucket[index].m_Count; i++)
-                if (bucket[index].m_Data[i] == value)
-                    return true;
-
-            return false;
-        }
-
-        OTR_INLINE void ClearDestructive()
-        {
-            if (m_BucketHandle.m_Pointer && m_BucketHandle.m_Size)
+            for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                auto* bucket = (Bucket*) m_BucketHandle.m_Pointer;
+                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                    continue;
 
-                for (UInt64 i = 0; i < m_BucketHandle.m_Size; i++)
-                    if (bucket[i].m_Data)
-                        Unsafe::Delete(UnsafeHandle{ bucket[i].m_Data, bucket[i].m_Capacity });
-
-                Unsafe::Delete(m_BucketHandle);
+                Buffer::Delete(m_Buckets[i].m_Items, m_Buckets[i].m_Capacity);
+                m_Buckets[i].m_Items    = nullptr;
+                m_Buckets[i].m_Capacity = 0;
+                m_Buckets[i].m_Count    = 0;
             }
 
-            m_BucketHandle.m_Pointer = nullptr;
-            m_BucketHandle.m_Size    = 0;
+            Buffer::Delete(m_Buckets, m_Capacity);
+            m_Buckets = nullptr;
         }
+
+        [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
 
     private:
-//        const Int32 k_31BitMask = 0x7FFFFFFF;
-        UInt64 m_TempSetCapacity    = 10;
-        UInt64 m_TempBucketCapacity = 10;
+        struct BucketItem
+        {
+            T      m_Data;
+            UInt64 m_Hash;
+        };
 
         struct Bucket
         {
-            T* m_Data;
+            BucketItem* m_Items;
             UInt64 m_Capacity;
             UInt64 m_Count;
         };
 
-        UnsafeHandle m_BucketHandle{ };
+        const Int32   k_31BitMask             = 0x7FFFFFFF;
+        const UInt16  k_InitialBucketCapacity = 3;
+        const Float16 k_BucketResizingFactor  = 1.5;
 
-        [[nodiscard]] OTR_INLINE UInt64 GetIndex(const T& item) const
+        Bucket* m_Buckets;
+        UInt64 m_Capacity;
+        UInt64 m_Count;
+
+        void InitialiseBucketWithItem(Bucket* bucket, const T& value, const UInt64& hash) const
         {
-            return GetHashCode(item) % m_TempSetCapacity;
+            bucket->m_Items           = Buffer::New<BucketItem>(k_InitialBucketCapacity);
+            bucket->m_Items[0].m_Data = value;
+            bucket->m_Items[0].m_Hash = hash;
+            bucket->m_Capacity        = k_InitialBucketCapacity;
+            bucket->m_Count           = 1;
+        }
+
+        void InitialiseBucketWithItem(Bucket* bucket, T&& value, const UInt64& hash) const
+        {
+            bucket->m_Items           = Buffer::New<BucketItem>(k_InitialBucketCapacity);
+            bucket->m_Items[0].m_Data = std::move(value);
+            bucket->m_Items[0].m_Hash = hash;
+            bucket->m_Capacity        = k_InitialBucketCapacity;
+            bucket->m_Count           = 1;
+        }
+
+        void ResizeBucket(Bucket* bucket) const
+        {
+            UInt64 newCapacity = bucket->m_Capacity * k_BucketResizingFactor;
+            BucketItem* newItems = Buffer::New<BucketItem>(newCapacity);
+
+            for (UInt64 i = 0; i < bucket->m_Count; i++)
+                newItems[i] = bucket->m_Items[i];
+
+            Buffer::Delete(bucket->m_Items, bucket->m_Capacity);
+
+            bucket->m_Items    = newItems;
+            bucket->m_Capacity = newCapacity;
+        }
+
+        [[nodiscard]] bool ExistsInBucket(const T& value, const UInt64& hash, const Bucket& bucket) const
+        {
+            for (UInt64 i = 0; i < bucket.m_Count; i++)
+                if (bucket.m_Items[i].m_Data == value && bucket.m_Items[i].m_Hash == hash)
+                    return true;
+
+            return false;
+        }
+
+        [[nodiscard]] bool TryGetInternal(const T& value, T& outValue) const
+        {
+            UInt64 hash  = GetHashCode(value) & k_31BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (m_Buckets[index].m_Capacity == 0)
+                return false;
+
+            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+            {
+                if (m_Buckets[index].m_Items[i].m_Hash == hash && m_Buckets[index].m_Items[i].m_Data == value)
+                {
+                    outValue = m_Buckets[index].m_Items[i].m_Data;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        [[nodiscard]] bool TryRemoveInternal(const T& value)
+        {
+            UInt64 hash  = GetHashCode(value) & k_31BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (m_Buckets[index].m_Capacity == 0)
+                return false;
+
+            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+            {
+                if (m_Buckets[index].m_Items[i].m_Hash == hash && m_Buckets[index].m_Items[i].m_Data == value)
+                {
+                    for (UInt64 j = i; j < m_Buckets[index].m_Count - 1; j++)
+                        m_Buckets[index].m_Items[j] = m_Buckets[index].m_Items[j + 1];
+
+                    m_Buckets[index].m_Count--;
+                    m_Count--;
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        [[nodiscard]] bool ContainsInternal(const T& value) const
+        {
+            UInt64 hash  = GetHashCode(value) & k_31BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (m_Buckets[index].m_Capacity == 0)
+                return false;
+
+            if (ExistsInBucket(value, hash, m_Buckets[index]))
+                return true;
+
+            return false;
         }
     };
 }

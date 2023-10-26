@@ -22,7 +22,7 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        OTR_INLINE void Reserve(const UInt64& capacity)
+        void Reserve(const UInt64& capacity)
         {
             if (capacity <= m_Capacity)
                 return;
@@ -39,7 +39,7 @@ namespace Otter
             m_Capacity = capacity;
         }
 
-        OTR_INLINE void Expand()
+        void Expand()
         {
             m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
 
@@ -54,7 +54,7 @@ namespace Otter
             m_Data = newData;
         }
 
-        OTR_INLINE bool Contains(const T& item) const
+        bool Contains(const T& item) const
         {
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)
@@ -63,7 +63,7 @@ namespace Otter
             return false;
         }
 
-        OTR_INLINE bool Contains(T&& item) const noexcept
+        bool Contains(T&& item) const noexcept
         {
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)
@@ -74,7 +74,7 @@ namespace Otter
 
         OTR_INLINE void Clear() { m_Count = 0; }
 
-        OTR_INLINE void ClearDestructive()
+        void ClearDestructive()
         {
             if (m_Data != nullptr && m_Capacity > 0)
                 Buffer::Delete(m_Data, m_Capacity);
@@ -102,100 +102,100 @@ namespace Otter
 
 #define OTR_COLLECTION_CHILD(Type) Type
 
-#define OTR_COLLECTION_CONSTRUCT(Type)                                                      \
-    OTR_COLLECTION_CHILD(Type)() : Collection<T>() { }                                      \
-    ~OTR_COLLECTION_CHILD(Type)()                                                           \
-    {                                                                                       \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                                \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                                 \
-                                                                                            \
-        base::m_Data     = nullptr;                                                         \
-        base::m_Capacity = 0;                                                               \
-        base::m_Count    = 0;                                                               \
-    }                                                                                       \
-                                                                                            \
-    OTR_INLINE explicit OTR_COLLECTION_CHILD(Type)(const T& value)                          \
-    {                                                                                       \
-        base::m_Capacity = 1;                                                               \
-                                                                                            \
-        base::m_Data = Buffer::New<T>(base::m_Capacity);                                    \
-        base::m_Data[0] = value;                                                            \
-                                                                                            \
-        base::m_Count = 1;                                                                  \
-    }                                                                                       \
-                                                                                            \
-    template<typename... Args>                                                              \
-    OTR_INLINE explicit OTR_COLLECTION_CHILD(Type)(const T& value, const Args&& ... args)   \
-    {                                                                                       \
-        base::m_Capacity = VariadicArgs<Args...>::GetSize() + 1;                            \
-        base::m_Data     = Buffer::New<T>(base::m_Capacity);                                \
-                                                                                            \
-        UInt64 i = 0;                                                                       \
-        base::m_Data[i++] = value;                                                          \
-        ([&]()                                                                              \
-        {                                                                                   \
-            base::m_Data[i++] = args;                                                       \
-        }(), ...);                                                                          \
-                                                                                            \
-        base::m_Count = base::m_Capacity;                                                   \
+#define OTR_COLLECTION_CONSTRUCT(Type)                                          \
+    OTR_COLLECTION_CHILD(Type)() : Collection<T>() { }                          \
+    ~OTR_COLLECTION_CHILD(Type)()                                               \
+    {                                                                           \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
+                                                                                \
+        base::m_Data     = nullptr;                                             \
+        base::m_Capacity = 0;                                                   \
+        base::m_Count    = 0;                                                   \
+    }                                                                           \
+                                                                                \
+        explicit OTR_COLLECTION_CHILD(Type)(const T& value)                     \
+    {                                                                           \
+        base::m_Capacity = 1;                                                   \
+                                                                                \
+        base::m_Data = Buffer::New<T>(base::m_Capacity);                        \
+        base::m_Data[0] = value;                                                \
+                                                                                \
+        base::m_Count = 1;                                                      \
+    }                                                                           \
+                                                                                \
+    template<typename... Args>                                                  \
+    explicit OTR_COLLECTION_CHILD(Type)(const T& value, const Args&& ... args)  \
+    {                                                                           \
+        base::m_Capacity = VariadicArgs<Args...>::GetSize() + 1;                \
+        base::m_Data     = Buffer::New<T>(base::m_Capacity);                    \
+                                                                                \
+        UInt64 i = 0;                                                           \
+        base::m_Data[i++] = value;                                              \
+        ([&]()                                                                  \
+        {                                                                       \
+            base::m_Data[i++] = args;                                           \
+        }(), ...);                                                              \
+                                                                                \
+        base::m_Count = base::m_Capacity;                                       \
     }
 
-#define OTR_COLLECTION_COPY(Type)                                                   \
-    OTR_INLINE explicit OTR_COLLECTION_CHILD(Type)(const Collection<T>& other)      \
-    {                                                                               \
-        if (this == &other)                                                         \
-            return;                                                                 \
-                                                                                    \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                        \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                         \
-                                                                                    \
-        base::m_Capacity = other.m_Capacity;                                        \
-        base::m_Count    = other.m_Count;                                           \
-        base::m_Data     = other.m_Data;                                            \
-    }                                                                               \
-                                                                                    \
-    OTR_INLINE OTR_COLLECTION_CHILD(Type)<T>& operator=(const Collection<T>& other) \
-    {                                                                               \
-        if (this == &other)                                                         \
-            return *this;                                                           \
-                                                                                    \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                        \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                         \
-                                                                                    \
-        base::m_Capacity = other.m_Capacity;                                        \
-        base::m_Count    = other.m_Count;                                           \
-        base::m_Data     = other.m_Data;                                            \
-                                                                                    \
-        return *this;                                                               \
+#define OTR_COLLECTION_COPY(Type)                                               \
+    explicit OTR_COLLECTION_CHILD(Type)(const Collection<T>& other)             \
+    {                                                                           \
+        if (this == &other)                                                     \
+            return;                                                             \
+                                                                                \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
+                                                                                \
+        base::m_Capacity = other.m_Capacity;                                    \
+        base::m_Count    = other.m_Count;                                       \
+        base::m_Data     = other.m_Data;                                        \
+    }                                                                           \
+                                                                                \
+    OTR_COLLECTION_CHILD(Type)<T>& operator=(const Collection<T>& other)        \
+    {                                                                           \
+        if (this == &other)                                                     \
+            return *this;                                                       \
+                                                                                \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
+                                                                                \
+        base::m_Capacity = other.m_Capacity;                                    \
+        base::m_Count    = other.m_Count;                                       \
+        base::m_Data     = other.m_Data;                                        \
+                                                                                \
+        return *this;                                                           \
     }
 
-#define OTR_COLLECTION_MOVE(Type)                                                       \
-    OTR_INLINE explicit OTR_COLLECTION_CHILD(Type)(Collection<T>&& other) noexcept      \
-    {                                                                                   \
-        if (this == &other)                                                             \
-            return;                                                                     \
-                                                                                        \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                            \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                             \
-                                                                                        \
-        base::m_Capacity = other.m_Capacity;                                            \
-        base::m_Count    = other.m_Count;                                               \
-        base::m_Data     = other.m_Data;                                                \
-    }                                                                                   \
-                                                                                        \
-    OTR_INLINE OTR_COLLECTION_CHILD(Type)<T>& operator=(Collection<T>&& other) noexcept \
-    {                                                                                   \
-        if (this == &other)                                                             \
-            return *this;                                                               \
-                                                                                        \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                            \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                             \
-                                                                                        \
-        base::m_Capacity = other.m_Capacity;                                            \
-        base::m_Count    = other.m_Count;                                               \
-        base::m_Data     = other.m_Data;                                                \
-                                                                                        \
-        return *this;                                                                   \
+#define OTR_COLLECTION_MOVE(Type)                                               \
+    explicit OTR_COLLECTION_CHILD(Type)(Collection<T>&& other) noexcept         \
+    {                                                                           \
+        if (this == &other)                                                     \
+            return;                                                             \
+                                                                                \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
+                                                                                \
+        base::m_Capacity = other.m_Capacity;                                    \
+        base::m_Count    = other.m_Count;                                       \
+        base::m_Data     = other.m_Data;                                        \
+    }                                                                           \
+                                                                                \
+    OTR_COLLECTION_CHILD(Type)<T>& operator=(Collection<T>&& other) noexcept    \
+    {                                                                           \
+        if (this == &other)                                                     \
+            return *this;                                                       \
+                                                                                \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
+                                                                                \
+        base::m_Capacity = other.m_Capacity;                                    \
+        base::m_Count    = other.m_Count;                                       \
+        base::m_Data     = other.m_Data;                                        \
+                                                                                \
+        return *this;                                                           \
     }
 
 #endif //OTTERENGINE_COLLECTION_H

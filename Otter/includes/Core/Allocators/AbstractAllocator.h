@@ -9,17 +9,17 @@ namespace Otter
     class AbstractAllocator
     {
     public:
-        OTR_INLINE AbstractAllocator()
+        AbstractAllocator()
             : m_Memory(nullptr), m_MemorySize(0), m_MemoryUsed(0)
         {
         }
-        OTR_INLINE explicit AbstractAllocator(void* memory, const UInt64& memorySize)
+        explicit AbstractAllocator(void* memory, const UInt64& memorySize)
             : m_Memory(memory), m_MemorySize(memorySize), m_MemoryUsed(0)
         {
             OTR_INTERNAL_ASSERT_MSG((m_Memory && m_MemorySize) || (!m_Memory && !m_MemorySize),
                                     "Memory and memory size must both be valid")
         }
-        OTR_INLINE virtual ~AbstractAllocator() = default;
+        virtual ~AbstractAllocator() = default;
 
         virtual void* Allocate(const UInt64& size, const UInt64& alignment) = 0;
         virtual void Free(void* block) = 0;

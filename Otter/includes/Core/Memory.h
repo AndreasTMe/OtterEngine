@@ -21,7 +21,7 @@ namespace Otter
         OTR_DISABLE_OBJECT_COPIES(Memory)
         OTR_DISABLE_OBJECT_MOVES(Memory)
 
-        OTR_INLINE static Memory* GetInstance()
+        [[nodiscard]] OTR_INLINE static Memory* GetInstance()
         {
             static Memory instance;
             return &instance;
@@ -37,6 +37,7 @@ namespace Otter
         void Free(void* block);
         void MemoryClear(void* block, const UInt64& size);
 
+        // TODO: Will probably be removed
         [[nodiscard]] OTR_INLINE const std::string GetTotalAllocation()
         {
             return std::to_string(m_Allocator.GetMemoryUsed()) + " / "
@@ -127,11 +128,7 @@ namespace Otter
 
             UInt64 alignedSize = OTR_ALIGNED_OFFSET(size, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-            UnsafeHandle handle{ };
-            handle.m_Pointer = Memory::GetInstance()->Allocate(alignedSize).m_Pointer;
-            handle.m_Size    = alignedSize;
-
-            return handle;
+            return Memory::GetInstance()->Allocate(alignedSize);
         }
 
         OTR_INLINE static void Delete(const UnsafeHandle& handle)

@@ -22,7 +22,7 @@ namespace Otter
     };
 
     template<typename OStream>
-    OTR_INLINE OStream& operator<<(OStream& os, const Otter::MouseButton& mouseButton)
+    OStream& operator<<(OStream& os, const Otter::MouseButton& mouseButton)
     {
         switch (mouseButton)
         {

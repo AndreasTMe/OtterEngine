@@ -2,7 +2,7 @@
 #define OTTERENGINE_APPLICATION_H
 
 #include "Core/Defines.h"
-#include "Core/Collections.h"
+#include "Core/Collections/List.h"
 #include "Core/Layers.h"
 
 namespace Otter
@@ -27,7 +27,7 @@ namespace Otter
         List<Layer*> m_Layers{ };
     };
 
-    Application* CreateApplication();
+    [[nodiscard]] Application* CreateApplication();
 }
 
 #endif //OTTERENGINE_APPLICATION_H

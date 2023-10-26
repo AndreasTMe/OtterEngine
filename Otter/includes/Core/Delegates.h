@@ -4,7 +4,7 @@
 #include <functional>
 
 #include "Core/Defines.h"
-#include "Core/Collections.h"
+#include "Core/Collections/List.h"
 
 namespace Otter
 {
@@ -16,26 +16,26 @@ namespace Otter
     public:
         OTR_WITH_DEFAULT_CONSTRUCTOR(Action)
 
-        OTR_INLINE Action(const Action& other) noexcept { m_Functions = other.m_Functions; }
-        OTR_INLINE Action(Action&& other) noexcept { m_Functions = std::move(other.m_Functions); }
-        OTR_INLINE explicit Action(Action* other)
+        Action(const Action& other) noexcept { m_Functions = other.m_Functions; }
+        Action(Action&& other) noexcept { m_Functions = std::move(other.m_Functions); }
+        explicit Action(Action* other)
             : Action(*other)
         {
         }
 
-        OTR_INLINE Action& operator=(const Action& other)
+        Action& operator=(const Action& other)
         {
             m_Functions = other.m_Functions;
             return *this;
         }
 
-        OTR_INLINE Action& operator=(Action&& other) noexcept
+        Action& operator=(Action&& other) noexcept
         {
             m_Functions = std::move(other.m_Functions);
             return *this;
         }
 
-        OTR_INLINE void operator+=(const Function& function)
+        void operator+=(const Function& function)
         {
             if (!function)
                 return;
@@ -43,20 +43,20 @@ namespace Otter
             m_Functions.Add(function);
         }
 
-//    OTR_INLINE void operator-=(const Function& function)
-//    {
-//        if (!function)
-//            return;
-//
-//        /*
-//         * BUG: no match for 'operator=='
-//         * (operand types are 'std::function<bool(const Otter::Internal::Event&)* >' and
-//         * 'const std::function<bool(const Otter::Internal::Event&)>')
-//         */
-//        m_Functions.erase(std::remove(m_Functions.begin(), m_Functions.end(), function), m_Functions.end());
-//    }
+        void operator-=(const Function& function)
+        {
+            if (!function)
+                return;
 
-        OTR_INLINE bool operator==(const Action<TArgs...>& other) const
+            /*
+             * BUG: no match for 'operator=='
+             * (operand types are 'std::function<bool(const Otter::Internal::Event&)* >' and
+             * 'const std::function<bool(const Otter::Internal::Event&)>')
+             */
+            // m_Functions.erase(std::remove(m_Functions.begin(), m_Functions.end(), function), m_Functions.end());
+        }
+
+        bool operator==(const Action<TArgs...>& other) const
         {
             if (m_Functions.GetCount() != other.m_Functions.GetCount())
                 return false;
@@ -69,9 +69,10 @@ namespace Otter
         }
 
         OTR_INLINE bool operator!=(const Action<TArgs...>& other) const { return !(operator==(other)); }
+
         OTR_INLINE void operator()(TArgs... args) { Invoke(args...); }
 
-        OTR_INLINE virtual void Invoke(TArgs... args)
+        virtual void Invoke(TArgs... args)
         {
             if (m_Functions.IsEmpty())
                 return;
@@ -96,26 +97,26 @@ namespace Otter
     public:
         OTR_WITH_DEFAULT_CONSTRUCTOR(Func)
 
-        OTR_INLINE Func(const Func& other) noexcept { m_Functions = other.m_Functions; }
-        OTR_INLINE Func(Func&& other) noexcept { m_Functions = std::move(other.m_Functions); }
-        OTR_INLINE explicit Func(Func* other)
+        Func(const Func& other) noexcept { m_Functions = other.m_Functions; }
+        Func(Func&& other) noexcept { m_Functions = std::move(other.m_Functions); }
+        explicit Func(Func* other)
             : Func(*other)
         {
         }
 
-        OTR_INLINE Func& operator=(const Func& other)
+        Func& operator=(const Func& other)
         {
             m_Functions = other.m_Functions;
             return *this;
         }
 
-        OTR_INLINE Func& operator=(Func&& other) noexcept
+        Func& operator=(Func&& other) noexcept
         {
             m_Functions = std::move(other.m_Functions);
             return *this;
         }
 
-        OTR_INLINE void operator+=(const Function& function)
+        void operator+=(const Function& function)
         {
             if (!function)
                 return;
@@ -123,20 +124,20 @@ namespace Otter
             m_Functions.Add(function);
         }
 
-//    OTR_INLINE void operator-=(Function& function)
-//    {
-//        if (!function)
-//            return;
-//
-//        /*
-//         * BUG: no match for 'operator=='
-//         * (operand types are 'std::function<bool(const Otter::Internal::Event&)* >' and
-//         * 'const std::function<bool(const Otter::Internal::Event&)>')
-//         */
-//        m_Functions.erase(std::remove(m_Functions.begin(), m_Functions.end(), function), m_Functions.end());
-//    }
+        void operator-=(const Function& function)
+        {
+            if (!function)
+                return;
 
-        OTR_INLINE bool operator==(const Func<TResult, TArgs...>& other) const
+            /*
+             * BUG: no match for 'operator=='
+             * (operand types are 'std::function<bool(const Otter::Internal::Event&)* >' and
+             * 'const std::function<bool(const Otter::Internal::Event&)>')
+             */
+            // m_Functions.erase(std::remove(m_Functions.begin(), m_Functions.end(), function), m_Functions.end());
+        }
+
+        bool operator==(const Func<TResult, TArgs...>& other) const
         {
             if (m_Functions.GetCount() != other.m_Functions.GetCount())
                 return false;
@@ -149,9 +150,10 @@ namespace Otter
         }
 
         OTR_INLINE bool operator!=(const Func<TResult, TArgs...>& other) const { return !(operator==(other)); }
+
         OTR_INLINE virtual TResult operator()(TArgs... args) { return Invoke(args...); }
 
-        OTR_INLINE TResult Invoke(TArgs... args)
+        TResult Invoke(TArgs... args)
         {
             TResult result = TResult();
 
@@ -166,7 +168,7 @@ namespace Otter
             return result;
         }
 
-        OTR_INLINE TResult ReverseInvoke(TArgs... args)
+        TResult ReverseInvoke(TArgs... args)
         {
             TResult result = TResult();
 

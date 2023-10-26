@@ -17,18 +17,18 @@ namespace Otter
             BestFit  = 1
         };
 
-        OTR_INLINE FreeListAllocator()
+        FreeListAllocator()
             : AbstractAllocator(), m_Head(nullptr), m_Policy(Policy::FirstFit)
         {
         }
-        OTR_INLINE explicit FreeListAllocator(void* memory,
-                                              const UInt64& memorySize,
-                                              const Policy& policy = Policy::FirstFit)
+        explicit FreeListAllocator(void* memory,
+                                   const UInt64& memorySize,
+                                   const Policy& policy = Policy::FirstFit)
             : AbstractAllocator(memory, memorySize), m_Head(nullptr), m_Policy(Policy::FirstFit)
         {
             Clear();
         }
-        OTR_INLINE ~FreeListAllocator() final { m_Memory = nullptr; }
+        ~FreeListAllocator() final { m_Memory = nullptr; }
 
         void* Allocate(const UInt64& size, const UInt64& alignment) final;
         void Free(void* block) final;
@@ -63,7 +63,7 @@ namespace Otter
     };
 
     template<typename OStream>
-    OTR_INLINE OStream& operator<<(OStream& os, const Otter::FreeListAllocator::Policy& policy)
+    OStream& operator<<(OStream& os, const Otter::FreeListAllocator::Policy& policy)
     {
         switch (policy)
         {

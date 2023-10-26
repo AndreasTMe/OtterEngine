@@ -19,7 +19,7 @@ namespace Otter
         OTR_COLLECTION_COPY(Queue)
         OTR_COLLECTION_MOVE(Queue)
 
-        OTR_INLINE void Enqueue(const T& item)
+        void Enqueue(const T& item)
         {
             if (base::m_Count >= base::m_Capacity)
                 base::Expand();
@@ -27,7 +27,7 @@ namespace Otter
             base::m_Data[base::m_Count++] = item;
         }
 
-        OTR_INLINE void Enqueue(T&& item) noexcept
+        void Enqueue(T&& item) noexcept
         {
             if (base::m_Count >= base::m_Capacity)
                 base::Expand();
@@ -35,7 +35,7 @@ namespace Otter
             base::m_Data[base::m_Count++] = std::move(item);
         }
 
-        OTR_INLINE bool TryDequeue()
+        bool TryDequeue()
         {
             if (base::m_Count == 0)
                 return false;
@@ -48,7 +48,7 @@ namespace Otter
             return true;
         }
 
-        OTR_INLINE bool TryPeek(T& item)
+        bool TryPeek(T& item)
         {
             if (base::m_Count == 0)
                 return false;

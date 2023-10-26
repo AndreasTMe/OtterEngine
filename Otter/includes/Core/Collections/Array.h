@@ -27,7 +27,7 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        OTR_INLINE explicit Array(const T& value)
+        explicit Array(const T& value)
         {
             m_Data = Buffer::New<T>(Size);
 
@@ -36,9 +36,9 @@ namespace Otter
         }
 
         template<typename... Args>
-        OTR_INLINE explicit Array(const T& value, const Args&& ... args)
+        explicit Array(const T& value, const Args&& ... args)
         {
-            OTR_ASSERT_MSG(sizeof...(Args) < Size, "Array size is too small")
+            OTR_ASSERT_MSG(VariadicArgs<Args...>::GetSize() < Size, "Array size is too small")
 
             m_Data = Buffer::New<T>(Size);
 
@@ -50,19 +50,19 @@ namespace Otter
             }(), ...);
         }
 
-        OTR_INLINE Array(const Array<T, Size>& other)
+        Array(const Array<T, Size>& other)
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = other.m_Data[i];
         }
 
-        OTR_INLINE Array(Array<T, Size>&& other) noexcept
+        Array(Array<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
         }
 
-        OTR_INLINE Array<T, Size>& operator=(const Array<T, Size>& other)
+        Array<T, Size>& operator=(const Array<T, Size>& other)
         {
             if (this == &other)
                 return *this;
@@ -73,7 +73,7 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE Array<T, Size>& operator=(Array<T, Size>&& other) noexcept
+        Array<T, Size>& operator=(Array<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
@@ -81,13 +81,13 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE T& operator[](UInt64 index)
+        T& operator[](UInt64 index)
         {
             OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
             return m_Data[index];
         }
 
-        OTR_INLINE const T& operator[](UInt64 index) const
+        const T& operator[](UInt64 index) const
         {
             OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
             return m_Data[index];
@@ -108,7 +108,7 @@ namespace Otter
 }
 
 template<typename OStream, typename T, UInt64 Size>
-OTR_INLINE OStream& operator<<(OStream& os, const Otter::Array<T, Size>& array)
+OStream& operator<<(OStream& os, const Otter::Array<T, Size>& array)
 {
     os << "Array: [";
 

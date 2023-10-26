@@ -19,7 +19,7 @@ namespace Otter
         OTR_COLLECTION_COPY(Stack)
         OTR_COLLECTION_MOVE(Stack)
 
-        OTR_INLINE void Push(const T& item)
+        void Push(const T& item)
         {
             if (base::m_Count >= base::m_Capacity)
                 base::Expand();
@@ -27,7 +27,7 @@ namespace Otter
             base::m_Data[base::m_Count++] = item;
         }
 
-        OTR_INLINE void Push(T&& item)
+        void Push(T&& item)
         {
             if (base::m_Count >= base::m_Capacity)
                 base::Expand();
@@ -35,7 +35,7 @@ namespace Otter
             base::m_Data[base::m_Count++] = std::move(item);
         }
 
-        OTR_INLINE bool TryPop()
+        bool TryPop()
         {
             if (base::m_Count == 0)
                 return false;
@@ -45,7 +45,7 @@ namespace Otter
             return true;
         }
 
-        OTR_INLINE bool TryPeek(const T& item)
+        bool TryPeek(const T& item)
         {
             if (base::m_Count == 0)
                 return false;

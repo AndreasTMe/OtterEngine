@@ -36,32 +36,32 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        OTR_INLINE explicit Span(const T& value)
+        explicit Span(const T& value)
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = value;
         }
 
         template<typename... Args>
-        OTR_INLINE explicit Span(const T& value, const Args&& ... args)
+        explicit Span(const T& value, const Args&& ... args)
             : m_Data{ value, args... }
         {
-            OTR_ASSERT_MSG(sizeof...(Args) < Size, "Span size is too small")
+            OTR_ASSERT_MSG(VariadicArgs<Args...>::GetSize() < Size, "Span size is too small")
         }
 
-        OTR_INLINE Span(const Span<T, Size>& other)
+        Span(const Span<T, Size>& other)
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = other.m_Data[i];
         }
 
-        OTR_INLINE Span(Span<T, Size>&& other) noexcept
+        Span(Span<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
         }
 
-        OTR_INLINE Span<T, Size>& operator=(const Span<T, Size>& other)
+        Span<T, Size>& operator=(const Span<T, Size>& other)
         {
             if (this == &other)
                 return *this;
@@ -72,7 +72,7 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE Span<T, Size>& operator=(Span<T, Size>&& other) noexcept
+        Span<T, Size>& operator=(Span<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
@@ -80,13 +80,13 @@ namespace Otter
             return *this;
         }
 
-        OTR_INLINE T& operator[](UInt64 index)
+        T& operator[](UInt64 index)
         {
             OTR_ASSERT_MSG(index < Size, "Span index out of bounds")
             return m_Data[index];
         }
 
-        OTR_INLINE const T& operator[](UInt64 index) const
+        const T& operator[](UInt64 index) const
         {
             OTR_ASSERT_MSG(index < Size, "Span index out of bounds")
             return m_Data[index];
@@ -107,7 +107,7 @@ namespace Otter
 }
 
 template<typename OStream, typename T, UInt64 Size>
-OTR_INLINE OStream& operator<<(OStream& os, const Otter::Span<T, Size>& span)
+OStream& operator<<(OStream& os, const Otter::Span<T, Size>& span)
 {
     os << "Span: [";
 

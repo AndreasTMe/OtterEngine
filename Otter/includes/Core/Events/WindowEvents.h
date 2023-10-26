@@ -5,12 +5,12 @@
 
 namespace Otter::Internal
 {
-#define OTR_WINDOW_EVENT_CLASS(Type)                                                                        \
-    class Window##Type##Event final : public Event                                                          \
-    {                                                                                                       \
-    public:                                                                                                 \
-        OTR_INLINE Window##Type##Event() : Event(EventType::Window##Type, EventCategory::Window) { }        \
-        OTR_INLINE ~Window##Type##Event() final = default;                                                  \
+#define OTR_WINDOW_EVENT_CLASS(Type)                                                        \
+    class Window##Type##Event final : public Event                                          \
+    {                                                                                       \
+    public:                                                                                 \
+        Window##Type##Event() : Event(EventType::Window##Type, EventCategory::Window) { }   \
+        ~Window##Type##Event() final = default;                                             \
     };
 
     OTR_WINDOW_EVENT_CLASS(Close)
@@ -18,12 +18,12 @@ namespace Otter::Internal
     class WindowResizeEvent final : public Event
     {
     public:
-        OTR_INLINE WindowResizeEvent(UInt16 width, UInt16 height, bool isInitiatedByUser)
+        WindowResizeEvent(UInt16 width, UInt16 height, bool isInitiatedByUser)
             : Event(EventType::WindowResize, EventCategory::Window),
               m_Width(width), m_Height(height), m_IsInitiatedByUser(isInitiatedByUser)
         {
         }
-        OTR_INLINE ~WindowResizeEvent() final = default;
+        ~WindowResizeEvent() final = default;
 
         [[nodiscard]] OTR_INLINE UInt16 GetWidth() const { return m_Width; }
         [[nodiscard]] OTR_INLINE UInt16 GetHeight() const { return m_Height; }

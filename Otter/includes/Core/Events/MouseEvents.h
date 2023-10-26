@@ -9,13 +9,13 @@ namespace Otter::Internal
     class MouseButtonPressedEvent final : public Event
     {
     public:
-        OTR_INLINE explicit MouseButtonPressedEvent(const MouseButton button, const UInt8 count = 1)
+        explicit MouseButtonPressedEvent(const MouseButton button, const UInt8 count = 1)
             : Event(EventType::MouseButtonPressed,
                     static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
               m_Button(button), m_Count(count)
         {
         }
-        OTR_INLINE ~MouseButtonPressedEvent() final = default;
+        ~MouseButtonPressedEvent() final = default;
 
         [[nodiscard]] OTR_INLINE MouseButton GetButton() const { return m_Button; }
         [[nodiscard]] OTR_INLINE UInt8 GetClickCount() const { return m_Count; }
@@ -28,13 +28,13 @@ namespace Otter::Internal
     class MouseButtonReleasedEvent final : public Event
     {
     public:
-        OTR_INLINE explicit MouseButtonReleasedEvent(const MouseButton button)
+        explicit MouseButtonReleasedEvent(const MouseButton button)
             : Event(EventType::MouseButtonReleased,
                     static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
               m_Button(button)
         {
         }
-        OTR_INLINE ~MouseButtonReleasedEvent() final = default;
+        ~MouseButtonReleasedEvent() final = default;
 
         [[nodiscard]] OTR_INLINE MouseButton GetButton() const { return m_Button; }
 
@@ -45,13 +45,13 @@ namespace Otter::Internal
     class MouseScrollEvent final : public Event
     {
     public:
-        OTR_INLINE explicit MouseScrollEvent(const bool isPositive)
+        explicit MouseScrollEvent(const bool isPositive)
             : Event(EventType::MouseScroll,
                     static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
               m_IsPositive(isPositive)
         {
         }
-        OTR_INLINE ~MouseScrollEvent() final = default;
+        ~MouseScrollEvent() final = default;
 
         [[nodiscard]] OTR_INLINE bool IsPositive() const { return m_IsPositive; }
 
@@ -62,13 +62,13 @@ namespace Otter::Internal
     class MouseMovedEvent final : public Event
     {
     public:
-        OTR_INLINE explicit MouseMovedEvent(const UInt32 x, const UInt32 y)
+        explicit MouseMovedEvent(const UInt32 x, const UInt32 y)
             : Event(EventType::MouseMoved,
                     static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
               m_X(x), m_Y(y)
         {
         }
-        OTR_INLINE ~MouseMovedEvent() final = default;
+        ~MouseMovedEvent() final = default;
 
         [[nodiscard]] OTR_INLINE UInt16 GetX() const { return m_X; }
         [[nodiscard]] OTR_INLINE UInt16 GetY() const { return m_Y; }
@@ -81,17 +81,17 @@ namespace Otter::Internal
     class MouseDraggedEvent final : public Event
     {
     public:
-        OTR_INLINE explicit MouseDraggedEvent(const MouseButton button,
-                                              const UInt16 x,
-                                              const UInt16 y,
-                                              const Float32 dragTime = 0,
-                                              const bool stopped = false)
+        explicit MouseDraggedEvent(const MouseButton button,
+                                   const UInt16 x,
+                                   const UInt16 y,
+                                   const Float32 dragTime = 0,
+                                   const bool stopped = false)
             : Event(EventType::MouseDragEnded,
                     static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
               m_Button(button), m_X(x), m_Y(y), m_DragTime(dragTime), m_Stopped(stopped)
         {
         }
-        OTR_INLINE ~MouseDraggedEvent() final = default;
+        ~MouseDraggedEvent() final = default;
 
         // TODO: Implement DragStarted/Ended events.
 //        [[nodiscard]] OTR_INLINE EventType GetEventType() const final
