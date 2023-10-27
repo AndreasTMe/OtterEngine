@@ -9,7 +9,10 @@ namespace Otter
     struct LinearIterator
     {
     public:
-        OTR_INLINE explicit LinearIterator(T* ptr) : m_Ptr(ptr) {}
+        explicit LinearIterator(T* ptr)
+            : m_Ptr(ptr)
+        {
+        }
 
         OTR_INLINE LinearIterator& operator++()
         {

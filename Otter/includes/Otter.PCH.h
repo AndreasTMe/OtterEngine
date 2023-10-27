@@ -13,6 +13,7 @@
 #include "Core/Collections/Stack.h"
 #include "Core/Collections/Queue.h"
 #include "Core/Collections/HashSet.h"
+#include "Core/Collections/Dictionary.h"
 #include "Core/Collections/Iterators/LinearIterator.h"
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
 #include "Core/Collections/ReadOnly/ReadOnlyArray.h"

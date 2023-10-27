@@ -2,20 +2,19 @@
 
 #include "Core/Events/EventSystem.h"
 
-#include <unordered_map> // TODO: Remove this later.
-
 namespace Otter
 {
     using Event = Internal::Event;
     using EventType = Internal::EventType;
 
-    // TODO: Replace with a custom map.
-    std::unordered_map<EventType, UnsafeHandle> g_Listeners;
+    Dictionary<EventType, UnsafeHandle> g_Listeners;
 
     void EventSystem::Initialise()
     {
         static bool isInitialised = false;
         OTR_INTERNAL_ASSERT_MSG(!isInitialised, "Event system has already been initialised")
+
+        g_Listeners = Dictionary<EventType, UnsafeHandle>(14);
 
         // Window Events
         AddListener(EventType::WindowClose, GlobalActions::OnWindowClose);
@@ -70,8 +69,9 @@ namespace Otter
         {
             auto type = event.GetEventType();
 
-            if (g_Listeners.find(type) != g_Listeners.end())
-                ((Func<bool, const Event&>*) g_Listeners[type].m_Pointer)->ReverseInvoke(event);
+            UnsafeHandle handle{ };
+            if (g_Listeners.TryGet(type, handle))
+                ((Func<bool, const Event&>*) handle.m_Pointer)->ReverseInvoke(event);
 
             m_Events.TryDequeue();
         }
@@ -83,20 +83,24 @@ namespace Otter
         OTR_INTERNAL_ASSERT_MSG(type != EventType::None, "Event type cannot be None")
         OTR_INTERNAL_ASSERT_MSG(type != EventType::Max, "Event type cannot be Max")
 
-        if (g_Listeners.find(type) != g_Listeners.end())
+        if (g_Listeners.Contains(type))
             return;
 
         UnsafeHandle handle = Unsafe::New(sizeof(Func<bool, const Event&>));
         handle.m_Pointer = new(handle.m_Pointer) Func<bool, TActionArg>(action);
-        g_Listeners[type] = handle;
+        g_Listeners.TryAdd(type, handle);
     }
 
     void EventSystem::RemoveAllListeners()
     {
-        for (auto& [_, handle]: g_Listeners)
+        Action<const UnsafeHandle&> deleteAction{ };
+        deleteAction += [](const UnsafeHandle& handle)
+        {
             Unsafe::Delete(handle);
+        };
 
-        g_Listeners.clear();
+        g_Listeners.ForEachValue(deleteAction);
+        g_Listeners.ClearDestructive();
     }
 
     void EventSystem::ClearEvents()

@@ -1,5 +1,5 @@
-#ifndef OTTERENGINE_HASHSET_H
-#define OTTERENGINE_HASHSET_H
+#ifndef OTTERENGINE_DICTIONARY_H
+#define OTTERENGINE_DICTIONARY_H
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
@@ -10,25 +10,25 @@
 
 namespace Otter
 {
-    // TODO: Not the best HashSet implementation, but it works for now
-    // TODO: Resize the HashSet to minimise collisions
-    template<typename T>
-    class HashSet final
+    // TODO: Not the best Dictionary implementation, but it works for now
+    // TODO: Resize the Dictionary to minimise collisions
+    template<typename TKey, typename TValue>
+    class Dictionary final
     {
         using HashUtils = Internal::HashUtils;
 
     public:
-        HashSet()
+        Dictionary()
             : m_Buckets(nullptr), m_Capacity(0), m_Count(0)
         {
         }
 
-        ~HashSet()
+        ~Dictionary()
         {
             ClearDestructive();
         }
 
-        explicit HashSet(UInt64 capacity)
+        explicit Dictionary(UInt64 capacity)
         {
             m_Capacity = HashUtils::GetNextPrime(capacity);
             m_Count    = 0;
@@ -38,7 +38,7 @@ namespace Otter
                 m_Buckets[i].m_Items = nullptr;
         }
 
-        HashSet(const HashSet<T>& other)
+        Dictionary(const Dictionary<TKey, TValue>& other)
         {
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
@@ -58,7 +58,7 @@ namespace Otter
             }
         }
 
-        HashSet(HashSet<T>&& other) noexcept
+        Dictionary(Dictionary<TKey, TValue>&& other) noexcept
         {
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
@@ -69,7 +69,7 @@ namespace Otter
             other.m_Buckets  = nullptr;
         }
 
-        HashSet<T>& operator=(const HashSet<T>& other)
+        Dictionary<TKey, TValue>& operator=(const Dictionary<TKey, TValue>& other)
         {
             if (this == &other)
                 return *this;
@@ -96,7 +96,7 @@ namespace Otter
             return *this;
         }
 
-        HashSet<T>& operator=(HashSet<T>&& other) noexcept
+        Dictionary<TKey, TValue>& operator=(Dictionary<TKey, TValue>&& other) noexcept
         {
             if (this == &other)
                 return *this;
@@ -114,27 +114,28 @@ namespace Otter
             return *this;
         }
 
-        bool TryAdd(const T& value)
+        bool TryAdd(const TKey& key, const TValue& value)
         {
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (m_Buckets[index].m_Capacity == 0)
             {
-                InitialiseBucketWithItem(&m_Buckets[index], value, hash);
+                InitialiseBucketWithItem(&m_Buckets[index], key, value, hash);
                 m_Count++;
 
                 return true;
             }
 
-            if (ExistsInBucket(value, hash, m_Buckets[index]))
+            if (ExistsInBucket(key, hash, m_Buckets[index]))
                 return false;
 
             if (m_Buckets[index].m_Count >= m_Buckets[index].m_Capacity)
                 ResizeBucket(&m_Buckets[index]);
 
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Data = value;
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Hash = hash;
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Pair.m_Key   = key;
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Pair.m_Value = value;
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Hash         = hash;
             m_Buckets[index].m_Count++;
 
             m_Count++;
@@ -142,27 +143,28 @@ namespace Otter
             return true;
         }
 
-        bool TryAdd(T&& value) noexcept
+        bool TryAdd(TKey&& key, TValue&& value) noexcept
         {
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (m_Buckets[index].m_Capacity == 0)
             {
-                InitialiseBucketWithItem(&m_Buckets[index], std::move(value), hash);
+                InitialiseBucketWithItem(&m_Buckets[index], std::move(key), std::move(value), hash);
                 m_Count++;
 
                 return true;
             }
 
-            if (ExistsInBucket(value, hash, m_Buckets[index]))
+            if (ExistsInBucket(key, hash, m_Buckets[index]))
                 return false;
 
             if (m_Buckets[index].m_Count >= m_Buckets[index].m_Capacity)
                 ResizeBucket(&m_Buckets[index]);
 
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Data = std::move(value);
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Hash = hash;
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Pair.m_Key   = std::move(key);
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Pair.m_Value = std::move(value);
+            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Hash         = hash;
             m_Buckets[index].m_Count++;
 
             m_Count++;
@@ -170,16 +172,16 @@ namespace Otter
             return true;
         }
 
-        bool TryGet(const T& value, T& outValue) const { return TryGetInternal(value, outValue); }
-        bool TryGet(T&& value, T& outValue) const noexcept { return TryGetInternal(std::move(value), outValue); }
+        bool TryGet(const TKey& key, TValue& value) const { return TryGetInternal(key, value); }
+        bool TryGet(TKey&& key, TValue& value) const noexcept { return TryGetInternal(std::move(key), value); }
 
-        bool TryRemove(const T& value) { return TryRemoveInternal(value); }
-        bool TryRemove(T&& value) noexcept { return TryRemoveInternal(std::move(value)); }
+        bool TryRemove(const TKey& key) { return TryRemoveInternal(key); }
+        bool TryRemove(TKey&& key) noexcept { return TryRemoveInternal(std::move(key)); }
 
-        [[nodiscard]] bool Contains(const T& value) const { return ContainsInternal(value); }
-        [[nodiscard]] bool Contains(T&& value) const noexcept { return ContainsInternal(std::move(value)); }
+        [[nodiscard]] bool Contains(const TKey& key) const { return ContainsInternal(key); }
+        [[nodiscard]] bool Contains(TKey&& key) const noexcept { return ContainsInternal(std::move(key)); }
 
-        void ForEach(Action<const T&>& action) const
+        void ForEach(Action<const TKey&, const TValue&>& action) const
         {
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
@@ -188,6 +190,30 @@ namespace Otter
 
                 for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
                     action(m_Buckets[i].m_Items[j].m_Pair.m_Key, m_Buckets[i].m_Items[j].m_Pair.m_Value);
+            }
+        }
+
+        void ForEachKey(Action<const TKey&>& action) const
+        {
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                    continue;
+
+                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
+                    action(m_Buckets[i].m_Items[j].m_Pair.m_Key);
+            }
+        }
+
+        void ForEachValue(Action<const TValue&>& action) const
+        {
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                    continue;
+
+                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
+                    action(m_Buckets[i].m_Items[j].m_Pair.m_Value);
             }
         }
 
@@ -227,10 +253,16 @@ namespace Otter
         [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
 
     private:
+        struct KeyValuePair
+        {
+            TKey   m_Key;
+            TValue m_Value;
+        };
+
         struct BucketItem
         {
-            T      m_Data;
-            UInt64 m_Hash;
+            KeyValuePair m_Pair;
+            UInt64       m_Hash;
         };
 
         struct Bucket
@@ -248,13 +280,14 @@ namespace Otter
         UInt64 m_Capacity;
         UInt64 m_Count;
 
-        void InitialiseBucketWithItem(Bucket* bucket, const T& value, const UInt64& hash) const
+        void InitialiseBucketWithItem(Bucket* bucket, const TKey& key, const TValue& value, const UInt64& hash) const
         {
-            bucket->m_Items           = Buffer::New<BucketItem>(k_InitialBucketCapacity);
-            bucket->m_Items[0].m_Data = value;
-            bucket->m_Items[0].m_Hash = hash;
-            bucket->m_Capacity        = k_InitialBucketCapacity;
-            bucket->m_Count           = 1;
+            bucket->m_Items                   = Buffer::New<BucketItem>(k_InitialBucketCapacity);
+            bucket->m_Items[0].m_Pair.m_Key   = key;
+            bucket->m_Items[0].m_Pair.m_Value = value;
+            bucket->m_Items[0].m_Hash         = hash;
+            bucket->m_Capacity                = k_InitialBucketCapacity;
+            bucket->m_Count                   = 1;
         }
 
         void ResizeBucket(Bucket* bucket) const
@@ -271,18 +304,18 @@ namespace Otter
             bucket->m_Capacity = newCapacity;
         }
 
-        [[nodiscard]] bool ExistsInBucket(const T& value, const UInt64& hash, const Bucket& bucket) const
+        [[nodiscard]] bool ExistsInBucket(const TKey& key, const UInt64& hash, const Bucket& bucket) const
         {
             for (UInt64 i = 0; i < bucket.m_Count; i++)
-                if (bucket.m_Items[i].m_Data == value && bucket.m_Items[i].m_Hash == hash)
+                if (bucket.m_Items[i].m_Pair.m_Key == key && bucket.m_Items[i].m_Hash == hash)
                     return true;
 
             return false;
         }
 
-        [[nodiscard]] bool TryGetInternal(const T& value, T& outValue) const
+        [[nodiscard]] bool TryGetInternal(const TKey& key, TValue& value) const
         {
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (m_Buckets[index].m_Capacity == 0)
@@ -290,9 +323,9 @@ namespace Otter
 
             for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
             {
-                if (m_Buckets[index].m_Items[i].m_Hash == hash && m_Buckets[index].m_Items[i].m_Data == value)
+                if (m_Buckets[index].m_Items[i].m_Hash == hash && m_Buckets[index].m_Items[i].m_Pair.m_Key == key)
                 {
-                    outValue = m_Buckets[index].m_Items[i].m_Data;
+                    value = m_Buckets[index].m_Items[i].m_Pair.m_Value;
                     return true;
                 }
             }
@@ -300,9 +333,9 @@ namespace Otter
             return false;
         }
 
-        [[nodiscard]] bool TryRemoveInternal(const T& value)
+        [[nodiscard]] bool TryRemoveInternal(const TKey& key)
         {
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (m_Buckets[index].m_Capacity == 0)
@@ -310,7 +343,7 @@ namespace Otter
 
             for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
             {
-                if (m_Buckets[index].m_Items[i].m_Hash == hash && m_Buckets[index].m_Items[i].m_Data == value)
+                if (m_Buckets[index].m_Items[i].m_Hash == hash && m_Buckets[index].m_Items[i].m_Pair.m_Key == key)
                 {
                     for (UInt64 j = i; j < m_Buckets[index].m_Count - 1; j++)
                         m_Buckets[index].m_Items[j] = m_Buckets[index].m_Items[j + 1];
@@ -325,15 +358,15 @@ namespace Otter
             return false;
         }
 
-        [[nodiscard]] bool ContainsInternal(const T& value) const
+        [[nodiscard]] bool ContainsInternal(const TKey& key) const
         {
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (m_Buckets[index].m_Capacity == 0)
                 return false;
 
-            if (ExistsInBucket(value, hash, m_Buckets[index]))
+            if (ExistsInBucket(key, hash, m_Buckets[index]))
                 return true;
 
             return false;
@@ -341,4 +374,4 @@ namespace Otter
     };
 }
 
-#endif //OTTERENGINE_HASHSET_H
+#endif //OTTERENGINE_DICTIONARY_H

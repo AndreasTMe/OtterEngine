@@ -23,6 +23,9 @@ namespace Otter
         {
         }
 
+        explicit Action(const Function& function) { m_Functions.Add(function); }
+        explicit Action(Function&& function) { m_Functions.Add(std::move(function)); }
+
         Action& operator=(const Action& other)
         {
             m_Functions = other.m_Functions;
@@ -103,6 +106,9 @@ namespace Otter
             : Func(*other)
         {
         }
+
+        explicit Func(const Function& function) { m_Functions.Add(function); }
+        explicit Func(Function&& function) { m_Functions.Add(std::move(function)); }
 
         Func& operator=(const Func& other)
         {

@@ -8,7 +8,7 @@ namespace Otter
     {
         OTR_INTERNAL_ASSERT_MSG(!m_HasInitialised, "Memory has already been initialised")
 
-        const UInt64 memorySize = 2_KiB;
+        const UInt64 memorySize = 5_KiB;
         void* memory = Platform::Allocate(memorySize);
 
         m_Allocator      = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
