@@ -81,7 +81,12 @@ namespace Otter
         TNumber& operator[](UInt8 index)
         {
             OTR_ASSERT_MSG(index < 16, "Index {0} is out of range", index)
+            return Values[index];
+        }
 
+        const TNumber& operator[](UInt8 index) const
+        {
+            OTR_ASSERT_MSG(index < 16, "Index {0} is out of range", index)
             return Values[index];
         }
     };

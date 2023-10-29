@@ -1,192 +1,206 @@
 #ifndef OTTERENGINE_MATH_VECTOR3_H
 #define OTTERENGINE_MATH_VECTOR3_H
 
+#include "Math/Core.h"
 #include "Math/Vector.h"
 
-namespace Otter
+namespace Otter::Math
 {
+    template<>
+    OTR_INLINE Vector<3, Int32> Left() { return Vector<3, Int32>(-1, 0, 0); }
+
+    template<>
+    OTR_INLINE Vector<3, Int32> Right() { return Vector<3, Int32>(1, 0, 0); }
+
+    template<>
+    OTR_INLINE Vector<3, Int32> Down() { return Vector<3, Int32>(0, -1, 0); }
+
+    template<>
+    OTR_INLINE Vector<3, Int32> Up() { return Vector<3, Int32>(0, 1, 0); }
+
+    template<>
+    OTR_INLINE Vector<3, Int32> Back() { return Vector<3, Int32>(0, 0, -1); }
+
+    template<>
+    OTR_INLINE Vector<3, Int32> Forward() { return Vector<3, Int32>(0, 0, 1); }
+
+    template<>
+    OTR_INLINE Vector<3, Int32> VectorOne() { return Vector<3, Int32>(1, 1, 1); }
+
+    template<>
+    OTR_INLINE Vector<3, Int32> VectorZero() { return Vector<3, Int32>(0, 0, 0); }
+
     template<AnyNumber TNumber>
-    struct Vector<3, TNumber> final
+    OTR_INLINE Vector<3, TNumber> VectorPositiveInfinity()
     {
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
-
-        union
-        {
-            struct
-            {
-                TNumber X, Y, Z;
-            };
-
-            TNumber Values[3];
-        };
-
-#pragma clang diagnostic pop
-
-        Vector()
-            : X(0), Y(0), Z(0)
-        {
-        }
-
-        explicit Vector(TNumber scalar)
-            : X(scalar), Y(scalar), Z(scalar)
-        {
-        }
-
-        template<typename... TArgs>
-        requires (sizeof...(TArgs) == 2 && (AnyNumber<TArgs>&& ...))
-        explicit Vector(TNumber x, TArgs... args)
-            : X(x)
-        {
-            UInt8 i = 1;
-            ([&]
-            {
-                Values[++i] = args;
-            }(), ...);
-        }
-
-        Vector(const Vector<3, TNumber>& other)
-            : X(other.X), Y(other.Y), Z(other.Z)
-        {
-        }
-
-        Vector(Vector<3, TNumber>&& other) noexcept
-            : X(other.X), Y(other.Y), Z(other.Z)
-        {
-        }
-
-        Vector<3, TNumber>& operator=(const Vector<3, TNumber>& other)
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] = other.Values[i];
-
-            return *this;
-        }
-
-        Vector<3, TNumber>& operator=(Vector<3, TNumber>&& other) noexcept
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] = other.Values[i];
-
-            return *this;
-        }
-
-        TNumber& operator[](UInt8 index)
-        {
-            OTR_ASSERT_MSG(index < 3, "Index {0} is out of range", index)
-
-            return Values[index];
-        }
-
-        template<AnyNumber T>
-        Vector<3, TNumber>& operator+=(const Vector<3, T>& other)
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] += static_cast<TNumber>(other.Values[i]);
-
-            return *this;
-        }
-
-        Vector<3, TNumber>& operator+=(const Vector<3, TNumber>& other) noexcept
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] += other.Values[i];
-
-            return *this;
-        }
-
-        template<AnyNumber T>
-        Vector<3, TNumber>& operator-=(const Vector<3, T>& other)
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] -= static_cast<TNumber>(other.Values[i]);
-
-            return *this;
-        }
-
-        Vector<3, TNumber>& operator-=(const Vector<3, TNumber>& other) noexcept
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] -= other.Values[i];
-
-            return *this;
-        }
-
-        template<AnyNumber T>
-        Vector<3, TNumber> operator+(const Vector<3, T>& other) const
-        {
-            return Vector<3, TNumber>(*this) += other;
-        }
-
-        template<AnyNumber T>
-        Vector<3, TNumber> operator-(const Vector<3, T>& other) const
-        {
-            return Vector<3, TNumber>(*this) -= other;
-        }
-
-        template<AnyNumber T>
-        Vector<3, TNumber>& operator*=(const Vector<3, T>& other)
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] *= static_cast<TNumber>(other.Values[i]);
-
-            return *this;
-        }
-
-        template<AnyNumber T>
-        Vector<3, TNumber>& operator*=(const T& scalar) noexcept
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] *= scalar;
-
-            return *this;
-        }
-
-        template<AnyNumber T>
-        Vector<3, TNumber>& operator/=(const Vector<3, T>& other)
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] /= static_cast<TNumber>(other.Values[i]);
-
-            return *this;
-        }
-
-        template<AnyNumber T>
-        Vector<4, TNumber>& operator/=(const T& scalar) noexcept
-        {
-            for (UInt8 i = 0; i < 3; ++i)
-                Values[i] /= scalar;
-
-            return *this;
-        }
-
-        template<AnyNumber TOtherNumber>
-        bool operator==(const Vector<3, TOtherNumber>& other) const noexcept
-        {
-            if constexpr (IntegerNumber<TNumber> && IntegerNumber<TOtherNumber>)
-                return X == other.X && Y == other.Y && Z == other.Z;
-
-            return Math::AreApproximatelyEqual(X, other.X)
-                   && Math::AreApproximatelyEqual(Y, other.Y)
-                   && Math::AreApproximatelyEqual(Z, other.Z);
-        }
-
-        template<AnyNumber TOtherNumber>
-        bool operator!=(const Vector<3, TOtherNumber>& other) const noexcept
-        {
-            if constexpr (IntegerNumber<TNumber> && IntegerNumber<TOtherNumber>)
-                return X != other.X || Y != other.Y || Z != other.Z;
-
-            return !Math::AreApproximatelyEqual(X, other.X)
-                   || !Math::AreApproximatelyEqual(Y, other.Y)
-                   || !Math::AreApproximatelyEqual(Z, other.Z);
-        }
-    };
-
-    namespace Math
-    {
-        // TODO: Implement Vector3 functions
+        return Vector<3, TNumber>(PositiveInfinity<TNumber>(),
+                                  PositiveInfinity<TNumber>(),
+                                  PositiveInfinity<TNumber>());
     }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE Vector<3, TNumber> VectorNegativeInfinity()
+    {
+        return Vector<3, TNumber>(NegativeInfinity<TNumber>(),
+                                  NegativeInfinity<TNumber>(),
+                                  NegativeInfinity<TNumber>());
+    }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE bool IsApproximatelyZero(const Vector<3, TNumber>& vector)
+    {
+        if constexpr (IntegerNumber<TNumber>)
+            return vector[0] == 0 && vector[1] == 0 && vector[2] == 0;
+
+        return Math::IsApproximatelyZero(vector[0])
+               && Math::IsApproximatelyZero(vector[1])
+               && Math::IsApproximatelyZero(vector[2]);
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE bool AreApproximatelyEqual(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
+    {
+        if constexpr (IntegerNumber<Tx> && IntegerNumber<Ty>)
+            return lhs[0] == rhs[0] && lhs[1] == rhs[1] && lhs[2] == rhs[2];
+
+        return Math::AreApproximatelyEqual(lhs[0], rhs[0])
+               && Math::AreApproximatelyEqual(lhs[1], rhs[1])
+               && Math::AreApproximatelyEqual(lhs[2], rhs[2]);
+    }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE auto MagnitudeSquared(const Vector<3, TNumber>& vector)
+    {
+        return Square(vector[0]) + Square(vector[1]) + Square(vector[2]);
+    }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE auto Magnitude(const Vector<3, TNumber>& vector) { return Sqrt(MagnitudeSquared(vector)); }
+
+    template<AnyNumber TNumber, AnyNumber TMaxMagnitude>
+    OTR_INLINE auto ClampMagnitude(const Vector<3, TNumber>& vector, const TMaxMagnitude& maxMagnitude)
+    {
+        return vector * Min(maxMagnitude / Magnitude(vector), 1);
+    }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE auto Normalise(const Vector<3, TNumber>& vector) { return vector / Magnitude(vector); }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto Dot(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
+    {
+        return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto Cross(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
+    {
+        return Vector<3, decltype(lhs[0] * rhs[0] - lhs[0] * rhs[0] + lhs[0] * rhs[0])>{
+            lhs[1] * rhs[2] - lhs[2] * rhs[1],
+            lhs[2] * rhs[0] - lhs[0] * rhs[2],
+            lhs[0] * rhs[1] - lhs[1] * rhs[0]
+        };
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto DistanceSquared(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
+    {
+        return MagnitudeSquared(lhs - rhs);
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto Distance(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
+    {
+        return Magnitude(lhs - rhs);
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto Lerp(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
+    {
+        return lhs + (rhs - lhs) * t;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto LerpClamped(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
+    {
+        return Lerp(lhs, rhs, Clamp(t, 0.0, 1.0));
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto Slerp(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
+    {
+        auto dotClamped = Clamp(Dot(lhs, rhs), -1.0, 1.0);
+        auto theta      = Acos(dotClamped) * t;
+        auto relative   = Normalise(rhs - lhs * dotClamped);
+
+        return ((lhs * Cos(theta)) + (relative * Sin(theta)));
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto SlerpClamped(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
+    {
+        return Slerp(lhs, rhs, Clamp(t, 0.0, 1.0));
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto Max(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
+    {
+        return Vector<3, decltype(Math::Max(lhs[0], rhs[0]))>(Math::Max(lhs[0], rhs[0]),
+                                                              Math::Max(lhs[1], rhs[1]),
+                                                              Math::Max(lhs[2], rhs[2]));
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto Min(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
+    {
+        return Vector<3, decltype(Math::Min(lhs[0], rhs[0]))>(Math::Min(lhs[0], rhs[0]),
+                                                              Math::Min(lhs[1], rhs[1]),
+                                                              Math::Min(lhs[2], rhs[2]));
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto Clamp(const Vector<3, Tx>& value, const Vector<3, Ty>& min, const Vector<3, Tz>& max)
+    {
+        return Vector<3, decltype(Math::Clamp(value[0], min[0], max[0]))>(Math::Clamp(value[0], min[0], max[0]),
+                                                                          Math::Clamp(value[1], min[1], max[1]),
+                                                                          Math::Clamp(value[2], min[2], max[2]));
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto Reflect(const Vector<3, Tx>& vector, const Vector<3, Ty>& normal)
+    {
+        return vector - 2 * Dot(vector, normal) * normal;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto Project(const Vector<3, Tx>& vector, const Vector<3, Ty>& normal)
+    {
+        auto magnitudeSquared = MagnitudeSquared(normal);
+        if (magnitudeSquared < Epsilon<Double128>)
+            return VectorZero<3>;
+
+        return (Dot(vector, normal) / magnitudeSquared) * normal;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto Angle(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
+    {
+        return Acos(Dot(lhs, rhs) / (Magnitude(lhs) * Magnitude(rhs)));
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto AngleSigned(const Vector<3, Tx>& from, const Vector<3, Ty>& to, const Vector<3, Ty>& axis)
+    {
+        return Sign(Dot(axis, Cross(from, to))) * Angle(from, to);
+    }
+
+    // TODO: Vector3::SmoothStep
+    // TODO: Vector3::SmoothDamp
+    // TODO: Vector3::SmoothDampAngle
+    // TODO: Vector3::MoveTowards
+    // TODO: Vector3::RotateTowards
+    // TODO: Vector3::ProjectOnPlane
+    // TODO: Vector3::OrthoNormalize
 }
 
 #endif //OTTERENGINE_MATH_VECTOR3_H
