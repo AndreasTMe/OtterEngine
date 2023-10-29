@@ -217,6 +217,19 @@ namespace Otter
 
 #pragma clang diagnostic pop
         }
+
+        [[nodiscard]] TNumber GetX() const noexcept { return m_Values[0]; }
+        void SetX(const TNumber& x) noexcept { m_Values[0] = x; }
+
+        [[nodiscard]] TNumber GetY() const noexcept { return m_Values[1]; }
+        void SetY(const TNumber& y) noexcept { m_Values[1] = y; }
+
+        [[nodiscard]] TNumber GetZ() const noexcept requires (TDimension >= 3) { return m_Values[2]; }
+        void SetZ(const TNumber& z) noexcept requires (TDimension >= 3) { m_Values[2] = z; }
+
+        [[nodiscard]] TNumber GetW() const noexcept requires (TDimension == 4) { return m_Values[3]; }
+        void SetW(const TNumber& w) noexcept requires (TDimension == 4) { m_Values[3] = w; }
+        
     private:
         TNumber m_Values[TDimension];
     };
