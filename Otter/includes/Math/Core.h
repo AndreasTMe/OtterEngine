@@ -161,7 +161,13 @@ namespace Otter::Math
     OTR_INLINE constexpr auto LerpClamped(Tx a, Ty b, Tz t) { return Clamp(Lerp(a, b, t), a, b); }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto InverseLerp(Tx a, Ty b, Tz value) { return (value - a) / (b - a); }
+    OTR_INLINE constexpr auto InverseLerp(Tx a, Ty b, Tz value)
+    {
+        if (a == b)
+            return 0.0;
+
+        return (value - a) / (b - a);
+    }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto InverseLerpClamped(Tx a, Ty b, Tz value) { return Clamp01(InverseLerp(a, b, value)); }

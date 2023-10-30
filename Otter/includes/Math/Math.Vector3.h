@@ -80,11 +80,22 @@ namespace Otter::Math
     template<AnyNumber TNumber, AnyNumber TMaxMagnitude>
     OTR_INLINE auto ClampMagnitude(const Vector<3, TNumber>& vector, const TMaxMagnitude& maxMagnitude)
     {
-        return vector * Min(maxMagnitude / Magnitude(vector), 1);
+        auto magnitudeSquared = MagnitudeSquared(vector);
+        if (magnitudeSquared > Square(maxMagnitude))
+            return vector * Min(maxMagnitude / Sqrt(magnitudeSquared), 1);
+
+        return vector;
     }
 
     template<AnyNumber TNumber>
-    OTR_INLINE auto Normalise(const Vector<3, TNumber>& vector) { return vector / Magnitude(vector); }
+    OTR_INLINE auto Normalise(const Vector<3, TNumber>& vector)
+    {
+        auto magnitude = Magnitude(vector);
+        if (magnitude < Epsilon<Double128>)
+            return VectorZero<3>;
+
+        return vector / magnitude;
+    }
 
     template<AnyNumber Tx, AnyNumber Ty>
     OTR_INLINE auto Dot(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
@@ -185,7 +196,11 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty>
     OTR_INLINE auto Angle(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
     {
-        return Acos(Dot(lhs, rhs) / (Magnitude(lhs) * Magnitude(rhs)));
+        auto magnitudeProduct = Magnitude(lhs) * Magnitude(rhs);
+        if (magnitudeProduct < Epsilon<Double128>)
+            return 0;
+
+        return Acos(Dot(lhs, rhs) / magnitudeProduct);
     }
 
     template<AnyNumber Tx, AnyNumber Ty>

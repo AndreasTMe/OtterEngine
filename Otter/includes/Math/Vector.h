@@ -84,8 +84,8 @@ namespace Otter
             return m_Values[index];
         }
 
-        template<AnyNumber T>
-        Vector<TDimension, TNumber>& operator+=(const Vector<TDimension, T>& other)
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber>& operator+=(const Vector<TDimension, TOtherNumber>& other)
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] += static_cast<TNumber>(other.m_Values[i]);
@@ -101,8 +101,8 @@ namespace Otter
             return *this;
         }
 
-        template<AnyNumber T>
-        Vector<TDimension, TNumber>& operator-=(const Vector<TDimension, T>& other)
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber>& operator-=(const Vector<TDimension, TOtherNumber>& other)
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] -= static_cast<TNumber>(other.m_Values[i]);
@@ -118,42 +118,8 @@ namespace Otter
             return *this;
         }
 
-        template<AnyNumber T>
-        Vector<TDimension, TNumber> operator+(const Vector<TDimension, T>& other) const
-        {
-            return Vector<TDimension, TNumber>(*this) += other;
-        }
-
-        template<AnyNumber T>
-        Vector<TDimension, TNumber> operator-(const Vector<TDimension, T>& other) const
-        {
-            return Vector<TDimension, TNumber>(*this) -= other;
-        }
-
-        template<AnyNumber T>
-        Vector<TDimension, TNumber> operator*(const T& scalar) const
-        {
-            auto result = Vector<TDimension, TNumber>(*this);
-
-            for (UInt8 i = 0; i < TDimension; ++i)
-                this->m_Values[i] *= scalar;
-
-            return result;
-        }
-
-        template<AnyNumber T>
-        Vector<TDimension, TNumber> operator/(const T& scalar) const
-        {
-            auto result = Vector<TDimension, TNumber>(*this);
-
-            for (UInt8 i = 0; i < TDimension; ++i)
-                result.m_Values[i] /= scalar;
-
-            return result;
-        }
-
-        template<AnyNumber T>
-        Vector<TDimension, TNumber>& operator*=(const Vector<TDimension, T>& other)
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber>& operator*=(const Vector<TDimension, TOtherNumber>& other)
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] *= static_cast<TNumber>(other.m_Values[i]);
@@ -161,8 +127,8 @@ namespace Otter
             return *this;
         }
 
-        template<AnyNumber T>
-        Vector<TDimension, TNumber>& operator*=(const T& scalar) noexcept
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber>& operator*=(const TOtherNumber& scalar) noexcept
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] *= scalar;
@@ -170,22 +136,51 @@ namespace Otter
             return *this;
         }
 
-        template<AnyNumber T>
-        Vector<TDimension, TNumber>& operator/=(const Vector<TDimension, T>& other)
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber>& operator/=(const Vector<TDimension, TOtherNumber>& other)
         {
+            OTR_ASSERT_MSG(other != VectorZero<TDimension>(), "Division by zero")
+
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] /= static_cast<TNumber>(other.m_Values[i]);
 
             return *this;
         }
 
-        template<AnyNumber T>
-        Vector<TDimension, TNumber>& operator/=(const T& scalar) noexcept
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber>& operator/=(const TOtherNumber& scalar) noexcept
         {
+            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
+
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] /= scalar;
 
             return *this;
+        }
+
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber> operator+(const Vector<TDimension, TOtherNumber>& other) const
+        {
+            return Vector<TDimension, TNumber>(*this) += other;
+        }
+
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber> operator-(const Vector<TDimension, TOtherNumber>& other) const
+        {
+            return Vector<TDimension, TNumber>(*this) -= other;
+        }
+
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber> operator*(const TOtherNumber& scalar) const
+        {
+            return Vector<TDimension, TNumber>(*this) *= scalar;
+        }
+
+        template<AnyNumber TOtherNumber>
+        Vector<TDimension, TNumber> operator/(const TOtherNumber& scalar) const
+        {
+            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
+            return Vector<TDimension, TNumber>(*this) /= scalar;
         }
 
         template<AnyNumber TOtherNumber>
@@ -229,7 +224,7 @@ namespace Otter
 
         [[nodiscard]] TNumber GetW() const noexcept requires (TDimension == 4) { return m_Values[3]; }
         void SetW(const TNumber& w) noexcept requires (TDimension == 4) { m_Values[3] = w; }
-        
+
     private:
         TNumber m_Values[TDimension];
     };
