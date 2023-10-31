@@ -13,13 +13,13 @@ namespace Otter
     struct Quaternion final
     {
     public:
-        Quaternion()
+        constexpr Quaternion()
         {
             for (UInt8 i = 0; i < 4; ++i)
                 m_Values[i] = 0;
         }
 
-        explicit Quaternion(TNumber scalar)
+        constexpr explicit Quaternion(TNumber scalar)
         {
             for (UInt8 i = 0; i < 4; ++i)
                 m_Values[i] = scalar;
@@ -27,7 +27,7 @@ namespace Otter
 
         template<typename... TArgs>
         requires (sizeof...(TArgs) == 3 && (AnyNumber<TArgs>&& ...))
-        explicit Quaternion(TNumber x, TArgs... args)
+        constexpr explicit Quaternion(TNumber x, TArgs... args)
         {
             m_Values[0] = x;
 
@@ -84,7 +84,117 @@ namespace Otter
             return m_Values[index];
         }
 
-        // TODO: Quaternion ==, !=, +, -, *, /, +=, -=, *=, /=
+        template<AnyNumber TOtherNumber>
+        explicit operator Quaternion<TOtherNumber>() const
+        {
+            Quaternion<TOtherNumber> result;
+
+            for (UInt8 i = 0; i < 4; ++i)
+                result[i] = static_cast<TOtherNumber>(m_Values[i]);
+
+            return result;
+        }
+
+        template<AnyNumber TOtherNumber>
+        Quaternion<TNumber>& operator*=(const Quaternion<TOtherNumber>& other)
+        {
+            *this = Quaternion<TNumber>{
+                m_Values[3] * other.m_Values[0]
+                + m_Values[0] * other.m_Values[3]
+                + m_Values[1] * other.m_Values[2]
+                - m_Values[2] * other.m_Values[1],
+
+                m_Values[3] * other.m_Values[1]
+                + m_Values[1] * other.m_Values[3]
+                + m_Values[2] * other.m_Values[0]
+                - m_Values[0] * other.m_Values[2],
+
+                m_Values[3] * other.m_Values[2]
+                + m_Values[2] * other.m_Values[3]
+                + m_Values[0] * other.m_Values[1]
+                - m_Values[1] * other.m_Values[0],
+
+                m_Values[3] * other.m_Values[3]
+                - m_Values[0] * other.m_Values[0]
+                - m_Values[1] * other.m_Values[1]
+                - m_Values[2] * other.m_Values[2]
+            };
+
+            return *this;
+        }
+
+        template<AnyNumber TOtherNumber>
+        Quaternion<TNumber>& operator*=(const TOtherNumber& scalar) noexcept
+        {
+            for (UInt8 i = 0; i < 4; ++i)
+                m_Values[i] *= scalar;
+
+            return *this;
+        }
+
+        template<AnyNumber TOtherNumber>
+        Quaternion<TNumber>& operator/=(const TOtherNumber& scalar) noexcept
+        {
+            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
+
+            for (UInt8 i = 0; i < 4; ++i)
+                m_Values[i] /= scalar;
+
+            return *this;
+        }
+
+        template<AnyNumber TOtherNumber>
+        friend decltype(auto) operator*(Quaternion<TNumber> lhs, const Quaternion<TOtherNumber>& rhs)
+        {
+            lhs *= rhs;
+            return lhs;
+        }
+
+        template<AnyNumber TOtherNumber>
+        friend decltype(auto) operator*(Quaternion<TNumber> lhs, const TOtherNumber& rhs)
+        {
+            lhs *= rhs;
+            return lhs;
+        }
+
+        template<AnyNumber TOtherNumber>
+        friend decltype(auto) operator/(Quaternion<TNumber> lhs, const TOtherNumber& rhs)
+        {
+            OTR_ASSERT_MSG(rhs != 0, "Division by zero")
+
+            lhs /= rhs;
+            return lhs;
+        }
+
+        template<AnyNumber TOtherNumber>
+        bool operator==(const Quaternion<TOtherNumber>& other) const noexcept
+        {
+            if constexpr (IntegerNumber<TNumber> && IntegerNumber<TOtherNumber>)
+            {
+                for (UInt8 i = 0; i < 4; ++i)
+                    if (m_Values[i] != other.m_Values[i])
+                        return false;
+
+                return true;
+            }
+
+            for (UInt8 i = 0; i < 4; ++i)
+                if (!Math::AreApproximatelyEqual(m_Values[i], other.m_Values[i]))
+                    return false;
+
+            return true;
+        }
+
+        template<AnyNumber TOtherNumber>
+        bool operator!=(const Quaternion<TOtherNumber>& other) const noexcept
+        {
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "Simplify"
+
+            return !(*this == other);
+
+#pragma clang diagnostic pop
+        }
 
         [[nodiscard]] TNumber GetX() const noexcept { return m_Values[0]; }
         void SetX(const TNumber& x) noexcept { m_Values[0] = x; }
@@ -101,6 +211,23 @@ namespace Otter
     private:
         TNumber m_Values[4];
     };
+
+    namespace Math
+    {
+        OTR_INLINE constexpr Quaternion<Int32> QuaternionZero() noexcept { return Quaternion<Int32>(0); }
+
+        OTR_INLINE constexpr Quaternion<Int32> QuaternionOne() noexcept { return Quaternion<Int32>(1); }
+
+        OTR_INLINE constexpr Quaternion<Int32> QuaternionI() noexcept { return Quaternion<Int32>{ 1, 0, 0, 0 }; }
+
+        OTR_INLINE constexpr Quaternion<Int32> QuaternionJ() noexcept { return Quaternion<Int32>{ 0, 1, 0, 0 }; }
+
+        OTR_INLINE constexpr Quaternion<Int32> QuaternionK() noexcept { return Quaternion<Int32>{ 0, 0, 1, 0 }; }
+
+        OTR_INLINE constexpr Quaternion<Int32> QuaternionIdentity() noexcept { return Quaternion<Int32>{ 0, 0, 0, 1 }; }
+    }
 }
+
+#include "Math/Quaternion.h"
 
 #endif //OTTERENGINE_QUATERNION_H

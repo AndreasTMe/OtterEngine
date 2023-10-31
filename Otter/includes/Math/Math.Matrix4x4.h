@@ -6,7 +6,7 @@
 namespace Otter::Math
 {
     template<>
-    OTR_INLINE constexpr Matrix<4, 4, Int32> Identity<4, 4>()
+    OTR_INLINE constexpr Matrix<4, 4, Int32> MatrixIdentity<4, 4>()
     {
         return Matrix<4, 4, Int32>{
             1, 0, 0, 0,
@@ -117,7 +117,7 @@ namespace Otter::Math
 
         const auto determinant = s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0;
         if (determinant == 0)
-            return Math::Zero<4, 4>();
+            return Math::MatrixZero<4, 4>();
 
         const auto detReversed = 1.0 / determinant;
 

@@ -100,6 +100,17 @@ namespace Otter
         }
 
         template<AnyNumber TOtherNumber>
+        explicit operator Matrix<Tx, Ty, TOtherNumber>() const
+        {
+            Matrix<Tx, Ty, TOtherNumber> result;
+
+            for (UInt8 i = 0; i < Tx * Ty; ++i)
+                result[i] = static_cast<TOtherNumber>(m_Values[i]);
+
+            return result;
+        }
+
+        template<AnyNumber TOtherNumber>
         Matrix<Tx, Ty, TNumber>& operator+=(const Matrix<Tx, Ty, TOtherNumber>& other)
         {
             for (UInt8 i = 0; i < Tx * Ty; ++i)
@@ -154,28 +165,35 @@ namespace Otter
         }
 
         template<AnyNumber TOtherNumber>
-        Matrix<Tx, Ty, TNumber> operator+(const Matrix<Tx, Ty, TOtherNumber>& other) const
+        friend decltype(auto) operator+(Matrix<Tx, Ty, TNumber>& lhs,
+                                        const Matrix<Tx, Ty, TOtherNumber>& rhs)
         {
-            return Matrix<Tx, Ty, TNumber>(*this) += other;
+            lhs += rhs;
+            return lhs;
         }
 
         template<AnyNumber TOtherNumber>
-        Matrix<Tx, Ty, TNumber> operator-(const Matrix<Tx, Ty, TOtherNumber>& other) const
+        friend decltype(auto) operator-(Matrix<Tx, Ty, TNumber>& lhs,
+                                        const Matrix<Tx, Ty, TOtherNumber>& rhs)
         {
-            return Matrix<Tx, Ty, TNumber>(*this) -= other;
+            lhs -= rhs;
+            return lhs;
         }
 
         template<AnyNumber TOtherNumber>
-        Matrix<Tx, Ty, TNumber> operator*(const TOtherNumber& scalar) const
+        friend decltype(auto) operator*(Matrix<Tx, Ty, TNumber>& lhs, const TOtherNumber& rhs)
         {
-            return Matrix<Tx, Ty, TNumber>(*this) *= scalar;
+            lhs *= rhs;
+            return lhs;
         }
 
         template<AnyNumber TOtherNumber>
-        Matrix<Tx, Ty, TNumber>& operator/(const TOtherNumber& scalar) const
+        friend decltype(auto) operator/(Matrix<Tx, Ty, TNumber>& lhs, const TOtherNumber& rhs)
         {
-            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
-            return Matrix<Tx, Ty, TNumber>(*this) /= scalar;
+            OTR_ASSERT_MSG(rhs != 0, "Division by zero")
+
+            lhs /= rhs;
+            return lhs;
         }
 
         template<AnyNumber TOtherNumber>
@@ -255,11 +273,11 @@ namespace Otter
     namespace Math
     {
         template<UInt8 Tx, UInt8 Ty>
-        OTR_INLINE constexpr Matrix<Tx, Ty, Int32> Zero() { return Matrix<Tx, Ty, Int32>(0); }
+        OTR_INLINE constexpr Matrix<Tx, Ty, Int32> MatrixZero() { return Matrix<Tx, Ty, Int32>(0); }
 
         template<UInt8 Tx, UInt8 Ty>
         requires Dimension<Tx> && Dimension<Ty> && (Tx == Ty)
-        constexpr Matrix<Tx, Ty, Int32> Identity();
+        constexpr Matrix<Tx, Ty, Int32> MatrixIdentity();
 
         template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
         requires Dimension<Tx> && Dimension<Ty>

@@ -91,7 +91,7 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE auto LerpClamped(const Vector<2, Tx>& lhs, const Vector<2, Ty>& rhs, const Tz& t)
     {
-        return Lerp(lhs, rhs, Clamp(t, 0, 1));
+        return Lerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
 
     template<AnyNumber Tx, AnyNumber Ty>

@@ -25,8 +25,8 @@ namespace Otter::Math
 
         return Math::AreApproximatelyEqual(lhs[0], rhs[0])
                && Math::AreApproximatelyEqual(lhs[1], rhs[1])
-               && Math::AreApproximatelyEqual(lhs[1], rhs[2])
-               && Math::AreApproximatelyEqual(lhs[2], rhs[3]);
+               && Math::AreApproximatelyEqual(lhs[2], rhs[2])
+               && Math::AreApproximatelyEqual(lhs[3], rhs[3]);
     }
 
     template<AnyNumber TNumber>
@@ -95,7 +95,7 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE auto LerpClamped(const Vector<4, Tx>& lhs, const Vector<4, Ty>& rhs, const Tz& t)
     {
-        return Lerp(lhs, rhs, Clamp(t, 0.0, 1.0));
+        return Lerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
 
     template<AnyNumber Tx, AnyNumber Ty>

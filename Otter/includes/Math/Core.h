@@ -152,7 +152,7 @@ namespace Otter::Math
     }
 
     template<AnyNumber TNumber>
-    OTR_INLINE constexpr auto Clamp01(TNumber value) { return Clamp(value, 0, 1); }
+    OTR_INLINE constexpr auto Clamp01(TNumber value) { return Clamp(value, (TNumber) 0.0, (TNumber) 1.0); }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto Lerp(Tx a, Ty b, Tz t) { return a + (b - a) * t; }

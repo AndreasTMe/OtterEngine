@@ -111,7 +111,7 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE auto LerpClamped(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
     {
-        return Lerp(lhs, rhs, Clamp(t, 0.0, 1.0));
+        return Lerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
@@ -127,7 +127,7 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE auto SlerpClamped(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
     {
-        return Slerp(lhs, rhs, Clamp(t, 0.0, 1.0));
+        return Slerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
 
     template<AnyNumber Tx, AnyNumber Ty>

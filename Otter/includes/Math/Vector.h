@@ -85,6 +85,17 @@ namespace Otter
         }
 
         template<AnyNumber TOtherNumber>
+        explicit operator Vector<TDimension, TOtherNumber>() const
+        {
+            Vector<TDimension, TOtherNumber> result;
+
+            for (UInt8 i = 0; i < TDimension; ++i)
+                result.m_Values[i] = static_cast<TOtherNumber>(m_Values[i]);
+
+            return result;
+        }
+
+        template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator+=(const Vector<TDimension, TOtherNumber>& other)
         {
             for (UInt8 i = 0; i < TDimension; ++i)
@@ -119,30 +130,10 @@ namespace Otter
         }
 
         template<AnyNumber TOtherNumber>
-        Vector<TDimension, TNumber>& operator*=(const Vector<TDimension, TOtherNumber>& other)
-        {
-            for (UInt8 i = 0; i < TDimension; ++i)
-                m_Values[i] *= static_cast<TNumber>(other.m_Values[i]);
-
-            return *this;
-        }
-
-        template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator*=(const TOtherNumber& scalar) noexcept
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] *= scalar;
-
-            return *this;
-        }
-
-        template<AnyNumber TOtherNumber>
-        Vector<TDimension, TNumber>& operator/=(const Vector<TDimension, TOtherNumber>& other)
-        {
-            OTR_ASSERT_MSG(other != Vector(0), "Division by zero")
-
-            for (UInt8 i = 0; i < TDimension; ++i)
-                m_Values[i] /= static_cast<TNumber>(other.m_Values[i]);
 
             return *this;
         }
@@ -159,28 +150,35 @@ namespace Otter
         }
 
         template<AnyNumber TOtherNumber>
-        Vector<TDimension, TNumber> operator+(const Vector<TDimension, TOtherNumber>& other) const
+        friend decltype(auto) operator+(Vector<TDimension, TNumber> lhs,
+                                        const Vector<TDimension, TOtherNumber>& rhs)
         {
-            return Vector<TDimension, TNumber>(*this) += other;
+            lhs += rhs;
+            return lhs;
         }
 
         template<AnyNumber TOtherNumber>
-        Vector<TDimension, TNumber> operator-(const Vector<TDimension, TOtherNumber>& other) const
+        friend decltype(auto) operator-(Vector<TDimension, TNumber> lhs,
+                                        const Vector<TDimension, TOtherNumber>& rhs)
         {
-            return Vector<TDimension, TNumber>(*this) -= other;
+            lhs -= rhs;
+            return lhs;
         }
 
         template<AnyNumber TOtherNumber>
-        Vector<TDimension, TNumber> operator*(const TOtherNumber& scalar) const
+        friend decltype(auto) operator*(Vector<TDimension, TNumber> lhs, const TOtherNumber& rhs)
         {
-            return Vector<TDimension, TNumber>(*this) *= scalar;
+            lhs *= rhs;
+            return lhs;
         }
 
         template<AnyNumber TOtherNumber>
-        Vector<TDimension, TNumber> operator/(const TOtherNumber& scalar) const
+        friend decltype(auto) operator/(Vector<TDimension, TNumber> lhs, const TOtherNumber& rhs)
         {
-            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
-            return Vector<TDimension, TNumber>(*this) /= scalar;
+            OTR_ASSERT_MSG(rhs != 0, "Division by zero")
+
+            lhs /= rhs;
+            return lhs;
         }
 
         template<AnyNumber TOtherNumber>
