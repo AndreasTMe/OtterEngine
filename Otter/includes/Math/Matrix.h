@@ -17,7 +17,7 @@ namespace Otter
         constexpr Matrix()
         {
             for (UInt8 i = 0; i < Tx * Ty; ++i)
-                m_Values[i] = 0;
+                m_Values[i] = static_cast<TNumber>(0.0);
         }
 
         constexpr explicit Matrix(TNumber scalar)
@@ -106,6 +106,22 @@ namespace Otter
 
             for (UInt8 i = 0; i < Tx * Ty; ++i)
                 result[i] = static_cast<TOtherNumber>(m_Values[i]);
+
+            return result;
+        }
+
+        template<UInt8 TOtherX, UInt8 TOtherY, AnyNumber TOtherNumber>
+        requires Dimension<TOtherX> && Dimension<TOtherY>
+        explicit operator Matrix<TOtherX, TOtherY, TOtherNumber>() const
+        {
+            Matrix<TOtherX, TOtherY, TOtherNumber> result;
+
+            for (UInt8 j = 0; j < TOtherY; ++j)
+                for (UInt8 i = 0; i < TOtherX; ++i)
+                    if (i >= Tx || j >= Ty)
+                        result[i, j] = static_cast<TOtherNumber>(0.0);
+                    else
+                        result[i, j] = static_cast<TOtherNumber>(m_Values[j + i * Ty]);
 
             return result;
         }

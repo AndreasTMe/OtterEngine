@@ -16,7 +16,7 @@ namespace Otter
         constexpr Vector()
         {
             for (UInt8 i = 0; i < TDimension; ++i)
-                m_Values[i] = 0;
+                m_Values[i] = static_cast<TNumber>(0.0);
         }
 
         constexpr explicit Vector(TNumber scalar)
