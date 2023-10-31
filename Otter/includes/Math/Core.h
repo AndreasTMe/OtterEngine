@@ -54,8 +54,8 @@ namespace Otter::Math
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto Abs(TNumber x) { return x < 0 ? -x : x; }
 
-    template<FloatingPointNumber TNumber>
-    OTR_INLINE constexpr bool AreApproximatelyEqual(TNumber a, TNumber b) { return Abs(a - b) < Epsilon<TNumber>; }
+    template<AnyNumber TNumber>
+    OTR_INLINE constexpr bool AreApproximatelyEqual(TNumber a, TNumber b) { return Abs(a - b) < Epsilon<Double128>; }
 
     template<AnyNumber TNumber>
     OTR_INLINE constexpr bool IsApproximatelyZero(TNumber x)
