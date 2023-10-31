@@ -6,7 +6,7 @@
 namespace Otter::Math
 {
     template<>
-    OTR_INLINE Matrix<2, 2, Int32> Identity<2, 2>()
+    OTR_INLINE constexpr Matrix<2, 2, Int32> Identity<2, 2>()
     {
         return Matrix<2, 2, Int32>{
             1, 0,

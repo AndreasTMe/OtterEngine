@@ -6,7 +6,7 @@
 namespace Otter::Math
 {
     template<>
-    OTR_INLINE Matrix<3, 3, Int32> Identity<3, 3>()
+    OTR_INLINE constexpr Matrix<3, 3, Int32> Identity<3, 3>()
     {
         return Matrix<3, 3, Int32>{
             1, 0, 0,
@@ -50,14 +50,14 @@ namespace Otter::Math
         // The minor is the determinant of the sub-matrix formed by deleting one row and one column from
         // the original matrix.
         //
-        //    | 0 1 2 |          | 4 5 |          | 3 5 |          | 3 4 |
-        // inv| 3 4 5 | = 0 * det| 7 8 | - 1 * det| 6 8 | + 2 * det| 6 7 |
-        //    | 6 7 8 |
-        //                       | 1 2 |          | 0 2 |          | 0 1 |
-        //               -3 * det| 7 8 | + 4 * det| 6 8 | - 5 * det| 6 7 |
-        //
-        //                       | 1 2 |          | 0 2 |          | 0 1 |
-        //              + 6 * det| 4 5 | - 7 * det| 3 5 | + 8 * det| 3 4 |
+        //                |         | 4 5 |            | 3 5 |            | 3 4 | |
+        //                |  0 * det| 7 8 |   - 1 * det| 6 8 |   + 2 * det| 6 7 | |
+        //                |                                                       |
+        //    | 0 1 2 |   |         | 1 2 |            | 0 2 |            | 0 1 | |
+        // inv| 3 4 5 | = | -3 * det| 7 8 |   + 4 * det| 6 8 |   - 5 * det| 6 7 | |
+        //    | 6 7 8 |   |                                                       |
+        //                |         | 1 2 |            | 0 2 |            | 0 1 | |
+        //                | +6 * det| 4 5 |   - 7 * det| 3 5 |   + 8 * det| 3 4 | |
 
         const auto m0 = matrix[4] * matrix[8] - matrix[5] * matrix[7];
         const auto m1 = matrix[3] * matrix[8] - matrix[5] * matrix[6];

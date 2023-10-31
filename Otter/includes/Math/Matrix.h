@@ -14,13 +14,13 @@ namespace Otter
     requires Dimension<Tx> && Dimension<Ty> && (!UnsignedNumber<TNumber>)
     struct Matrix final
     {
-        Matrix()
+        constexpr Matrix()
         {
             for (UInt8 i = 0; i < Tx * Ty; ++i)
                 m_Values[i] = 0;
         }
 
-        explicit Matrix(TNumber scalar)
+        constexpr explicit Matrix(TNumber scalar)
         {
             for (UInt8 i = 0; i < Tx * Ty; ++i)
                 m_Values[i] = scalar;
@@ -28,7 +28,7 @@ namespace Otter
 
         template<typename... TArgs>
         requires((sizeof...(TArgs) == Tx * Ty - 1 && (AnyNumber<TArgs> && ...)))
-        explicit Matrix(TNumber x, TArgs... args)
+        constexpr explicit Matrix(TNumber x, TArgs... args)
         {
             m_Values[0] = x;
 
@@ -83,7 +83,7 @@ namespace Otter
         {
             OTR_ASSERT_MSG(x < Tx, "Row index {0} is out of range", x)
             OTR_ASSERT_MSG(y < Ty, "Column index {0} is out of range", y)
-            return m_Values[x + y * Tx];
+            return m_Values[y + x * Ty];
         }
 
         const TNumber& operator[](UInt8 index) const
@@ -96,7 +96,7 @@ namespace Otter
         {
             OTR_ASSERT_MSG(x < Tx, "Row index {0} is out of range", x)
             OTR_ASSERT_MSG(y < Ty, "Column index {0} is out of range", y)
-            return m_Values[x + y * Tx];
+            return m_Values[y + x * Ty];
         }
 
         template<AnyNumber TOtherNumber>
@@ -255,11 +255,11 @@ namespace Otter
     namespace Math
     {
         template<UInt8 Tx, UInt8 Ty>
-        OTR_INLINE Matrix<Tx, Ty, Int32> Zero() { return Matrix<Tx, Ty, Int32>(0); }
+        OTR_INLINE constexpr Matrix<Tx, Ty, Int32> Zero() { return Matrix<Tx, Ty, Int32>(0); }
 
         template<UInt8 Tx, UInt8 Ty>
         requires Dimension<Tx> && Dimension<Ty> && (Tx == Ty)
-        Matrix<Tx, Ty, Int32> Identity();
+        constexpr Matrix<Tx, Ty, Int32> Identity();
 
         template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
         requires Dimension<Tx> && Dimension<Ty>
@@ -272,6 +272,20 @@ namespace Otter
         template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
         requires Dimension<Tx> && Dimension<Ty> && (Tx == Ty)
         Matrix<Tx, Ty, TNumber> Inverse(const Matrix<Tx, Ty, TNumber>& matrix);
+
+        template<UInt8 Tx, UInt8 Ty, UInt8 Tz, AnyNumber TNumber, AnyNumber TOtherNumber>
+        requires Dimension<Tx> && Dimension<Ty> && Dimension<Tz>
+        OTR_INLINE decltype(auto) Multiply(const Matrix<Tx, Ty, TNumber>& m1, const Matrix<Ty, Tz, TOtherNumber>& m2)
+        {
+            Matrix<Tx, Tz, decltype(TNumber{ } * TOtherNumber{ })> result;
+
+            for (int col = 0; col < Tz; col++)
+                for (int row = 0; row < Tx; row++)
+                    for (int inner = 0; inner < Ty; inner++)
+                        result[row, col] += m1[row, inner] * m2[inner, col];
+
+            return result;
+        }
     }
 }
 
