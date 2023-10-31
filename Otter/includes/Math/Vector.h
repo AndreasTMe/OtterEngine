@@ -13,13 +13,13 @@ namespace Otter
     struct Vector final
     {
     public:
-        Vector()
+        constexpr Vector()
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] = 0;
         }
 
-        explicit Vector(TNumber scalar)
+        constexpr explicit Vector(TNumber scalar)
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] = scalar;
@@ -27,7 +27,7 @@ namespace Otter
 
         template<typename... TArgs>
         requires (sizeof...(TArgs) == TDimension - 1 && (AnyNumber<TArgs>&& ...))
-        explicit Vector(TNumber x, TArgs... args)
+        constexpr explicit Vector(TNumber x, TArgs... args)
         {
             m_Values[0] = x;
 
@@ -233,46 +233,46 @@ namespace Otter
     {
         template<UInt8 TDimension>
         requires Dimension<TDimension> && (TDimension < 4)
-        Vector<TDimension, Int32> Left();
+        constexpr Vector<TDimension, Int32> Left();
 
         template<UInt8 TDimension>
         requires Dimension<TDimension> && (TDimension < 4)
-        Vector<TDimension, Int32> Right();
+        constexpr Vector<TDimension, Int32> Right();
 
         template<UInt8 TDimension>
         requires Dimension<TDimension> && (TDimension < 4)
-        Vector<TDimension, Int32> Down();
+        constexpr Vector<TDimension, Int32> Down();
 
         template<UInt8 TDimension>
         requires Dimension<TDimension> && (TDimension < 4)
-        Vector<TDimension, Int32> Up();
+        constexpr Vector<TDimension, Int32> Up();
 
         template<UInt8 TDimension>
         requires Dimension<TDimension> && (TDimension == 3)
-        Vector<TDimension, Int32> Back();
+        constexpr Vector<TDimension, Int32> Back();
 
         template<UInt8 TDimension>
         requires Dimension<TDimension> && (TDimension == 3)
-        Vector<TDimension, Int32> Forward();
+        constexpr Vector<TDimension, Int32> Forward();
 
         template<UInt8 TDimension>
         requires Dimension<TDimension>
-        OTR_INLINE Vector<TDimension, Int32> VectorOne() { return Vector<TDimension, Int32>(1); }
+        OTR_INLINE constexpr Vector<TDimension, Int32> VectorOne() { return Vector<TDimension, Int32>(1); }
 
         template<UInt8 TDimension>
         requires Dimension<TDimension>
-        OTR_INLINE Vector<TDimension, Int32> VectorZero() { return Vector<TDimension, Int32>(0); }
+        OTR_INLINE constexpr Vector<TDimension, Int32> VectorZero() { return Vector<TDimension, Int32>(0); }
 
         template<UInt8 TDimension, AnyNumber TNumber>
         requires Dimension<TDimension>
-        OTR_INLINE Vector<TDimension, TNumber> VectorPositiveInfinity()
+        OTR_INLINE constexpr Vector<TDimension, TNumber> VectorPositiveInfinity()
         {
             return Vector<TDimension, TNumber>(PositiveInfinity<TNumber>());
         }
 
         template<UInt8 TDimension, AnyNumber TNumber>
         requires Dimension<TDimension>
-        OTR_INLINE Vector<TDimension, TNumber> VectorNegativeInfinity()
+        OTR_INLINE constexpr Vector<TDimension, TNumber> VectorNegativeInfinity()
         {
             return Vector<TDimension, TNumber>(NegativeInfinity<TNumber>());
         }
