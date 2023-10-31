@@ -139,7 +139,7 @@ namespace Otter
         template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator/=(const Vector<TDimension, TOtherNumber>& other)
         {
-            OTR_ASSERT_MSG(other != VectorZero<TDimension>(), "Division by zero")
+            OTR_ASSERT_MSG(other != Vector(0), "Division by zero")
 
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] /= static_cast<TNumber>(other.m_Values[i]);
@@ -257,19 +257,25 @@ namespace Otter
 
         template<UInt8 TDimension>
         requires Dimension<TDimension>
-        Vector<TDimension, Int32> VectorOne();
+        OTR_INLINE Vector<TDimension, Int32> VectorOne() { return Vector<TDimension, Int32>(1); }
 
         template<UInt8 TDimension>
         requires Dimension<TDimension>
-        Vector<TDimension, Int32> VectorZero();
+        OTR_INLINE Vector<TDimension, Int32> VectorZero() { return Vector<TDimension, Int32>(0); }
 
         template<UInt8 TDimension, AnyNumber TNumber>
         requires Dimension<TDimension>
-        Vector<TDimension, TNumber> VectorPositiveInfinity();
+        OTR_INLINE Vector<TDimension, TNumber> VectorPositiveInfinity()
+        {
+            return Vector<TDimension, TNumber>(PositiveInfinity<TNumber>());
+        }
 
         template<UInt8 TDimension, AnyNumber TNumber>
         requires Dimension<TDimension>
-        Vector<TDimension, TNumber> VectorNegativeInfinity();
+        OTR_INLINE Vector<TDimension, TNumber> VectorNegativeInfinity()
+        {
+            return Vector<TDimension, TNumber>(NegativeInfinity<TNumber>());
+        }
     }
 }
 

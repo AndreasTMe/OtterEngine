@@ -1,7 +1,6 @@
 #ifndef OTTERENGINE_MATH_VECTOR3_H
 #define OTTERENGINE_MATH_VECTOR3_H
 
-#include "Math/Core.h"
 #include "Math/Vector.h"
 
 namespace Otter::Math
@@ -23,28 +22,6 @@ namespace Otter::Math
 
     template<>
     OTR_INLINE Vector<3, Int32> Forward() { return Vector<3, Int32>(0, 0, 1); }
-
-    template<>
-    OTR_INLINE Vector<3, Int32> VectorOne() { return Vector<3, Int32>(1, 1, 1); }
-
-    template<>
-    OTR_INLINE Vector<3, Int32> VectorZero() { return Vector<3, Int32>(0, 0, 0); }
-
-    template<AnyNumber TNumber>
-    OTR_INLINE Vector<3, TNumber> VectorPositiveInfinity()
-    {
-        return Vector<3, TNumber>(PositiveInfinity<TNumber>(),
-                                  PositiveInfinity<TNumber>(),
-                                  PositiveInfinity<TNumber>());
-    }
-
-    template<AnyNumber TNumber>
-    OTR_INLINE Vector<3, TNumber> VectorNegativeInfinity()
-    {
-        return Vector<3, TNumber>(NegativeInfinity<TNumber>(),
-                                  NegativeInfinity<TNumber>(),
-                                  NegativeInfinity<TNumber>());
-    }
 
     template<AnyNumber TNumber>
     OTR_INLINE bool IsApproximatelyZero(const Vector<3, TNumber>& vector)
@@ -80,7 +57,7 @@ namespace Otter::Math
     template<AnyNumber TNumber, AnyNumber TMaxMagnitude>
     OTR_INLINE auto ClampMagnitude(const Vector<3, TNumber>& vector, const TMaxMagnitude& maxMagnitude)
     {
-        auto magnitudeSquared = MagnitudeSquared(vector);
+        const auto magnitudeSquared = MagnitudeSquared(vector);
         if (magnitudeSquared > Square(maxMagnitude))
             return vector * Min(maxMagnitude / Sqrt(magnitudeSquared), 1);
 
@@ -90,7 +67,7 @@ namespace Otter::Math
     template<AnyNumber TNumber>
     OTR_INLINE auto Normalise(const Vector<3, TNumber>& vector)
     {
-        auto magnitude = Magnitude(vector);
+        const auto magnitude = Magnitude(vector);
         if (magnitude < Epsilon<Double128>)
             return VectorZero<3>;
 
@@ -186,7 +163,7 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty>
     OTR_INLINE auto Project(const Vector<3, Tx>& vector, const Vector<3, Ty>& normal)
     {
-        auto magnitudeSquared = MagnitudeSquared(normal);
+        const auto magnitudeSquared = MagnitudeSquared(normal);
         if (magnitudeSquared < Epsilon<Double128>)
             return VectorZero<3>;
 
@@ -196,7 +173,7 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty>
     OTR_INLINE auto Angle(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs)
     {
-        auto magnitudeProduct = Magnitude(lhs) * Magnitude(rhs);
+        const auto magnitudeProduct = Magnitude(lhs) * Magnitude(rhs);
         if (magnitudeProduct < Epsilon<Double128>)
             return 0;
 

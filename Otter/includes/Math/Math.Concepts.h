@@ -19,6 +19,12 @@ namespace Otter
     template<typename T>
     concept FloatingPointNumber = AnyNumber<T> && std::is_floating_point_v<T>;
 
+    template<typename T>
+    concept SignedNumber = std::is_signed_v<T>;
+
+    template<typename T>
+    concept UnsignedNumber = std::is_unsigned_v<T>;
+
     template<UInt8 num>
     concept Dimension = num == 2 || num == 3 || num == 4;
 }

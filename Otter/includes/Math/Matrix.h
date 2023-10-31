@@ -10,7 +10,8 @@
 
 namespace Otter
 {
-    template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber> requires Dimension<Tx> && Dimension<Ty>
+    template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
+    requires Dimension<Tx> && Dimension<Ty> && (!UnsignedNumber<TNumber>)
     struct Matrix final
     {
         Matrix()
@@ -254,7 +255,7 @@ namespace Otter
     namespace Math
     {
         template<UInt8 Tx, UInt8 Ty>
-        Matrix<Tx, Ty, Int32> Zero();
+        OTR_INLINE Matrix<Tx, Ty, Int32> Zero() { return Matrix<Tx, Ty, Int32>(0); }
 
         template<UInt8 Tx, UInt8 Ty>
         requires Dimension<Tx> && Dimension<Ty> && (Tx == Ty)
@@ -265,12 +266,12 @@ namespace Otter
         TNumber Determinant(const Matrix<Tx, Ty, TNumber>& matrix);
 
         template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
-        requires Dimension<Tx> && Dimension<Ty> && (Tx == Ty)
-        Matrix<Tx, Ty, TNumber> Inverse(const Matrix<Tx, Ty, TNumber>& matrix);
-
-        template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
         requires Dimension<Tx> && Dimension<Ty>
         Matrix<Ty, Tx, TNumber> Transpose(const Matrix<Tx, Ty, TNumber>& matrix);
+
+        template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
+        requires Dimension<Tx> && Dimension<Ty> && (Tx == Ty)
+        Matrix<Tx, Ty, TNumber> Inverse(const Matrix<Tx, Ty, TNumber>& matrix);
     }
 }
 

@@ -1,7 +1,6 @@
 #ifndef OTTERENGINE_MATH_VECTOR2_H
 #define OTTERENGINE_MATH_VECTOR2_H
 
-#include "Math/Core.h"
 #include "Math/Vector.h"
 
 namespace Otter::Math
@@ -17,24 +16,6 @@ namespace Otter::Math
 
     template<>
     OTR_INLINE Vector<2, Int32> Up() { return Vector<2, Int32>(0, 1); }
-
-    template<>
-    OTR_INLINE Vector<2, Int32> VectorOne() { return Vector<2, Int32>(1, 1); }
-
-    template<>
-    OTR_INLINE Vector<2, Int32> VectorZero() { return Vector<2, Int32>(0, 0); }
-
-    template<AnyNumber TNumber>
-    OTR_INLINE Vector<2, TNumber> VectorPositiveInfinity()
-    {
-        return Vector<2, TNumber>(PositiveInfinity<TNumber>(), PositiveInfinity<TNumber>());
-    }
-
-    template<AnyNumber TNumber>
-    OTR_INLINE Vector<2, TNumber> VectorNegativeInfinity()
-    {
-        return Vector<2, TNumber>(NegativeInfinity<TNumber>(), NegativeInfinity<TNumber>());
-    }
 
     template<AnyNumber TNumber>
     OTR_INLINE bool IsApproximatelyZero(const Vector<2, TNumber>& vector)
@@ -66,7 +47,7 @@ namespace Otter::Math
     template<AnyNumber TNumber, AnyNumber TMaxMagnitude>
     OTR_INLINE auto ClampMagnitude(const Vector<2, TNumber>& vector, const TMaxMagnitude& maxMagnitude)
     {
-        auto magnitudeSquared = MagnitudeSquared(vector);
+        const auto magnitudeSquared = MagnitudeSquared(vector);
         if (magnitudeSquared > Square(maxMagnitude))
             return vector * Min(maxMagnitude / Sqrt(magnitudeSquared), 1);
 
@@ -76,7 +57,7 @@ namespace Otter::Math
     template<AnyNumber TNumber>
     OTR_INLINE auto Normalise(const Vector<2, TNumber>& vector)
     {
-        auto magnitude = Magnitude(vector);
+        const auto magnitude = Magnitude(vector);
         if (magnitude < Epsilon<Double128>)
             return VectorZero<2>;
 
@@ -143,7 +124,7 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty>
     OTR_INLINE auto Angle(const Vector<2, Tx>& lhs, const Vector<2, Ty>& rhs)
     {
-        auto magnitudeProduct = Magnitude(lhs) * Magnitude(rhs);
+        const auto magnitudeProduct = Magnitude(lhs) * Magnitude(rhs);
         if (magnitudeProduct < Epsilon<Double128>)
             return 0;
 
