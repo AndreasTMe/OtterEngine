@@ -51,7 +51,7 @@ namespace Otter
                     ss << "[FATAL]: ";
                     break;
 
-#pragma clang diagnostic push // HELP: The code appears faded out as it is unreachable, this disables it.
+#pragma clang diagnostic push
 #pragma ide diagnostic ignored "UnreachableCode"
 
                 default:

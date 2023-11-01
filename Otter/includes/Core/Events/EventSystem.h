@@ -1,8 +1,6 @@
 #ifndef OTTERENGINE_EVENTSYSTEM_H
 #define OTTERENGINE_EVENTSYSTEM_H
 
-#include <unordered_map>
-
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Delegates.h"
@@ -21,32 +19,21 @@ namespace Otter
         OTR_DISABLE_OBJECT_COPIES(EventSystem)
         OTR_DISABLE_OBJECT_MOVES(EventSystem)
 
-        [[nodiscard]] OTR_INLINE static EventSystem* GetInstance()
-        {
-            static EventSystem instance;
-            return &instance;
-        }
-
-        void Initialise();
-        void Shutdown();
+        static void Initialise();
+        static void Shutdown();
 
         template<typename TEvent, typename... TArgs>
-        void Schedule(TArgs&& ... args)
+        static void Schedule(TArgs&& ... args)
         {
-            m_Events.Enqueue(TEvent(std::forward<TArgs>(args)...));
+            s_Events.Enqueue(TEvent(std::forward<TArgs>(args)...));
         }
 
-        void Process();
+        static void Process();
 
     private:
-        OTR_WITH_DEFAULT_CONSTRUCTOR(EventSystem)
+        OTR_DISABLE_CONSTRUCTION(EventSystem)
 
-        Queue<Internal::Event> m_Events{ };
-
-        template<typename TEvent = Internal::Event, typename TActionArg = const TEvent&>
-        void AddListener(Internal::EventType type, const Func<bool, TActionArg>& action);
-        void RemoveAllListeners();
-        void ClearEvents();
+        static Queue<Internal::Event> s_Events;
     };
 }
 

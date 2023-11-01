@@ -7,7 +7,12 @@ namespace Otter
     using Event = Internal::Event;
     using EventType = Internal::EventType;
 
+    Queue<Event> EventSystem::s_Events{ };
+
     Dictionary<EventType, UnsafeHandle> g_Listeners;
+
+    template<typename TEvent = Event, typename TActionArg = const TEvent&>
+    void AddListener(EventType type, const Func<bool, TActionArg>& action);
 
     void EventSystem::Initialise()
     {
@@ -41,8 +46,16 @@ namespace Otter
 
     void EventSystem::Shutdown()
     {
-        RemoveAllListeners();
-        ClearEvents();
+        Action<const UnsafeHandle&> deleteAction{ };
+        deleteAction += [](const UnsafeHandle& handle)
+        {
+            Unsafe::Delete(handle);
+        };
+
+        g_Listeners.ForEachValue(deleteAction);
+        g_Listeners.ClearDestructive();
+
+        s_Events.ClearDestructive();
 
         GlobalActions::OnMouseDragged.ClearDestructive();
         GlobalActions::OnMouseMoved.ClearDestructive();
@@ -65,7 +78,7 @@ namespace Otter
     void EventSystem::Process()
     {
         Event event;
-        while (m_Events.TryPeek(event))
+        while (s_Events.TryPeek(event))
         {
             auto type = event.GetEventType();
 
@@ -73,12 +86,12 @@ namespace Otter
             if (g_Listeners.TryGet(type, handle))
                 ((Func<bool, const Event&>*) handle.m_Pointer)->ReverseInvoke(event);
 
-            m_Events.TryDequeue();
+            s_Events.TryDequeue();
         }
     }
 
     template<typename TEvent, typename TActionArg>
-    void EventSystem::AddListener(EventType type, const Func<bool, TActionArg>& action)
+    void AddListener(EventType type, const Func<bool, TActionArg>& action)
     {
         OTR_INTERNAL_ASSERT_MSG(type != EventType::None, "Event type cannot be None")
         OTR_INTERNAL_ASSERT_MSG(type != EventType::Max, "Event type cannot be Max")
@@ -89,22 +102,5 @@ namespace Otter
         UnsafeHandle handle = Unsafe::New(sizeof(Func<bool, const Event&>));
         handle.m_Pointer = new(handle.m_Pointer) Func<bool, TActionArg>(action);
         g_Listeners.TryAdd(type, handle);
-    }
-
-    void EventSystem::RemoveAllListeners()
-    {
-        Action<const UnsafeHandle&> deleteAction{ };
-        deleteAction += [](const UnsafeHandle& handle)
-        {
-            Unsafe::Delete(handle);
-        };
-
-        g_Listeners.ForEachValue(deleteAction);
-        g_Listeners.ClearDestructive();
-    }
-
-    void EventSystem::ClearEvents()
-    {
-        m_Events.ClearDestructive();
     }
 }

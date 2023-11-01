@@ -3,9 +3,9 @@
 #include "Platform/Platform.h"
 
 #if OTR_PLATFORM_WINDOWS
-#include "Platform/PlatformWin32.h"
+#include "Platform/Windows/Platform.Win32.h"
 #elif OTR_PLATFORM_LINUX
-#include "Platform/PlatformLinux.h"
+#include "Platform/Linux/PlatformLinux.h"
 #else
 #error "Unsupported platform"
 #endif

@@ -6,10 +6,16 @@ file(GLOB_RECURSE SOURCES src/*.cpp)
 file(GLOB_RECURSE HEADERS includes/*.h)
 list(REMOVE_ITEM HEADERS includes/Otter.PCH.h)
 
-#add_subdirectory()
-
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
-#target_link_libraries(${PROJECT_NAME} PRIVATE ...)
+
+find_package(Vulkan REQUIRED)
+if (Vulkan_FOUND)
+    message(STATUS "Vulkan found, linking ${PROJECT_NAME} with Vulkan...")
+
+    target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
+endif ()
+
 target_precompile_headers(${PROJECT_NAME} PRIVATE includes/Otter.PCH.h)
 target_include_directories(${PROJECT_NAME} PRIVATE includes)
 

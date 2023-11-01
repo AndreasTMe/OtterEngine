@@ -1,18 +1,18 @@
-#ifndef OTTERENGINE_PLATFORMWIN32_H
-#define OTTERENGINE_PLATFORMWIN32_H
+#ifndef OTTERENGINE_PLATFORM_LINUX_H
+#define OTTERENGINE_PLATFORM_LINUX_H
 
 #include "Core/Defines/Defines.Platform.h"
 
-#if OTR_PLATFORM_WINDOWS
+#if OTR_PLATFORM_LINUX
 
 #include "Platform/Platform.h"
 
 namespace Otter::Internal
 {
-    class WindowsPlatform final : public Platform
+    class LinuxPlatform final : public Platform
     {
     public:
-        OTR_WITH_DEFAULT_CONSTRUCTOR_AND_FINAL_DESTRUCTOR(WindowsPlatform);
+        OTR_WITH_DEFAULT_CONSTRUCTOR_AND_FINAL_DESTRUCTOR(LinuxPlatform);
 
         bool Startup(const char* title,
                      UInt16 left,
@@ -22,9 +22,9 @@ namespace Otter::Internal
         void Shutdown() final;
         void CaptureWindowEvents() final;
 
+        [[nodiscard]] OTR_INLINE bool IsRunning() const final { return m_IsRunning; }
         [[nodiscard]] OTR_INLINE UInt16 GetWidth() const final { return m_Width; }
         [[nodiscard]] OTR_INLINE UInt16 GetHeight() const final { return m_Height; }
-        [[nodiscard]] OTR_INLINE bool IsRunning() const final { return m_IsRunning; }
 
         [[nodiscard]] Double64 GetAbsoluteTime() const final;
 
@@ -32,19 +32,11 @@ namespace Otter::Internal
         UInt16 m_Width     = 0;
         UInt16 m_Height    = 0;
         bool   m_IsRunning = false;
-
-        void RegisterEvents();
-        bool InitialiseWindow(const char* title,
-                              UInt16 left,
-                              UInt16 top,
-                              UInt16 width,
-                              UInt16 height);
-        void InitialiseInternalClock();
     };
 }
 
-OTR_WITH_TYPENAME(Otter::Internal::WindowsPlatform)
+OTR_WITH_TYPENAME(Otter::Internal::LinuxPlatform)
 
-#endif // OTR_PLATFORM_WINDOWS
+#endif // OTR_PLATFORM_LINUX
 
-#endif //OTTERENGINE_PLATFORMWIN32_H
+#endif //OTTERENGINE_PLATFORM_LINUX_H

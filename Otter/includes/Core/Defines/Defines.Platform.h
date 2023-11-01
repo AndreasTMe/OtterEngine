@@ -13,6 +13,7 @@
     #endif
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
+    #define OTR_PLATFORM_APPLE 1
     #if TARGET_IPHONE_SIMULATOR
         #define OTR_PLATFORM_IPHONE_SIMULATOR 1
         #error "iOS, tvOS or watchOS simulator is currently not supported!"

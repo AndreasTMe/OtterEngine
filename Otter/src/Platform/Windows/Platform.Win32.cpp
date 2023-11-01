@@ -1,6 +1,6 @@
 #include "Otter.PCH.h"
 
-#include "Platform/PlatformWin32.h"
+#include "Platform/Windows/Platform.Win32.h"
 
 #if OTR_PLATFORM_WINDOWS
 
@@ -86,6 +86,11 @@ namespace Otter::Internal
         QueryPerformanceCounter(&currentTime);
 
         return static_cast<Double64>(currentTime.QuadPart - s_ClockStart.QuadPart) * s_ClockFrequency;
+    }
+
+    const void* WindowsPlatform::GetUnsafeWindow() const
+    {
+        return ((WindowsPlatformWindowData*) m_Context->m_Window)->m_Window;
     }
 
     void WindowsPlatform::RegisterEvents()
@@ -210,7 +215,7 @@ namespace Otter::Internal
         {
             case WM_QUIT:
             case WM_CLOSE:
-                EventSystem::GetInstance()->Schedule<WindowCloseEvent>();
+                EventSystem::Schedule<WindowCloseEvent>();
                 return 0;
             case WM_DESTROY:
                 PostQuitMessage(0);
@@ -237,9 +242,9 @@ namespace Otter::Internal
             {
                 RECT clientRect;
                 GetClientRect(window, &clientRect);
-                EventSystem::GetInstance()->Schedule<WindowResizeEvent>(clientRect.right - clientRect.left,
-                                                                        clientRect.bottom - clientRect.top,
-                                                                        userIsResizing);
+                EventSystem::Schedule<WindowResizeEvent>(clientRect.right - clientRect.left,
+                                                         clientRect.bottom - clientRect.top,
+                                                         userIsResizing);
             }
                 break;
             case WM_KEYDOWN:
@@ -264,49 +269,49 @@ namespace Otter::Internal
                     keyCode = static_cast<KeyCode>(wParam);
 
                 if (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)
-                    EventSystem::GetInstance()->Schedule<KeyPressedEvent>(keyCode);
+                    EventSystem::Schedule<KeyPressedEvent>(keyCode);
                 else
-                    EventSystem::GetInstance()->Schedule<KeyReleasedEvent>(keyCode);
+                    EventSystem::Schedule<KeyReleasedEvent>(keyCode);
 
                 // TODO: Implement key hold event
 
                 return 0;
             }
             case WM_MOUSEMOVE:
-                EventSystem::GetInstance()->Schedule<MouseMovedEvent>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+                EventSystem::Schedule<MouseMovedEvent>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
                 break;
             case WM_MOUSEWHEEL:
             {
                 Int16 delta = GET_WHEEL_DELTA_WPARAM(wParam);
                 if (delta != 0)
-                    EventSystem::GetInstance()->Schedule<MouseScrollEvent>(delta > 0);
+                    EventSystem::Schedule<MouseScrollEvent>(delta > 0);
             }
                 break;
             case WM_LBUTTONDOWN:
             case WM_LBUTTONUP:
             {
                 if (message == WM_LBUTTONDOWN)
-                    EventSystem::GetInstance()->Schedule<MouseButtonPressedEvent>(MouseButton::Left);
+                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Left);
                 else
-                    EventSystem::GetInstance()->Schedule<MouseButtonReleasedEvent>(MouseButton::Left);
+                    EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Left);
             }
                 break;
             case WM_MBUTTONDOWN:
             case WM_MBUTTONUP:
             {
                 if (message == WM_MBUTTONDOWN)
-                    EventSystem::GetInstance()->Schedule<MouseButtonPressedEvent>(MouseButton::Middle);
+                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Middle);
                 else
-                    EventSystem::GetInstance()->Schedule<MouseButtonReleasedEvent>(MouseButton::Middle);
+                    EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Middle);
             }
                 break;
             case WM_RBUTTONDOWN:
             case WM_RBUTTONUP:
             {
                 if (message == WM_RBUTTONDOWN)
-                    EventSystem::GetInstance()->Schedule<MouseButtonPressedEvent>(MouseButton::Right);
+                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Right);
                 else
-                    EventSystem::GetInstance()->Schedule<MouseButtonReleasedEvent>(MouseButton::Right);
+                    EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Right);
             }
                 break;
             default:

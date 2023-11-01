@@ -15,18 +15,8 @@ namespace Otter
         UInt64 m_Size;
     };
 
-    class Memory
+    namespace MemorySystem
     {
-    public:
-        OTR_DISABLE_OBJECT_COPIES(Memory)
-        OTR_DISABLE_OBJECT_MOVES(Memory)
-
-        [[nodiscard]] OTR_INLINE static Memory* GetInstance()
-        {
-            static Memory instance;
-            return &instance;
-        }
-
         void Initialise();
         void Shutdown();
 
@@ -38,17 +28,7 @@ namespace Otter
         void MemoryClear(void* block, const UInt64& size);
 
         // TODO: Will probably be removed
-        [[nodiscard]] OTR_INLINE const std::string GetTotalAllocation()
-        {
-            return std::to_string(m_Allocator.GetMemoryUsed()) + " / "
-                   + std::to_string(m_Allocator.GetMemorySize()) + " bytes";
-        }
-
-    private:
-        OTR_WITH_DEFAULT_CONSTRUCTOR(Memory)
-
-        bool              m_HasInitialised = false;
-        FreeListAllocator m_Allocator;
+        [[nodiscard]] std::string GetTotalAllocation();
     };
 
     template<typename T, typename... TArgs>
@@ -56,7 +36,7 @@ namespace Otter
     {
         UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(T), OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-        UnsafeHandle handle = Memory::GetInstance()->Allocate(alignedSize);
+        UnsafeHandle handle = MemorySystem::Allocate(alignedSize);
         T* ptr = new(handle.m_Pointer) T(args...);
 
         return ptr;
@@ -68,8 +48,8 @@ namespace Otter
         if (!std::is_destructible<T>::value)
             ptr->~T();
 
-        Memory::GetInstance()->MemoryClear(ptr, sizeof(T));
-        Memory::GetInstance()->Free(ptr);
+        MemorySystem::MemoryClear(ptr, sizeof(T));
+        MemorySystem::Free(ptr);
     }
 
     class Buffer final
@@ -83,7 +63,7 @@ namespace Otter
             UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(T), OTR_PLATFORM_MEMORY_ALIGNMENT);
             UInt64 bufferSize  = length * alignedSize;
 
-            UnsafeHandle handle = Memory::GetInstance()->Allocate(bufferSize);
+            UnsafeHandle handle = MemorySystem::Allocate(bufferSize);
 
             if (std::is_default_constructible<T>::value)
             {
@@ -114,8 +94,8 @@ namespace Otter
                 }
             }
 
-            Memory::GetInstance()->MemoryClear(ptr, length * sizeof(T));
-            Memory::GetInstance()->Free(ptr);
+            MemorySystem::MemoryClear(ptr, length * sizeof(T));
+            MemorySystem::Free(ptr);
         }
     };
 
@@ -128,7 +108,7 @@ namespace Otter
 
             UInt64 alignedSize = OTR_ALIGNED_OFFSET(size, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-            return Memory::GetInstance()->Allocate(alignedSize);
+            return MemorySystem::Allocate(alignedSize);
         }
 
         OTR_INLINE static void Delete(const UnsafeHandle& handle)
@@ -136,8 +116,8 @@ namespace Otter
             OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Handle pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(handle.m_Size > 0, "Handle size must be greater than 0")
 
-            Memory::GetInstance()->MemoryClear(handle.m_Pointer, handle.m_Size);
-            Memory::GetInstance()->Free(handle.m_Pointer);
+            MemorySystem::MemoryClear(handle.m_Pointer, handle.m_Size);
+            MemorySystem::Free(handle.m_Pointer);
         }
 
         OTR_INLINE static void Delete(UnsafeHandle&& handle)
@@ -145,8 +125,8 @@ namespace Otter
             OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Handle pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(handle.m_Size > 0, "Handle size must be greater than 0")
 
-            Memory::GetInstance()->MemoryClear(handle.m_Pointer, handle.m_Size);
-            Memory::GetInstance()->Free(handle.m_Pointer);
+            MemorySystem::MemoryClear(handle.m_Pointer, handle.m_Size);
+            MemorySystem::Free(handle.m_Pointer);
         }
     };
 }

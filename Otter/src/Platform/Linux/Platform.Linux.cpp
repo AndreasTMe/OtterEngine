@@ -1,6 +1,6 @@
 #include "Otter.PCH.h"
 
-#include "Platform/PlatformLinux.h"
+#include "Platform/Linux/Platform.Linux.h"
 
 #if OTR_PLATFORM_LINUX
 
@@ -9,7 +9,7 @@ namespace Otter::Internal
     struct LinuxPlatformWindowData
     {
     };
-    
+
     bool LinuxPlatform::Startup(const char* title, UInt16 left, UInt16 top, UInt16 width, UInt16 height)
     {
         return false;

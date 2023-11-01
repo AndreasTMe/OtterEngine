@@ -2,38 +2,42 @@
 
 #include "Core/Memory.h"
 
-namespace Otter
+namespace Otter::MemorySystem
 {
-    void Memory::Initialise()
+    static bool       gs_HasInitialised = false;
+    FreeListAllocator g_Allocator;
+
+    void Initialise()
     {
-        OTR_INTERNAL_ASSERT_MSG(!m_HasInitialised, "Memory has already been initialised")
+        OTR_INTERNAL_ASSERT_MSG(!gs_HasInitialised, "Memory has already been initialised")
 
         const UInt64 memorySize = 5_KiB;
         void* memory = Platform::Allocate(memorySize);
 
-        m_Allocator      = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
-        m_HasInitialised = true;
+        g_Allocator = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
 
         OTR_LOG_DEBUG("Memory allocator initialized with {0} bytes", memorySize)
+
+        gs_HasInitialised = true;
     }
 
-    void Memory::Shutdown()
+    void Shutdown()
     {
-        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
+        OTR_INTERNAL_ASSERT_MSG(gs_HasInitialised, "Memory has not been initialised")
 
-        void* memoryBlock = m_Allocator.GetMemoryUnsafePointer();
+        void* memoryBlock = g_Allocator.GetMemoryUnsafePointer();
         if (memoryBlock)
         {
-            Platform::MemoryClear(memoryBlock, m_Allocator.GetMemorySize());
+            Platform::MemoryClear(memoryBlock, g_Allocator.GetMemorySize());
             Platform::Free(memoryBlock);
         }
 
-        m_HasInitialised = false;
+        gs_HasInitialised = false;
     }
 
-    UnsafeHandle Memory::Allocate(const UInt64& size, const UInt64& alignment)
+    UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment)
     {
-        if (!m_HasInitialised)
+        if (!gs_HasInitialised)
             return { };
 
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0 bytes")
@@ -41,18 +45,16 @@ namespace Otter
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
         UnsafeHandle handle = { };
-        handle.m_Pointer = m_Allocator.Allocate(size, alignment);
+        handle.m_Pointer = g_Allocator.Allocate(size, alignment);
         handle.m_Size    = size;
 
         return handle;
     }
 
     // TODO: Use FreeListAllocator to reallocate memory
-    UnsafeHandle Memory::Reallocate(UnsafeHandle& handle,
-                                    const UInt64& size,
-                                    const UInt64& alignment)
+    UnsafeHandle Reallocate(UnsafeHandle& handle, const UInt64& size, const UInt64& alignment)
     {
-        if (!m_HasInitialised)
+        if (!gs_HasInitialised)
             return { };
 
         OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Reallocation handle must not be null")
@@ -67,20 +69,20 @@ namespace Otter
         return handle;
     }
 
-    void Memory::Free(void* block)
+    void Free(void* block)
     {
-        if (!m_HasInitialised)
+        if (!gs_HasInitialised)
             return;
 
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Block to be freed must not be null")
 
-        m_Allocator.Free(block);
+        g_Allocator.Free(block);
     }
 
     // TODO: Use FreeListAllocator to clear memory
-    void Memory::MemoryClear(void* block, const UInt64& size)
+    void MemoryClear(void* block, const UInt64& size)
     {
-        if (!m_HasInitialised)
+        if (!gs_HasInitialised)
         {
             OTR_LOG_WARNING("Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
                             " memory functions. Note that there might be some global/static variables that use memory.")
@@ -91,5 +93,12 @@ namespace Otter
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Clear size must be greater than 0 bytes")
 
         Platform::MemoryClear(block, size);
+    }
+
+    // TODO: Will probably be removed
+    std::string GetTotalAllocation()
+    {
+        return std::to_string(g_Allocator.GetMemoryUsed()) + " / "
+               + std::to_string(g_Allocator.GetMemorySize()) + " bytes";
     }
 }
