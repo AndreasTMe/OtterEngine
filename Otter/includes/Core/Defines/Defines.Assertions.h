@@ -2,6 +2,7 @@
 #define OTTERENGINE_DEFINES_ASSERTIONS_H
 
 #include "Defines.Platform.h"
+#include "Defines.Compilation.h"
 
 #if defined(OTR_DEBUG)
     #define OTR_INTERNAL_ASSERTIONS_ENABLED 1
@@ -24,6 +25,7 @@
                     ->PrepareAssertion(#assertion, nullptr)             \
                     ->CaptureSource(__FILE__, __LINE__)                 \
                     ->Log();                                            \
+                OTR_DEBUG_BREAK();                                      \
             }                                                           \
         }
 
@@ -36,6 +38,7 @@
                     ->PrepareAssertion(#assertion, __VA_ARGS__)         \
                     ->CaptureSource(__FILE__, __LINE__)                 \
                     ->Log();                                            \
+                OTR_DEBUG_BREAK();                                      \
             }                                                           \
         }
 
@@ -58,6 +61,7 @@
                     ->PrepareAssertion(#assertion, nullptr)             \
                     ->CaptureSource(__FILE__, __LINE__)                 \
                     ->Log();                                            \
+                OTR_DEBUG_BREAK();                                      \
             }                                                           \
         }
 
@@ -70,6 +74,7 @@
                     ->PrepareAssertion(#assertion, __VA_ARGS__)         \
                     ->CaptureSource(__FILE__, __LINE__)                 \
                     ->Log();                                            \
+                OTR_DEBUG_BREAK();                                      \
             }                                                           \
         }
 #else

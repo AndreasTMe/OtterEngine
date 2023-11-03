@@ -99,8 +99,6 @@ namespace Otter
         template<typename... TArgs>
         Logger* PrepareAssertion(const char* assertion, const char* message, TArgs&& ... args)
         {
-            m_IsAssertion = true;
-
             std::string assertionMessage = "Assertion failed: ";
             assertionMessage += assertion;
 
@@ -124,20 +122,13 @@ namespace Otter
         {
             Platform::Log(m_LogMessage.str().c_str(), (UInt8) m_LogLevel);
             m_LogMessage.str(std::string());
-
-            if (m_IsAssertion)
-            {
-                m_IsAssertion = false;
-                std::abort();
-            }
         }
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(Logger);
 
-        bool              m_IsAssertion = false;
-        LogLevel          m_LogLevel    = LogLevel::Trace;
-        std::stringstream m_LogMessage  = std::stringstream(std::string());
+        LogLevel          m_LogLevel   = LogLevel::Trace;
+        std::stringstream m_LogMessage = std::stringstream(std::string());
     };
 }
 
