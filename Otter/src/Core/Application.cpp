@@ -1,6 +1,7 @@
 #include "Otter.PCH.h"
 
 #include "Core/Application.h"
+#include "Graphics/GraphicsSystem.h"
 
 namespace Otter
 {
@@ -9,20 +10,38 @@ namespace Otter
         MemorySystem::Initialise();
 
         auto* platform = Platform::CreatePlatform();
-        if (platform->Startup("Otter Engine", 100, 100, 1280, 720))
+        if (!platform->Startup("Otter Engine", 100, 100, 1280, 720))
         {
-            EventSystem::Initialise();
+            OTR_LOG_FATAL("Failed to initialise platform. Shutting down...")
 
+            Platform::DestroyPlatform(platform);
+            MemorySystem::Shutdown();
+
+            return;
+        }
+
+        EventSystem::Initialise();
+
+        if (GraphicsSystem::TryInitialise(platform->GetUnsafeWindow()))
+        {
             OTR_LOG_DEBUG("Total allocation after system initialisation: {0}", MemorySystem::GetTotalAllocation())
 
             while (platform->IsRunning())
             {
                 platform->CaptureWindowEvents();
                 EventSystem::Process();
+
+                GraphicsSystem::RenderFrame();
             }
 
-            EventSystem::Shutdown();
+            GraphicsSystem::Shutdown();
         }
+        else
+        {
+            OTR_LOG_FATAL("Failed to initialise graphics system")
+        }
+
+        EventSystem::Shutdown();
 
         platform->Shutdown();
         Platform::DestroyPlatform(platform);

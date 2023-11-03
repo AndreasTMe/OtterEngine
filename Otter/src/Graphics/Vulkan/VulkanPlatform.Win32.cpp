@@ -2,13 +2,15 @@
 
 #if OTR_PLATFORM_WINDOWS
 
-#include "Renderer/Vulkan/VulkanBase.h"
-#include "Renderer/Vulkan/VulkanPlatform.h"
+#include "Graphics/Vulkan/VulkanBase.h"
+#include "Graphics/Vulkan/VulkanPlatform.h"
 
-namespace Otter::Renderer
+namespace Otter::Graphics::Vulkan
 {
     void GetRequiredInstanceExtensions(List<const char*>& extensions, List<const char*>& layers)
     {
+        extensions.Reserve(2);
+
         extensions.Add(VK_KHR_SURFACE_EXTENSION_NAME);
         extensions.Add(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
     }
