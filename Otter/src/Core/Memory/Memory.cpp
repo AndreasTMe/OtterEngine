@@ -16,7 +16,7 @@ namespace Otter::MemorySystem
 
         g_Allocator = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
 
-        OTR_LOG_DEBUG("Memory allocator initialized with {0} bytes", memorySize)
+        OTR_LOG_TRACE("Memory system initialized with {0} bytes allocated", memorySize)
 
         gs_HasInitialised = true;
     }
@@ -84,8 +84,9 @@ namespace Otter::MemorySystem
     {
         if (!gs_HasInitialised)
         {
-            OTR_LOG_WARNING("Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
-                            " memory functions. Note that there might be some global/static variables that use memory.")
+            OTR_LOG_WARNING(
+                "Memory has not been initialised. Make sure to call Memory::TryInitialise() before using any"
+                " memory functions. Note that there might be some global/static variables that use memory.")
             return;
         }
 

@@ -153,6 +153,11 @@ namespace Otter
         return nullptr;
     }
 
+    void Platform::DestroyPlatform(Platform* platform)
+    {
+        OTR_LOG_FATAL("'Platform::DestroyPlatform' not supported for this platform");
+    }
+
     void* Platform::Allocate(UInt64 size)
     {
         OTR_LOG_FATAL("'Platform::Allocate' not supported for this platform");
@@ -175,11 +180,6 @@ namespace Otter
     void Platform::MemoryClear(void* block, UInt64 size)
     {
         OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform");
-    }
-
-    void Platform::MemoryCopy(void* dest, const void* src, UInt64 size)
-    {
-        OTR_LOG_FATAL("'Platform::MemoryCopy' not supported for this platform");
     }
 
     void Platform::Log(const char* message, UInt8 level)

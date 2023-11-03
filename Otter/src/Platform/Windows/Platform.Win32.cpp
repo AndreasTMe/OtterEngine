@@ -48,9 +48,12 @@ namespace Otter::Internal
         RegisterEvents();
 
         if (!InitialiseWindow(title, left, top, width, height))
+        {
+            Unsafe::Delete(g_PlatformMemoryHandle);
             return false;
-        InitialiseInternalClock();
+        }
 
+        InitialiseInternalClock();
         m_IsRunning = true;
 
         return true;

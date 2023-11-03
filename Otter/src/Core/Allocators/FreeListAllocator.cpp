@@ -6,9 +6,9 @@ namespace Otter
 {
     void* FreeListAllocator::Allocate(const UInt64& size, const UInt64& alignment)
     {
-        if (size <= sizeof(Node))
+        if (size < sizeof(Node))
         {
-            OTR_LOG_WARNING("Allocation size is less than or equal to the size of a Free List node ({0} <= {1})."
+            OTR_LOG_WARNING("Allocation size is less than or equal to the size of a Free List node ({0} < {1})."
                             "\n\tConsider using a different allocator for this.", size, sizeof(Node))
         }
 
