@@ -3,7 +3,7 @@
 
 namespace Otter::GraphicsSystem
 {
-    bool TryInitialise(const void* windowHandle);
+    bool TryInitialise(const void* platformContext);
     void Shutdown();
 
     void RenderFrame();

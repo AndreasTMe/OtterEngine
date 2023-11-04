@@ -9,6 +9,12 @@
 
 namespace Otter::Internal
 {
+    struct WindowsPlatformWindowData
+    {
+        HWND      m_WindowHandle;
+        HINSTANCE m_InstanceHandle;
+    };
+
     class WindowsPlatform final : public Platform
     {
     public:
@@ -27,7 +33,6 @@ namespace Otter::Internal
         [[nodiscard]] OTR_INLINE bool IsRunning() const final { return m_IsRunning; }
 
         [[nodiscard]] Double64 GetAbsoluteTime() const final;
-        [[nodiscard]] const void* GetUnsafeWindow() const final;
 
     private:
         UInt16 m_Width     = 0;
@@ -45,6 +50,8 @@ namespace Otter::Internal
 }
 
 OTR_WITH_TYPENAME(Otter::Internal::WindowsPlatform)
+
+OTR_WITH_TYPENAME(Otter::Internal::WindowsPlatformWindowData)
 
 #endif // OTR_PLATFORM_WINDOWS
 

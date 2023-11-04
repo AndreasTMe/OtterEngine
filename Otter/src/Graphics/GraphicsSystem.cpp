@@ -11,7 +11,7 @@ namespace Otter::GraphicsSystem
     Graphics::AbstractRenderer* g_Renderer;
     GraphicsAPI g_GraphicsApi = GraphicsAPI::Vulkan; // TODO: Pass from configuration
 
-    bool TryInitialise(const void* windowHandle)
+    bool TryInitialise(const void* platformContext)
     {
         switch (g_GraphicsApi)
         {
@@ -25,7 +25,7 @@ namespace Otter::GraphicsSystem
             }
         }
 
-        g_Renderer->TryInitialise(windowHandle);
+        g_Renderer->Initialise(platformContext);
 
         return true;
     }

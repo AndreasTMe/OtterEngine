@@ -84,6 +84,8 @@ namespace Otter
             m_Count    = 0;
         }
 
+        [[nodiscard]] OTR_INLINE static constexpr Collection Empty() { return Collection(); }
+
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }
         [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }

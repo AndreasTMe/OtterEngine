@@ -5,13 +5,81 @@
 
 namespace Otter::Graphics::Vulkan
 {
-#if !OTR_RELEASE
-    VkDebugUtilsMessengerEXT g_DebugMessenger = VK_NULL_HANDLE;
+    void VulkanRenderer::Initialise(const void* platformContext)
+    {
+        m_Context = New<VulkanContext>();
 
-    VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                 VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                 const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-                                                 void* userData)
+        CreateVulkanInstance();
+        SetupVulkanDebugMessenger();
+        CreateSurface(m_Context, platformContext);
+    }
+
+    void VulkanRenderer::Shutdown()
+    {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_Context->m_Instance,
+                                                                                "vkDestroyDebugUtilsMessengerEXT");
+        if (func != nullptr)
+            func(m_Context->m_Instance, m_Context->m_DebugMessenger, m_Context->m_Allocator);
+
+        vkDestroySurfaceKHR(m_Context->m_Instance, m_Context->m_Surface, m_Context->m_Allocator);
+        vkDestroyInstance(m_Context->m_Instance, m_Context->m_Allocator);
+
+        Delete(m_Context);
+    }
+
+    void VulkanRenderer::CreateVulkanInstance()
+    {
+//        if (!CheckValidationLayerSupport())
+//            throw std::runtime_error("Validation layers requested, but not available!");
+
+        VkApplicationInfo appInfo{ };
+        appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.pApplicationName   = "Otter Engine";
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName        = "Otter Engine";
+        appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.apiVersion         = VK_API_VERSION_1_0;
+
+        VkInstanceCreateInfo createInfo{ };
+        createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        createInfo.pApplicationInfo = &appInfo;
+
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{ };
+        PopulateDebugMessengerCreateInfo(debugCreateInfo);
+
+        List<const char*> extensions;
+        List<const char*> layers;
+        GetRequiredInstanceExtensions(extensions, layers);
+        createInfo.enabledExtensionCount   = extensions.GetCount();
+        createInfo.ppEnabledExtensionNames = extensions.GetData();
+        createInfo.enabledLayerCount       = layers.GetCount();
+        createInfo.ppEnabledLayerNames     = layers.GetData();
+        createInfo.pNext                   = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+
+        OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, m_Context->m_Allocator, &m_Context->m_Instance))
+    }
+
+    void VulkanRenderer::SetupVulkanDebugMessenger()
+    {
+        VkDebugUtilsMessengerCreateInfoEXT createInfo;
+        PopulateDebugMessengerCreateInfo(createInfo);
+
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_Context->m_Instance,
+                                                                               "vkCreateDebugUtilsMessengerEXT");
+
+        if (!func
+            || func(m_Context->m_Instance,
+                    &createInfo, m_Context->m_Allocator,
+                    &m_Context->m_DebugMessenger) != VK_SUCCESS)
+        {
+            OTR_INTERNAL_ASSERT("Failed to set up debug messenger!")
+        }
+    }
+
+    VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                                 VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                                 const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+                                                                 void* userData)
     {
         // TODO: Also use the message type to filter out messages
         switch (messageSeverity)
@@ -36,7 +104,7 @@ namespace Otter::Graphics::Vulkan
         return VK_FALSE;
     }
 
-    void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    void VulkanRenderer::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
     {
         createInfo = { };
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -51,64 +119,5 @@ namespace Otter::Graphics::Vulkan
             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
         createInfo.pfnUserCallback = DebugCallback;
-    }
-#endif
-
-    bool VulkanRenderer::TryInitialise(const void* windowHandle)
-    {
-#if !OTR_RELEASE
-//        if (!CheckValidationLayerSupport())
-//            throw std::runtime_error("Validation layers requested, but not available!");
-#endif
-
-        VkApplicationInfo appInfo{ };
-        appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName   = "Otter Engine";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName        = "Otter Engine";
-        appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion         = VK_API_VERSION_1_0;
-
-        VkInstanceCreateInfo createInfo{ };
-        createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pApplicationInfo = &appInfo;
-
-        List<const char*> extensions;
-        List<const char*> layers;
-        GetRequiredInstanceExtensions(extensions, layers);
-        createInfo.enabledExtensionCount   = extensions.GetCount();
-        createInfo.ppEnabledExtensionNames = extensions.GetData();
-
-#if !OTR_RELEASE
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{ };
-        createInfo.enabledLayerCount   = layers.GetCount();
-        createInfo.ppEnabledLayerNames = layers.GetData();
-
-        PopulateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
-#else
-        createInfo.enabledLayerCount = 0;
-        createInfo.pNext = nullptr;
-#endif
-
-        if (vkCreateInstance(&createInfo, nullptr, &m_Instance) != VK_SUCCESS)
-        {
-            OTR_LOG_FATAL("Failed to create Vulkan instance")
-            return false;
-        }
-
-        return true;
-    }
-
-    void VulkanRenderer::Shutdown()
-    {
-#if !OTR_RELEASE
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_Instance,
-                                                                                "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr)
-            func(m_Instance, g_DebugMessenger, nullptr);
-#endif
-
-        vkDestroyInstance(m_Instance, nullptr);
     }
 }

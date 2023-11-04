@@ -8,7 +8,7 @@ namespace Otter::Graphics
     public:
         virtual ~AbstractRenderer() = default;
 
-        virtual bool TryInitialise(const void* windowHandle) = 0;
+        virtual void Initialise(const void* platformContext) = 0;
         virtual void Shutdown() = 0;
     };
 }

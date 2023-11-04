@@ -22,7 +22,7 @@ namespace Otter
 
         EventSystem::Initialise();
 
-        if (GraphicsSystem::TryInitialise(platform->GetUnsafeWindow()))
+        if (GraphicsSystem::TryInitialise(platform->GetUnsafeContext()))
         {
             OTR_LOG_DEBUG("Total allocation after system initialisation: {0}", MemorySystem::GetTotalAllocation())
 

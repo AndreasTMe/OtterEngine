@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_VULKANBASE_H
 #define OTTERENGINE_VULKANBASE_H
 
-#include "Core/Defines/Defines.Platform.h"
+#include "Core/Defines.h"
 
 #include <vulkan/vulkan.h>
 
@@ -18,5 +18,12 @@
 #else
     #error "Unsupported platform!"
 #endif
+
+#define OTR_VULKAN_VALIDATE(vkCall)                                                     \
+    {                                                                                   \
+        VkResult result = vkCall;                                                       \
+        OTR_INTERNAL_ASSERT_MSG(result == VK_SUCCESS,                                   \
+                                "'{0}' failed with error code: {1}", #vkCall, result)   \
+    }
 
 #endif //OTTERENGINE_VULKANBASE_H

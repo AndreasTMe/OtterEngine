@@ -9,12 +9,6 @@
 
 namespace Otter::Internal
 {
-    struct WindowsPlatformWindowData
-    {
-        HINSTANCE m_Instance;
-        HWND      m_Window;
-    };
-
     static LRESULT CALLBACK WindowProcedureCallbackOverride(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
 #pragma clang diagnostic push
@@ -40,7 +34,7 @@ namespace Otter::Internal
         g_PlatformMemoryHandle = Unsafe::New(platformContextSize + platformWindowDataSize);
 
         m_Context = (PlatformContext*) g_PlatformMemoryHandle.m_Pointer;
-        m_Context->m_Window = (WindowsPlatformWindowData*) g_PlatformMemoryHandle.m_Pointer + platformContextSize;
+        m_Context->m_Data = (WindowsPlatformWindowData*) ((UIntPtr*) g_PlatformMemoryHandle.m_Pointer + 1);
 
         m_Width  = width;
         m_Height = height;
@@ -61,9 +55,9 @@ namespace Otter::Internal
 
     void WindowsPlatform::Shutdown()
     {
-        if (m_Context->m_Window)
+        if (m_Context->m_Data)
         {
-            DestroyWindow(((WindowsPlatformWindowData*) m_Context->m_Window)->m_Window);
+            DestroyWindow(((WindowsPlatformWindowData*) m_Context->m_Data)->m_WindowHandle);
             Unsafe::Delete(g_PlatformMemoryHandle);
 
             return;
@@ -91,11 +85,6 @@ namespace Otter::Internal
         return static_cast<Double64>(currentTime.QuadPart - s_ClockStart.QuadPart) * s_ClockFrequency;
     }
 
-    const void* WindowsPlatform::GetUnsafeWindow() const
-    {
-        return ((WindowsPlatformWindowData*) m_Context->m_Window)->m_Window;
-    }
-
     void WindowsPlatform::RegisterEvents()
     {
         GlobalActions::OnWindowClose += [&](const WindowCloseEvent& event)
@@ -121,8 +110,8 @@ namespace Otter::Internal
                                            UInt16 width,
                                            UInt16 height)
     {
-        auto windowData = static_cast<WindowsPlatformWindowData*>(m_Context->m_Window);
-        windowData->m_Instance = GetModuleHandleA(nullptr);
+        auto windowData = static_cast<WindowsPlatformWindowData*>(m_Context->m_Data);
+        windowData->m_InstanceHandle = GetModuleHandleA(nullptr);
 
         const char* className = "WindowClass";
 
@@ -132,9 +121,9 @@ namespace Otter::Internal
         windowClass.cbWndExtra    = 0;
         windowClass.hbrBackground = nullptr;
         windowClass.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-        windowClass.hIcon         = LoadIcon(windowData->m_Instance, IDI_APPLICATION);
-        windowClass.hIconSm       = LoadIcon(windowData->m_Instance, IDI_APPLICATION);
-        windowClass.hInstance     = windowData->m_Instance;
+        windowClass.hIcon         = LoadIcon(windowData->m_InstanceHandle, IDI_APPLICATION);
+        windowClass.hIconSm       = LoadIcon(windowData->m_InstanceHandle, IDI_APPLICATION);
+        windowClass.hInstance     = windowData->m_InstanceHandle;
         windowClass.lpfnWndProc   = WindowProcedureCallbackOverride;
         windowClass.lpszClassName = className;
         windowClass.lpszMenuName  = nullptr;
@@ -179,7 +168,7 @@ namespace Otter::Internal
                                       windowHeight,
                                       nullptr,
                                       nullptr,
-                                      windowData->m_Instance,
+                                      windowData->m_InstanceHandle,
                                       nullptr);
 
         if (!window)
@@ -191,7 +180,7 @@ namespace Otter::Internal
         }
         else
         {
-            windowData->m_Window = window;
+            windowData->m_WindowHandle = window;
         }
 
         // TODO: If the window should not accept input, use SW_SHOWNOACTIVATE instead of SW_SHOW
@@ -324,7 +313,5 @@ namespace Otter::Internal
         return DefWindowProcA(window, message, wParam, lParam);
     }
 }
-
-OTR_WITH_TYPENAME(Otter::Internal::WindowsPlatformWindowData)
 
 #endif // OTR_PLATFORM_WINDOWS

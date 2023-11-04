@@ -8,7 +8,7 @@ namespace Otter
 {
     struct PlatformContext
     {
-        void* m_Window;
+        void* m_Data;
     };
 
     class Platform
@@ -28,7 +28,8 @@ namespace Otter
         [[nodiscard]] virtual UInt16 GetWidth() const = 0;
         [[nodiscard]] virtual UInt16 GetHeight() const = 0;
         [[nodiscard]] virtual Double64 GetAbsoluteTime() const = 0;
-        [[nodiscard]] virtual const void* GetUnsafeWindow() const = 0;
+
+        [[nodiscard]] const void* GetUnsafeContext() const { return m_Context; }
 
         [[nodiscard]] static Platform* CreatePlatform();
         static void DestroyPlatform(Platform* platform);
