@@ -10,16 +10,19 @@ namespace Otter::Graphics::Vulkan
         m_Context = New<VulkanContext>();
 
         CreateVulkanInstance();
-        SetupVulkanDebugMessenger();
+
+#if !OTR_RUNTIME
+        CreateVulkanDebugMessenger();
+#endif
+
         CreateSurface(m_Context, platformContext);
     }
 
     void VulkanRenderer::Shutdown()
     {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_Context->m_Instance,
-                                                                                "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr)
-            func(m_Context->m_Instance, m_Context->m_DebugMessenger, m_Context->m_Allocator);
+#if !OTR_RUNTIME
+        DestroyVulkanDebugMessenger();
+#endif
 
         vkDestroySurfaceKHR(m_Context->m_Instance, m_Context->m_Surface, m_Context->m_Allocator);
         vkDestroyInstance(m_Context->m_Instance, m_Context->m_Allocator);
@@ -44,36 +47,54 @@ namespace Otter::Graphics::Vulkan
         createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{ };
-        PopulateDebugMessengerCreateInfo(debugCreateInfo);
-
         List<const char*> extensions;
         List<const char*> layers;
         GetRequiredInstanceExtensions(extensions, layers);
         createInfo.enabledExtensionCount   = extensions.GetCount();
         createInfo.ppEnabledExtensionNames = extensions.GetData();
-        createInfo.enabledLayerCount       = layers.GetCount();
-        createInfo.ppEnabledLayerNames     = layers.GetData();
-        createInfo.pNext                   = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+
+#if !OTR_RUNTIME
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{ };
+        PopulateDebugMessengerCreateInfo(debugCreateInfo);
+
+        createInfo.enabledLayerCount   = layers.GetCount();
+        createInfo.ppEnabledLayerNames = layers.GetData();
+        createInfo.pNext               = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+#else
+        createInfo.enabledLayerCount       = 0;
+        createInfo.ppEnabledLayerNames     = nullptr;
+        createInfo.pNext                   = nullptr;
+#endif
 
         OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, m_Context->m_Allocator, &m_Context->m_Instance))
     }
 
-    void VulkanRenderer::SetupVulkanDebugMessenger()
+#if !OTR_RUNTIME
+    void VulkanRenderer::CreateVulkanDebugMessenger()
     {
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         PopulateDebugMessengerCreateInfo(createInfo);
 
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_Context->m_Instance,
-                                                                               "vkCreateDebugUtilsMessengerEXT");
+        auto createDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
+            m_Context->m_Instance,
+            "vkCreateDebugUtilsMessengerEXT");
 
-        if (!func
-            || func(m_Context->m_Instance,
-                    &createInfo, m_Context->m_Allocator,
-                    &m_Context->m_DebugMessenger) != VK_SUCCESS)
+        if (createDebugUtilsMessenger)
         {
-            OTR_INTERNAL_ASSERT("Failed to set up debug messenger!")
+            OTR_VULKAN_VALIDATE(createDebugUtilsMessenger(m_Context->m_Instance,
+                                                          &createInfo, m_Context->m_Allocator,
+                                                          &m_Context->m_DebugMessenger))
         }
+    }
+
+    void VulkanRenderer::DestroyVulkanDebugMessenger()
+    {
+        auto destroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
+            m_Context->m_Instance,
+            "vkDestroyDebugUtilsMessengerEXT");
+
+        if (destroyDebugUtilsMessenger != nullptr)
+            destroyDebugUtilsMessenger(m_Context->m_Instance, m_Context->m_DebugMessenger, m_Context->m_Allocator);
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -120,4 +141,5 @@ namespace Otter::Graphics::Vulkan
             VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
         createInfo.pfnUserCallback = DebugCallback;
     }
+#endif
 }

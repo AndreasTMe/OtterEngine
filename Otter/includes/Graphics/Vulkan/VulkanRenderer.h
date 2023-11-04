@@ -16,13 +16,17 @@ namespace Otter::Graphics::Vulkan
         VulkanContext* m_Context = nullptr;
 
         void CreateVulkanInstance();
-        void SetupVulkanDebugMessenger();
 
+#if !OTR_RUNTIME
+        void CreateVulkanDebugMessenger();
+        void DestroyVulkanDebugMessenger();
+        
         static void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
         static VkBool32 DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                       VkDebugUtilsMessageTypeFlagsEXT messageType,
                                       const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
                                       void* userData);
+#endif
     };
 }
 
