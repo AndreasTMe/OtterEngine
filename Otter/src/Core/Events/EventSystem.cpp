@@ -42,10 +42,14 @@ namespace Otter
         AddListener(EventType::MouseDragged, GlobalActions::OnMouseDragged);
 
         isInitialised = true;
+
+        OTR_LOG_DEBUG("Event system initialised")
     }
 
     void EventSystem::Shutdown()
     {
+        OTR_LOG_DEBUG("Shutting down event system...")
+
         Action<const UnsafeHandle&> deleteAction{ };
         deleteAction += [](const UnsafeHandle& handle)
         {

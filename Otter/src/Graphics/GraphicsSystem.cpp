@@ -27,11 +27,15 @@ namespace Otter::GraphicsSystem
 
         g_Renderer->Initialise(platformContext);
 
+        OTR_LOG_DEBUG("Graphics system initialised ({0})", g_GraphicsApi)
+
         return true;
     }
 
     void Shutdown()
     {
+        OTR_LOG_DEBUG("Shutting down graphics system...")
+
         g_Renderer->Shutdown();
 
         switch (g_GraphicsApi)

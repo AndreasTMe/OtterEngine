@@ -13,6 +13,7 @@
 namespace Otter
 {
 #if OTR_PLATFORM_WINDOWS
+
     Platform* Platform::CreatePlatform()
     {
         return New<Internal::WindowsPlatform>();
@@ -25,6 +26,7 @@ namespace Otter
 
     void* Platform::Allocate(UInt64 size)
     {
+        OTR_LOG_TRACE("Requested allocation of {0} bytes from OS", size)
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0")
 
         void* block = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
@@ -37,6 +39,7 @@ namespace Otter
 
     void* Platform::Reallocate(void* block, UInt64 size)
     {
+        OTR_LOG_TRACE("Requested re-allocation of {0} bytes from OS", size)
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Reallocation size must be greater than 0")
 
         if (!block)
@@ -50,6 +53,7 @@ namespace Otter
 
     void Platform::Free(void* block)
     {
+        OTR_LOG_TRACE("Requested de-allocation of memory from OS")
         OTR_INTERNAL_ASSERT(block != nullptr)
 
         HeapFree(GetProcessHeap(), 0, block);
@@ -83,6 +87,7 @@ namespace Otter
     }
 
 #elif OTR_PLATFORM_LINUX
+
     Platform* Platform::CreatePlatform()
     {
         return New<Internal::LinuxPlatform>();
@@ -95,7 +100,7 @@ namespace Otter
 
     void* Platform::Allocate(UInt64 size)
     {
-        OTR_LOG_FATAL("'Platform::Allocate' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::Allocate' not supported for this platform")
 
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0")
 
@@ -108,7 +113,7 @@ namespace Otter
 
     void* Platform::Reallocate(void* block, UInt64 size)
     {
-        OTR_LOG_FATAL("'Platform::Reallocate' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::Reallocate' not supported for this platform")
 
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Reallocation size must be greater than 0")
 
@@ -123,7 +128,7 @@ namespace Otter
 
     void Platform::Free(void* block)
     {
-        OTR_LOG_FATAL("'Platform::Free' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::Free' not supported for this platform")
 
         OTR_INTERNAL_ASSERT(block != nullptr)
 
@@ -132,7 +137,7 @@ namespace Otter
 
     void Platform::MemoryClear(void* block, UInt64 size)
     {
-        OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform")
 
         OTR_INTERNAL_ASSERT(block != nullptr)
 
@@ -141,50 +146,53 @@ namespace Otter
 
     void Platform::Log(const char* message, UInt8 level)
     {
-        OTR_LOG_FATAL("'Platform::Log' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::Log' not supported for this platform")
 
 //        OTR_INTERNAL_ASSERT(level < 6)
     }
+
 #else
+
     Platform* Platform::CreatePlatform()
     {
-        OTR_LOG_FATAL("'Platform::CreatePlatform' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::CreatePlatform' not supported for this platform")
 
         return nullptr;
     }
 
     void Platform::DestroyPlatform(Platform* platform)
     {
-        OTR_LOG_FATAL("'Platform::DestroyPlatform' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::DestroyPlatform' not supported for this platform")
     }
 
     void* Platform::Allocate(UInt64 size)
     {
-        OTR_LOG_FATAL("'Platform::Allocate' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::Allocate' not supported for this platform")
 
         return nullptr;
     }
 
     void* Platform::Reallocate(void* block, UInt64 size)
     {
-        OTR_LOG_FATAL("'Platform::Reallocate' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::Reallocate' not supported for this platform")
 
         return nullptr;
     }
 
     void Platform::Free(void* block)
     {
-        OTR_LOG_FATAL("'Platform::Free' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::Free' not supported for this platform")
     }
 
     void Platform::MemoryClear(void* block, UInt64 size)
     {
-        OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform")
     }
 
     void Platform::Log(const char* message, UInt8 level)
     {
-        OTR_LOG_FATAL("'Platform::Log' not supported for this platform");
+        OTR_LOG_FATAL("'Platform::Log' not supported for this platform")
     }
+
 #endif
 }

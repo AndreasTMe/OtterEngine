@@ -1,5 +1,5 @@
-#ifndef OTTERENGINE_VULKANBASE_H
-#define OTTERENGINE_VULKANBASE_H
+#ifndef OTTERENGINE_VULKANBASE_INCLUDES_H
+#define OTTERENGINE_VULKANBASE_INCLUDES_H
 
 #include "Core/Defines.h"
 
@@ -26,4 +26,4 @@
                                 "'{0}' failed with error code: {1}", #vkCall, result)   \
     }
 
-#endif //OTTERENGINE_VULKANBASE_H
+#endif //OTTERENGINE_VULKANBASE_INCLUDES_H
