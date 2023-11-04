@@ -1,7 +1,7 @@
-#ifndef OTTERENGINE_VULKANCONTEXT_H
-#define OTTERENGINE_VULKANCONTEXT_H
+#ifndef OTTERENGINE_VULKANBASE_TYPES_H
+#define OTTERENGINE_VULKANBASE_TYPES_H
 
-#include "Graphics/Vulkan/VulkanBase.h"
+#include "Graphics/Vulkan/VulkanBase.Includes.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -17,4 +17,4 @@ namespace Otter::Graphics::Vulkan
     };
 }
 
-#endif //OTTERENGINE_VULKANCONTEXT_H
+#endif //OTTERENGINE_VULKANBASE_TYPES_H

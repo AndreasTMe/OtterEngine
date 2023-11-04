@@ -1,7 +1,8 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/Vulkan/VulkanRenderer.h"
-#include "Graphics/Vulkan/VulkanPlatform.h"
+#include "Graphics/Vulkan/VulkanBase.Platform.h"
+#include "Graphics/Vulkan/VulkanSurface.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -32,6 +33,8 @@ namespace Otter::Graphics::Vulkan
 
     void VulkanRenderer::CreateVulkanInstance()
     {
+        OTR_LOG_TRACE("Creating Vulkan instance...")
+
 //        if (!CheckValidationLayerSupport())
 //            throw std::runtime_error("Validation layers requested, but not available!");
 
@@ -47,6 +50,7 @@ namespace Otter::Graphics::Vulkan
         createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
+        OTR_LOG_TRACE("Getting required instance extensions and layers...")
         List<const char*> extensions;
         List<const char*> layers;
         GetRequiredInstanceExtensions(extensions, layers);
@@ -54,6 +58,8 @@ namespace Otter::Graphics::Vulkan
         createInfo.ppEnabledExtensionNames = extensions.GetData();
 
 #if !OTR_RUNTIME
+        OTR_LOG_TRACE("Creating Vulkan debug messenger...")
+
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{ };
         PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
@@ -67,6 +73,9 @@ namespace Otter::Graphics::Vulkan
 #endif
 
         OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, m_Context->m_Allocator, &m_Context->m_Instance))
+
+        extensions.ClearDestructive();
+        layers.ClearDestructive();
     }
 
 #if !OTR_RUNTIME

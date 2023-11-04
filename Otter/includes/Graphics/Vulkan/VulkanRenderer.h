@@ -2,7 +2,7 @@
 #define OTTERENGINE_VULKANRENDERER_H
 
 #include "Graphics/AbstractRenderer.h"
-#include "VulkanContext.h"
+#include "VulkanBase.Types.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -20,7 +20,7 @@ namespace Otter::Graphics::Vulkan
 #if !OTR_RUNTIME
         void CreateVulkanDebugMessenger();
         void DestroyVulkanDebugMessenger();
-        
+
         static void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
         static VkBool32 DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                       VkDebugUtilsMessageTypeFlagsEXT messageType,

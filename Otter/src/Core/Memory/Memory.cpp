@@ -11,18 +11,18 @@ namespace Otter::MemorySystem
     {
         OTR_INTERNAL_ASSERT_MSG(!gs_HasInitialised, "Memory has already been initialised")
 
-        const UInt64 memorySize = 5_KiB;
+        const UInt64 memorySize = 20_KiB;
         void* memory = Platform::Allocate(memorySize);
 
-        g_Allocator = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
-
-        OTR_LOG_TRACE("Memory system initialized with {0} bytes allocated", memorySize)
-
+        g_Allocator       = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
         gs_HasInitialised = true;
+
+        OTR_LOG_DEBUG("Memory system initialized with {0} bytes available", memorySize)
     }
 
     void Shutdown()
     {
+        OTR_LOG_DEBUG("Shutting down memory system...")
         OTR_INTERNAL_ASSERT_MSG(gs_HasInitialised, "Memory has not been initialised")
 
         void* memoryBlock = g_Allocator.GetMemoryUnsafePointer();
