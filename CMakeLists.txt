@@ -26,16 +26,20 @@ foreach (CONFIG_TYPE ${CMAKE_CONFIGURATION_TYPES})
             "${CMAKE_SOURCE_DIR}/bin-lib/${CONFIG_TYPE}-${CMAKE_SYSTEM_NAME}/${PROJECT_NAME}/$<0:>")
 endforeach ()
 
-# Otter library configuration
-add_subdirectory(lib/GoogleTest)
-
+# Main Engine
 add_subdirectory(Otter)
-add_subdirectory(Otter.Tests)
 
 # Sandbox configuration
 add_subdirectory(Sandbox)
-target_link_libraries(Sandbox PRIVATE Otter)
 target_include_directories(Sandbox PRIVATE Otter/includes)
+target_link_libraries(Sandbox PRIVATE Otter)
+
+# Test Setup
+add_subdirectory(lib/GoogleTest)
+# Main Engine Tests
+add_subdirectory(Otter.Tests)
+target_include_directories(Otter.Tests PRIVATE ${gtest_SOURCE_DIR} ${gtest_SOURCE_DIR}/include Otter/includes)
+target_link_libraries(Otter.Tests PRIVATE gtest gtest_main Otter)
 
 if (MSVC)
     set_property(DIRECTORY Sandbox PROPERTY VS_STARTUP_PROJECT Sandbox)
