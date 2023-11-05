@@ -27,7 +27,10 @@ foreach (CONFIG_TYPE ${CMAKE_CONFIGURATION_TYPES})
 endforeach ()
 
 # Otter library configuration
+add_subdirectory(lib/GoogleTest)
+
 add_subdirectory(Otter)
+add_subdirectory(Otter.Tests)
 
 # Sandbox configuration
 add_subdirectory(Sandbox)
