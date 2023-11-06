@@ -5,12 +5,32 @@
 
 namespace Otter
 {
+    // TODO: Move this to a configuration file.
+    struct ApplicationArgs
+    {
+        const char* m_Title;
+        UInt32 m_Left;
+        UInt32 m_Top;
+        UInt32 m_Width;
+        UInt32 m_Height;
+        UInt64 m_MemoryRequirements;
+    };
+
+    const static ApplicationArgs gk_Args = {
+        "Otter Engine",
+        100,
+        100,
+        1280,
+        720,
+        20_KiB
+    };
+
     void Application::Run()
     {
-        MemorySystem::Initialise();
+        MemorySystem::Initialise(gk_Args.m_MemoryRequirements);
 
         auto* platform = Platform::CreatePlatform();
-        if (!platform->Startup("Otter Engine", 100, 100, 1280, 720))
+        if (!platform->Startup(gk_Args.m_Title, gk_Args.m_Left, gk_Args.m_Top, gk_Args.m_Width, gk_Args.m_Height))
         {
             OTR_LOG_FATAL("Failed to initialise platform. Shutting down...")
 

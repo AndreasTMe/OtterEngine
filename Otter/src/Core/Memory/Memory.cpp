@@ -7,17 +7,16 @@ namespace Otter::MemorySystem
     static bool       gs_HasInitialised = false;
     FreeListAllocator g_Allocator;
 
-    void Initialise()
+    void Initialise(const UInt64& memoryRequirements)
     {
         OTR_INTERNAL_ASSERT_MSG(!gs_HasInitialised, "Memory has already been initialised")
 
-        const UInt64 memorySize = 20_KiB;
-        void* memory = Platform::Allocate(memorySize);
+        void* memory = Platform::Allocate(memoryRequirements);
 
-        g_Allocator       = FreeListAllocator(memory, memorySize, FreeListAllocator::Policy::FirstFit);
+        g_Allocator       = FreeListAllocator(memory, memoryRequirements, FreeListAllocator::Policy::FirstFit);
         gs_HasInitialised = true;
 
-        OTR_LOG_DEBUG("Memory system initialized with {0} bytes available", memorySize)
+        OTR_LOG_DEBUG("Memory system initialized with {0} bytes available", memoryRequirements)
     }
 
     void Shutdown()

@@ -17,7 +17,7 @@ namespace Otter
 
     namespace MemorySystem
     {
-        void Initialise();
+        void Initialise(const UInt64& memoryRequirements);
         void Shutdown();
 
         UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
