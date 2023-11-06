@@ -35,7 +35,7 @@ target_include_directories(Sandbox PRIVATE Otter/includes)
 target_link_libraries(Sandbox PRIVATE Otter)
 
 # Test Setup
-add_subdirectory(lib/GoogleTest)
+add_subdirectory(ThirdParty/GoogleTest)
 # Main Engine Tests
 add_subdirectory(Otter.Tests)
 target_include_directories(Otter.Tests PRIVATE ${gtest_SOURCE_DIR} ${gtest_SOURCE_DIR}/include Otter/includes)
