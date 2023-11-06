@@ -10,6 +10,8 @@ namespace Otter
 {
     class FreeListAllocator final : public AbstractAllocator
     {
+        struct Iterator;
+
     public:
         enum class Policy : UInt8
         {
@@ -24,7 +26,7 @@ namespace Otter
         explicit FreeListAllocator(void* memory,
                                    const UInt64& memorySize,
                                    const Policy& policy = Policy::FirstFit)
-            : AbstractAllocator(memory, memorySize), m_Head(nullptr), m_Policy(Policy::FirstFit)
+            : AbstractAllocator(memory, memorySize), m_Head(nullptr), m_Policy(policy)
         {
             Clear();
         }
@@ -35,7 +37,19 @@ namespace Otter
 
         void Clear();
 
-        [[nodiscard]] OTR_INLINE Policy GetAllocationPolicy() const { return m_Policy; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetAllocatorHeaderSize() const final
+        {
+            return sizeof(Header);
+        }
+        [[nodiscard]] OTR_INLINE constexpr Policy GetAllocationPolicy() const { return m_Policy; }
+
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
+
+        [[nodiscard]] OTR_INLINE Iterator begin() const noexcept { return Iterator(m_Head); }
+        [[nodiscard]] OTR_INLINE Iterator end() const noexcept { return Iterator(nullptr); }
+
+#pragma clang diagnostic pop
 
     private:
         struct Header
@@ -50,6 +64,35 @@ namespace Otter
             Node* m_Next;
         };
 
+        struct Iterator
+        {
+        public:
+            explicit Iterator(Node* node)
+                : m_Node(node)
+            {
+            }
+
+            OTR_INLINE Iterator& operator++()
+            {
+                m_Node = m_Node->m_Next;
+                return *this;
+            }
+
+            OTR_INLINE const Iterator operator++(int)
+            {
+                Iterator iterator = *this;
+                ++(*this);
+                return iterator;
+            }
+
+            OTR_INLINE Node& operator*() { return *m_Node; }
+            OTR_INLINE bool operator==(const Iterator& other) const { return m_Node == other.m_Node; }
+            OTR_INLINE bool operator!=(const Iterator& other) const { return !(*this == other); }
+
+        private:
+            Node* m_Node;
+        };
+
         Node* m_Head;
         Policy m_Policy;
 
@@ -57,7 +100,7 @@ namespace Otter
         Node* FindBestFit(Node** previous, UInt16* padding, const UInt64& size, const UInt16& alignment);
         void Insert(Node* node, Node* previous);
         void Remove(Node* node, Node* previous);
-        void Merge(Node* left, Node* right);
+        void Merge(Node* toMerge, Node* previousNode);
 
         static UIntPtr GetAlignmentPadding(const UIntPtr& address, const UInt16& alignment);
     };

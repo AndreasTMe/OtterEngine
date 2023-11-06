@@ -61,7 +61,8 @@ namespace Otter
 
     void FreeListAllocator::Free(void* block)
     {
-        const UIntPtr headerAddress = (UIntPtr) block - OTR_ALIGNED_OFFSET(sizeof(Header), OTR_PLATFORM_MEMORY_ALIGNMENT);
+        const UIntPtr headerAddress =
+                          (UIntPtr) block - OTR_ALIGNED_OFFSET(sizeof(Header), OTR_PLATFORM_MEMORY_ALIGNMENT);
         const Header* const header = (Header*) headerAddress;
 
         Node* nodeToInsert = (Node * )(headerAddress);
@@ -83,7 +84,7 @@ namespace Otter
 
         m_MemoryUsed -= nodeToInsert->m_Size;
 
-        Merge(iteratorPrevious, nodeToInsert);
+        Merge(nodeToInsert, iteratorPrevious);
     }
 
     void FreeListAllocator::Clear()
@@ -175,8 +176,8 @@ namespace Otter
         {
             if (m_Head)
                 toInsert->m_Next = m_Head;
-            else
-                m_Head = toInsert;
+
+            m_Head = toInsert;
         }
         else
         {
@@ -203,18 +204,22 @@ namespace Otter
             previous->m_Next = toRemove->m_Next;
     }
 
-    void FreeListAllocator::Merge(Node* left, Node* right)
+    void FreeListAllocator::Merge(Node* toMerge, Node* previousNode)
     {
-        if (right->m_Next && right->m_Size + ((UIntPtr) right) == (UIntPtr) right->m_Next)
+        if (toMerge
+            && toMerge->m_Next
+            && ((UIntPtr) toMerge + toMerge->m_Size) == (UIntPtr) toMerge->m_Next)
         {
-            right->m_Size += right->m_Next->m_Size;
-            Remove(right, right->m_Next);
+            toMerge->m_Size += toMerge->m_Next->m_Size;
+            Remove(toMerge->m_Next, toMerge);
         }
 
-        if (left && left->m_Size + ((UIntPtr) left) == (UIntPtr) right)
+        if (previousNode
+            && previousNode->m_Next
+            && ((UIntPtr) previousNode + previousNode->m_Size) == (UIntPtr) toMerge)
         {
-            left->m_Size += right->m_Size;
-            Remove(left, right);
+            previousNode->m_Size += toMerge->m_Size;
+            Remove(toMerge, previousNode);
         }
     }
 

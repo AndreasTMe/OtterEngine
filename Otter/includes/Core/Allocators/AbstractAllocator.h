@@ -24,11 +24,12 @@ namespace Otter
         virtual void* Allocate(const UInt64& size, const UInt64& alignment) = 0;
         virtual void Free(void* block) = 0;
 
-        [[nodiscard]] OTR_INLINE void* GetMemoryUnsafePointer() const { return m_Memory; }
-        [[nodiscard]] OTR_INLINE UInt64 GetMemorySize() const { return m_MemorySize; }
-        [[nodiscard]] OTR_INLINE UInt64 GetMemoryUsed() const { return m_MemoryUsed; }
-        [[nodiscard]] OTR_INLINE UInt64 GetMemoryFree() const { return m_MemorySize - m_MemoryUsed; }
+        [[nodiscard]] OTR_INLINE constexpr void* GetMemoryUnsafePointer() const { return m_Memory; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetMemorySize() const { return m_MemorySize; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetMemoryUsed() const { return m_MemoryUsed; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetMemoryFree() const { return m_MemorySize - m_MemoryUsed; }
 
+        [[nodiscard]] OTR_INLINE constexpr virtual UInt64 GetAllocatorHeaderSize() const = 0;
     protected:
         void* m_Memory;
         UInt64 m_MemorySize;
