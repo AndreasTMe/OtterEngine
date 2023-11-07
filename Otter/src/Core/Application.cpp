@@ -22,7 +22,7 @@ namespace Otter
         100,
         1280,
         720,
-        20_KiB
+        10_KiB
     };
 
     void Application::Run()

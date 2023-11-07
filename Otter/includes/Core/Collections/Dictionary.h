@@ -114,7 +114,7 @@ namespace Otter
             return *this;
         }
 
-        bool TryAdd(const TKey& key, const TValue& value)
+        bool TryAdd(const TKey& key, const TValue& value, bool overwrite = false)
         {
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
@@ -127,8 +127,19 @@ namespace Otter
                 return true;
             }
 
-            if (ExistsInBucket(key, hash, m_Buckets[index]))
-                return false;
+            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+            {
+                if (m_Buckets[index].m_Items[i].m_Pair.m_Key == key && m_Buckets[index].m_Items[i].m_Hash == hash)
+                {
+                    if (overwrite)
+                    {
+                        m_Buckets[index].m_Items[i].m_Pair.m_Value = value;
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
 
             if (m_Buckets[index].m_Count >= m_Buckets[index].m_Capacity)
                 ResizeBucket(&m_Buckets[index]);
@@ -143,7 +154,7 @@ namespace Otter
             return true;
         }
 
-        bool TryAdd(TKey&& key, TValue&& value) noexcept
+        bool TryAdd(TKey&& key, TValue&& value, bool overwrite = false) noexcept
         {
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
@@ -156,8 +167,19 @@ namespace Otter
                 return true;
             }
 
-            if (ExistsInBucket(key, hash, m_Buckets[index]))
-                return false;
+            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+            {
+                if (m_Buckets[index].m_Items[i].m_Pair.m_Key == key && m_Buckets[index].m_Items[i].m_Hash == hash)
+                {
+                    if (overwrite)
+                    {
+                        m_Buckets[index].m_Items[i].m_Pair.m_Value = value;
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
 
             if (m_Buckets[index].m_Count >= m_Buckets[index].m_Capacity)
                 ResizeBucket(&m_Buckets[index]);
@@ -304,15 +326,6 @@ namespace Otter
             bucket->m_Capacity = newCapacity;
         }
 
-        [[nodiscard]] bool ExistsInBucket(const TKey& key, const UInt64& hash, const Bucket& bucket) const
-        {
-            for (UInt64 i = 0; i < bucket.m_Count; i++)
-                if (bucket.m_Items[i].m_Pair.m_Key == key && bucket.m_Items[i].m_Hash == hash)
-                    return true;
-
-            return false;
-        }
-
         [[nodiscard]] bool TryGetInternal(const TKey& key, TValue& value) const
         {
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
@@ -366,8 +379,9 @@ namespace Otter
             if (m_Buckets[index].m_Capacity == 0)
                 return false;
 
-            if (ExistsInBucket(key, hash, m_Buckets[index]))
-                return true;
+            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+                if (m_Buckets[index].m_Items[i].m_Pair.m_Key == key && m_Buckets[index].m_Items[i].m_Hash == hash)
+                    return true;
 
             return false;
         }

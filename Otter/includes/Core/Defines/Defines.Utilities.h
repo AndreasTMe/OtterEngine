@@ -24,4 +24,29 @@
 #define OTR_ALIGNED_OFFSET(value, alignment) ((value + (alignment - 1)) & ~(alignment - 1))
 #define OTR_ALIGNED_PADDING(address, alignment) ((alignment - (address % alignment)) % alignment)
 
+#if OTR_DEBUG
+    #define OTR_INTERNAL_DEBUG_BLOCK(code)  \
+        {                                   \
+            code                            \
+        }
+#elif OTR_EDITOR
+    #define OTR_INTERNAL_DEBUG_BLOCK(code)
+#else
+    #define OTR_INTERNAL_DEBUG_BLOCK(code)
+#endif
+
+#if OTR_DEBUG
+    #define OTR_DEBUG_BLOCK(code)   \
+        {                           \
+            code                    \
+        }
+#elif OTR_EDITOR
+    #define OTR_DEBUG_BLOCK(code)   \
+        {                           \
+            code                    \
+        }
+#else
+    #define OTR_DEBUG_BLOCK(code)
+#endif
+
 #endif //OTTERENGINE_DEFINES_UTILITIES_H
