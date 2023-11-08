@@ -10,6 +10,28 @@
 namespace Otter
 {
     template<typename T>
+    class Collection;
+
+    class Collections final
+    {
+    public:
+        template<typename T>
+        static void New(const T* const data, const UInt64& count, Collection<T>& outCollection)
+        {
+            OTR_INTERNAL_ASSERT_MSG(data != nullptr, "Data cannot be null!")
+            OTR_INTERNAL_ASSERT_MSG(count > 0, "Count must be greater than 0!")
+
+            outCollection.Reserve(count);
+
+            for (UInt64 i = 0; i < count; i++)
+            {
+                outCollection.m_Data[i] = data[i];
+                outCollection.m_Count++;
+            }
+        }
+    };
+
+    template<typename T>
     class Collection
     {
     public:
@@ -108,14 +130,11 @@ namespace Otter
             m_Count    = 0;
         }
 
-        [[nodiscard]] OTR_INLINE static constexpr Collection Empty() { return Collection(); }
-
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_Count == 0; }
 
         [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
-        [[nodiscard]] OTR_INLINE T* GetUnsafeCollectionData() { return m_Data; }
 
     protected:
         Collection()
@@ -126,6 +145,8 @@ namespace Otter
         T* m_Data;
         UInt64 m_Capacity;
         UInt64 m_Count;
+
+        friend class Collections;
     };
 }
 
@@ -143,30 +164,14 @@ namespace Otter
         base::m_Count    = 0;                                                   \
     }                                                                           \
                                                                                 \
-        explicit OTR_COLLECTION_CHILD(Type)(const T& value)                     \
+    OTR_COLLECTION_CHILD(Type)(InitialiserList<T> list)                         \
     {                                                                           \
-        base::m_Capacity = 1;                                                   \
-                                                                                \
-        base::m_Data = Buffer::New<T>(base::m_Capacity);                        \
-        base::m_Data[0] = value;                                                \
-                                                                                \
-        base::m_Count = 1;                                                      \
-    }                                                                           \
-                                                                                \
-    template<typename... Args>                                                  \
-    explicit OTR_COLLECTION_CHILD(Type)(const T& value, const Args&& ... args)  \
-    {                                                                           \
-        base::m_Capacity = VariadicArgs<Args...>::GetSize() + 1;                \
+        base::m_Capacity = list.size();                                         \
         base::m_Data     = Buffer::New<T>(base::m_Capacity);                    \
                                                                                 \
-        UInt64 i = 0;                                                           \
-        base::m_Data[i++] = value;                                              \
-        ([&]()                                                                  \
-        {                                                                       \
-            base::m_Data[i++] = args;                                           \
-        }(), ...);                                                              \
-                                                                                \
-        base::m_Count = base::m_Capacity;                                       \
+        base::m_Count = 0;                                                      \
+        for (const T& item: list)                                               \
+            base::m_Data[base::m_Count++] = item;                               \
     }
 
 #define OTR_COLLECTION_COPY(Type)                                               \

@@ -33,6 +33,9 @@ typedef std::float64_t  Double64;
 typedef std::float128_t Double128;
 
 template<typename T>
+using InitialiserList = std::initializer_list<T>;
+
+template<typename T>
 struct TypeOf
 {
 public:
