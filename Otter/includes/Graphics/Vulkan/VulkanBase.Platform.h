@@ -5,9 +5,8 @@
 
 namespace Otter::Graphics::Vulkan
 {
-    void GetRequiredInstanceExtensions(List<const char*>& extensions, List<const char*>& layers);
-
-    void GetRequiredDeviceExtensions(List<const char*>& extensions, List<const char*>& layers);
+    void GetRequiredInstanceExtensions(List<const char*>& extensions);
+    void GetRequiredInstanceValidationLayers(List<const char*>& layers);
 }
 
 #endif //OTTERENGINE_VULKANBASE_PLATFORM_H

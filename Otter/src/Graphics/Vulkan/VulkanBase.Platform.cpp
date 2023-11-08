@@ -5,7 +5,7 @@
 
 namespace Otter::Graphics::Vulkan
 {
-    void GetRequiredInstanceExtensions(List<const char*>& extensions, List<const char*>& layers)
+    void GetRequiredInstanceExtensions(List<const char*>& extensions)
     {
         extensions.Add(VK_KHR_SURFACE_EXTENSION_NAME);
 
@@ -48,7 +48,10 @@ namespace Otter::Graphics::Vulkan
         }
 
         Buffer::Delete(availableExtensions, availableExtensionCount);
+    }
 
+    void GetRequiredInstanceValidationLayers(List<const char*>& layers)
+    {
 #if !OTR_RUNTIME
         layers.Add("VK_LAYER_KHRONOS_validation");
 
@@ -76,11 +79,6 @@ namespace Otter::Graphics::Vulkan
 
         Buffer::Delete(availableLayers, availableLayerCount);
 #endif
-    }
-
-    void GetRequiredDeviceExtensions(List<const char*>& extensions, List<const char*>& layers)
-    {
-        extensions.Add(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     }
 }
 

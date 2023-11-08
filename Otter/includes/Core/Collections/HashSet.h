@@ -187,7 +187,7 @@ namespace Otter
                     continue;
 
                 for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
-                    action(m_Buckets[i].m_Items[j].m_Pair.m_Key, m_Buckets[i].m_Items[j].m_Pair.m_Value);
+                    action(m_Buckets[i].m_Items[j].m_Data);
             }
         }
 

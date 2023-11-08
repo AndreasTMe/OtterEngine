@@ -3,6 +3,7 @@
 #include "Graphics/Vulkan/VulkanRenderer.h"
 #include "Graphics/Vulkan/VulkanBase.Platform.h"
 #include "Graphics/Vulkan/VulkanSurface.h"
+#include "Graphics/Vulkan/VulkanDevice.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -17,10 +18,13 @@ namespace Otter::Graphics::Vulkan
 #endif
 
         CreateSurface(m_Context, platformContext);
+        CreateDevicePairs(m_Context);
     }
 
     void VulkanRenderer::Shutdown()
     {
+        vkDestroyDevice(m_Context->m_DevicePair.m_LogicalDevice, m_Context->m_Allocator);
+
 #if !OTR_RUNTIME
         DestroyVulkanDebugMessenger();
 #endif
@@ -48,9 +52,10 @@ namespace Otter::Graphics::Vulkan
         createInfo.pApplicationInfo = &appInfo;
 
         OTR_LOG_TRACE("Getting required instance extensions and layers...")
+
         List<const char*> extensions;
-        List<const char*> layers;
-        GetRequiredInstanceExtensions(extensions, layers);
+        GetRequiredInstanceExtensions(extensions);
+
         createInfo.enabledExtensionCount   = extensions.GetCount();
         createInfo.ppEnabledExtensionNames = extensions.GetData();
 
@@ -60,19 +65,24 @@ namespace Otter::Graphics::Vulkan
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{ };
         PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
+        List<const char*> layers;
+        GetRequiredInstanceValidationLayers(layers);
+
         createInfo.enabledLayerCount   = layers.GetCount();
         createInfo.ppEnabledLayerNames = layers.GetData();
         createInfo.pNext               = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
 #else
-        createInfo.enabledLayerCount       = 0;
-        createInfo.ppEnabledLayerNames     = nullptr;
-        createInfo.pNext                   = nullptr;
+        createInfo.enabledLayerCount   = 0;
+        createInfo.ppEnabledLayerNames = nullptr;
+        createInfo.pNext               = nullptr;
 #endif
 
         OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, m_Context->m_Allocator, &m_Context->m_Instance))
 
         extensions.ClearDestructive();
+#if !OTR_RUNTIME
         layers.ClearDestructive();
+#endif
     }
 
 #if !OTR_RUNTIME
