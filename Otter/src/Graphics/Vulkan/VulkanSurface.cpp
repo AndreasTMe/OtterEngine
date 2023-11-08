@@ -6,7 +6,9 @@ namespace Otter::Graphics::Vulkan
 {
 #if OTR_PLATFORM_WINDOWS
 
-    void CreateSurface(VulkanContext* vulkanContext, const void* const platformContext)
+    void CreateSurface(const VulkanContext* const vulkanContext,
+                       const void* const platformContext,
+                       VkSurfaceKHR& outSurface)
     {
         const auto* const platformContextData       = ((PlatformContext*) platformContext)->m_Data;
         const auto* const windowsPlatformWindowData = (Internal::WindowsPlatformWindowData*) platformContextData;
@@ -19,7 +21,7 @@ namespace Otter::Graphics::Vulkan
         OTR_VULKAN_VALIDATE(vkCreateWin32SurfaceKHR(vulkanContext->m_Instance,
                                                     &createInfo,
                                                     vulkanContext->m_Allocator,
-                                                    &vulkanContext->m_Surface))
+                                                    &outSurface))
     }
 
 #else

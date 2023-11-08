@@ -5,6 +5,16 @@
 
 namespace Otter::Graphics::Vulkan
 {
+    struct VulkanSwapchain
+    {
+        VkSwapchainKHR     m_Handle            = VK_NULL_HANDLE;
+        VkSurfaceFormatKHR m_SurfaceFormat     = { };
+        UInt32             m_ImageCount        = 0;
+        VkPresentModeKHR   m_PresentMode       = VK_PRESENT_MODE_FIFO_KHR;
+        VkExtent2D         m_Extent            = { };
+        UInt8              m_MaxFramesInFlight = 0;
+    };
+
     struct SwapchainSupportInfo
     {
         VkSurfaceCapabilitiesKHR m_SurfaceCapabilities;
@@ -14,8 +24,8 @@ namespace Otter::Graphics::Vulkan
 
     struct VulkanQueueFamily
     {
-        UInt32  m_Index = UINT32_MAX;
-        VkQueue m_Queue = VK_NULL_HANDLE;
+        VkQueue m_Handle = VK_NULL_HANDLE;
+        UInt32  m_Index  = UINT32_MAX;
     };
 
     struct VulkanDevicePair
@@ -28,6 +38,11 @@ namespace Otter::Graphics::Vulkan
         // TODO: VulkanQueueFamily m_ComputeQueueFamily;
         // TODO: VulkanQueueFamily m_TransferQueueFamily;
         // TODO: VulkanQueueFamily m_SparseBindingQueueFamily;
+
+        [[nodiscard]] OTR_INLINE bool GraphicsAndPresentationQueueFamiliesAreTheSame() const
+        {
+            return m_GraphicsQueueFamily.m_Index == m_PresentationQueueFamily.m_Index;
+        }
     };
 
     struct VulkanContext
@@ -41,6 +56,7 @@ namespace Otter::Graphics::Vulkan
 #endif
 
         VulkanDevicePair m_DevicePair;
+        VulkanSwapchain  m_Swapchain;
     };
 }
 

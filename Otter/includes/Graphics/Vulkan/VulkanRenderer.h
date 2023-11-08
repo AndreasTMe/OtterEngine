@@ -12,6 +12,8 @@ namespace Otter::Graphics::Vulkan
         void Initialise(const void* platformContext) final;
         void Shutdown() final;
 
+        void RenderFrame() final;
+
     private:
         VulkanContext* m_Context = nullptr;
 

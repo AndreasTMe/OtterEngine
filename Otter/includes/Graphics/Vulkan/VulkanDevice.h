@@ -5,10 +5,10 @@
 
 namespace Otter::Graphics::Vulkan
 {
-    void CreateDevicePairs(VulkanContext* vulkanContext);
+    void CreateDevicePairs(const VulkanContext* vulkanContext, VulkanDevicePair& outDevicePair);
+    void DestroyDevicePairs(const VulkanContext* vulkanContext);
 
     void QueryQueueFamilies(const VkPhysicalDevice& physicalDevice, UInt32& graphicsFamily, UInt32& presentFamily);
-    void QuerySwapchainSupport(const VkPhysicalDevice& physicalDevice, SwapchainSupportInfo& swapchainSupportInfo);
     bool DeviceSupportsRequiredExtensions(const VkPhysicalDevice& physicalDevice);
 }
 

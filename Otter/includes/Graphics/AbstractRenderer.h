@@ -10,6 +10,8 @@ namespace Otter::Graphics
 
         virtual void Initialise(const void* platformContext) = 0;
         virtual void Shutdown() = 0;
+
+        virtual void RenderFrame() = 0;
     };
 }
 

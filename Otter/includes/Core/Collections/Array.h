@@ -27,27 +27,13 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        explicit Array(const T& value)
+        Array(InitialiserList<T> list)
         {
-            m_Data = Buffer::New<T>(Size);
-
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = value;
-        }
-
-        template<typename... Args>
-        explicit Array(const T& value, const Args&& ... args)
-        {
-            OTR_ASSERT_MSG(VariadicArgs<Args...>::GetSize() < Size, "Array size is too small")
-
-            m_Data = Buffer::New<T>(Size);
+            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
-            m_Data[i++] = value;
-            ([&]()
-            {
-                m_Data[i++] = args;
-            }(), ...);
+            for (const T& value: list)
+                m_Data[i++] = value;
         }
 
         Array(const Array<T, Size>& other)
@@ -98,6 +84,7 @@ namespace Otter
             return ReadOnlyArray<T, Size>(*this);
         }
 
+        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 Length() const { return Size; }
 
     private:

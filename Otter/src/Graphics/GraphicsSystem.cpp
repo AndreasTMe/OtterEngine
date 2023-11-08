@@ -53,5 +53,6 @@ namespace Otter::GraphicsSystem
 
     void RenderFrame()
     {
+        g_Renderer->RenderFrame();
     }
 }

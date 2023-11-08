@@ -1,6 +1,7 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/Vulkan/VulkanDevice.h"
+#include "Graphics/Vulkan/VulkanSwapchain.h"
 #include "Graphics/Vulkan/VulkanBase.Platform.h"
 
 namespace Otter::Graphics::Vulkan
@@ -14,15 +15,30 @@ namespace Otter::Graphics::Vulkan
     void CreateLogicalDevice();
     void GetDeviceRequiredExtensions(List<const char*>& requiredExtensions);
 
-    void CreateDevicePairs(VulkanContext* vulkanContext)
+    void CreateDevicePairs(const VulkanContext* const vulkanContext, VulkanDevicePair& outDevicePair)
     {
+        OTR_INTERNAL_ASSERT_MSG(vulkanContext->m_Instance != VK_NULL_HANDLE,
+                                "Instance must be initialized before creating device pairs")
+        OTR_INTERNAL_ASSERT_MSG(vulkanContext->m_Surface != VK_NULL_HANDLE,
+                                "Surface must be initialized before creating device pairs")
+
+        OTR_LOG_TRACE("Creating Vulkan device pairs...")
+
         gs_Instance = vulkanContext->m_Instance;
         gs_Surface  = vulkanContext->m_Surface;
 
         SelectPhysicalDevice();
         CreateLogicalDevice();
 
-        vulkanContext->m_DevicePair = g_DevicePair;
+        outDevicePair = g_DevicePair;
+    }
+
+    void DestroyDevicePairs(const VulkanContext* const vulkanContext)
+    {
+        OTR_INTERNAL_ASSERT_MSG(vulkanContext->m_DevicePair.m_LogicalDevice != VK_NULL_HANDLE,
+                                "Logical device must be initialized before destroying device pairs")
+
+        vkDestroyDevice(vulkanContext->m_DevicePair.m_LogicalDevice, vulkanContext->m_Allocator);
     }
 
     void SelectPhysicalDevice()
@@ -72,7 +88,7 @@ namespace Otter::Graphics::Vulkan
 
             // HELP: Require a GPU with swapchain support
             SwapchainSupportInfo swapchainSupportInfo;
-            QuerySwapchainSupport(queriedDevice, swapchainSupportInfo);
+            QuerySwapchainSupport(gs_Surface, queriedDevice, swapchainSupportInfo);
 
             bool isSwapchainSupported = swapchainSupportInfo.m_SurfaceFormats.GetCount() > 0
                                         && swapchainSupportInfo.m_PresentModes.GetCount() > 0;
@@ -122,6 +138,7 @@ namespace Otter::Graphics::Vulkan
         uniqueQueueFamilies.ForEach(addQueueCreateInfo);
         addQueueCreateInfo.ClearDestructive();
 
+        // TODO: Should be configuration driven, all features are disabled by default for now
         VkPhysicalDeviceFeatures deviceFeatures{ };
 
         List<const char*> requiredExtensions;
@@ -134,17 +151,8 @@ namespace Otter::Graphics::Vulkan
         createInfo.pEnabledFeatures        = &deviceFeatures;
         createInfo.enabledExtensionCount   = requiredExtensions.GetCount();
         createInfo.ppEnabledExtensionNames = requiredExtensions.GetData();
-
-#if !OTR_RUNTIME
-        List<const char*> layers;
-        GetRequiredInstanceValidationLayers(layers);
-
-        createInfo.enabledLayerCount   = layers.GetCount();
-        createInfo.ppEnabledLayerNames = layers.GetData();
-#else
-        createInfo.enabledLayerCount   = 0;
-        createInfo.ppEnabledLayerNames = nullptr;
-#endif
+        createInfo.enabledLayerCount       = 0;
+        createInfo.ppEnabledLayerNames     = nullptr;
 
         OTR_VULKAN_VALIDATE(vkCreateDevice(g_DevicePair.m_PhysicalDevice,
                                            &createInfo,
@@ -154,22 +162,19 @@ namespace Otter::Graphics::Vulkan
         OTR_INTERNAL_ASSERT_MSG(g_DevicePair.m_LogicalDevice != VK_NULL_HANDLE, "Failed to create logical device")
 
         requiredExtensions.ClearDestructive();
-#if !OTR_RUNTIME
-        layers.ClearDestructive();
-#endif
 
         vkGetDeviceQueue(g_DevicePair.m_LogicalDevice,
                          g_DevicePair.m_GraphicsQueueFamily.m_Index,
                          0,
-                         &g_DevicePair.m_GraphicsQueueFamily.m_Queue);
+                         &g_DevicePair.m_GraphicsQueueFamily.m_Handle);
         vkGetDeviceQueue(g_DevicePair.m_LogicalDevice,
                          g_DevicePair.m_PresentationQueueFamily.m_Index,
                          0,
-                         &g_DevicePair.m_PresentationQueueFamily.m_Queue);
+                         &g_DevicePair.m_PresentationQueueFamily.m_Handle);
 
-        OTR_INTERNAL_ASSERT_MSG(g_DevicePair.m_GraphicsQueueFamily.m_Queue != VK_NULL_HANDLE,
+        OTR_INTERNAL_ASSERT_MSG(g_DevicePair.m_GraphicsQueueFamily.m_Handle != VK_NULL_HANDLE,
                                 "Failed to get graphics queue")
-        OTR_INTERNAL_ASSERT_MSG(g_DevicePair.m_PresentationQueueFamily.m_Queue != VK_NULL_HANDLE,
+        OTR_INTERNAL_ASSERT_MSG(g_DevicePair.m_PresentationQueueFamily.m_Handle != VK_NULL_HANDLE,
                                 "Failed to get presentation queue")
     }
 
@@ -207,58 +212,6 @@ namespace Otter::Graphics::Vulkan
                 break;
 
             currentIndex++;
-        }
-    }
-
-    void QuerySwapchainSupport(const VkPhysicalDevice& physicalDevice, SwapchainSupportInfo& swapchainSupportInfo)
-    {
-        OTR_INTERNAL_ASSERT_MSG(gs_Surface != VK_NULL_HANDLE,
-                                "Surface must be initialized before querying swapchain support")
-        OTR_INTERNAL_ASSERT_MSG(physicalDevice != VK_NULL_HANDLE,
-                                "Physical device must be initialized before querying swapchain support")
-
-        OTR_VULKAN_VALIDATE(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice,
-                                                                      gs_Surface,
-                                                                      &swapchainSupportInfo.m_SurfaceCapabilities))
-
-        UInt32 surfaceFormatCount;
-        OTR_VULKAN_VALIDATE(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,
-                                                                 gs_Surface,
-                                                                 &surfaceFormatCount,
-                                                                 nullptr))
-
-        if (surfaceFormatCount != 0)
-        {
-            VkSurfaceFormatKHR surfaceFormats[surfaceFormatCount];
-            OTR_VULKAN_VALIDATE(vkGetPhysicalDeviceSurfaceFormatsKHR(
-                physicalDevice,
-                gs_Surface,
-                &surfaceFormatCount,
-                surfaceFormats))
-
-            Collections::New<VkSurfaceFormatKHR>(surfaceFormats,
-                                                 surfaceFormatCount,
-                                                 swapchainSupportInfo.m_SurfaceFormats);
-        }
-
-        UInt32 presentModeCount;
-        OTR_VULKAN_VALIDATE(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice,
-                                                                      gs_Surface,
-                                                                      &presentModeCount,
-                                                                      nullptr))
-
-        if (presentModeCount != 0)
-        {
-            VkPresentModeKHR presentModes[presentModeCount];
-            OTR_VULKAN_VALIDATE(vkGetPhysicalDeviceSurfacePresentModesKHR(
-                physicalDevice,
-                gs_Surface,
-                &presentModeCount,
-                presentModes))
-
-            Collections::New<VkPresentModeKHR>(presentModes,
-                                               presentModeCount,
-                                               swapchainSupportInfo.m_PresentModes);
         }
     }
 

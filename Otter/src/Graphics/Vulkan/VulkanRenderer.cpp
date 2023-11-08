@@ -4,10 +4,11 @@
 #include "Graphics/Vulkan/VulkanBase.Platform.h"
 #include "Graphics/Vulkan/VulkanSurface.h"
 #include "Graphics/Vulkan/VulkanDevice.h"
+#include "Graphics/Vulkan/VulkanSwapchain.h"
 
 namespace Otter::Graphics::Vulkan
 {
-    void VulkanRenderer::Initialise(const void* platformContext)
+    void VulkanRenderer::Initialise(const void* const platformContext)
     {
         m_Context = New<VulkanContext>();
 
@@ -17,13 +18,15 @@ namespace Otter::Graphics::Vulkan
         CreateVulkanDebugMessenger();
 #endif
 
-        CreateSurface(m_Context, platformContext);
-        CreateDevicePairs(m_Context);
+        CreateSurface(m_Context, platformContext, m_Context->m_Surface);
+        CreateDevicePairs(m_Context, m_Context->m_DevicePair);
+        CreateSwapchain(m_Context, m_Context->m_Swapchain);
     }
 
     void VulkanRenderer::Shutdown()
     {
-        vkDestroyDevice(m_Context->m_DevicePair.m_LogicalDevice, m_Context->m_Allocator);
+        DestroySwapchain(m_Context);
+        DestroyDevicePairs(m_Context);
 
 #if !OTR_RUNTIME
         DestroyVulkanDebugMessenger();
@@ -33,6 +36,10 @@ namespace Otter::Graphics::Vulkan
         vkDestroyInstance(m_Context->m_Instance, m_Context->m_Allocator);
 
         Delete(m_Context);
+    }
+
+    void VulkanRenderer::RenderFrame()
+    {
     }
 
     void VulkanRenderer::CreateVulkanInstance()

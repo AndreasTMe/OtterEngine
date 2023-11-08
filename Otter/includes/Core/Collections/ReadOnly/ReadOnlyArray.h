@@ -27,27 +27,13 @@ namespace Otter
         OTR_DISABLE_OBJECT_MOVES(ReadOnlyArray)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        explicit ReadOnlyArray(const T& value)
+        ReadOnlyArray(InitialiserList<T> list)
         {
-            m_Data = Buffer::New<T>(Size);
-
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = value;
-        }
-
-        template<typename... Args>
-        explicit ReadOnlyArray(const T& value, const Args&& ... args)
-        {
-            OTR_ASSERT_MSG(VariadicArgs<Args...>::GetSize() < Size, "ReadOnlyArray size is too small")
-
-            m_Data = Buffer::New<T>(Size);
+            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
-            m_Data[i++] = value;
-            ([&]()
-            {
-                m_Data[i++] = args;
-            }(), ...);
+            for (const T& value: list)
+                m_Data[i++] = value;
         }
 
         explicit ReadOnlyArray(const Array<T, Size>& other)
@@ -86,6 +72,9 @@ namespace Otter
             OTR_ASSERT_MSG(index < Size, "ReadOnlyArray index out of bounds")
             return m_Data[index];
         }
+
+        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
 
     private:
         T m_Data[Size];

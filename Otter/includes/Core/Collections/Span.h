@@ -36,17 +36,13 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        explicit Span(const T& value)
+        Span(InitialiserList<T> list)
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = value;
-        }
+            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
 
-        template<typename... Args>
-        explicit Span(const T& value, const Args&& ... args)
-            : m_Data{ value, args... }
-        {
-            OTR_ASSERT_MSG(VariadicArgs<Args...>::GetSize() < Size, "Span size is too small")
+            UInt64 i = 0;
+            for (const T& value: list)
+                m_Data[i++] = value;
         }
 
         Span(const Span<T, Size>& other)
@@ -97,6 +93,7 @@ namespace Otter
             return ReadOnlySpan<T, Size>(*this);
         }
 
+        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 Length() const { return Size; }
 
     private:
