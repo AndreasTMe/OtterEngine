@@ -93,9 +93,6 @@ namespace Otter::Graphics::Vulkan
             bool isSwapchainSupported = swapchainSupportInfo.m_SurfaceFormats.GetCount() > 0
                                         && swapchainSupportInfo.m_PresentModes.GetCount() > 0;
 
-            swapchainSupportInfo.m_SurfaceFormats.ClearDestructive();
-            swapchainSupportInfo.m_PresentModes.ClearDestructive();
-
             if (!isSwapchainSupported)
             {
                 OTR_LOG_TRACE("{0} is not suitable due to missing swapchain support. "
@@ -160,8 +157,6 @@ namespace Otter::Graphics::Vulkan
                                            &g_DevicePair.m_LogicalDevice))
 
         OTR_INTERNAL_ASSERT_MSG(g_DevicePair.m_LogicalDevice != VK_NULL_HANDLE, "Failed to create logical device")
-
-        requiredExtensions.ClearDestructive();
 
         vkGetDeviceQueue(g_DevicePair.m_LogicalDevice,
                          g_DevicePair.m_GraphicsQueueFamily.m_Index,
@@ -249,8 +244,6 @@ namespace Otter::Graphics::Vulkan
                 }
             }
         }
-
-        requiredExtensions.ClearDestructive();
 
         return foundRequiredExtensions;
     }

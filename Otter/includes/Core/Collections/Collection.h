@@ -21,7 +21,12 @@ namespace Otter
             OTR_INTERNAL_ASSERT_MSG(data != nullptr, "Data cannot be null!")
             OTR_INTERNAL_ASSERT_MSG(count > 0, "Count must be greater than 0!")
 
-            outCollection.Reserve(count);
+            if (outCollection.m_Data != nullptr && outCollection.m_Capacity > 0)
+                Buffer::Delete(outCollection.m_Data, outCollection.m_Capacity);
+
+            outCollection.m_Data     = Buffer::New<T>(count);
+            outCollection.m_Capacity = count;
+            outCollection.m_Count    = 0;
 
             for (UInt64 i = 0; i < count; i++)
             {

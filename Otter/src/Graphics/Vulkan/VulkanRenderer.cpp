@@ -5,6 +5,7 @@
 #include "Graphics/Vulkan/VulkanSurface.h"
 #include "Graphics/Vulkan/VulkanDevice.h"
 #include "Graphics/Vulkan/VulkanSwapchain.h"
+#include "Graphics/Vulkan/VulkanCommands.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -21,10 +22,12 @@ namespace Otter::Graphics::Vulkan
         CreateSurface(m_Context, platformContext, m_Context->m_Surface);
         CreateDevicePairs(m_Context, m_Context->m_DevicePair);
         CreateSwapchain(m_Context, m_Context->m_Swapchain);
+        CreateCommandBuffers(m_Context, m_Context->m_DevicePair.m_GraphicsCommandPool, m_Context->m_CommandBuffers);
     }
 
     void VulkanRenderer::Shutdown()
     {
+        DestroyCommandBuffers(m_Context, m_Context->m_CommandBuffers);
         DestroySwapchain(m_Context);
         DestroyDevicePairs(m_Context);
 
@@ -85,11 +88,6 @@ namespace Otter::Graphics::Vulkan
 #endif
 
         OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, m_Context->m_Allocator, &m_Context->m_Instance))
-
-        extensions.ClearDestructive();
-#if !OTR_RUNTIME
-        layers.ClearDestructive();
-#endif
     }
 
 #if !OTR_RUNTIME
