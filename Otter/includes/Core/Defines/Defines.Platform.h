@@ -13,30 +13,39 @@
     #endif
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
-    #define OTR_PLATFORM_APPLE 1
-    #if TARGET_IPHONE_SIMULATOR
-        #define OTR_PLATFORM_IPHONE_SIMULATOR 1
-        #error "iOS, tvOS or watchOS simulator is currently not supported!"
-    #elif TARGET_OS_MACCATALYST
-        #define OTR_PLATFORM_MAC_CATALYST 1
-        #error "Mac Catalyst is currently not supported!"
-    #elif TARGET_OS_IPHONE
-        #define OTR_PLATFORM_IPHONE 1
-        #error "iOS, tvOS or watchOS is currently not supported!"
+    #if TARGET_OS_IOS
+        #define OTR_PLATFORM_IOS 1
+        #error "iOS is currently not supported!"
     #elif TARGET_OS_MAC
-        #define OTR_PLATFORM_MAC 1
+        #define OTR_PLATFORM_MACOS 1
         #error "MacOS is currently not supported!"
     #else
-        #error "Unknown Apple platform!"
+        #error "Not supported Apple platform!"
     #endif
 #elif defined(__ANDROID__)
     #define OTR_PLATFORM_ANDROID 1
     #error "Android is currently not supported!"
 #elif defined(__linux__)
     #define OTR_PLATFORM_LINUX 1
-//    #error "Linux is currently not supported!"
+    #error "Linux is currently not supported!"
 #else
     #error "Unsupported platform!"
+#endif
+
+#ifndef OTR_PLATFORM_WINDOWS
+    #define OTR_PLATFORM_WINDOWS 0
+#endif
+#ifndef OTR_PLATFORM_IOS
+    #define OTR_PLATFORM_IOS 0
+#endif
+#ifndef OTR_PLATFORM_MACOS
+    #define OTR_PLATFORM_MACOS 0
+#endif
+#ifndef OTR_PLATFORM_ANDROID
+    #define OTR_PLATFORM_ANDROID 0
+#endif
+#ifndef OTR_PLATFORM_LINUX
+    #define OTR_PLATFORM_LINUX 0
 #endif
 
 #if OTR_PLATFORM_WINDOWS

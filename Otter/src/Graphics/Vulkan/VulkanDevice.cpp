@@ -2,7 +2,6 @@
 
 #include "Graphics/Vulkan/VulkanDevice.h"
 #include "Graphics/Vulkan/VulkanSwapchain.h"
-#include "Graphics/Vulkan/VulkanBase.Platform.h"
 
 namespace Otter::Graphics::Vulkan
 {

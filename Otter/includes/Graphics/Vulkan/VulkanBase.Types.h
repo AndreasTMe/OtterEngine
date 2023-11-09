@@ -42,6 +42,8 @@ namespace Otter::Graphics::Vulkan
         VkCommandPool m_GraphicsCommandPool = VK_NULL_HANDLE;
         // TODO: VkCommandPool m_CopyCommandPool = VK_NULL_HANDLE;
 
+        List<VkCommandBuffer> m_CommandBuffers;
+
         [[nodiscard]] OTR_INLINE bool GraphicsAndPresentationQueueFamiliesAreTheSame() const
         {
             return m_GraphicsQueueFamily.m_Index == m_PresentationQueueFamily.m_Index;
@@ -58,9 +60,10 @@ namespace Otter::Graphics::Vulkan
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 #endif
 
-        VulkanDevicePair      m_DevicePair;
-        VulkanSwapchain       m_Swapchain;
-        List<VkCommandBuffer> m_CommandBuffers;
+        VulkanDevicePair m_DevicePair;
+        VulkanSwapchain  m_Swapchain;
+
+        VkRenderPass m_RenderPass = VK_NULL_HANDLE;
     };
 }
 

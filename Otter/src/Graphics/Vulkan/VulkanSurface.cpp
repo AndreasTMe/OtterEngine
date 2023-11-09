@@ -32,4 +32,9 @@ namespace Otter::Graphics::Vulkan
     }
 
 #endif
+
+    void DestroySurface(const VulkanContext* vulkanContext)
+    {
+        vkDestroySurfaceKHR(vulkanContext->m_Instance, vulkanContext->m_Surface, vulkanContext->m_Allocator);
+    }
 }

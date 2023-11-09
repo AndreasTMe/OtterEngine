@@ -6,6 +6,7 @@
 namespace Otter::Graphics::Vulkan
 {
     void CreateSurface(const VulkanContext* vulkanContext, const void* platformContext, VkSurfaceKHR& outSurface);
+    void DestroySurface(const VulkanContext* vulkanContext);
 }
 
 #endif //OTTERENGINE_VULKANSURFACE_H

@@ -18,6 +18,12 @@ namespace Otter::Graphics::Vulkan
         VulkanContext* m_Context = nullptr;
 
         void CreateVulkanInstance();
+        void DestroyVulkanInstance();
+
+        void CreateRenderPass();
+        void DestroyRenderPass();
+
+        static void GetRequiredInstanceExtensions(List<const char*>& extensions);
 
 #if !OTR_RUNTIME
         void CreateVulkanDebugMessenger();
@@ -28,6 +34,8 @@ namespace Otter::Graphics::Vulkan
                                       VkDebugUtilsMessageTypeFlagsEXT messageType,
                                       const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
                                       void* userData);
+
+        static void GetRequiredInstanceValidationLayers(List<const char*>& layers);
 #endif
     };
 }
