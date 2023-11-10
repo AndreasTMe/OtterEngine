@@ -2,6 +2,7 @@
 #define OTTERENGINE_VULKANBASE_INCLUDES_H
 
 #include "Core/Defines.h"
+#include "Core/Types.h"
 
 #include <vulkan/vulkan.h>
 
