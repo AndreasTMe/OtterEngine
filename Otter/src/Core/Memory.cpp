@@ -34,7 +34,7 @@ namespace Otter::MemorySystem
         gs_HasInitialised = false;
     }
 
-    UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment)
+    UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!gs_HasInitialised)
             return { };
@@ -51,7 +51,9 @@ namespace Otter::MemorySystem
     }
 
     // TODO: Use FreeListAllocator to reallocate memory
-    UnsafeHandle Reallocate(UnsafeHandle& handle, const UInt64& size, const UInt64& alignment)
+    UnsafeHandle Reallocate(UnsafeHandle& handle,
+                            const UInt64& size,
+                            const UInt64& alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!gs_HasInitialised)
             return { };
