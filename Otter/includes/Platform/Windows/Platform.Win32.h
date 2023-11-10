@@ -11,8 +11,8 @@ namespace Otter::Internal
 {
     struct WindowsPlatformWindowData
     {
-        HWND      m_WindowHandle;
-        HINSTANCE m_InstanceHandle;
+        HWND      WindowHandle;
+        HINSTANCE InstanceHandle;
     };
 
     class WindowsPlatform final : public Platform

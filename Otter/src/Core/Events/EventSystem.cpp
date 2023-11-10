@@ -88,7 +88,7 @@ namespace Otter
 
             UnsafeHandle handle{ };
             if (g_Listeners.TryGet(type, handle))
-                ((Func<bool, const Event&>*) handle.m_Pointer)->ReverseInvoke(event);
+                ((Func<bool, const Event&>*) handle.Pointer)->ReverseInvoke(event);
 
             s_Events.TryDequeue();
         }
@@ -104,7 +104,7 @@ namespace Otter
             return;
 
         UnsafeHandle handle = Unsafe::New(sizeof(Func<bool, const Event&>));
-        handle.m_Pointer = new(handle.m_Pointer) Func<bool, TActionArg>(action);
+        handle.Pointer = new(handle.Pointer) Func<bool, TActionArg>(action);
         g_Listeners.TryAdd(type, handle);
     }
 }

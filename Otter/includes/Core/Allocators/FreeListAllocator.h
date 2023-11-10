@@ -54,14 +54,14 @@ namespace Otter
     private:
         struct Header
         {
-            UInt64 m_Size;
-            UInt16 m_Padding;
+            UInt64 Size;
+            UInt16 Padding;
         };
 
         struct Node
         {
-            UInt64 m_Size;
-            Node* m_Next;
+            UInt64 Size;
+            Node* Next;
         };
 
         struct Iterator
@@ -74,7 +74,7 @@ namespace Otter
 
             OTR_INLINE Iterator& operator++()
             {
-                m_Node = m_Node->m_Next;
+                m_Node = m_Node->Next;
                 return *this;
             }
 

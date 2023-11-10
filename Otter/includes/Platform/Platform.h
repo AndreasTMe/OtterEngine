@@ -8,7 +8,7 @@ namespace Otter
 {
     struct PlatformContext
     {
-        void* m_Data;
+        void* Data;
     };
 
     class Platform

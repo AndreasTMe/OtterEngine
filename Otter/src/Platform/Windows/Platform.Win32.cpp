@@ -33,8 +33,8 @@ namespace Otter::Internal
 
         g_PlatformMemoryHandle = Unsafe::New(platformContextSize + platformWindowDataSize);
 
-        m_Context = (PlatformContext*) g_PlatformMemoryHandle.m_Pointer;
-        m_Context->m_Data = (WindowsPlatformWindowData*) ((UIntPtr*) g_PlatformMemoryHandle.m_Pointer + 1);
+        m_Context = (PlatformContext*) g_PlatformMemoryHandle.Pointer;
+        m_Context->Data = (WindowsPlatformWindowData*) ((UIntPtr*) g_PlatformMemoryHandle.Pointer + 1);
 
         m_Width  = width;
         m_Height = height;
@@ -55,9 +55,9 @@ namespace Otter::Internal
 
     void WindowsPlatform::Shutdown()
     {
-        if (m_Context->m_Data)
+        if (m_Context->Data)
         {
-            DestroyWindow(((WindowsPlatformWindowData*) m_Context->m_Data)->m_WindowHandle);
+            DestroyWindow(((WindowsPlatformWindowData*) m_Context->Data)->WindowHandle);
             Unsafe::Delete(g_PlatformMemoryHandle);
 
             return;
@@ -110,8 +110,8 @@ namespace Otter::Internal
                                            UInt16 width,
                                            UInt16 height)
     {
-        auto windowData = static_cast<WindowsPlatformWindowData*>(m_Context->m_Data);
-        windowData->m_InstanceHandle = GetModuleHandleA(nullptr);
+        auto windowData = static_cast<WindowsPlatformWindowData*>(m_Context->Data);
+        windowData->InstanceHandle = GetModuleHandleA(nullptr);
 
         const char* className = "WindowClass";
 
@@ -121,9 +121,9 @@ namespace Otter::Internal
         windowClass.cbWndExtra    = 0;
         windowClass.hbrBackground = nullptr;
         windowClass.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-        windowClass.hIcon         = LoadIcon(windowData->m_InstanceHandle, IDI_APPLICATION);
-        windowClass.hIconSm       = LoadIcon(windowData->m_InstanceHandle, IDI_APPLICATION);
-        windowClass.hInstance     = windowData->m_InstanceHandle;
+        windowClass.hIcon         = LoadIcon(windowData->InstanceHandle, IDI_APPLICATION);
+        windowClass.hIconSm       = LoadIcon(windowData->InstanceHandle, IDI_APPLICATION);
+        windowClass.hInstance     = windowData->InstanceHandle;
         windowClass.lpfnWndProc   = WindowProcedureCallbackOverride;
         windowClass.lpszClassName = className;
         windowClass.lpszMenuName  = nullptr;
@@ -168,7 +168,7 @@ namespace Otter::Internal
                                       windowHeight,
                                       nullptr,
                                       nullptr,
-                                      windowData->m_InstanceHandle,
+                                      windowData->InstanceHandle,
                                       nullptr);
 
         if (!window)
@@ -180,7 +180,7 @@ namespace Otter::Internal
         }
         else
         {
-            windowData->m_WindowHandle = window;
+            windowData->WindowHandle = window;
         }
 
         // TODO: If the window should not accept input, use SW_SHOWNOACTIVATE instead of SW_SHOW

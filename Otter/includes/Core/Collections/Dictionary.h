@@ -35,7 +35,7 @@ namespace Otter
             m_Buckets  = Buffer::New<Bucket>(m_Capacity);
 
             for (UInt64 i = 0; i < m_Capacity; i++)
-                m_Buckets[i].m_Items = nullptr;
+                m_Buckets[i].Items = nullptr;
         }
 
         Dictionary(const Dictionary<TKey, TValue>& other)
@@ -46,15 +46,15 @@ namespace Otter
 
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (other.m_Buckets[i].m_Capacity == 0)
+                if (other.m_Buckets[i].Capacity == 0)
                     continue;
 
-                m_Buckets[i].m_Items    = Buffer::New<BucketItem>(other.m_Buckets[i].m_Capacity);
-                m_Buckets[i].m_Capacity = other.m_Buckets[i].m_Capacity;
-                m_Buckets[i].m_Count    = other.m_Buckets[i].m_Count;
+                m_Buckets[i].Items    = Buffer::New<BucketItem>(other.m_Buckets[i].Capacity);
+                m_Buckets[i].Capacity = other.m_Buckets[i].Capacity;
+                m_Buckets[i].Count    = other.m_Buckets[i].Count;
 
-                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
-                    m_Buckets[i].m_Items[j] = other.m_Buckets[i].m_Items[j];
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                    m_Buckets[i].Items[j] = other.m_Buckets[i].Items[j];
             }
         }
 
@@ -82,15 +82,15 @@ namespace Otter
 
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (other.m_Buckets[i].m_Capacity == 0)
+                if (other.m_Buckets[i].Capacity == 0)
                     continue;
 
-                m_Buckets[i].m_Items    = Buffer::New<BucketItem>(other.m_Buckets[i].m_Capacity);
-                m_Buckets[i].m_Capacity = other.m_Buckets[i].m_Capacity;
-                m_Buckets[i].m_Count    = other.m_Buckets[i].m_Count;
+                m_Buckets[i].Items    = Buffer::New<BucketItem>(other.m_Buckets[i].Capacity);
+                m_Buckets[i].Capacity = other.m_Buckets[i].Capacity;
+                m_Buckets[i].Count    = other.m_Buckets[i].Count;
 
-                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
-                    m_Buckets[i].m_Items[j] = other.m_Buckets[i].m_Items[j];
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                    m_Buckets[i].Items[j] = other.m_Buckets[i].Items[j];
             }
 
             return *this;
@@ -119,7 +119,7 @@ namespace Otter
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].m_Capacity == 0)
+            if (m_Buckets[index].Capacity == 0)
             {
                 InitialiseBucketWithItem(&m_Buckets[index], key, value, hash);
                 m_Count++;
@@ -127,13 +127,13 @@ namespace Otter
                 return true;
             }
 
-            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+            for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
             {
-                if (m_Buckets[index].m_Items[i].m_Pair.m_Key == key && m_Buckets[index].m_Items[i].m_Hash == hash)
+                if (m_Buckets[index].Items[i].Pair.Key == key && m_Buckets[index].Items[i].Hash == hash)
                 {
                     if (overwrite)
                     {
-                        m_Buckets[index].m_Items[i].m_Pair.m_Value = value;
+                        m_Buckets[index].Items[i].Pair.Value = value;
                         return true;
                     }
 
@@ -141,13 +141,13 @@ namespace Otter
                 }
             }
 
-            if (m_Buckets[index].m_Count >= m_Buckets[index].m_Capacity)
+            if (m_Buckets[index].Count >= m_Buckets[index].Capacity)
                 ResizeBucket(&m_Buckets[index]);
 
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Pair.m_Key   = key;
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Pair.m_Value = value;
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Hash         = hash;
-            m_Buckets[index].m_Count++;
+            m_Buckets[index].Items[m_Buckets[index].Count].Pair.Key   = key;
+            m_Buckets[index].Items[m_Buckets[index].Count].Pair.Value = value;
+            m_Buckets[index].Items[m_Buckets[index].Count].Hash       = hash;
+            m_Buckets[index].Count++;
 
             m_Count++;
 
@@ -159,7 +159,7 @@ namespace Otter
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].m_Capacity == 0)
+            if (m_Buckets[index].Capacity == 0)
             {
                 InitialiseBucketWithItem(&m_Buckets[index], std::move(key), std::move(value), hash);
                 m_Count++;
@@ -167,13 +167,13 @@ namespace Otter
                 return true;
             }
 
-            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+            for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
             {
-                if (m_Buckets[index].m_Items[i].m_Pair.m_Key == key && m_Buckets[index].m_Items[i].m_Hash == hash)
+                if (m_Buckets[index].Items[i].Pair.Key == key && m_Buckets[index].Items[i].Hash == hash)
                 {
                     if (overwrite)
                     {
-                        m_Buckets[index].m_Items[i].m_Pair.m_Value = value;
+                        m_Buckets[index].Items[i].Pair.Value = value;
                         return true;
                     }
 
@@ -181,13 +181,13 @@ namespace Otter
                 }
             }
 
-            if (m_Buckets[index].m_Count >= m_Buckets[index].m_Capacity)
+            if (m_Buckets[index].Count >= m_Buckets[index].Capacity)
                 ResizeBucket(&m_Buckets[index]);
 
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Pair.m_Key   = std::move(key);
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Pair.m_Value = std::move(value);
-            m_Buckets[index].m_Items[m_Buckets[index].m_Count].m_Hash         = hash;
-            m_Buckets[index].m_Count++;
+            m_Buckets[index].Items[m_Buckets[index].Count].Pair.Key   = std::move(key);
+            m_Buckets[index].Items[m_Buckets[index].Count].Pair.Value = std::move(value);
+            m_Buckets[index].Items[m_Buckets[index].Count].Hash       = hash;
+            m_Buckets[index].Count++;
 
             m_Count++;
 
@@ -207,11 +207,11 @@ namespace Otter
         {
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
                     continue;
 
-                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
-                    action(m_Buckets[i].m_Items[j].m_Pair.m_Key, m_Buckets[i].m_Items[j].m_Pair.m_Value);
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                    action(m_Buckets[i].Items[j].Pair.Key, m_Buckets[i].Items[j].Pair.Value);
             }
         }
 
@@ -219,11 +219,11 @@ namespace Otter
         {
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
                     continue;
 
-                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
-                    action(m_Buckets[i].m_Items[j].m_Pair.m_Key);
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                    action(m_Buckets[i].Items[j].Pair.Key);
             }
         }
 
@@ -231,11 +231,11 @@ namespace Otter
         {
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
                     continue;
 
-                for (UInt64 j = 0; j < m_Buckets[i].m_Count; j++)
-                    action(m_Buckets[i].m_Items[j].m_Pair.m_Value);
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                    action(m_Buckets[i].Items[j].Pair.Value);
             }
         }
 
@@ -243,10 +243,10 @@ namespace Otter
         {
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
                     continue;
 
-                m_Buckets[i].m_Count = 0;
+                m_Buckets[i].Count = 0;
             }
 
             m_Count = 0;
@@ -259,13 +259,13 @@ namespace Otter
 
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (!m_Buckets[i].m_Items || m_Buckets[i].m_Capacity == 0)
+                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
                     continue;
 
-                Buffer::Delete(m_Buckets[i].m_Items, m_Buckets[i].m_Capacity);
-                m_Buckets[i].m_Items    = nullptr;
-                m_Buckets[i].m_Capacity = 0;
-                m_Buckets[i].m_Count    = 0;
+                Buffer::Delete(m_Buckets[i].Items, m_Buckets[i].Capacity);
+                m_Buckets[i].Items    = nullptr;
+                m_Buckets[i].Capacity = 0;
+                m_Buckets[i].Count    = 0;
             }
 
             Buffer::Delete(m_Buckets, m_Capacity);
@@ -277,21 +277,21 @@ namespace Otter
     private:
         struct KeyValuePair
         {
-            TKey   m_Key;
-            TValue m_Value;
+            TKey   Key;
+            TValue Value;
         };
 
         struct BucketItem
         {
-            KeyValuePair m_Pair;
-            UInt64       m_Hash;
+            KeyValuePair Pair;
+            UInt64       Hash;
         };
 
         struct Bucket
         {
-            BucketItem* m_Items;
-            UInt64 m_Capacity;
-            UInt64 m_Count;
+            BucketItem* Items;
+            UInt64 Capacity;
+            UInt64 Count;
         };
 
         const Int64   k_63BitMask             = 0x7FFFFFFFFFFFFFFF;
@@ -304,26 +304,26 @@ namespace Otter
 
         void InitialiseBucketWithItem(Bucket* bucket, const TKey& key, const TValue& value, const UInt64& hash) const
         {
-            bucket->m_Items                   = Buffer::New<BucketItem>(k_InitialBucketCapacity);
-            bucket->m_Items[0].m_Pair.m_Key   = key;
-            bucket->m_Items[0].m_Pair.m_Value = value;
-            bucket->m_Items[0].m_Hash         = hash;
-            bucket->m_Capacity                = k_InitialBucketCapacity;
-            bucket->m_Count                   = 1;
+            bucket->Items               = Buffer::New<BucketItem>(k_InitialBucketCapacity);
+            bucket->Items[0].Pair.Key   = key;
+            bucket->Items[0].Pair.Value = value;
+            bucket->Items[0].Hash       = hash;
+            bucket->Capacity            = k_InitialBucketCapacity;
+            bucket->Count               = 1;
         }
 
         void ResizeBucket(Bucket* bucket) const
         {
-            UInt64 newCapacity = bucket->m_Capacity * k_BucketResizingFactor;
+            UInt64 newCapacity = bucket->Capacity * k_BucketResizingFactor;
             BucketItem* newItems = Buffer::New<BucketItem>(newCapacity);
 
-            for (UInt64 i = 0; i < bucket->m_Count; i++)
-                newItems[i] = bucket->m_Items[i];
+            for (UInt64 i = 0; i < bucket->Count; i++)
+                newItems[i] = bucket->Items[i];
 
-            Buffer::Delete(bucket->m_Items, bucket->m_Capacity);
+            Buffer::Delete(bucket->Items, bucket->Capacity);
 
-            bucket->m_Items    = newItems;
-            bucket->m_Capacity = newCapacity;
+            bucket->Items    = newItems;
+            bucket->Capacity = newCapacity;
         }
 
         [[nodiscard]] bool TryGetInternal(const TKey& key, TValue& value) const
@@ -331,14 +331,14 @@ namespace Otter
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].m_Capacity == 0)
+            if (m_Buckets[index].Capacity == 0)
                 return false;
 
-            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+            for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
             {
-                if (m_Buckets[index].m_Items[i].m_Hash == hash && m_Buckets[index].m_Items[i].m_Pair.m_Key == key)
+                if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Pair.Key == key)
                 {
-                    value = m_Buckets[index].m_Items[i].m_Pair.m_Value;
+                    value = m_Buckets[index].Items[i].Pair.Value;
                     return true;
                 }
             }
@@ -351,17 +351,17 @@ namespace Otter
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].m_Capacity == 0)
+            if (m_Buckets[index].Capacity == 0)
                 return false;
 
-            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
+            for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
             {
-                if (m_Buckets[index].m_Items[i].m_Hash == hash && m_Buckets[index].m_Items[i].m_Pair.m_Key == key)
+                if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Pair.Key == key)
                 {
-                    for (UInt64 j = i; j < m_Buckets[index].m_Count - 1; j++)
-                        m_Buckets[index].m_Items[j] = m_Buckets[index].m_Items[j + 1];
+                    for (UInt64 j = i; j < m_Buckets[index].Count - 1; j++)
+                        m_Buckets[index].Items[j] = m_Buckets[index].Items[j + 1];
 
-                    m_Buckets[index].m_Count--;
+                    m_Buckets[index].Count--;
                     m_Count--;
 
                     return true;
@@ -376,11 +376,11 @@ namespace Otter
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].m_Capacity == 0)
+            if (m_Buckets[index].Capacity == 0)
                 return false;
 
-            for (UInt64 i = 0; i < m_Buckets[index].m_Count; i++)
-                if (m_Buckets[index].m_Items[i].m_Pair.m_Key == key && m_Buckets[index].m_Items[i].m_Hash == hash)
+            for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
+                if (m_Buckets[index].Items[i].Pair.Key == key && m_Buckets[index].Items[i].Hash == hash)
                     return true;
 
             return false;
