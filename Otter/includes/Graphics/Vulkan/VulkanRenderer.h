@@ -1,43 +1,12 @@
 #ifndef OTTERENGINE_VULKANRENDERER_H
 #define OTTERENGINE_VULKANRENDERER_H
 
-#include "Graphics/AbstractRenderer.h"
-#include "VulkanBase.Types.h"
-
 namespace Otter::Graphics::Vulkan
 {
-    class VulkanRenderer final : public AbstractRenderer
-    {
-    public:
-        void Initialise(const void* platformContext) final;
-        void Shutdown() final;
+    void Initialise(const void* platformContext);
+    void Shutdown();
 
-        void RenderFrame() final;
-
-    private:
-        VulkanContext* m_Context = nullptr;
-
-        void CreateVulkanInstance();
-        void DestroyVulkanInstance();
-
-        void CreateRenderPass();
-        void DestroyRenderPass();
-
-        static void GetRequiredInstanceExtensions(List<const char*>& extensions);
-
-#if !OTR_RUNTIME
-        void CreateVulkanDebugMessenger();
-        void DestroyVulkanDebugMessenger();
-
-        static void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-        static VkBool32 DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                      VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                      const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-                                      void* userData);
-
-        static void GetRequiredInstanceValidationLayers(List<const char*>& layers);
-#endif
-    };
+    void RenderFrame();
 }
 
 #endif //OTTERENGINE_VULKANRENDERER_H
