@@ -51,5 +51,17 @@ namespace Otter::GraphicsSystem
     void RenderFrame()
     {
         // TODO: Use function pointers for this, switch is not ideal
+        switch (g_GraphicsApi)
+        {
+            case GraphicsAPI::Vulkan:
+            {
+                Graphics::Vulkan::RenderFrame();
+            }
+                break;
+            default:
+            {
+                OTR_LOG_FATAL("Unsupported graphics API: {0}", g_GraphicsApi)
+            }
+        }
     }
 }

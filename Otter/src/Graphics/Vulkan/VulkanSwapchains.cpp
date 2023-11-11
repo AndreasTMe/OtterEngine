@@ -161,6 +161,11 @@ namespace Otter::Graphics::Vulkan
                                const VkSwapchainKHR& swapchain,
                                List <VkImage>& swapchainImages)
     {
+        OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
+                                "Logical device must be initialized before creating swapchain images")
+        OTR_INTERNAL_ASSERT_MSG(swapchain != VK_NULL_HANDLE,
+                                "Swapchain must be initialized before creating its images")
+
         UInt32 imageCount = 0;
         OTR_VULKAN_VALIDATE(vkGetSwapchainImagesKHR(logicalDevice, swapchain, &imageCount, nullptr))
 
@@ -171,10 +176,14 @@ namespace Otter::Graphics::Vulkan
     }
 
     void CreateSwapchainImageViews(const VkDevice& logicalDevice,
+                                   const VkAllocationCallbacks* const allocator,
                                    const List <VkImage>& swapchainImages,
                                    const VkFormat& imageFormat,
                                    List <VkImageView>& swapchainImageViews)
     {
+        OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
+                                "Logical device must be initialized before creating swapchain image views")
+
         VkImageView tempSwapchainImageViews[swapchainImages.GetCount()];
 
         UInt64 index = 0;
@@ -197,10 +206,47 @@ namespace Otter::Graphics::Vulkan
 
             OTR_VULKAN_VALIDATE(vkCreateImageView(logicalDevice,
                                                   &createInfo,
-                                                  nullptr,
+                                                  allocator,
                                                   &tempSwapchainImageViews[index++]))
         }
 
         Collections::New<VkImageView>(tempSwapchainImageViews, swapchainImages.GetCount(), swapchainImageViews);
+    }
+
+    void CreateSwapchainFrameBuffers(const VkDevice& logicalDevice,
+                                     const VkAllocationCallbacks* const allocator,
+                                     const VkExtent2D& swapChainExtent,
+                                     const List <VkImageView>& swapchainImageViews,
+                                     const VkRenderPass& renderPass,
+                                     List <VkFramebuffer>& swapchainFrameBuffers)
+    {
+        OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
+                                "Logical device must be initialized before creating swapchain image views")
+        OTR_INTERNAL_ASSERT_MSG(renderPass != VK_NULL_HANDLE,
+                                "Render pass must be initialized before creating swapchain frame buffers")
+
+        VkFramebuffer tempSwapchainFrameBuffers[swapchainImageViews.GetCount()];
+
+        for (size_t i = 0; i < swapchainImageViews.GetCount(); i++)
+        {
+            VkFramebufferCreateInfo framebufferInfo{ };
+            framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebufferInfo.renderPass      = renderPass;
+            framebufferInfo.attachmentCount = 1;
+            framebufferInfo.pAttachments    = &swapchainImageViews[i];
+            framebufferInfo.width           = swapChainExtent.width;
+            framebufferInfo.height          = swapChainExtent.height;
+            framebufferInfo.layers          = 1;
+            framebufferInfo.pNext           = nullptr;
+
+            OTR_VULKAN_VALIDATE(vkCreateFramebuffer(logicalDevice,
+                                                    &framebufferInfo,
+                                                    allocator,
+                                                    &tempSwapchainFrameBuffers[i]))
+        }
+
+        Collections::New<VkFramebuffer>(tempSwapchainFrameBuffers,
+                                        swapchainImageViews.GetCount(),
+                                        swapchainFrameBuffers);
     }
 }

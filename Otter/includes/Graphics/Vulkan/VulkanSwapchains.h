@@ -21,9 +21,16 @@ namespace Otter::Graphics::Vulkan
                                const VkSwapchainKHR& swapchain,
                                List <VkImage>& swapchainImages);
     void CreateSwapchainImageViews(const VkDevice& logicalDevice,
+                                   const VkAllocationCallbacks* allocator,
                                    const List <VkImage>& swapchainImages,
                                    const VkFormat& imageFormat,
                                    List <VkImageView>& swapchainImageViews);
+    void CreateSwapchainFrameBuffers(const VkDevice& logicalDevice,
+                                     const VkAllocationCallbacks* const allocator,
+                                     const VkExtent2D& swapChainExtent,
+                                     const List <VkImageView>& swapchainImageViews,
+                                     const VkRenderPass& renderPass,
+                                     List <VkFramebuffer>& swapchainFrameBuffers);
 }
 
 #endif //OTTERENGINE_VULKANSWAPCHAINS_H

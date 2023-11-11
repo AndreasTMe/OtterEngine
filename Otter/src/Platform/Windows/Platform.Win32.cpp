@@ -21,11 +21,7 @@ namespace Otter::Internal
 
     UnsafeHandle g_PlatformMemoryHandle;
 
-    bool WindowsPlatform::Startup(const char* const title,
-                                  UInt16 left,
-                                  UInt16 top,
-                                  UInt16 width,
-                                  UInt16 height)
+    bool WindowsPlatform::Startup(const char* const title, UInt16 width, UInt16 height)
     {
         UInt64 platformContextSize    = OTR_ALIGNED_OFFSET(sizeof(PlatformContext), OTR_PLATFORM_MEMORY_ALIGNMENT);
         UInt64 platformWindowDataSize = OTR_ALIGNED_OFFSET(sizeof(WindowsPlatformWindowData),
@@ -41,7 +37,12 @@ namespace Otter::Internal
 
         RegisterEvents();
 
-        if (!InitialiseWindow(title, left, top, width, height))
+        RECT rect;
+        GetClientRect(GetDesktopWindow(), &rect);
+        rect.left = (rect.right / 2) - (width / 2);
+        rect.top  = (rect.bottom / 2) - (height / 2);
+
+        if (!InitialiseWindow(title, rect.left, rect.top, width, height))
         {
             Unsafe::Delete(g_PlatformMemoryHandle);
             return false;
@@ -211,15 +212,6 @@ namespace Otter::Internal
                 return 0;
             case WM_DESTROY:
                 PostQuitMessage(0);
-                return 0;
-            case WM_PAINT:
-            {
-                // TODO: This will probably be removed in the future, once rendering is implemented
-                PAINTSTRUCT ps;
-                HDC         hdc = BeginPaint(window, &ps);
-                FillRect(hdc, &ps.rcPaint, CreateSolidBrush(RGB(50, 50, 50)));
-                EndPaint(window, &ps);
-            }
                 return 0;
             case WM_ERASEBKGND:
                 // HELP: This is to prevent flickering when resizing the window
