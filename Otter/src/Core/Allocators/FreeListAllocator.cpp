@@ -39,20 +39,20 @@ namespace Otter
 
         UInt16 bodyPadding    = headerPadding - OTR_ALIGNED_OFFSET(sizeof(Header), OTR_PLATFORM_MEMORY_ALIGNMENT);
         UInt64 requiredSpace  = size + headerPadding;
-        UInt64 remainingSpace = foundNode->m_Size - requiredSpace;
+        UInt64 remainingSpace = foundNode->Size - requiredSpace;
 
         if (remainingSpace > sizeof(Node))
         {
             Node* nextNode = (Node * )((UIntPtr) foundNode + requiredSpace);
-            nextNode->m_Size = remainingSpace;
-            nextNode->m_Next = nullptr;
+            nextNode->Size = remainingSpace;
+            nextNode->Next = nullptr;
             Insert(nextNode, foundNode);
         }
         Remove(foundNode, previousNode);
 
         auto* header = (Header * )((UIntPtr*) foundNode + bodyPadding);
-        header->m_Size    = requiredSpace;
-        header->m_Padding = bodyPadding;
+        header->Size    = requiredSpace;
+        header->Padding = bodyPadding;
 
         m_MemoryUsed += requiredSpace;
 
@@ -66,8 +66,8 @@ namespace Otter
         const Header* const header = (Header*) headerAddress;
 
         Node* nodeToInsert = (Node * )(headerAddress);
-        nodeToInsert->m_Size = header->m_Size + header->m_Padding;
-        nodeToInsert->m_Next = nullptr;
+        nodeToInsert->Size = header->Size + header->Padding;
+        nodeToInsert->Next = nullptr;
 
         Node* iteratorCurrent  = m_Head;
         Node* iteratorPrevious = nullptr;
@@ -79,10 +79,10 @@ namespace Otter
                 break;
             }
             iteratorPrevious = iteratorCurrent;
-            iteratorCurrent  = iteratorCurrent->m_Next;
+            iteratorCurrent = iteratorCurrent->Next;
         }
 
-        m_MemoryUsed -= nodeToInsert->m_Size;
+        m_MemoryUsed -= nodeToInsert->Size;
 
         Merge(nodeToInsert, iteratorPrevious);
     }
@@ -92,8 +92,8 @@ namespace Otter
         m_MemoryUsed = 0;
 
         m_Head = (Node*) m_Memory;
-        m_Head->m_Size = m_MemorySize;
-        m_Head->m_Next = nullptr;
+        m_Head->Size = m_MemorySize;
+        m_Head->Next = nullptr;
     }
 
     FreeListAllocator::Node* FreeListAllocator::FindFirstFit(Node** previous,
@@ -110,11 +110,11 @@ namespace Otter
             itPadding = GetAlignmentPadding((UIntPtr) itCurrent, alignment);
             UInt64 requiredSpace = size + itPadding;
 
-            if (itCurrent->m_Size >= requiredSpace)
+            if (itCurrent->Size >= requiredSpace)
                 break;
 
             itPrevious = itCurrent;
-            itCurrent  = itCurrent->m_Next;
+            itCurrent = itCurrent->Next;
         }
 
         if (padding)
@@ -142,21 +142,21 @@ namespace Otter
         {
             itPadding = GetAlignmentPadding((UIntPtr) itCurrent, alignment);
             UInt64 requiredSpace = size + itPadding;
-            UInt64 difference    = itCurrent->m_Size - requiredSpace;
+            UInt64 difference = itCurrent->Size - requiredSpace;
 
             if (difference == 0)
             {
                 itBest = itCurrent;
                 break;
             }
-            else if (itCurrent->m_Size > requiredSpace && difference < smallestDifference)
+            else if (itCurrent->Size > requiredSpace && difference < smallestDifference)
             {
                 smallestDifference = difference;
                 itBest             = itCurrent;
             }
 
             itPrevious = itCurrent;
-            itCurrent  = itCurrent->m_Next;
+            itCurrent         = itCurrent->Next;
         }
 
         if (padding)
@@ -175,21 +175,21 @@ namespace Otter
         if (!previous)
         {
             if (m_Head)
-                toInsert->m_Next = m_Head;
+                toInsert->Next = m_Head;
 
             m_Head = toInsert;
         }
         else
         {
-            if (!previous->m_Next)
+            if (!previous->Next)
             {
-                previous->m_Next = toInsert;
-                toInsert->m_Next = nullptr;
+                previous->Next = toInsert;
+                toInsert->Next = nullptr;
             }
             else
             {
-                toInsert->m_Next = previous->m_Next;
-                previous->m_Next = toInsert;
+                toInsert->Next = previous->Next;
+                previous->Next = toInsert;
             }
         }
     }
@@ -199,26 +199,26 @@ namespace Otter
         OTR_INTERNAL_ASSERT_MSG(toRemove, "Node to remove must not be null")
 
         if (!previous)
-            m_Head = toRemove->m_Next;
+            m_Head = toRemove->Next;
         else
-            previous->m_Next = toRemove->m_Next;
+            previous->Next = toRemove->Next;
     }
 
     void FreeListAllocator::Merge(Node* toMerge, Node* previousNode)
     {
         if (toMerge
-            && toMerge->m_Next
-            && ((UIntPtr) toMerge + toMerge->m_Size) == (UIntPtr) toMerge->m_Next)
+            && toMerge->Next
+            && ((UIntPtr) toMerge + toMerge->Size) == (UIntPtr) toMerge->Next)
         {
-            toMerge->m_Size += toMerge->m_Next->m_Size;
-            Remove(toMerge->m_Next, toMerge);
+            toMerge->Size += toMerge->Next->Size;
+            Remove(toMerge->Next, toMerge);
         }
 
         if (previousNode
-            && previousNode->m_Next
-            && ((UIntPtr) previousNode + previousNode->m_Size) == (UIntPtr) toMerge)
+            && previousNode->Next
+            && ((UIntPtr) previousNode + previousNode->Size) == (UIntPtr) toMerge)
         {
-            previousNode->m_Size += toMerge->m_Size;
+            previousNode->Size += toMerge->Size;
             Remove(toMerge, previousNode);
         }
     }

@@ -3,12 +3,10 @@
 #include "Graphics/GraphicsSystem.h"
 
 #include "Graphics/Common/Types.GraphicsAPI.h"
-#include "Graphics/AbstractRenderer.h"
 #include "Graphics/Vulkan/VulkanRenderer.h"
 
 namespace Otter::GraphicsSystem
 {
-    Graphics::AbstractRenderer* g_Renderer;
     GraphicsAPI g_GraphicsApi = GraphicsAPI::Vulkan; // TODO: Pass from configuration
 
     bool TryInitialise(const void* platformContext)
@@ -16,7 +14,9 @@ namespace Otter::GraphicsSystem
         switch (g_GraphicsApi)
         {
             case GraphicsAPI::Vulkan:
-                g_Renderer = New<Graphics::Vulkan::VulkanRenderer>();
+            {
+                Graphics::Vulkan::Initialise(platformContext);
+            }
                 break;
             default:
             {
@@ -24,8 +24,6 @@ namespace Otter::GraphicsSystem
                 return false;
             }
         }
-
-        g_Renderer->Initialise(platformContext);
 
         OTR_LOG_DEBUG("Graphics system initialised ({0})", g_GraphicsApi)
 
@@ -36,22 +34,34 @@ namespace Otter::GraphicsSystem
     {
         OTR_LOG_DEBUG("Shutting down graphics system...")
 
-        g_Renderer->Shutdown();
-
         switch (g_GraphicsApi)
         {
             case GraphicsAPI::Vulkan:
-                Delete<Graphics::Vulkan::VulkanRenderer>((Graphics::Vulkan::VulkanRenderer*) g_Renderer);
+            {
+                Graphics::Vulkan::Shutdown();
+            }
                 break;
             default:
             {
                 OTR_LOG_FATAL("Unsupported graphics API: {0}. Possible memory leak on deletion.", g_GraphicsApi)
-                Delete(g_Renderer);
             }
         }
     }
 
     void RenderFrame()
     {
+        // TODO: Use function pointers for this, switch is not ideal
+        switch (g_GraphicsApi)
+        {
+            case GraphicsAPI::Vulkan:
+            {
+                Graphics::Vulkan::RenderFrame();
+            }
+                break;
+            default:
+            {
+                OTR_LOG_FATAL("Unsupported graphics API: {0}", g_GraphicsApi)
+            }
+        }
     }
 }

@@ -8,7 +8,7 @@ namespace Otter
 {
     struct PlatformContext
     {
-        void* m_Data;
+        void* Data;
     };
 
     class Platform
@@ -16,11 +16,7 @@ namespace Otter
     public:
         OTR_WITH_DEFAULT_CONSTRUCTOR_AND_VIRTUAL_DESTRUCTOR(Platform);
 
-        virtual bool Startup(const char* title,
-                             UInt16 left,
-                             UInt16 top,
-                             UInt16 width,
-                             UInt16 height) = 0;
+        virtual bool Startup(const char* title, UInt16 width, UInt16 height) = 0;
         virtual void Shutdown() = 0;
         virtual void CaptureWindowEvents() = 0;
 

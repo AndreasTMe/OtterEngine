@@ -14,11 +14,7 @@ namespace Otter::Internal
     public:
         OTR_WITH_DEFAULT_CONSTRUCTOR_AND_FINAL_DESTRUCTOR(LinuxPlatform);
 
-        bool Startup(const char* title,
-                     UInt16 left,
-                     UInt16 top,
-                     UInt16 width,
-                     UInt16 height) final;
+        bool Startup(const char* title, UInt16 width, UInt16 height) final;
         void Shutdown() final;
         void CaptureWindowEvents() final;
 

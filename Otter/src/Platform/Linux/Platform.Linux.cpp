@@ -10,7 +10,7 @@ namespace Otter::Internal
     {
     };
 
-    bool LinuxPlatform::Startup(const char* title, UInt16 left, UInt16 top, UInt16 width, UInt16 height)
+    bool LinuxPlatform::Startup(const char* title, UInt16 width, UInt16 height)
     {
         return false;
     }

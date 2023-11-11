@@ -5,42 +5,69 @@
 
 namespace Otter::Graphics::Vulkan
 {
+    struct VulkanSwapchain
+    {
+        VkSwapchainKHR     Handle            = VK_NULL_HANDLE;
+        VkExtent2D         Extent            = { };
+        VkSurfaceFormatKHR SurfaceFormat     = { };
+        VkPresentModeKHR   PresentMode       = VK_PRESENT_MODE_FIFO_KHR;
+        UInt8              CurrentFrame      = 0;
+        UInt8              MaxFramesInFlight = 0;
+    };
+
     struct SwapchainSupportInfo
     {
-        VkSurfaceCapabilitiesKHR m_SurfaceCapabilities;
-        List<VkSurfaceFormatKHR> m_SurfaceFormats;
-        List<VkPresentModeKHR>   m_PresentModes;
+        VkSurfaceCapabilitiesKHR  SurfaceCapabilities;
+        List <VkSurfaceFormatKHR> SurfaceFormats;
+        List <VkPresentModeKHR>   PresentModes;
     };
 
     struct VulkanQueueFamily
     {
-        UInt32  m_Index = UINT32_MAX;
-        VkQueue m_Queue = VK_NULL_HANDLE;
+        VkQueue Handle = VK_NULL_HANDLE;
+        UInt32  Index  = UINT32_MAX;
     };
 
     struct VulkanDevicePair
     {
-        VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
-        VkDevice         m_LogicalDevice  = VK_NULL_HANDLE;
+        VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
+        VkDevice         LogicalDevice  = VK_NULL_HANDLE;
 
-        VulkanQueueFamily m_GraphicsQueueFamily;
-        VulkanQueueFamily m_PresentationQueueFamily;
-        // TODO: VulkanQueueFamily m_ComputeQueueFamily;
-        // TODO: VulkanQueueFamily m_TransferQueueFamily;
-        // TODO: VulkanQueueFamily m_SparseBindingQueueFamily;
+        VulkanQueueFamily GraphicsQueueFamily;
+        VulkanQueueFamily PresentationQueueFamily;
+        // TODO: VulkanQueueFamily ComputeQueueFamily;
+        // TODO: VulkanQueueFamily TransferQueueFamily;
+        // TODO: VulkanQueueFamily SparseBindingQueueFamily;
+
+        VkCommandPool GraphicsCommandPool = VK_NULL_HANDLE;
+        // TODO: VkCommandPool CopyCommandPool = VK_NULL_HANDLE;
+
+        List <VkCommandBuffer> CommandBuffers;
+
+        List <VkSemaphore> ImageAvailableSemaphores;
+        List <VkSemaphore> RenderFinishedSemaphores;
+        List <VkFence>     RenderInFlightFences;
+
+        [[nodiscard]] OTR_INLINE bool GraphicsAndPresentationQueueFamiliesAreTheSame() const
+        {
+            return GraphicsQueueFamily.Index == PresentationQueueFamily.Index;
+        }
     };
 
     struct VulkanContext
     {
-        VkInstance m_Instance = VK_NULL_HANDLE;
-        VkAllocationCallbacks* m_Allocator = VK_NULL_HANDLE;
-        VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+        VkInstance Instance = VK_NULL_HANDLE;
+        VkAllocationCallbacks* Allocator = VK_NULL_HANDLE;
+        VkSurfaceKHR Surface = VK_NULL_HANDLE;
 
 #if !OTR_RUNTIME
-        VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
+        VkDebugUtilsMessengerEXT DebugMessenger = VK_NULL_HANDLE;
 #endif
 
-        VulkanDevicePair m_DevicePair;
+        VulkanDevicePair DevicePair;
+        VulkanSwapchain  Swapchain;
+
+        VkRenderPass RenderPass = VK_NULL_HANDLE;
     };
 }
 

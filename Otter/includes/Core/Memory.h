@@ -11,8 +11,8 @@ namespace Otter
 {
     struct UnsafeHandle
     {
-        void* m_Pointer;
-        UInt64 m_Size;
+        void* Pointer;
+        UInt64 Size;
     };
 
     namespace MemorySystem
@@ -29,7 +29,7 @@ namespace Otter
 
         // TODO: Will probably be removed
         [[nodiscard]] std::string GetTotalAllocation();
-    };
+    }
 
     template<typename T, typename... TArgs>
     OTR_INLINE T* New(TArgs&& ... args)
@@ -37,7 +37,7 @@ namespace Otter
         UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(T), OTR_PLATFORM_MEMORY_ALIGNMENT);
 
         UnsafeHandle handle = MemorySystem::Allocate(alignedSize);
-        T* ptr = new(handle.m_Pointer) T(args...);
+        T* ptr = new(handle.Pointer) T(args...);
 
         return ptr;
     }
@@ -67,7 +67,7 @@ namespace Otter
 
             if (std::is_default_constructible<T>::value)
             {
-                T* ptrCopy = (T*) handle.m_Pointer;
+                T* ptrCopy = (T*) handle.Pointer;
                 for (UInt64 i = 0; i < length; i++)
                 {
                     new(ptrCopy) T();
@@ -75,7 +75,7 @@ namespace Otter
                 }
             }
 
-            return (T*) handle.m_Pointer;
+            return (T*) handle.Pointer;
         }
 
         template<typename T>
@@ -113,20 +113,20 @@ namespace Otter
 
         OTR_INLINE static void Delete(const UnsafeHandle& handle)
         {
-            OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Handle pointer must not be null")
-            OTR_INTERNAL_ASSERT_MSG(handle.m_Size > 0, "Handle size must be greater than 0")
+            OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Handle pointer must not be null")
+            OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")
 
-            MemorySystem::MemoryClear(handle.m_Pointer, handle.m_Size);
-            MemorySystem::Free(handle.m_Pointer);
+            MemorySystem::MemoryClear(handle.Pointer, handle.Size);
+            MemorySystem::Free(handle.Pointer);
         }
 
         OTR_INLINE static void Delete(UnsafeHandle&& handle)
         {
-            OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Handle pointer must not be null")
-            OTR_INTERNAL_ASSERT_MSG(handle.m_Size > 0, "Handle size must be greater than 0")
+            OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Handle pointer must not be null")
+            OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")
 
-            MemorySystem::MemoryClear(handle.m_Pointer, handle.m_Size);
-            MemorySystem::Free(handle.m_Pointer);
+            MemorySystem::MemoryClear(handle.Pointer, handle.Size);
+            MemorySystem::Free(handle.Pointer);
         }
     };
 }

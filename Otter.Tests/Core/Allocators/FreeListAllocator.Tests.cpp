@@ -43,7 +43,7 @@ TEST(FreeListAllocator, Allocate_FindFirstFit)
     auto count = 0;
     for (auto& node: allocator)
     {
-        EXPECT_GT(node.m_Size, 0);
+        EXPECT_GT(node.Size, 0);
         count++;
     }
 
@@ -75,7 +75,7 @@ TEST(FreeListAllocator, FreeSingleAllocation)
     auto count = 0;
     for (auto& node: allocator)
     {
-        EXPECT_GT(node.m_Size, 0);
+        EXPECT_GT(node.Size, 0);
         count++;
     }
 
@@ -108,7 +108,7 @@ TEST(FreeListAllocator, FreeAllocationWhenOthersPresent)
     auto count = 0;
     for (auto& node: allocator)
     {
-        EXPECT_GT(node.m_Size, 0);
+        EXPECT_GT(node.Size, 0);
         count++;
     }
 
@@ -141,7 +141,7 @@ TEST(FreeListAllocator, FreeMultipleAllocations)
     auto count = 0;
     for (auto& node: allocator)
     {
-        EXPECT_GT(node.m_Size, 0);
+        EXPECT_GT(node.Size, 0);
         count++;
     }
 
@@ -153,7 +153,7 @@ TEST(FreeListAllocator, FreeMultipleAllocations)
     count = 0;
     for (auto& node: allocator)
     {
-        EXPECT_GT(node.m_Size, 0);
+        EXPECT_GT(node.Size, 0);
         count++;
     }
 

@@ -34,7 +34,7 @@ namespace Otter::MemorySystem
         gs_HasInitialised = false;
     }
 
-    UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment)
+    UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!gs_HasInitialised)
             return { };
@@ -44,26 +44,28 @@ namespace Otter::MemorySystem
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
         UnsafeHandle handle = { };
-        handle.m_Pointer = g_Allocator.Allocate(size, alignment);
-        handle.m_Size    = size;
+        handle.Pointer = g_Allocator.Allocate(size, alignment);
+        handle.Size    = size;
 
         return handle;
     }
 
     // TODO: Use FreeListAllocator to reallocate memory
-    UnsafeHandle Reallocate(UnsafeHandle& handle, const UInt64& size, const UInt64& alignment)
+    UnsafeHandle Reallocate(UnsafeHandle& handle,
+                            const UInt64& size,
+                            const UInt64& alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!gs_HasInitialised)
             return { };
 
-        OTR_INTERNAL_ASSERT_MSG(handle.m_Pointer != nullptr, "Reallocation handle must not be null")
+        OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Reallocation handle must not be null")
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Reallocation size must be greater than 0 bytes")
         OTR_INTERNAL_ASSERT_MSG(alignment >= OTR_PLATFORM_MEMORY_ALIGNMENT,
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
         UnsafeHandle newHandle = { };
-        newHandle.m_Pointer = Platform::Reallocate(handle.m_Pointer, size);
-        newHandle.m_Size    = size;
+        newHandle.Pointer = Platform::Reallocate(handle.Pointer, size);
+        newHandle.Size    = size;
 
         return handle;
     }

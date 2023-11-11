@@ -2,13 +2,16 @@
 #define OTTERENGINE_VULKANBASE_INCLUDES_H
 
 #include "Core/Defines.h"
+#include "Core/Types.h"
 
 #include <vulkan/vulkan.h>
 
 #if OTR_PLATFORM_WINDOWS
     #include <vulkan/vulkan_win32.h>
     #include "Platform/Windows/Platform.Win32.h"
-#elif OTR_PLATFORM_APPLE
+#elif OTR_PLATFORM_IOS
+    #include <vulkan/vulkan_ios.h>
+#elif OTR_PLATFORM_MACOS
     #include <vulkan/vulkan_macos.h>
 #elif OTR_PLATFORM_LINUX
     #include <vulkan/vulkan_xlib.h>

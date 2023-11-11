@@ -36,17 +36,13 @@ namespace Otter
         OTR_DISABLE_OBJECT_MOVES(ReadOnlySpan)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        explicit ReadOnlySpan(const T& value)
+        ReadOnlySpan(InitialiserList<T> list)
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = value;
-        }
+            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
 
-        template<typename... Args>
-        explicit ReadOnlySpan(const T& value, const Args&& ... args)
-            : m_Data{ value, args... }
-        {
-            OTR_ASSERT_MSG(VariadicArgs<Args...>::GetSize() < Size, "ReadOnlySpan size is too small")
+            UInt64 i = 0;
+            for (const T& value: list)
+                m_Data[i++] = value;
         }
 
         explicit ReadOnlySpan(const Span<T, Size>& other)
@@ -85,6 +81,9 @@ namespace Otter
             OTR_ASSERT_MSG(index < Size, "ReadOnlySpan index out of bounds")
             return m_Data[index];
         }
+
+        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 Length() const { return Size; }
 
     private:
         T m_Data[Size];

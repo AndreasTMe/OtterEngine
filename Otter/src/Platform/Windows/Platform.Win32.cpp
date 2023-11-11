@@ -21,11 +21,7 @@ namespace Otter::Internal
 
     UnsafeHandle g_PlatformMemoryHandle;
 
-    bool WindowsPlatform::Startup(const char* const title,
-                                  UInt16 left,
-                                  UInt16 top,
-                                  UInt16 width,
-                                  UInt16 height)
+    bool WindowsPlatform::Startup(const char* const title, UInt16 width, UInt16 height)
     {
         UInt64 platformContextSize    = OTR_ALIGNED_OFFSET(sizeof(PlatformContext), OTR_PLATFORM_MEMORY_ALIGNMENT);
         UInt64 platformWindowDataSize = OTR_ALIGNED_OFFSET(sizeof(WindowsPlatformWindowData),
@@ -33,15 +29,20 @@ namespace Otter::Internal
 
         g_PlatformMemoryHandle = Unsafe::New(platformContextSize + platformWindowDataSize);
 
-        m_Context = (PlatformContext*) g_PlatformMemoryHandle.m_Pointer;
-        m_Context->m_Data = (WindowsPlatformWindowData*) ((UIntPtr*) g_PlatformMemoryHandle.m_Pointer + 1);
+        m_Context = (PlatformContext*) g_PlatformMemoryHandle.Pointer;
+        m_Context->Data = (WindowsPlatformWindowData*) ((UIntPtr*) g_PlatformMemoryHandle.Pointer + 1);
 
         m_Width  = width;
         m_Height = height;
 
         RegisterEvents();
 
-        if (!InitialiseWindow(title, left, top, width, height))
+        RECT rect;
+        GetClientRect(GetDesktopWindow(), &rect);
+        rect.left = (rect.right / 2) - (width / 2);
+        rect.top  = (rect.bottom / 2) - (height / 2);
+
+        if (!InitialiseWindow(title, rect.left, rect.top, width, height))
         {
             Unsafe::Delete(g_PlatformMemoryHandle);
             return false;
@@ -55,9 +56,9 @@ namespace Otter::Internal
 
     void WindowsPlatform::Shutdown()
     {
-        if (m_Context->m_Data)
+        if (m_Context->Data)
         {
-            DestroyWindow(((WindowsPlatformWindowData*) m_Context->m_Data)->m_WindowHandle);
+            DestroyWindow(((WindowsPlatformWindowData*) m_Context->Data)->WindowHandle);
             Unsafe::Delete(g_PlatformMemoryHandle);
 
             return;
@@ -110,8 +111,8 @@ namespace Otter::Internal
                                            UInt16 width,
                                            UInt16 height)
     {
-        auto windowData = static_cast<WindowsPlatformWindowData*>(m_Context->m_Data);
-        windowData->m_InstanceHandle = GetModuleHandleA(nullptr);
+        auto windowData = static_cast<WindowsPlatformWindowData*>(m_Context->Data);
+        windowData->InstanceHandle = GetModuleHandleA(nullptr);
 
         const char* className = "WindowClass";
 
@@ -121,9 +122,9 @@ namespace Otter::Internal
         windowClass.cbWndExtra    = 0;
         windowClass.hbrBackground = nullptr;
         windowClass.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-        windowClass.hIcon         = LoadIcon(windowData->m_InstanceHandle, IDI_APPLICATION);
-        windowClass.hIconSm       = LoadIcon(windowData->m_InstanceHandle, IDI_APPLICATION);
-        windowClass.hInstance     = windowData->m_InstanceHandle;
+        windowClass.hIcon         = LoadIcon(windowData->InstanceHandle, IDI_APPLICATION);
+        windowClass.hIconSm       = LoadIcon(windowData->InstanceHandle, IDI_APPLICATION);
+        windowClass.hInstance     = windowData->InstanceHandle;
         windowClass.lpfnWndProc   = WindowProcedureCallbackOverride;
         windowClass.lpszClassName = className;
         windowClass.lpszMenuName  = nullptr;
@@ -168,7 +169,7 @@ namespace Otter::Internal
                                       windowHeight,
                                       nullptr,
                                       nullptr,
-                                      windowData->m_InstanceHandle,
+                                      windowData->InstanceHandle,
                                       nullptr);
 
         if (!window)
@@ -180,7 +181,7 @@ namespace Otter::Internal
         }
         else
         {
-            windowData->m_WindowHandle = window;
+            windowData->WindowHandle = window;
         }
 
         // TODO: If the window should not accept input, use SW_SHOWNOACTIVATE instead of SW_SHOW
@@ -211,15 +212,6 @@ namespace Otter::Internal
                 return 0;
             case WM_DESTROY:
                 PostQuitMessage(0);
-                return 0;
-            case WM_PAINT:
-            {
-                // TODO: This will probably be removed in the future, once rendering is implemented
-                PAINTSTRUCT ps;
-                HDC         hdc = BeginPaint(window, &ps);
-                FillRect(hdc, &ps.rcPaint, CreateSolidBrush(RGB(50, 50, 50)));
-                EndPaint(window, &ps);
-            }
                 return 0;
             case WM_ERASEBKGND:
                 // HELP: This is to prevent flickering when resizing the window

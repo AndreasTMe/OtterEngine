@@ -11,8 +11,8 @@ namespace Otter::Internal
 {
     struct WindowsPlatformWindowData
     {
-        HWND      m_WindowHandle;
-        HINSTANCE m_InstanceHandle;
+        HWND      WindowHandle;
+        HINSTANCE InstanceHandle;
     };
 
     class WindowsPlatform final : public Platform
@@ -20,11 +20,7 @@ namespace Otter::Internal
     public:
         OTR_WITH_DEFAULT_CONSTRUCTOR_AND_FINAL_DESTRUCTOR(WindowsPlatform);
 
-        bool Startup(const char* title,
-                     UInt16 left,
-                     UInt16 top,
-                     UInt16 width,
-                     UInt16 height) final;
+        bool Startup(const char* title, UInt16 width, UInt16 height) final;
         void Shutdown() final;
         void CaptureWindowEvents() final;
 
