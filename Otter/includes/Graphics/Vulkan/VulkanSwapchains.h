@@ -2,7 +2,9 @@
 #define OTTERENGINE_VULKANSWAPCHAINS_H
 
 #include "Core/Collections/List.h"
-#include "Graphics/Vulkan/VulkanBase.Types.h"
+#include "Graphics/Vulkan/VulkanBase.Includes.h"
+#include "Graphics/Vulkan/Types/VulkanTypes.Device.h"
+#include "Graphics/Vulkan/Types/VulkanTypes.Swapchain.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -26,7 +28,7 @@ namespace Otter::Graphics::Vulkan
                                    const VkFormat& imageFormat,
                                    List <VkImageView>& swapchainImageViews);
     void CreateSwapchainFrameBuffers(const VkDevice& logicalDevice,
-                                     const VkAllocationCallbacks* const allocator,
+                                     const VkAllocationCallbacks* allocator,
                                      const VkExtent2D& swapChainExtent,
                                      const List <VkImageView>& swapchainImageViews,
                                      const VkRenderPass& renderPass,

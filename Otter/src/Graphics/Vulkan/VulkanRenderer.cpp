@@ -1,7 +1,8 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/Vulkan/VulkanRenderer.h"
-#include "Graphics/Vulkan/VulkanBase.Types.h"
+#include "Graphics/Vulkan/Types/VulkanTypes.Context.h"
+#include "Graphics/Vulkan/Types/VulkanTypes.Shader.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 #include "Graphics/Vulkan/VulkanQueues.h"
 #include "Graphics/Vulkan/VulkanSwapchains.h"
