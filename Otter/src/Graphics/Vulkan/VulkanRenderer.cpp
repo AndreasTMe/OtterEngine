@@ -5,6 +5,7 @@
 #include "Graphics/Vulkan/VulkanExtensions.h"
 #include "Graphics/Vulkan/VulkanQueues.h"
 #include "Graphics/Vulkan/VulkanSwapchains.h"
+#include "Graphics/Vulkan/VulkanShaders.h"
 #include "Math/Core.h"
 
 namespace Otter::Graphics::Vulkan
@@ -42,6 +43,10 @@ namespace Otter::Graphics::Vulkan
         void CreateSyncObjects();
         void DestroySyncObjects();
 
+        // HELP: VkPipeline related
+        void CreatePipelines();
+        void DestroyPipelines();
+
 #if !OTR_RUNTIME
         // HELP: VkDebugUtilsMessenger related
         void CreateVulkanDebugMessenger();
@@ -62,6 +67,10 @@ namespace Otter::Graphics::Vulkan
     List <VkImage>       g_SwapchainImages;
     List <VkImageView>   g_SwapchainImageViews;
     List <VkFramebuffer> g_SwapchainFrameBuffers;
+
+    // TODO: Remove from here, temporary handles
+    VkPipeline       g_Pipeline       = VK_NULL_HANDLE;
+    VkPipelineLayout g_PipelineLayout = VK_NULL_HANDLE;
 
 #define OTR_VULKAN_SYNC_TIMEOUT 1000000000
 
@@ -89,6 +98,8 @@ namespace Otter::Graphics::Vulkan
         Internal::CreateCommandBuffers();
 
         Internal::CreateSyncObjects();
+
+        Internal::CreatePipelines();
     }
 
     void Shutdown()
@@ -97,6 +108,7 @@ namespace Otter::Graphics::Vulkan
 
         Internal::DestroyCommandBuffers();
 
+        Internal::DestroyPipelines();
         Internal::DestroySyncObjects();
         Internal::DestroyRenderPass();
         Internal::DestroySwapchains();
@@ -157,7 +169,10 @@ namespace Otter::Graphics::Vulkan
                              &renderPassInfo,
                              VK_SUBPASS_CONTENTS_INLINE);
 
-        // TODO: Add pipeline stuff in here
+        vkCmdBindPipeline(gs_Context->DevicePair.CommandBuffers[0],
+                          VK_PIPELINE_BIND_POINT_GRAPHICS,
+                          g_Pipeline);
+        vkCmdDraw(gs_Context->DevicePair.CommandBuffers[0], 3, 1, 0, 0);
 
         vkCmdEndRenderPass(gs_Context->DevicePair.CommandBuffers[0]);
 
@@ -435,7 +450,7 @@ namespace Otter::Graphics::Vulkan
 
         void CreateSwapchains()
         {
-            OTR_LOG_TRACE("Creating Vulkan swapchain...")
+            OTR_LOG_TRACE("Creating Vulkan swapchains...")
 
             CreateSingleSwapchain(gs_Context->Surface,
                                   gs_Context->DevicePair,
@@ -473,6 +488,13 @@ namespace Otter::Graphics::Vulkan
                                       g_SwapchainImages,
                                       gs_Context->Swapchain.SurfaceFormat.format,
                                       g_SwapchainImageViews);
+
+            CreateSwapchainFrameBuffers(gs_Context->DevicePair.LogicalDevice,
+                                        gs_Context->Allocator,
+                                        gs_Context->Swapchain.Extent,
+                                        g_SwapchainImageViews,
+                                        gs_Context->RenderPass,
+                                        g_SwapchainFrameBuffers);
         }
 
         void DestroySwapchains()
@@ -659,6 +681,193 @@ namespace Otter::Graphics::Vulkan
             gs_Context->DevicePair.ImageAvailableSemaphores.ClearDestructive();
             gs_Context->DevicePair.RenderFinishedSemaphores.ClearDestructive();
             gs_Context->DevicePair.RenderInFlightFences.ClearDestructive();
+        }
+
+        void CreatePipelines()
+        {
+            VkShaderModuleCreateInfo vertexShaderModuleCreateInfo;
+            if (!LoadShaderModule("Assets/Shaders/default.vert.spv", &vertexShaderModuleCreateInfo))
+            {
+                OTR_LOG_WARNING("Error when building the vertex shader module")
+            }
+            VkShaderModule vertexShaderModule;
+            OTR_VULKAN_VALIDATE(vkCreateShaderModule(gs_Context->DevicePair.LogicalDevice,
+                                                     &vertexShaderModuleCreateInfo,
+                                                     gs_Context->Allocator,
+                                                     &vertexShaderModule))
+
+            VkShaderModuleCreateInfo fragmentShaderModuleCreateInfo;
+            if (!LoadShaderModule("Assets/Shaders/default.frag.spv", &fragmentShaderModuleCreateInfo))
+            {
+                OTR_LOG_WARNING("Error when building the fragment shader module")
+            }
+            VkShaderModule fragmentShaderModule;
+            OTR_VULKAN_VALIDATE(vkCreateShaderModule(gs_Context->DevicePair.LogicalDevice,
+                                                     &fragmentShaderModuleCreateInfo,
+                                                     gs_Context->Allocator,
+                                                     &fragmentShaderModule))
+
+            VkPipelineShaderStageCreateInfo vertShaderStageInfo{ };
+            vertShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            vertShaderStageInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+            vertShaderStageInfo.module = vertexShaderModule;
+            vertShaderStageInfo.pName  = "main";
+            vertShaderStageInfo.pNext  = VK_NULL_HANDLE;
+
+            VkPipelineShaderStageCreateInfo fragShaderStageInfo{ };
+            fragShaderStageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            fragShaderStageInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+            fragShaderStageInfo.module = fragmentShaderModule;
+            fragShaderStageInfo.pName  = "main";
+            fragShaderStageInfo.pNext  = VK_NULL_HANDLE;
+
+            VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+            // Vertex Input
+            VkPipelineVertexInputStateCreateInfo vertexInputInfo{ };
+            vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+            vertexInputInfo.vertexBindingDescriptionCount   = 0;
+            vertexInputInfo.vertexAttributeDescriptionCount = 0;
+            vertexInputInfo.pNext                           = VK_NULL_HANDLE;
+
+            // Input Assembly
+            VkPipelineInputAssemblyStateCreateInfo inputAssembly{ };
+            inputAssembly.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+            inputAssembly.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            inputAssembly.primitiveRestartEnable = VK_FALSE;
+            inputAssembly.pNext                  = VK_NULL_HANDLE;
+
+            // Viewport and Scissor
+            VkViewport viewport{ };
+            viewport.x        = 0.0f;
+            viewport.y        = 0.0f;
+            viewport.width    = (float) gs_Context->Swapchain.Extent.width;
+            viewport.height   = (float) gs_Context->Swapchain.Extent.height;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor{ };
+            scissor.offset = { 0, 0 };
+            scissor.extent = gs_Context->Swapchain.Extent;
+
+            VkPipelineViewportStateCreateInfo viewportState{ };
+            viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+            viewportState.viewportCount = 1;
+            viewportState.pViewports    = &viewport;
+            viewportState.scissorCount  = 1;
+            viewportState.pScissors     = &scissor;
+            viewportState.pNext         = VK_NULL_HANDLE;
+
+            // Rasterizer
+            VkPipelineRasterizationStateCreateInfo rasterizer{ };
+            rasterizer.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+            rasterizer.depthClampEnable        = VK_FALSE;
+            rasterizer.rasterizerDiscardEnable = VK_FALSE;
+            rasterizer.polygonMode             = VK_POLYGON_MODE_FILL;
+            rasterizer.lineWidth               = 1.0f;
+            rasterizer.cullMode                = VK_CULL_MODE_NONE;
+            rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+            rasterizer.depthBiasEnable         = VK_FALSE;
+            rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+            rasterizer.depthBiasClamp          = 0.0f; // Optional
+            rasterizer.depthBiasSlopeFactor    = 0.0f; // Optional
+            rasterizer.pNext                   = VK_NULL_HANDLE;
+
+            // Multisampling
+            VkPipelineMultisampleStateCreateInfo multisampling{ };
+            multisampling.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+            multisampling.sampleShadingEnable   = VK_FALSE;
+            multisampling.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
+            multisampling.minSampleShading      = 1.0f; // Optional
+            multisampling.pSampleMask           = VK_NULL_HANDLE; // Optional
+            multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
+            multisampling.alphaToOneEnable      = VK_FALSE; // Optional
+            multisampling.pNext                 = VK_NULL_HANDLE;
+
+            // Color blending
+            VkPipelineColorBlendAttachmentState colorBlendAttachment{ }; // Per attached framebuffer
+            colorBlendAttachment.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT
+                                                       | VK_COLOR_COMPONENT_G_BIT
+                                                       | VK_COLOR_COMPONENT_B_BIT
+                                                       | VK_COLOR_COMPONENT_A_BIT;
+            colorBlendAttachment.blendEnable         = VK_FALSE;
+            colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+            colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+            colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD; // Optional
+            colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE; // Optional
+            colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO; // Optional
+            colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD; // Optional
+
+            VkPipelineColorBlendStateCreateInfo colorBlending{ }; // Global
+            colorBlending.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            colorBlending.logicOpEnable   = VK_FALSE;
+            colorBlending.logicOp         = VK_LOGIC_OP_COPY; // Optional
+            colorBlending.attachmentCount = 1;
+            colorBlending.pAttachments    = &colorBlendAttachment;
+            colorBlending.blendConstants[0] = 0.0f; // Optional
+            colorBlending.blendConstants[1] = 0.0f; // Optional
+            colorBlending.blendConstants[2] = 0.0f; // Optional
+            colorBlending.blendConstants[3] = 0.0f; // Optional
+            colorBlending.pNext = VK_NULL_HANDLE;
+
+            // Pipeline Layout
+            VkPipelineLayoutCreateInfo pipelineLayoutInfo{ };
+            pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.flags                  = 0;
+            pipelineLayoutInfo.setLayoutCount         = 0;
+            pipelineLayoutInfo.pSetLayouts            = VK_NULL_HANDLE;
+            pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+            pipelineLayoutInfo.pPushConstantRanges    = VK_NULL_HANDLE; // Optional
+            pipelineLayoutInfo.pNext                  = VK_NULL_HANDLE;
+
+            OTR_VULKAN_VALIDATE(vkCreatePipelineLayout(gs_Context->DevicePair.LogicalDevice,
+                                                       &pipelineLayoutInfo,
+                                                       gs_Context->Allocator,
+                                                       &g_PipelineLayout))
+
+            // Graphics Pipeline
+            VkGraphicsPipelineCreateInfo pipelineInfo{ };
+            pipelineInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+            pipelineInfo.stageCount          = 2;
+            pipelineInfo.pStages             = shaderStages;
+            pipelineInfo.pVertexInputState   = &vertexInputInfo;
+            pipelineInfo.pInputAssemblyState = &inputAssembly;
+            pipelineInfo.pViewportState      = &viewportState;
+            pipelineInfo.pRasterizationState = &rasterizer;
+            pipelineInfo.pMultisampleState   = &multisampling;
+            pipelineInfo.pDepthStencilState  = VK_NULL_HANDLE; // Optional
+            pipelineInfo.pColorBlendState    = &colorBlending;
+            pipelineInfo.pDynamicState       = VK_NULL_HANDLE;
+            pipelineInfo.layout              = g_PipelineLayout;
+            pipelineInfo.renderPass          = gs_Context->RenderPass;
+            pipelineInfo.subpass             = 0;
+            pipelineInfo.basePipelineHandle  = VK_NULL_HANDLE; // Optional
+            pipelineInfo.basePipelineIndex   = -1; // Optional
+            pipelineInfo.pNext               = VK_NULL_HANDLE;
+
+            OTR_VULKAN_VALIDATE(vkCreateGraphicsPipelines(gs_Context->DevicePair.LogicalDevice,
+                                                          VK_NULL_HANDLE,
+                                                          1,
+                                                          &pipelineInfo,
+                                                          gs_Context->Allocator,
+                                                          &g_Pipeline))
+
+            vkDestroyShaderModule(gs_Context->DevicePair.LogicalDevice,
+                                  vertexShaderModule,
+                                  gs_Context->Allocator);
+            vkDestroyShaderModule(gs_Context->DevicePair.LogicalDevice,
+                                  fragmentShaderModule,
+                                  gs_Context->Allocator);
+        }
+
+        void DestroyPipelines()
+        {
+            vkDestroyPipeline(gs_Context->DevicePair.LogicalDevice,
+                              g_Pipeline,
+                              gs_Context->Allocator);
+            vkDestroyPipelineLayout(gs_Context->DevicePair.LogicalDevice,
+                                    g_PipelineLayout,
+                                    gs_Context->Allocator);
         }
 
 #if !OTR_RUNTIME
