@@ -5,16 +5,10 @@
 
 namespace Otter::Graphics::Vulkan
 {
-    struct VulkanShaderStage
-    {
-        VkShaderModule           Handle     = VK_NULL_HANDLE;
-        VkShaderModuleCreateInfo CreateInfo = { };
-    };
-
     struct VulkanShader
     {
-        VulkanShaderStage VertexStage;
-        VulkanShaderStage FragmentStage;
+        VkShaderModule VertexModule   = VK_NULL_HANDLE;
+        VkShaderModule FragmentModule = VK_NULL_HANDLE;
     };
 }
 
