@@ -7,8 +7,8 @@ namespace Otter::Graphics::Vulkan
 {
     void QueryQueueFamilies(const VkSurfaceKHR& surface,
                             const VkPhysicalDevice& physicalDevice,
-                            UInt32& graphicsFamily,
-                            UInt32& presentFamily);
+                            UInt32* outGraphicsFamily,
+                            UInt32* outPresentFamily);
 }
 
 #endif //OTTERENGINE_VULKANQUEUES_H

@@ -1,204 +1,144 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/Vulkan/VulkanRenderer.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Context.h"
 #include "Graphics/Vulkan/Types/VulkanTypes.Shader.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
-#include "Graphics/Vulkan/VulkanQueues.h"
 #include "Graphics/Vulkan/VulkanSwapchains.h"
 #include "Graphics/Vulkan/VulkanShaders.h"
+#include "Graphics/Vulkan/VulkanPipelines.h"
+#include "Graphics/Vulkan/VulkanBuffers.h"
+#include "Graphics/Vulkan/VulkanQueues.h"
 #include "Math/Core.h"
 
 namespace Otter::Graphics::Vulkan
 {
-    namespace Internal
-    {
-        // HELP: VkInstance related
-        void CreateVulkanInstance();
-        void DestroyVulkanInstance();
-
-        // HELP: VkSurfaceKHR related
-        void CreateSurface(const void* platformContext);
-        void DestroySurface();
-
-        // HELP: VkPhysicalDevice & VkDevice related
-        void CreateDevicePairs();
-        void DestroyDevicePairs();
-        void SelectPhysicalDevice();
-        void CreateLogicalDevice();
-
-        // HELP: VkSwapchainKHR related
-        void CreateSwapchains();
-        void RecreateSwapchains();
-        void DestroySwapchains();
-
-        // HELP: VkRenderPass related
-        void CreateRenderPass();
-        void DestroyRenderPass();
-
-        // HELP: VkCommandPool & VkCommandBuffer related
-        void CreateCommandBuffers();
-        void DestroyCommandBuffers();
-
-        // HELP: VkSemaphore & VkFence related
-        void CreateSyncObjects();
-        void DestroySyncObjects();
-
-        // HELP: VkPipeline related
-        void CreatePipelines();
-        void DestroyPipelines();
-
-#if !OTR_RUNTIME
-        // HELP: VkDebugUtilsMessenger related
-        void CreateVulkanDebugMessenger();
-        void DestroyVulkanDebugMessenger();
-
-        void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-        VkBool32 DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                               [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
-                               const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-                               void* userData);
-
-        void GetRequiredInstanceValidationLayers(List<const char*>& layers);
-#endif
-    }
-
-    static VulkanContext* gs_Context = nullptr;
-
-    List <VkImage>       g_SwapchainImages;
-    List <VkImageView>   g_SwapchainImageViews;
-    List <VkFramebuffer> g_SwapchainFrameBuffers;
-
-    // TODO: Remove from here, temporary handles
-    VkPipeline       g_Pipeline       = VK_NULL_HANDLE;
-    VkPipelineLayout g_PipelineLayout = VK_NULL_HANDLE;
-
 #define OTR_VULKAN_SYNC_TIMEOUT 1000000000
 
-    void Initialise(const void* const platformContext)
+    void Renderer::Initialise(const void* platformContext)
     {
-        gs_Context = New<VulkanContext>();
-
-        Internal::CreateVulkanInstance();
-
+        CreateVulkanInstance(m_Allocator, &m_Instance);
 #if !OTR_RUNTIME
-        Internal::CreateVulkanDebugMessenger();
+        CreateVulkanDebugMessenger(m_Instance, m_Allocator, &m_DebugMessenger);
 #endif
-
-        Internal::CreateSurface(platformContext);
-        Internal::CreateDevicePairs();
-        Internal::CreateSwapchains();
-        Internal::CreateRenderPass();
-        CreateSwapchainFrameBuffers(gs_Context->DevicePair.LogicalDevice,
-                                    gs_Context->Allocator,
-                                    gs_Context->Swapchain.Extent,
-                                    g_SwapchainImageViews,
-                                    gs_Context->RenderPass,
-                                    g_SwapchainFrameBuffers);
-
-        Internal::CreateCommandBuffers();
-
-        Internal::CreateSyncObjects();
-
-        Internal::CreatePipelines();
+        CreateSurface(platformContext, m_Instance, m_Allocator, &m_Surface);
+        CreateDevicePairs(m_Instance, m_Surface, m_Allocator, &m_DevicePair);
+        CreateSwapchains();
+        CreateRenderPass(m_DevicePair.LogicalDevice, m_Allocator, m_Swapchain, &m_RenderPass);
+        CreateSwapchainFrameBuffers(m_DevicePair.LogicalDevice,
+                                    m_Allocator,
+                                    m_Swapchain.Extent,
+                                    m_SwapchainImageViews,
+                                    m_RenderPass,
+                                    m_SwapchainFrameBuffers);
+        CreateCommandPool(m_DevicePair, m_Allocator, &m_DevicePair.GraphicsCommandPool);
+        CreateCommandBuffers(m_DevicePair.LogicalDevice,
+                             m_DevicePair.GraphicsCommandPool,
+                             m_Swapchain.MaxFramesInFlight,
+                             m_DevicePair.CommandBuffers);
+        CreatePipelines();
+        CreateBuffers();
+        CreateSyncObjects();
     }
 
-    void Shutdown()
+    void Renderer::Shutdown()
     {
-        vkDeviceWaitIdle(gs_Context->DevicePair.LogicalDevice);
+        vkDeviceWaitIdle(m_DevicePair.LogicalDevice);
 
-        Internal::DestroyCommandBuffers();
-
-        Internal::DestroyPipelines();
-        Internal::DestroySyncObjects();
-        Internal::DestroyRenderPass();
-        Internal::DestroySwapchains();
-        Internal::DestroyDevicePairs();
-        Internal::DestroySurface();
-
+        DestroyCommandBuffers(m_DevicePair.CommandBuffers);
+        DestroyCommandPool(m_DevicePair, m_Allocator, &m_DevicePair.GraphicsCommandPool);
+        DestroySyncObjects();
+        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_VertexBuffer);
+        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_IndexBuffer);
+        DestroyPipeline(m_DevicePair.LogicalDevice, m_Allocator, &m_PipelineLayout, &m_Pipeline);
+        DestroyRenderPass(m_DevicePair.LogicalDevice, m_Allocator, &m_RenderPass);
+        DestroySwapchains();
+        DestroyDevicePairs(m_Allocator, &m_DevicePair);
+        DestroySurface(m_Instance, m_Allocator, &m_Surface);
 #if !OTR_RUNTIME
-        Internal::DestroyVulkanDebugMessenger();
+        DestroyVulkanDebugMessenger(m_Instance, m_Allocator, &m_DebugMessenger);
 #endif
-
-        Internal::DestroyVulkanInstance();
-
-        Delete(gs_Context);
+        DestroyVulkanInstance(m_Allocator, &m_Instance);
     }
 
-    void RenderFrame()
+    void Renderer::RenderFrame()
     {
-        const auto currentFrame = gs_Context->Swapchain.CurrentFrame;
+        const auto currentFrame = m_Swapchain.CurrentFrame;
 
-        OTR_VULKAN_VALIDATE(vkWaitForFences(gs_Context->DevicePair.LogicalDevice,
+        OTR_VULKAN_VALIDATE(vkWaitForFences(m_DevicePair.LogicalDevice,
                                             1,
-                                            &gs_Context->DevicePair.RenderInFlightFences[0],
+                                            &m_DevicePair.RenderInFlightFences[0],
                                             VK_TRUE,
                                             OTR_VULKAN_SYNC_TIMEOUT))
-        OTR_VULKAN_VALIDATE(vkResetFences(gs_Context->DevicePair.LogicalDevice,
+        OTR_VULKAN_VALIDATE(vkResetFences(m_DevicePair.LogicalDevice,
                                           1,
-                                          &gs_Context->DevicePair.RenderInFlightFences[0]))
+                                          &m_DevicePair.RenderInFlightFences[0]))
 
-        UInt32 imageIndex;
-        OTR_VULKAN_VALIDATE(vkAcquireNextImageKHR(gs_Context->DevicePair.LogicalDevice,
-                                                  gs_Context->Swapchain.Handle,
-                                                  OTR_VULKAN_SYNC_TIMEOUT,
-                                                  gs_Context->DevicePair.ImageAvailableSemaphores[0],
-                                                  VK_NULL_HANDLE,
-                                                  &imageIndex))
+        UInt32   imageIndex;
+        VkResult acquireNextImageResult = vkAcquireNextImageKHR(m_DevicePair.LogicalDevice,
+                                                                m_Swapchain.Handle,
+                                                                OTR_VULKAN_SYNC_TIMEOUT,
+                                                                m_DevicePair.ImageAvailableSemaphores[0],
+                                                                VK_NULL_HANDLE,
+                                                                &imageIndex);
+        if (acquireNextImageResult == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            RecreateSwapchains();
+            return;
+        }
+        else if (acquireNextImageResult != VK_SUCCESS && acquireNextImageResult != VK_SUBOPTIMAL_KHR)
+        {
+            OTR_INTERNAL_ASSERT_MSG(false, "Failed to acquire swapchain image")
+        }
 
-        OTR_VULKAN_VALIDATE(vkResetCommandBuffer(gs_Context->DevicePair.CommandBuffers[0],
-                                                 0))
+        // TODO: Add test triangle code here
+
+        OTR_VULKAN_VALIDATE(vkResetCommandBuffer(m_DevicePair.CommandBuffers[0], 0))
 
         VkCommandBufferBeginInfo beginInfo{ };
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        OTR_VULKAN_VALIDATE(vkBeginCommandBuffer(gs_Context->DevicePair.CommandBuffers[0],
-                                                 &beginInfo))
+        OTR_VULKAN_VALIDATE(vkBeginCommandBuffer(m_DevicePair.CommandBuffers[0], &beginInfo))
 
         VkClearValue clearColor = {{{ 0.3f, 0.2f, 0.5f, 1.0f }}}; // TODO: Remove this later
 
         VkRenderPassBeginInfo renderPassInfo{ };
         renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass        = gs_Context->RenderPass;
-        renderPassInfo.framebuffer       = g_SwapchainFrameBuffers[imageIndex];
+        renderPassInfo.renderPass        = m_RenderPass;
+        renderPassInfo.framebuffer       = m_SwapchainFrameBuffers[imageIndex];
         renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = gs_Context->Swapchain.Extent;
+        renderPassInfo.renderArea.extent = m_Swapchain.Extent;
         renderPassInfo.clearValueCount   = 1;
         renderPassInfo.pClearValues      = &clearColor;
 
-        vkCmdBeginRenderPass(gs_Context->DevicePair.CommandBuffers[0],
-                             &renderPassInfo,
-                             VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(m_DevicePair.CommandBuffers[0], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(gs_Context->DevicePair.CommandBuffers[0],
-                          VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          g_Pipeline);
-        vkCmdDraw(gs_Context->DevicePair.CommandBuffers[0], 3, 1, 0, 0);
+        vkCmdBindPipeline(m_DevicePair.CommandBuffers[0], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+        vkCmdDraw(m_DevicePair.CommandBuffers[0], 3, 1, 0, 0);
 
-        vkCmdEndRenderPass(gs_Context->DevicePair.CommandBuffers[0]);
+        vkCmdEndRenderPass(m_DevicePair.CommandBuffers[0]);
 
-        OTR_VULKAN_VALIDATE(vkEndCommandBuffer(gs_Context->DevicePair.CommandBuffers[0]))
+        OTR_VULKAN_VALIDATE(vkEndCommandBuffer(m_DevicePair.CommandBuffers[0]))
 
         VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        VkSemaphore          waitSemaphores[]   = { gs_Context->DevicePair.ImageAvailableSemaphores[0] };
-        VkSemaphore          signalSemaphores[] = { gs_Context->DevicePair.RenderFinishedSemaphores[0] };
+        VkSemaphore          waitSemaphores[]   = { m_DevicePair.ImageAvailableSemaphores[0] };
+        VkSemaphore          signalSemaphores[] = { m_DevicePair.RenderFinishedSemaphores[0] };
 
         VkSubmitInfo submitInfo{ };
         submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount   = 1;
-        submitInfo.pCommandBuffers      = &gs_Context->DevicePair.CommandBuffers[0];
+        submitInfo.pCommandBuffers      = &m_DevicePair.CommandBuffers[0];
         submitInfo.pWaitDstStageMask    = waitStages;
         submitInfo.waitSemaphoreCount   = 1;
         submitInfo.pWaitSemaphores      = waitSemaphores;
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores    = signalSemaphores;
 
-        OTR_VULKAN_VALIDATE(vkQueueSubmit(gs_Context->DevicePair.GraphicsQueueFamily.Handle,
+        OTR_VULKAN_VALIDATE(vkQueueSubmit(m_DevicePair.GraphicsQueueFamily.Handle,
                                           1,
                                           &submitInfo,
-                                          gs_Context->DevicePair.RenderInFlightFences[0]))
+                                          m_DevicePair.RenderInFlightFences[0]))
 
-        VkSwapchainKHR swapChains[] = { gs_Context->Swapchain.Handle };
+        VkSwapchainKHR swapChains[] = { m_Swapchain.Handle };
 
         VkPresentInfoKHR presentInfo{ };
         presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -208,769 +148,695 @@ namespace Otter::Graphics::Vulkan
         presentInfo.pSwapchains        = swapChains;
         presentInfo.pImageIndices      = &imageIndex;
 
-        OTR_VULKAN_VALIDATE(vkQueuePresentKHR(gs_Context->DevicePair.PresentationQueueFamily.Handle,
-                                              &presentInfo))
+        OTR_VULKAN_VALIDATE(vkQueuePresentKHR(m_DevicePair.PresentationQueueFamily.Handle, &presentInfo))
 
-        gs_Context->Swapchain.CurrentFrame = (currentFrame + 1) % gs_Context->Swapchain.MaxFramesInFlight;
+        m_Swapchain.CurrentFrame = (currentFrame + 1) % m_Swapchain.MaxFramesInFlight;
     }
 
-    namespace Internal
+    void Renderer::CreateVulkanInstance(const VkAllocationCallbacks* const allocator, VkInstance* outInstance)
     {
-        void CreateVulkanInstance()
-        {
-            OTR_LOG_TRACE("Creating Vulkan instance...")
+        OTR_LOG_TRACE("Creating Vulkan instance...")
 
-            VkApplicationInfo appInfo{ };
-            appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-            appInfo.pApplicationName   = "Otter Engine";
-            appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-            appInfo.pEngineName        = "Otter Engine";
-            appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-            appInfo.apiVersion         = VK_API_VERSION_1_0;
+        VkApplicationInfo appInfo{ };
+        appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        appInfo.pApplicationName   = "Otter Engine";
+        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.pEngineName        = "Otter Engine";
+        appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.apiVersion         = VK_API_VERSION_1_0;
 
-            VkInstanceCreateInfo createInfo{ };
-            createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-            createInfo.pApplicationInfo = &appInfo;
+        VkInstanceCreateInfo createInfo{ };
+        createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        createInfo.pApplicationInfo = &appInfo;
 
-            OTR_LOG_TRACE("Getting required instance extensions and layers...")
+        OTR_LOG_TRACE("Getting required instance extensions and layers...")
 
-            List<const char*> extensions;
-            GetRequiredInstanceExtensions(extensions);
+        List<const char*> extensions;
+        GetRequiredInstanceExtensions(extensions);
 
-            createInfo.enabledExtensionCount   = extensions.GetCount();
-            createInfo.ppEnabledExtensionNames = extensions.GetData();
+        createInfo.enabledExtensionCount   = extensions.GetCount();
+        createInfo.ppEnabledExtensionNames = extensions.GetData();
 
 #if !OTR_RUNTIME
-            OTR_LOG_TRACE("Creating Vulkan debug messenger...")
+        OTR_LOG_TRACE("Creating Vulkan debug messenger...")
 
-            VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{ };
-            PopulateDebugMessengerCreateInfo(debugCreateInfo);
+        VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{ };
+        PopulateDebugMessengerCreateInfo(debugCreateInfo);
 
-            List<const char*> layers;
-            GetRequiredInstanceValidationLayers(layers);
+        List<const char*> layers;
+        GetRequiredInstanceValidationLayers(layers);
 
-            createInfo.enabledLayerCount   = layers.GetCount();
-            createInfo.ppEnabledLayerNames = layers.GetData();
-            createInfo.pNext               = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+        createInfo.enabledLayerCount   = layers.GetCount();
+        createInfo.ppEnabledLayerNames = layers.GetData();
+        createInfo.pNext               = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
 #else
-            createInfo.enabledLayerCount   = 0;
+        createInfo.enabledLayerCount   = 0;
             createInfo.ppEnabledLayerNames = VK_NULL_HANDLE;
             createInfo.pNext               = VK_NULL_HANDLE;
 #endif
 
-            OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, gs_Context->Allocator, &gs_Context->Instance))
-        }
+        OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, allocator, outInstance))
+    }
 
-        void DestroyVulkanInstance()
-        {
-            vkDestroyInstance(gs_Context->Instance, gs_Context->Allocator);
-        }
+    void Renderer::DestroyVulkanInstance(const VkAllocationCallbacks* const allocator, VkInstance* outInstance)
+    {
+        OTR_INTERNAL_ASSERT_MSG(*outInstance != VK_NULL_HANDLE,
+                                "Instance must be initialized before being destroyed")
 
-        void CreateSurface(const void* const platformContext)
-        {
+        vkDestroyInstance(*outInstance, allocator);
+        *outInstance = VK_NULL_HANDLE;
+    }
+
+    void Renderer::CreateSurface(const void* const platformContext,
+                                 const VkInstance& instance,
+                                 const VkAllocationCallbacks* const allocator,
+                                 VkSurfaceKHR* outSurface)
+    {
 #if OTR_PLATFORM_WINDOWS
-            const auto* const platformContextData       = ((PlatformContext*) platformContext)->Data;
-            const auto* const windowsPlatformWindowData =
-                          (Otter::Internal::WindowsPlatformWindowData*) platformContextData;
+        const auto* const platformContextData       = ((PlatformContext*) platformContext)->Data;
+        const auto* const windowsPlatformWindowData =
+                      (Otter::Internal::WindowsPlatformWindowData*) platformContextData;
 
-            VkWin32SurfaceCreateInfoKHR createInfo = { };
-            createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-            createInfo.hwnd      = windowsPlatformWindowData->WindowHandle;
-            createInfo.hinstance = windowsPlatformWindowData->InstanceHandle;
+        VkWin32SurfaceCreateInfoKHR createInfo{ };
+        createInfo.sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+        createInfo.hwnd      = windowsPlatformWindowData->WindowHandle;
+        createInfo.hinstance = windowsPlatformWindowData->InstanceHandle;
 
-            OTR_VULKAN_VALIDATE(vkCreateWin32SurfaceKHR(gs_Context->Instance,
-                                                        &createInfo,
-                                                        gs_Context->Allocator,
-                                                        &gs_Context->Surface))
+        OTR_VULKAN_VALIDATE(vkCreateWin32SurfaceKHR(instance, &createInfo, allocator, outSurface))
 #else
-            OTR_LOG_FATAL("'CreateSurface' not supported for this platform")
-#endif
-        }
-
-        void DestroySurface()
-        {
-            vkDestroySurfaceKHR(gs_Context->Instance, gs_Context->Surface, gs_Context->Allocator);
-        }
-
-        void CreateDevicePairs()
-        {
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->Instance != VK_NULL_HANDLE,
-                                    "Instance must be initialized before creating device pairs")
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->Surface != VK_NULL_HANDLE,
-                                    "Surface must be initialized before creating device pairs")
-
-            OTR_LOG_TRACE("Creating Vulkan device pairs...")
-
-            SelectPhysicalDevice();
-            CreateLogicalDevice();
-        }
-
-        void DestroyDevicePairs()
-        {
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->DevicePair.LogicalDevice != VK_NULL_HANDLE,
-                                    "Logical device must be initialized before destroying device pairs")
-
-            vkDestroyDevice(gs_Context->DevicePair.LogicalDevice, gs_Context->Allocator);
-        }
-
-        void SelectPhysicalDevice()
-        {
-            UInt32 deviceCount = 0;
-            OTR_VULKAN_VALIDATE(vkEnumeratePhysicalDevices(gs_Context->Instance,
-                                                           &deviceCount,
-                                                           VK_NULL_HANDLE))
-
-            OTR_INTERNAL_ASSERT_MSG(deviceCount > 0, "Failed to find GPUs with Vulkan support")
-
-            VkPhysicalDevice queriedDevices[deviceCount];
-            OTR_VULKAN_VALIDATE(vkEnumeratePhysicalDevices(gs_Context->Instance, &deviceCount, queriedDevices))
-
-            for (const auto& queriedDevice: queriedDevices)
-            {
-                VkPhysicalDeviceProperties deviceProperties;
-                vkGetPhysicalDeviceProperties(queriedDevice, &deviceProperties);
-
-                OTR_LOG_TRACE("Checking GPU: {0}", deviceProperties.deviceName)
-
-                // HELP: Require a discrete GPU
-                if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
-                {
-                    OTR_LOG_TRACE("{0} is not a discrete GPU. Moving to the next one...", deviceProperties.deviceName)
-                    continue;
-                }
-
-                // HELP: Require a GPU with graphics and presentation queues
-                UInt32 graphicsFamily = UINT32_MAX;
-                UInt32 presentFamily  = UINT32_MAX;
-                QueryQueueFamilies(gs_Context->Surface, queriedDevice, graphicsFamily, presentFamily);
-
-                if (graphicsFamily == UINT32_MAX || presentFamily == UINT32_MAX)
-                {
-                    OTR_LOG_TRACE("{0} is not suitable due to missing Graphics and/or Presentation queue. "
-                                  "Moving to the next one...", deviceProperties.deviceName)
-
-                    continue;
-                }
-
-                // HELP: Require a GPU with all required extensions
-                if (!DeviceSupportsRequiredExtensions(queriedDevice))
-                {
-                    OTR_LOG_TRACE("{0} is not suitable due to missing required extensions. "
-                                  "Moving to the next one...", deviceProperties.deviceName)
-                    continue;
-                }
-
-                // HELP: Require a GPU with swapchain support
-                SwapchainSupportInfo swapchainSupportInfo;
-                QuerySwapchainSupport(gs_Context->Surface, queriedDevice, swapchainSupportInfo);
-
-                bool isSwapchainSupported = swapchainSupportInfo.SurfaceFormats.GetCount() > 0
-                                            && swapchainSupportInfo.PresentModes.GetCount() > 0;
-
-                if (!isSwapchainSupported)
-                {
-                    OTR_LOG_TRACE("{0} is not suitable due to missing swapchain support. "
-                                  "Moving to the next one...", deviceProperties.deviceName)
-                    continue;
-                }
-
-                gs_Context->DevicePair.PhysicalDevice                = queriedDevice;
-                gs_Context->DevicePair.GraphicsQueueFamily.Index     = graphicsFamily;
-                gs_Context->DevicePair.PresentationQueueFamily.Index = presentFamily;
-
-                OTR_LOG_TRACE("Found a suitable GPU: {0}", deviceProperties.deviceName)
-
-                break;
-            }
-
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->DevicePair.PhysicalDevice != VK_NULL_HANDLE,
-                                    "Failed to find a suitable GPU")
-        }
-
-        void CreateLogicalDevice()
-        {
-            List <VkDeviceQueueCreateInfo> queueCreateInfos;
-
-            HashSet <UInt32> uniqueQueueFamilies(2);
-            uniqueQueueFamilies.TryAdd(gs_Context->DevicePair.GraphicsQueueFamily.Index);
-            uniqueQueueFamilies.TryAdd(gs_Context->DevicePair.PresentationQueueFamily.Index);
-
-            float queuePriority = 1.0f;
-
-            Action<const UInt32&> addQueueCreateInfo;
-            addQueueCreateInfo += [&](UInt32 queueFamily)
-            {
-                VkDeviceQueueCreateInfo queueCreateInfo{ };
-                queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-                queueCreateInfo.queueFamilyIndex = queueFamily;
-                queueCreateInfo.queueCount       = 1;
-                queueCreateInfo.pQueuePriorities = &queuePriority;
-                queueCreateInfos.Add(queueCreateInfo);
-            };
-            uniqueQueueFamilies.ForEach(addQueueCreateInfo);
-            addQueueCreateInfo.ClearDestructive();
-
-            // TODO: Should be configuration driven, all features are disabled by default for now
-            VkPhysicalDeviceFeatures deviceFeatures{ };
-
-            List<const char*> requiredExtensions;
-            GetDeviceRequiredExtensions(requiredExtensions);
-
-            VkDeviceCreateInfo createInfo{ };
-            createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            createInfo.queueCreateInfoCount    = queueCreateInfos.GetCount();
-            createInfo.pQueueCreateInfos       = queueCreateInfos.GetData();
-            createInfo.pEnabledFeatures        = &deviceFeatures;
-            createInfo.enabledExtensionCount   = requiredExtensions.GetCount();
-            createInfo.ppEnabledExtensionNames = requiredExtensions.GetData();
-            createInfo.enabledLayerCount       = 0;
-            createInfo.ppEnabledLayerNames     = VK_NULL_HANDLE;
-
-            OTR_VULKAN_VALIDATE(vkCreateDevice(gs_Context->DevicePair.PhysicalDevice,
-                                               &createInfo,
-                                               VK_NULL_HANDLE,
-                                               &gs_Context->DevicePair.LogicalDevice))
-
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->DevicePair.LogicalDevice != VK_NULL_HANDLE,
-                                    "Failed to create logical device")
-
-            vkGetDeviceQueue(gs_Context->DevicePair.LogicalDevice,
-                             gs_Context->DevicePair.GraphicsQueueFamily.Index,
-                             0,
-                             &gs_Context->DevicePair.GraphicsQueueFamily.Handle);
-            vkGetDeviceQueue(gs_Context->DevicePair.LogicalDevice,
-                             gs_Context->DevicePair.PresentationQueueFamily.Index,
-                             0,
-                             &gs_Context->DevicePair.PresentationQueueFamily.Handle);
-
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->DevicePair.GraphicsQueueFamily.Handle != VK_NULL_HANDLE,
-                                    "Failed to get graphics queue")
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->DevicePair.PresentationQueueFamily.Handle != VK_NULL_HANDLE,
-                                    "Failed to get presentation queue")
-        }
-
-        void CreateSwapchains()
-        {
-            OTR_LOG_TRACE("Creating Vulkan swapchains...")
-
-            CreateSingleSwapchain(gs_Context->Surface,
-                                  gs_Context->DevicePair,
-                                  gs_Context->Allocator,
-                                  gs_Context->Swapchain);
-
-            CreateSwapchainImages(gs_Context->DevicePair.LogicalDevice,
-                                  gs_Context->Swapchain.Handle,
-                                  g_SwapchainImages);
-
-            CreateSwapchainImageViews(gs_Context->DevicePair.LogicalDevice,
-                                      gs_Context->Allocator,
-                                      g_SwapchainImages,
-                                      gs_Context->Swapchain.SurfaceFormat.format,
-                                      g_SwapchainImageViews);
-        }
-
-        void RecreateSwapchains()
-        {
-            OTR_LOG_TRACE("Recreating Vulkan swapchain...")
-
-            DestroySwapchains();
-
-            CreateSingleSwapchain(gs_Context->Surface,
-                                  gs_Context->DevicePair,
-                                  gs_Context->Allocator,
-                                  gs_Context->Swapchain);
-
-            CreateSwapchainImages(gs_Context->DevicePair.LogicalDevice,
-                                  gs_Context->Swapchain.Handle,
-                                  g_SwapchainImages);
-
-            CreateSwapchainImageViews(gs_Context->DevicePair.LogicalDevice,
-                                      gs_Context->Allocator,
-                                      g_SwapchainImages,
-                                      gs_Context->Swapchain.SurfaceFormat.format,
-                                      g_SwapchainImageViews);
-
-            CreateSwapchainFrameBuffers(gs_Context->DevicePair.LogicalDevice,
-                                        gs_Context->Allocator,
-                                        gs_Context->Swapchain.Extent,
-                                        g_SwapchainImageViews,
-                                        gs_Context->RenderPass,
-                                        g_SwapchainFrameBuffers);
-        }
-
-        void DestroySwapchains()
-        {
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->DevicePair.LogicalDevice != VK_NULL_HANDLE,
-                                    "Logical device must be initialized before destroying its swapchain")
-
-            for (auto& swapchainFrameBuffer: g_SwapchainFrameBuffers)
-            {
-                vkDestroyFramebuffer(gs_Context->DevicePair.LogicalDevice,
-                                     swapchainFrameBuffer,
-                                     gs_Context->Allocator);
-            }
-            g_SwapchainFrameBuffers.ClearDestructive();
-
-            for (auto& swapchainImageView: g_SwapchainImageViews)
-            {
-                vkDestroyImageView(gs_Context->DevicePair.LogicalDevice,
-                                   swapchainImageView,
-                                   gs_Context->Allocator);
-            }
-            g_SwapchainImageViews.ClearDestructive();
-            g_SwapchainImages.ClearDestructive();
-
-            vkDestroySwapchainKHR(gs_Context->DevicePair.LogicalDevice,
-                                  gs_Context->Swapchain.Handle,
-                                  gs_Context->Allocator);
-        }
-
-        void CreateRenderPass()
-        {
-            VkAttachmentDescription colorAttachment{ };
-            colorAttachment.format         = gs_Context->Swapchain.SurfaceFormat.format;
-            colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
-            colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
-            colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-            colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-            colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-            colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-            VkAttachmentReference colorAttachmentRef{ };
-            colorAttachmentRef.attachment = 0;
-            colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-            VkSubpassDescription subPass{ };
-            subPass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            subPass.colorAttachmentCount = 1;
-            subPass.pColorAttachments    = &colorAttachmentRef;
-
-            VkSubpassDependency dependency{ };
-            dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
-            dependency.dstSubpass    = 0;
-            dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependency.srcAccessMask = 0;
-            dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-            dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-            VkRenderPassCreateInfo renderPassInfo{ };
-            renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-            renderPassInfo.attachmentCount = 1;
-            renderPassInfo.pAttachments    = &colorAttachment;
-            renderPassInfo.subpassCount    = 1;
-            renderPassInfo.pSubpasses      = &subPass;
-            renderPassInfo.dependencyCount = 1;
-            renderPassInfo.pDependencies   = &dependency;
-
-            OTR_VULKAN_VALIDATE(vkCreateRenderPass(gs_Context->DevicePair.LogicalDevice,
-                                                   &renderPassInfo,
-                                                   gs_Context->Allocator,
-                                                   &gs_Context->RenderPass))
-        }
-
-        void DestroyRenderPass()
-        {
-            vkDestroyRenderPass(gs_Context->DevicePair.LogicalDevice,
-                                gs_Context->RenderPass,
-                                gs_Context->Allocator);
-        }
-
-        void CreateCommandBuffers()
-        {
-            VkCommandPoolCreateInfo commandPoolCreateInfo{ };
-            commandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-            commandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-            commandPoolCreateInfo.queueFamilyIndex = gs_Context->DevicePair.GraphicsQueueFamily.Index;
-            commandPoolCreateInfo.pNext            = VK_NULL_HANDLE;
-
-            OTR_VULKAN_VALIDATE(vkCreateCommandPool(gs_Context->DevicePair.LogicalDevice,
-                                                    &commandPoolCreateInfo,
-                                                    gs_Context->Allocator,
-                                                    &gs_Context->DevicePair.GraphicsCommandPool))
-
-            VkCommandBufferAllocateInfo commandBufferAllocateInfo{ };
-            commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-            commandBufferAllocateInfo.commandPool        = gs_Context->DevicePair.GraphicsCommandPool;
-            commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-            commandBufferAllocateInfo.commandBufferCount = gs_Context->Swapchain.MaxFramesInFlight;
-            commandBufferAllocateInfo.pNext              = VK_NULL_HANDLE;
-
-            VkCommandBuffer tempCommandBuffers[gs_Context->Swapchain.MaxFramesInFlight];
-            OTR_VULKAN_VALIDATE(vkAllocateCommandBuffers(gs_Context->DevicePair.LogicalDevice,
-                                                         &commandBufferAllocateInfo,
-                                                         tempCommandBuffers))
-
-            Collections::New<VkCommandBuffer>(tempCommandBuffers,
-                                              gs_Context->Swapchain.MaxFramesInFlight,
-                                              gs_Context->DevicePair.CommandBuffers);
-        }
-
-        void DestroyCommandBuffers()
-        {
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->DevicePair.GraphicsCommandPool != VK_NULL_HANDLE,
-                                    "Vulkan command pool is null!")
-            OTR_INTERNAL_ASSERT_MSG(gs_Context->DevicePair.LogicalDevice != VK_NULL_HANDLE,
-                                    "Vulkan logical device is null!")
-
-            vkDestroyCommandPool(gs_Context->DevicePair.LogicalDevice,
-                                 gs_Context->DevicePair.GraphicsCommandPool,
-                                 gs_Context->Allocator);
-
-            gs_Context->DevicePair.CommandBuffers.ClearDestructive();
-        }
-
-        void CreateSyncObjects()
-        {
-            gs_Context->DevicePair.ImageAvailableSemaphores.Reserve(gs_Context->Swapchain.MaxFramesInFlight);
-            gs_Context->DevicePair.RenderFinishedSemaphores.Reserve(gs_Context->Swapchain.MaxFramesInFlight);
-            gs_Context->DevicePair.RenderInFlightFences.Reserve(gs_Context->Swapchain.MaxFramesInFlight);
-
-            VkSemaphoreCreateInfo semaphoreInfo{ };
-            semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-            VkFenceCreateInfo fenceInfo{ };
-            fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-            fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-            VkSemaphore tempImageAvailableSemaphores[gs_Context->Swapchain.MaxFramesInFlight];
-            VkSemaphore tempRenderFinishedSemaphores[gs_Context->Swapchain.MaxFramesInFlight];
-            VkFence     tempInFlightFences[gs_Context->Swapchain.MaxFramesInFlight];
-
-            for (size_t i = 0; i < gs_Context->Swapchain.MaxFramesInFlight; i++)
-            {
-                OTR_VULKAN_VALIDATE(vkCreateSemaphore(gs_Context->DevicePair.LogicalDevice,
-                                                      &semaphoreInfo,
-                                                      gs_Context->Allocator,
-                                                      &tempImageAvailableSemaphores[i]))
-                OTR_VULKAN_VALIDATE(vkCreateSemaphore(gs_Context->DevicePair.LogicalDevice,
-                                                      &semaphoreInfo,
-                                                      gs_Context->Allocator,
-                                                      &tempRenderFinishedSemaphores[i]))
-                OTR_VULKAN_VALIDATE(vkCreateFence(gs_Context->DevicePair.LogicalDevice,
-                                                  &fenceInfo,
-                                                  gs_Context->Allocator,
-                                                  &tempInFlightFences[i]))
-            }
-
-            Collections::New<VkSemaphore>(tempImageAvailableSemaphores,
-                                          gs_Context->Swapchain.MaxFramesInFlight,
-                                          gs_Context->DevicePair.ImageAvailableSemaphores);
-            Collections::New<VkSemaphore>(tempRenderFinishedSemaphores,
-                                          gs_Context->Swapchain.MaxFramesInFlight,
-                                          gs_Context->DevicePair.RenderFinishedSemaphores);
-            Collections::New<VkFence>(tempInFlightFences,
-                                      gs_Context->Swapchain.MaxFramesInFlight,
-                                      gs_Context->DevicePair.RenderInFlightFences);
-        }
-
-        void DestroySyncObjects()
-        {
-            for (size_t i = 0; i < gs_Context->Swapchain.MaxFramesInFlight; i++)
-            {
-                vkDestroySemaphore(gs_Context->DevicePair.LogicalDevice,
-                                   gs_Context->DevicePair.ImageAvailableSemaphores[i],
-                                   gs_Context->Allocator);
-                vkDestroySemaphore(gs_Context->DevicePair.LogicalDevice,
-                                   gs_Context->DevicePair.RenderFinishedSemaphores[i],
-                                   gs_Context->Allocator);
-                vkDestroyFence(gs_Context->DevicePair.LogicalDevice,
-                               gs_Context->DevicePair.RenderInFlightFences[i],
-                               gs_Context->Allocator);
-            }
-
-            gs_Context->DevicePair.ImageAvailableSemaphores.ClearDestructive();
-            gs_Context->DevicePair.RenderFinishedSemaphores.ClearDestructive();
-            gs_Context->DevicePair.RenderInFlightFences.ClearDestructive();
-        }
-
-        void CreatePipelines()
-        {
-            VulkanShader shader{ };
-            if (!TryCreateShaderModule(gs_Context->DevicePair.LogicalDevice,
-                                       gs_Context->Allocator,
-                                       "Assets/Shaders/default.vert.spv", // TODO: Remove hardcoded path
-                                       &shader.VertexModule))
-            {
-                OTR_LOG_FATAL("Error when building the vertex shader module")
-                return;
-            }
-
-            if (!TryCreateShaderModule(gs_Context->DevicePair.LogicalDevice,
-                                       gs_Context->Allocator,
-                                       "Assets/Shaders/default.frag.spv", // TODO: Remove hardcoded path
-                                       &shader.FragmentModule))
-            {
-                DestroyShaderModule(gs_Context->DevicePair.LogicalDevice,
-                                    gs_Context->Allocator,
-                                    shader.VertexModule);
-
-                OTR_LOG_FATAL("Error when building the fragment shader module")
-                return;
-            }
-
-            VkPipelineShaderStageCreateInfo vertShaderStageCreateInfo{ };
-            vertShaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            vertShaderStageCreateInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-            vertShaderStageCreateInfo.module = shader.VertexModule;
-            vertShaderStageCreateInfo.pName  = "main";
-            vertShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
-
-            VkPipelineShaderStageCreateInfo fragShaderStageCreateInfo{ };
-            fragShaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            fragShaderStageCreateInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-            fragShaderStageCreateInfo.module = shader.FragmentModule;
-            fragShaderStageCreateInfo.pName  = "main";
-            fragShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
-
-            VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageCreateInfo, fragShaderStageCreateInfo };
-
-            // Vertex Input
-            VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{ };
-            vertexInputStateCreateInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-            vertexInputStateCreateInfo.vertexBindingDescriptionCount   = 0;
-            vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 0;
-            vertexInputStateCreateInfo.pNext                           = VK_NULL_HANDLE;
-
-            // Input Assembly
-            VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo{ };
-            inputAssemblyStateCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-            inputAssemblyStateCreateInfo.topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-            inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
-            inputAssemblyStateCreateInfo.pNext                  = VK_NULL_HANDLE;
-
-            // Viewport and Scissor
-            VkViewport viewport{ };
-            viewport.x        = 0.0f;
-            viewport.y        = 0.0f;
-            viewport.width    = (float) gs_Context->Swapchain.Extent.width;
-            viewport.height   = (float) gs_Context->Swapchain.Extent.height;
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
-
-            VkRect2D scissor{ };
-            scissor.offset = { 0, 0 };
-            scissor.extent = gs_Context->Swapchain.Extent;
-
-            VkPipelineViewportStateCreateInfo viewportStateCreateInfo{ };
-            viewportStateCreateInfo.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-            viewportStateCreateInfo.viewportCount = 1;
-            viewportStateCreateInfo.pViewports    = &viewport;
-            viewportStateCreateInfo.scissorCount  = 1;
-            viewportStateCreateInfo.pScissors     = &scissor;
-            viewportStateCreateInfo.pNext         = VK_NULL_HANDLE;
-
-            // Rasterizer
-            VkPipelineRasterizationStateCreateInfo rasterizationStateCreateInfo{ };
-            rasterizationStateCreateInfo.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-            rasterizationStateCreateInfo.depthClampEnable        = VK_FALSE;
-            rasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-            rasterizationStateCreateInfo.polygonMode             = VK_POLYGON_MODE_FILL;
-            rasterizationStateCreateInfo.lineWidth               = 1.0f;
-            rasterizationStateCreateInfo.cullMode                = VK_CULL_MODE_NONE;
-            rasterizationStateCreateInfo.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-            rasterizationStateCreateInfo.depthBiasEnable         = VK_FALSE;
-            rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0f;
-            rasterizationStateCreateInfo.depthBiasClamp          = 0.0f;
-            rasterizationStateCreateInfo.depthBiasSlopeFactor    = 0.0f;
-            rasterizationStateCreateInfo.pNext                   = VK_NULL_HANDLE;
-
-            // Multisampling
-            VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{ };
-            multisampleStateCreateInfo.sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-            multisampleStateCreateInfo.sampleShadingEnable   = VK_FALSE;
-            multisampleStateCreateInfo.rasterizationSamples  = VK_SAMPLE_COUNT_1_BIT;
-            multisampleStateCreateInfo.minSampleShading      = 1.0f;
-            multisampleStateCreateInfo.pSampleMask           = VK_NULL_HANDLE;
-            multisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
-            multisampleStateCreateInfo.alphaToOneEnable      = VK_FALSE;
-            multisampleStateCreateInfo.pNext                 = VK_NULL_HANDLE;
-
-            // Color blending
-            VkPipelineColorBlendAttachmentState colorBlendAttachmentState{ };
-            colorBlendAttachmentState.colorWriteMask      = VK_COLOR_COMPONENT_R_BIT
-                                                            | VK_COLOR_COMPONENT_G_BIT
-                                                            | VK_COLOR_COMPONENT_B_BIT
-                                                            | VK_COLOR_COMPONENT_A_BIT;
-            colorBlendAttachmentState.blendEnable         = VK_FALSE;
-            colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-            colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-            colorBlendAttachmentState.colorBlendOp        = VK_BLEND_OP_ADD;
-            colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-            colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-            colorBlendAttachmentState.alphaBlendOp        = VK_BLEND_OP_ADD;
-
-            VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo{ };
-            colorBlendStateCreateInfo.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-            colorBlendStateCreateInfo.logicOpEnable   = VK_FALSE;
-            colorBlendStateCreateInfo.logicOp         = VK_LOGIC_OP_COPY;
-            colorBlendStateCreateInfo.attachmentCount = 1;
-            colorBlendStateCreateInfo.pAttachments    = &colorBlendAttachmentState;
-            colorBlendStateCreateInfo.blendConstants[0] = 0.0f;
-            colorBlendStateCreateInfo.blendConstants[1] = 0.0f;
-            colorBlendStateCreateInfo.blendConstants[2] = 0.0f;
-            colorBlendStateCreateInfo.blendConstants[3] = 0.0f;
-            colorBlendStateCreateInfo.pNext = VK_NULL_HANDLE;
-
-            // Pipeline Layout
-            VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{ };
-            pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-            pipelineLayoutCreateInfo.flags                  = 0;
-            pipelineLayoutCreateInfo.setLayoutCount         = 0;
-            pipelineLayoutCreateInfo.pSetLayouts            = VK_NULL_HANDLE;
-            pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-            pipelineLayoutCreateInfo.pPushConstantRanges    = VK_NULL_HANDLE;
-            pipelineLayoutCreateInfo.pNext                  = VK_NULL_HANDLE;
-
-            OTR_VULKAN_VALIDATE(vkCreatePipelineLayout(gs_Context->DevicePair.LogicalDevice,
-                                                       &pipelineLayoutCreateInfo,
-                                                       gs_Context->Allocator,
-                                                       &g_PipelineLayout))
-
-            // Graphics Pipeline
-            VkGraphicsPipelineCreateInfo pipelineCreateInfo{ };
-            pipelineCreateInfo.sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-            pipelineCreateInfo.stageCount          = 2;
-            pipelineCreateInfo.pStages             = shaderStages;
-            pipelineCreateInfo.pVertexInputState   = &vertexInputStateCreateInfo;
-            pipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
-            pipelineCreateInfo.pViewportState      = &viewportStateCreateInfo;
-            pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
-            pipelineCreateInfo.pMultisampleState   = &multisampleStateCreateInfo;
-            pipelineCreateInfo.pDepthStencilState  = VK_NULL_HANDLE;
-            pipelineCreateInfo.pColorBlendState    = &colorBlendStateCreateInfo;
-            pipelineCreateInfo.pDynamicState       = VK_NULL_HANDLE;
-            pipelineCreateInfo.layout              = g_PipelineLayout;
-            pipelineCreateInfo.renderPass          = gs_Context->RenderPass;
-            pipelineCreateInfo.subpass             = 0;
-            pipelineCreateInfo.basePipelineHandle  = VK_NULL_HANDLE;
-            pipelineCreateInfo.basePipelineIndex   = -1;
-            pipelineCreateInfo.pNext               = VK_NULL_HANDLE;
-
-            OTR_VULKAN_VALIDATE(vkCreateGraphicsPipelines(gs_Context->DevicePair.LogicalDevice,
-                                                          VK_NULL_HANDLE,
-                                                          1,
-                                                          &pipelineCreateInfo,
-                                                          gs_Context->Allocator,
-                                                          &g_Pipeline))
-
-            DestroyShaderModule(gs_Context->DevicePair.LogicalDevice, gs_Context->Allocator, shader.VertexModule);
-            DestroyShaderModule(gs_Context->DevicePair.LogicalDevice, gs_Context->Allocator, shader.FragmentModule);
-        }
-
-        void DestroyPipelines()
-        {
-            vkDestroyPipeline(gs_Context->DevicePair.LogicalDevice,
-                              g_Pipeline,
-                              gs_Context->Allocator);
-            vkDestroyPipelineLayout(gs_Context->DevicePair.LogicalDevice,
-                                    g_PipelineLayout,
-                                    gs_Context->Allocator);
-        }
-
-#if !OTR_RUNTIME
-        void CreateVulkanDebugMessenger()
-        {
-            VkDebugUtilsMessengerCreateInfoEXT createInfo;
-            PopulateDebugMessengerCreateInfo(createInfo);
-
-            auto createDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
-                gs_Context->Instance,
-                "vkCreateDebugUtilsMessengerEXT");
-
-            if (createDebugUtilsMessenger)
-            {
-                OTR_VULKAN_VALIDATE(createDebugUtilsMessenger(gs_Context->Instance,
-                                                              &createInfo, gs_Context->Allocator,
-                                                              &gs_Context->DebugMessenger))
-            }
-        }
-
-        void DestroyVulkanDebugMessenger()
-        {
-            auto destroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
-                gs_Context->Instance,
-                "vkDestroyDebugUtilsMessengerEXT");
-
-            if (destroyDebugUtilsMessenger != VK_NULL_HANDLE)
-                destroyDebugUtilsMessenger(gs_Context->Instance,
-                                           gs_Context->DebugMessenger,
-                                           gs_Context->Allocator);
-        }
-
-        VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                     VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                     const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-                                                     [[maybe_unused]] void* userData)
-        {
-            // TODO: Also use the message type to filter out messages
-            switch (messageSeverity)
-            {
-                case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
-                    OTR_LOG_DEBUG(callbackData->pMessage)
-                    break;
-                case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
-                    OTR_LOG_INFO(callbackData->pMessage)
-                    break;
-                case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-                    OTR_LOG_WARNING(callbackData->pMessage)
-                    break;
-                case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
-                    OTR_LOG_ERROR(callbackData->pMessage)
-                    break;
-                default:
-                    OTR_LOG_FATAL("Unknown Error: {0}", callbackData->pMessage)
-                    break;
-            }
-
-            return VK_FALSE;
-        }
-
-        void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
-        {
-            createInfo = { };
-            createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-            createInfo.messageSeverity =
-//            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-//            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
-                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-                VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-            createInfo.messageType     =
-                VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-                VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
-                VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
-            createInfo.pfnUserCallback = DebugCallback;
-        }
-
-        void GetRequiredInstanceValidationLayers(List<const char*>& layers)
-        {
-            layers.Add("VK_LAYER_KHRONOS_validation");
-
-            UInt32 availableLayerCount = 0;
-            OTR_VULKAN_VALIDATE(vkEnumerateInstanceLayerProperties(&availableLayerCount, VK_NULL_HANDLE))
-            auto* availableLayers = Buffer::New<VkLayerProperties>(availableLayerCount);
-            OTR_VULKAN_VALIDATE(vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers))
-
-            for (UInt32 i = 0; i < layers.GetCount(); ++i)
-            {
-                bool found = false;
-
-                for (UInt32 j = 0; j < availableLayerCount; ++j)
-                {
-                    if (strcmp(layers[i], availableLayers[j].layerName) == 0)
-                    {
-                        found = true;
-                        OTR_LOG_TRACE("Required validation layer found: {0}", layers[i])
-                        break;
-                    }
-                }
-
-                OTR_INTERNAL_ASSERT_MSG(found, "Required layer is missing: {0}", layers[i])
-            }
-
-            Buffer::Delete(availableLayers, availableLayerCount);
-        }
+        OTR_LOG_FATAL("'CreateSurface' not supported for this platform")
 #endif
     }
+
+    void Renderer::DestroySurface(const VkInstance& instance,
+                                  const VkAllocationCallbacks* const allocator,
+                                  VkSurfaceKHR* outSurface)
+    {
+        OTR_INTERNAL_ASSERT_MSG(instance != VK_NULL_HANDLE,
+                                "Instance must be initialized before destroying surface")
+        OTR_INTERNAL_ASSERT_MSG(*outSurface != VK_NULL_HANDLE,
+                                "Surface must be initialized before being destroyed")
+
+        vkDestroySurfaceKHR(instance, *outSurface, allocator);
+        *outSurface = VK_NULL_HANDLE;
+    }
+
+    void Renderer::SelectPhysicalDevice(const VkInstance& instance,
+                                        const VkSurfaceKHR& surface,
+                                        VulkanDevicePair* outDevicePair)
+    {
+        UInt32 deviceCount = 0;
+        OTR_VULKAN_VALIDATE(vkEnumeratePhysicalDevices(instance, &deviceCount, VK_NULL_HANDLE))
+
+        OTR_INTERNAL_ASSERT_MSG(deviceCount > 0, "Failed to find GPUs with Vulkan support")
+
+        VkPhysicalDevice queriedDevices[deviceCount];
+        OTR_VULKAN_VALIDATE(vkEnumeratePhysicalDevices(instance, &deviceCount, queriedDevices))
+
+        for (const auto& queriedDevice: queriedDevices)
+        {
+            VkPhysicalDeviceProperties deviceProperties;
+            vkGetPhysicalDeviceProperties(queriedDevice, &deviceProperties);
+
+            OTR_LOG_TRACE("Checking GPU: {0}", deviceProperties.deviceName)
+
+            // HELP: Require a discrete GPU
+            if (deviceProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            {
+                OTR_LOG_TRACE("{0} is not a discrete GPU. Moving to the next one...", deviceProperties.deviceName)
+                continue;
+            }
+
+            // HELP: Require a GPU with graphics and presentation queues
+            UInt32 graphicsFamily = UINT32_MAX;
+            UInt32 presentFamily  = UINT32_MAX;
+            QueryQueueFamilies(surface, queriedDevice, &graphicsFamily, &presentFamily);
+
+            if (graphicsFamily == UINT32_MAX || presentFamily == UINT32_MAX)
+            {
+                OTR_LOG_TRACE("{0} is not suitable due to missing Graphics and/or Presentation queue. "
+                              "Moving to the next one...", deviceProperties.deviceName)
+
+                continue;
+            }
+
+            // HELP: Require a GPU with all required extensions
+            if (!DeviceSupportsRequiredExtensions(queriedDevice))
+            {
+                OTR_LOG_TRACE("{0} is not suitable due to missing required extensions. "
+                              "Moving to the next one...", deviceProperties.deviceName)
+                continue;
+            }
+
+            // HELP: Require a GPU with swapchain support
+            SwapchainSupportInfo swapchainSupportInfo;
+            QuerySwapchainSupport(surface, queriedDevice, &swapchainSupportInfo);
+
+            bool isSwapchainSupported = swapchainSupportInfo.SurfaceFormats.GetCount() > 0
+                                        && swapchainSupportInfo.PresentModes.GetCount() > 0;
+
+            if (!isSwapchainSupported)
+            {
+                OTR_LOG_TRACE("{0} is not suitable due to missing swapchain support. "
+                              "Moving to the next one...", deviceProperties.deviceName)
+                continue;
+            }
+
+            outDevicePair->PhysicalDevice                = queriedDevice;
+            outDevicePair->GraphicsQueueFamily.Index     = graphicsFamily;
+            outDevicePair->PresentationQueueFamily.Index = presentFamily;
+
+            OTR_LOG_TRACE("Found a suitable GPU: {0}", deviceProperties.deviceName)
+
+            break;
+        }
+
+        OTR_INTERNAL_ASSERT_MSG(outDevicePair->PhysicalDevice != VK_NULL_HANDLE, "Failed to find a suitable GPU")
+    }
+
+    void Renderer::CreateLogicalDevice(const VkAllocationCallbacks* const allocator, VulkanDevicePair* outDevicePair)
+    {
+        List <VkDeviceQueueCreateInfo> queueCreateInfos;
+
+        HashSet <UInt32> uniqueQueueFamilies(2);
+        uniqueQueueFamilies.TryAdd(outDevicePair->GraphicsQueueFamily.Index);
+        uniqueQueueFamilies.TryAdd(outDevicePair->PresentationQueueFamily.Index);
+
+        float queuePriority = 1.0f;
+
+        Action<const UInt32&> addQueueCreateInfo;
+        addQueueCreateInfo += [&](UInt32 queueFamily)
+        {
+            VkDeviceQueueCreateInfo queueCreateInfo{ };
+            queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueCount       = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+            queueCreateInfos.Add(queueCreateInfo);
+        };
+        uniqueQueueFamilies.ForEach(addQueueCreateInfo);
+        addQueueCreateInfo.ClearDestructive();
+
+        // TODO: Should be configuration driven, all features are disabled by default for now
+        VkPhysicalDeviceFeatures deviceFeatures{ };
+
+        List<const char*> requiredExtensions;
+        GetDeviceRequiredExtensions(requiredExtensions);
+
+        VkDeviceCreateInfo createInfo{ };
+        createInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.queueCreateInfoCount    = queueCreateInfos.GetCount();
+        createInfo.pQueueCreateInfos       = queueCreateInfos.GetData();
+        createInfo.pEnabledFeatures        = &deviceFeatures;
+        createInfo.enabledExtensionCount   = requiredExtensions.GetCount();
+        createInfo.ppEnabledExtensionNames = requiredExtensions.GetData();
+        createInfo.enabledLayerCount       = 0;
+        createInfo.ppEnabledLayerNames     = VK_NULL_HANDLE;
+
+        OTR_VULKAN_VALIDATE(vkCreateDevice(outDevicePair->PhysicalDevice,
+                                           &createInfo,
+                                           allocator,
+                                           &outDevicePair->LogicalDevice))
+
+        OTR_INTERNAL_ASSERT_MSG(outDevicePair->LogicalDevice != VK_NULL_HANDLE,
+                                "Failed to create logical device")
+
+        vkGetDeviceQueue(outDevicePair->LogicalDevice,
+                         outDevicePair->GraphicsQueueFamily.Index,
+                         0,
+                         &outDevicePair->GraphicsQueueFamily.Handle);
+        vkGetDeviceQueue(outDevicePair->LogicalDevice,
+                         outDevicePair->PresentationQueueFamily.Index,
+                         0,
+                         &outDevicePair->PresentationQueueFamily.Handle);
+
+        OTR_INTERNAL_ASSERT_MSG(outDevicePair->GraphicsQueueFamily.Handle != VK_NULL_HANDLE,
+                                "Failed to get graphics queue")
+        OTR_INTERNAL_ASSERT_MSG(outDevicePair->PresentationQueueFamily.Handle != VK_NULL_HANDLE,
+                                "Failed to get presentation queue")
+    }
+
+    void Renderer::CreateDevicePairs(const VkInstance& instance,
+                                     const VkSurfaceKHR& surface,
+                                     const VkAllocationCallbacks* const allocator,
+                                     VulkanDevicePair* outDevicePair)
+    {
+        OTR_INTERNAL_ASSERT_MSG(instance != VK_NULL_HANDLE,
+                                "Instance must be initialized before creating device pairs")
+        OTR_INTERNAL_ASSERT_MSG(surface != VK_NULL_HANDLE,
+                                "Surface must be initialized before creating device pairs")
+
+        OTR_LOG_TRACE("Creating device pairs...")
+
+        SelectPhysicalDevice(instance, surface, outDevicePair);
+        CreateLogicalDevice(allocator, outDevicePair);
+    }
+
+    void Renderer::DestroyDevicePairs(const VkAllocationCallbacks* const allocator, VulkanDevicePair* outDevicePair)
+    {
+        OTR_INTERNAL_ASSERT_MSG(outDevicePair->LogicalDevice != VK_NULL_HANDLE,
+                                "Logical device must be initialized before destroying device pairs")
+
+        vkDestroyDevice(outDevicePair->LogicalDevice, allocator);
+
+        outDevicePair->PhysicalDevice                 = VK_NULL_HANDLE;
+        outDevicePair->LogicalDevice                  = VK_NULL_HANDLE;
+        outDevicePair->GraphicsQueueFamily.Handle     = VK_NULL_HANDLE;
+        outDevicePair->PresentationQueueFamily.Handle = VK_NULL_HANDLE;
+    }
+
+    void Renderer::CreateSwapchains()
+    {
+        OTR_LOG_TRACE("Creating Vulkan swapchains...")
+
+        CreateSingleSwapchain(m_Surface, m_DevicePair, m_Allocator, &m_Swapchain);
+        CreateSwapchainImages(m_DevicePair.LogicalDevice, m_Swapchain.Handle, m_SwapchainImages);
+        CreateSwapchainImageViews(m_DevicePair.LogicalDevice,
+                                  m_Allocator,
+                                  m_SwapchainImages,
+                                  m_Swapchain.SurfaceFormat.format,
+                                  m_SwapchainImageViews);
+    }
+
+    void Renderer::RecreateSwapchains()
+    {
+        OTR_LOG_TRACE("Recreating Vulkan swapchains...")
+
+        DestroySwapchains();
+
+        CreateSingleSwapchain(m_Surface, m_DevicePair, m_Allocator, &m_Swapchain);
+        CreateSwapchainImages(m_DevicePair.LogicalDevice, m_Swapchain.Handle, m_SwapchainImages);
+        CreateSwapchainImageViews(m_DevicePair.LogicalDevice,
+                                  m_Allocator,
+                                  m_SwapchainImages,
+                                  m_Swapchain.SurfaceFormat.format,
+                                  m_SwapchainImageViews);
+        CreateSwapchainFrameBuffers(m_DevicePair.LogicalDevice,
+                                    m_Allocator,
+                                    m_Swapchain.Extent,
+                                    m_SwapchainImageViews,
+                                    m_RenderPass,
+                                    m_SwapchainFrameBuffers);
+    }
+
+    void Renderer::DestroySwapchains()
+    {
+        OTR_INTERNAL_ASSERT_MSG(m_DevicePair.LogicalDevice != VK_NULL_HANDLE,
+                                "Logical device must be initialized before destroying its swapchain")
+
+        for (auto& swapchainFrameBuffer: m_SwapchainFrameBuffers)
+            vkDestroyFramebuffer(m_DevicePair.LogicalDevice, swapchainFrameBuffer, m_Allocator);
+
+        m_SwapchainFrameBuffers.ClearDestructive();
+
+        for (auto& swapchainImageView: m_SwapchainImageViews)
+            vkDestroyImageView(m_DevicePair.LogicalDevice, swapchainImageView, m_Allocator);
+
+        m_SwapchainImageViews.ClearDestructive();
+        m_SwapchainImages.ClearDestructive();
+
+        vkDestroySwapchainKHR(m_DevicePair.LogicalDevice, m_Swapchain.Handle, m_Allocator);
+    }
+
+    void Renderer::CreateRenderPass(const VkDevice& logicalDevice,
+                                    const VkAllocationCallbacks* const allocator,
+                                    const VulkanSwapchain& swapchain,
+                                    VkRenderPass* outRenderPass)
+    {
+        OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
+                                "Logical device must be initialized before creating render pass")
+        OTR_INTERNAL_ASSERT_MSG(swapchain.Handle != VK_NULL_HANDLE,
+                                "Swapchain must be initialized before creating render pass")
+
+        VkAttachmentDescription colorAttachment{ };
+        colorAttachment.format         = swapchain.SurfaceFormat.format;
+        colorAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment.loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp        = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment.finalLayout    = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        colorAttachment.flags          = 0;
+
+        VkAttachmentReference colorAttachmentRef{ };
+        colorAttachmentRef.attachment = 0;
+        colorAttachmentRef.layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subPass{ };
+        subPass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subPass.inputAttachmentCount    = 0;
+        subPass.pInputAttachments       = VK_NULL_HANDLE;
+        subPass.colorAttachmentCount    = 1;
+        subPass.pColorAttachments       = &colorAttachmentRef;
+        subPass.pResolveAttachments     = VK_NULL_HANDLE;
+        subPass.pDepthStencilAttachment = VK_NULL_HANDLE;
+        subPass.preserveAttachmentCount = 0;
+        subPass.pPreserveAttachments    = VK_NULL_HANDLE;
+        subPass.flags                   = 0;
+
+        VkSubpassDependency dependency{ };
+        dependency.srcSubpass      = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass      = 0;
+        dependency.srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask   = 0;
+        dependency.dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency.dependencyFlags = 0;
+
+        VkRenderPassCreateInfo renderPassInfo{ };
+        renderPassInfo.sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassInfo.attachmentCount = 1;
+        renderPassInfo.pAttachments    = &colorAttachment;
+        renderPassInfo.subpassCount    = 1;
+        renderPassInfo.pSubpasses      = &subPass;
+        renderPassInfo.dependencyCount = 1;
+        renderPassInfo.pDependencies   = &dependency;
+        renderPassInfo.pNext           = VK_NULL_HANDLE;
+
+        OTR_VULKAN_VALIDATE(vkCreateRenderPass(logicalDevice, &renderPassInfo, allocator, outRenderPass))
+    }
+
+    void Renderer::DestroyRenderPass(const VkDevice& logicalDevice,
+                                     const VkAllocationCallbacks* const allocator,
+                                     VkRenderPass* outRenderPass)
+    {
+        OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
+                                "Logical device must be initialized before destroying render pass")
+        OTR_INTERNAL_ASSERT_MSG(*outRenderPass != VK_NULL_HANDLE,
+                                "Render pass must be initialized before being destroyed")
+
+        vkDestroyRenderPass(logicalDevice, *outRenderPass, allocator);
+        *outRenderPass = VK_NULL_HANDLE;
+    }
+
+    void Renderer::CreateCommandPool(const VulkanDevicePair& devicePair,
+                                     const VkAllocationCallbacks* const allocator,
+                                     VkCommandPool* outCommandPool)
+    {
+        VkCommandPoolCreateInfo commandPoolCreateInfo{ };
+        commandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        commandPoolCreateInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        commandPoolCreateInfo.queueFamilyIndex = devicePair.GraphicsQueueFamily.Index;
+        commandPoolCreateInfo.pNext            = VK_NULL_HANDLE;
+
+        OTR_VULKAN_VALIDATE(vkCreateCommandPool(devicePair.LogicalDevice,
+                                                &commandPoolCreateInfo,
+                                                allocator,
+                                                outCommandPool))
+    }
+
+    void Renderer::DestroyCommandPool(const VulkanDevicePair& devicePair,
+                                      const VkAllocationCallbacks* const allocator,
+                                      VkCommandPool* outCommandPool)
+    {
+        OTR_INTERNAL_ASSERT_MSG(devicePair.LogicalDevice != VK_NULL_HANDLE, "Vulkan logical device is null!")
+        OTR_INTERNAL_ASSERT_MSG(*outCommandPool != VK_NULL_HANDLE, "Vulkan command pool is null!")
+
+        vkDestroyCommandPool(devicePair.LogicalDevice, *outCommandPool, allocator);
+    }
+
+    void Renderer::CreateCommandBuffers(const VkDevice& logicalDevice,
+                                        const VkCommandPool& commandPool,
+                                        const UInt32& commandBufferCount,
+                                        List <VkCommandBuffer>& outCommandBuffers)
+    {
+        VkCommandBufferAllocateInfo commandBufferAllocateInfo{ };
+        commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        commandBufferAllocateInfo.commandPool        = commandPool;
+        commandBufferAllocateInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        commandBufferAllocateInfo.commandBufferCount = commandBufferCount;
+        commandBufferAllocateInfo.pNext              = VK_NULL_HANDLE;
+
+        VkCommandBuffer tempCommandBuffers[commandBufferCount];
+        OTR_VULKAN_VALIDATE(vkAllocateCommandBuffers(logicalDevice, &commandBufferAllocateInfo, tempCommandBuffers))
+
+        Collections::New<VkCommandBuffer>(tempCommandBuffers, commandBufferCount, outCommandBuffers);
+    }
+
+    void Renderer::DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers)
+    {
+        outCommandBuffers.ClearDestructive();
+    }
+
+    void Renderer::CreateSyncObjects()
+    {
+        m_DevicePair.ImageAvailableSemaphores.Reserve(m_Swapchain.MaxFramesInFlight);
+        m_DevicePair.RenderFinishedSemaphores.Reserve(m_Swapchain.MaxFramesInFlight);
+        m_DevicePair.RenderInFlightFences.Reserve(m_Swapchain.MaxFramesInFlight);
+
+        VkSemaphoreCreateInfo semaphoreInfo{ };
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        semaphoreInfo.pNext = VK_NULL_HANDLE;
+
+        VkFenceCreateInfo fenceInfo{ };
+        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        fenceInfo.pNext = VK_NULL_HANDLE;
+
+        VkSemaphore tempImageAvailableSemaphores[m_Swapchain.MaxFramesInFlight];
+        VkSemaphore tempRenderFinishedSemaphores[m_Swapchain.MaxFramesInFlight];
+        VkFence     tempInFlightFences[m_Swapchain.MaxFramesInFlight];
+
+        for (size_t i = 0; i < m_Swapchain.MaxFramesInFlight; i++)
+        {
+            OTR_VULKAN_VALIDATE(vkCreateSemaphore(m_DevicePair.LogicalDevice,
+                                                  &semaphoreInfo,
+                                                  m_Allocator,
+                                                  &tempImageAvailableSemaphores[i]))
+            OTR_VULKAN_VALIDATE(vkCreateSemaphore(m_DevicePair.LogicalDevice,
+                                                  &semaphoreInfo,
+                                                  m_Allocator,
+                                                  &tempRenderFinishedSemaphores[i]))
+            OTR_VULKAN_VALIDATE(vkCreateFence(m_DevicePair.LogicalDevice,
+                                              &fenceInfo,
+                                              m_Allocator,
+                                              &tempInFlightFences[i]))
+        }
+
+        Collections::New<VkSemaphore>(tempImageAvailableSemaphores,
+                                      m_Swapchain.MaxFramesInFlight,
+                                      m_DevicePair.ImageAvailableSemaphores);
+        Collections::New<VkSemaphore>(tempRenderFinishedSemaphores,
+                                      m_Swapchain.MaxFramesInFlight,
+                                      m_DevicePair.RenderFinishedSemaphores);
+        Collections::New<VkFence>(tempInFlightFences,
+                                  m_Swapchain.MaxFramesInFlight,
+                                  m_DevicePair.RenderInFlightFences);
+    }
+
+    void Renderer::DestroySyncObjects()
+    {
+        for (size_t i = 0; i < m_Swapchain.MaxFramesInFlight; i++)
+        {
+            vkDestroySemaphore(m_DevicePair.LogicalDevice, m_DevicePair.ImageAvailableSemaphores[i], m_Allocator);
+            vkDestroySemaphore(m_DevicePair.LogicalDevice, m_DevicePair.RenderFinishedSemaphores[i], m_Allocator);
+            vkDestroyFence(m_DevicePair.LogicalDevice, m_DevicePair.RenderInFlightFences[i], m_Allocator);
+        }
+
+        m_DevicePair.ImageAvailableSemaphores.ClearDestructive();
+        m_DevicePair.RenderFinishedSemaphores.ClearDestructive();
+        m_DevicePair.RenderInFlightFences.ClearDestructive();
+    }
+
+    void Renderer::CreateBuffers()
+    {
+        const auto memoryPropertyFlags = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+        const UInt64 vertexBufferSize = sizeof(Float32) * 3 * 3;
+        const UInt64 indexBufferSize  = sizeof(UInt32) * 3;
+
+        if (!TryCreateBuffer(m_DevicePair,
+                             m_Allocator,
+                             vertexBufferSize,
+                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+                             | VK_BUFFER_USAGE_TRANSFER_DST_BIT
+                             | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                             memoryPropertyFlags,
+                             &m_VertexBuffer))
+        {
+            OTR_LOG_FATAL("Failed to create vertex buffer")
+            return;
+        }
+
+        if (!TryCreateBuffer(m_DevicePair,
+                             m_Allocator,
+                             indexBufferSize,
+                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+                             | VK_BUFFER_USAGE_TRANSFER_DST_BIT
+                             | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                             memoryPropertyFlags,
+                             &m_IndexBuffer))
+        {
+            OTR_LOG_FATAL("Failed to create index buffer")
+            return;
+        }
+    }
+
+    void Renderer::CreatePipelines()
+    {
+        VulkanShader shader{ };
+        if (!TryCreateShaderModule(m_DevicePair.LogicalDevice,
+                                   m_Allocator,
+                                   "Assets/Shaders/default.vert.spv", // TODO: Remove hardcoded path
+                                   &shader.VertexModule))
+        {
+            OTR_LOG_FATAL("Error when building the vertex shader module")
+            return;
+        }
+
+        if (!TryCreateShaderModule(m_DevicePair.LogicalDevice,
+                                   m_Allocator,
+                                   "Assets/Shaders/default.frag.spv", // TODO: Remove hardcoded path
+                                   &shader.FragmentModule))
+        {
+            DestroyShaderModule(m_DevicePair.LogicalDevice, m_Allocator, &shader.VertexModule);
+
+            OTR_LOG_FATAL("Error when building the fragment shader module")
+            return;
+        }
+
+        VkPipelineShaderStageCreateInfo vertShaderStageCreateInfo{ };
+        vertShaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertShaderStageCreateInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageCreateInfo.module = shader.VertexModule;
+        vertShaderStageCreateInfo.pName  = "main";
+        vertShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
+
+        VkPipelineShaderStageCreateInfo fragShaderStageCreateInfo{ };
+        fragShaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragShaderStageCreateInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragShaderStageCreateInfo.module = shader.FragmentModule;
+        fragShaderStageCreateInfo.pName  = "main";
+        fragShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
+
+        List <VkPipelineShaderStageCreateInfo> shaderStages{ vertShaderStageCreateInfo, fragShaderStageCreateInfo };
+        CreatePipeline(m_DevicePair.LogicalDevice,
+                       m_RenderPass,
+                       m_Allocator,
+                       shaderStages,
+                       m_Swapchain.Extent,
+                       &m_PipelineLayout,
+                       &m_Pipeline);
+
+        DestroyShaderModule(m_DevicePair.LogicalDevice, m_Allocator, &shader.VertexModule);
+        DestroyShaderModule(m_DevicePair.LogicalDevice, m_Allocator, &shader.FragmentModule);
+    }
+
+#if !OTR_RUNTIME
+    void Renderer::CreateVulkanDebugMessenger(const VkInstance& instance,
+                                              const VkAllocationCallbacks* const allocator,
+                                              VkDebugUtilsMessengerEXT* outDebugMessenger)
+    {
+        OTR_INTERNAL_ASSERT_MSG(instance != VK_NULL_HANDLE,
+                                "Instance must be initialized before creating debug messenger")
+
+        VkDebugUtilsMessengerCreateInfoEXT createInfo;
+        PopulateDebugMessengerCreateInfo(createInfo);
+
+        auto createDebugUtilsMessenger = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
+            instance,
+            "vkCreateDebugUtilsMessengerEXT");
+
+        if (createDebugUtilsMessenger)
+        {
+            OTR_VULKAN_VALIDATE(createDebugUtilsMessenger(instance, &createInfo, allocator, outDebugMessenger))
+        }
+    }
+
+    void Renderer::DestroyVulkanDebugMessenger(const VkInstance& instance,
+                                               const VkAllocationCallbacks* const allocator,
+                                               VkDebugUtilsMessengerEXT* outDebugMessenger)
+    {
+        OTR_INTERNAL_ASSERT_MSG(instance != VK_NULL_HANDLE,
+                                "Instance must be initialized before destroying debug messenger")
+        OTR_INTERNAL_ASSERT_MSG(*outDebugMessenger != VK_NULL_HANDLE,
+                                "Debug messenger must be initialized before being destroyed")
+
+        auto destroyDebugUtilsMessenger = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
+            instance,
+            "vkDestroyDebugUtilsMessengerEXT");
+
+        if (destroyDebugUtilsMessenger != VK_NULL_HANDLE)
+            destroyDebugUtilsMessenger(instance, *outDebugMessenger, allocator);
+
+        *outDebugMessenger = VK_NULL_HANDLE;
+    }
+
+    VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                           VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                           const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+                                                           [[maybe_unused]] void* userData)
+    {
+        // TODO: Also use the message type to filter out messages
+        switch (messageSeverity)
+        {
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+                OTR_LOG_DEBUG(callbackData->pMessage)
+                break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+                OTR_LOG_INFO(callbackData->pMessage)
+                break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+                OTR_LOG_WARNING(callbackData->pMessage)
+                break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+                OTR_LOG_ERROR(callbackData->pMessage)
+                break;
+            default:
+                OTR_LOG_FATAL("Unknown Error: {0}", callbackData->pMessage)
+                break;
+        }
+
+        return VK_FALSE;
+    }
+
+    void Renderer::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    {
+        createInfo = { };
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity =
+//            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+//            VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType     =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+            VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT;
+        createInfo.pfnUserCallback = DebugCallback;
+    }
+
+    void Renderer::GetRequiredInstanceValidationLayers(List<const char*>& layers)
+    {
+        layers.Add("VK_LAYER_KHRONOS_validation");
+
+        UInt32 availableLayerCount = 0;
+        OTR_VULKAN_VALIDATE(vkEnumerateInstanceLayerProperties(&availableLayerCount, VK_NULL_HANDLE))
+        auto* availableLayers = Buffer::New<VkLayerProperties>(availableLayerCount);
+        OTR_VULKAN_VALIDATE(vkEnumerateInstanceLayerProperties(&availableLayerCount, availableLayers))
+
+        for (UInt32 i = 0; i < layers.GetCount(); ++i)
+        {
+            bool found = false;
+
+            for (UInt32 j = 0; j < availableLayerCount; ++j)
+            {
+                if (strcmp(layers[i], availableLayers[j].layerName) == 0)
+                {
+                    found = true;
+                    OTR_LOG_TRACE("Required validation layer found: {0}", layers[i])
+                    break;
+                }
+            }
+
+            OTR_INTERNAL_ASSERT_MSG(found, "Required layer is missing: {0}", layers[i])
+        }
+
+        Buffer::Delete(availableLayers, availableLayerCount);
+    }
+#endif
+
+#undef OTR_VULKAN_SYNC_TIMEOUT
 }

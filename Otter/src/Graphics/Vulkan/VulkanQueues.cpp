@@ -6,8 +6,8 @@ namespace Otter::Graphics::Vulkan
 {
     void QueryQueueFamilies(const VkSurfaceKHR& surface,
                             const VkPhysicalDevice& physicalDevice,
-                            UInt32& graphicsFamily,
-                            UInt32& presentFamily)
+                            UInt32* outGraphicsFamily,
+                            UInt32* outPresentFamily)
     {
         OTR_INTERNAL_ASSERT_MSG(surface != VK_NULL_HANDLE,
                                 "Surface must be initialized before querying queue families")
@@ -26,7 +26,7 @@ namespace Otter::Graphics::Vulkan
         for (const auto& queueFamily: queueFamilies)
         {
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-                graphicsFamily = currentIndex;
+                *outGraphicsFamily = currentIndex;
 
             VkBool32 isPresentationSupported = false;
             OTR_VULKAN_VALIDATE(vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice,
@@ -35,9 +35,9 @@ namespace Otter::Graphics::Vulkan
                                                                      &isPresentationSupported))
 
             if (isPresentationSupported)
-                presentFamily = currentIndex;
+                *outPresentFamily = currentIndex;
 
-            if (graphicsFamily != UINT32_MAX && presentFamily != UINT32_MAX)
+            if (outGraphicsFamily != nullptr && outPresentFamily != nullptr)
                 break;
 
             currentIndex++;

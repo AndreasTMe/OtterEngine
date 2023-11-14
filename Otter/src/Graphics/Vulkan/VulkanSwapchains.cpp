@@ -8,7 +8,7 @@ namespace Otter::Graphics::Vulkan
     void CreateSingleSwapchain(const VkSurfaceKHR& surface,
                                const VulkanDevicePair& devicePair,
                                const VkAllocationCallbacks* const allocator,
-                               VulkanSwapchain& swapchain)
+                               VulkanSwapchain* outSwapchain)
     {
         OTR_INTERNAL_ASSERT_MSG(surface != VK_NULL_HANDLE,
                                 "Surface must be initialized before creating its swapchain")
@@ -18,27 +18,27 @@ namespace Otter::Graphics::Vulkan
                                 "Logical device must be initialized before creating its swapchain")
 
         SwapchainSupportInfo swapchainSupportInfo;
-        QuerySwapchainSupport(surface, devicePair.PhysicalDevice, swapchainSupportInfo);
+        QuerySwapchainSupport(surface, devicePair.PhysicalDevice, &swapchainSupportInfo);
 
-        swapchain.Extent        = SelectSwapchainExtent(swapchainSupportInfo.SurfaceCapabilities);
-        swapchain.SurfaceFormat = SelectSwapchainSurfaceFormat(swapchainSupportInfo.SurfaceFormats);
-        swapchain.PresentMode   = SelectSwapchainPresentMode(swapchainSupportInfo.PresentModes);
+        outSwapchain->Extent        = SelectSwapchainExtent(swapchainSupportInfo.SurfaceCapabilities);
+        outSwapchain->SurfaceFormat = SelectSwapchainSurfaceFormat(swapchainSupportInfo.SurfaceFormats);
+        outSwapchain->PresentMode   = SelectSwapchainPresentMode(swapchainSupportInfo.PresentModes);
 
         UInt32 imageCount = swapchainSupportInfo.SurfaceCapabilities.minImageCount + 1;
         if (swapchainSupportInfo.SurfaceCapabilities.maxImageCount > 0
             && imageCount > swapchainSupportInfo.SurfaceCapabilities.maxImageCount)
             imageCount = swapchainSupportInfo.SurfaceCapabilities.maxImageCount;
 
-        swapchain.MaxFramesInFlight = imageCount - 1;
+        outSwapchain->MaxFramesInFlight = imageCount - 1;
 
         VkSwapchainCreateInfoKHR createInfo{ };
         createInfo.sType   = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         createInfo.surface = surface;
 
         createInfo.minImageCount    = imageCount;
-        createInfo.imageFormat      = swapchain.SurfaceFormat.format;
-        createInfo.imageColorSpace  = swapchain.SurfaceFormat.colorSpace;
-        createInfo.imageExtent      = swapchain.Extent;
+        createInfo.imageFormat      = outSwapchain->SurfaceFormat.format;
+        createInfo.imageColorSpace  = outSwapchain->SurfaceFormat.colorSpace;
+        createInfo.imageExtent      = outSwapchain->Extent;
         createInfo.imageArrayLayers = 1;
         createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -60,19 +60,19 @@ namespace Otter::Graphics::Vulkan
 
         createInfo.preTransform   = swapchainSupportInfo.SurfaceCapabilities.currentTransform;
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        createInfo.presentMode    = swapchain.PresentMode;
+        createInfo.presentMode    = outSwapchain->PresentMode;
         createInfo.clipped        = VK_TRUE;
         createInfo.oldSwapchain   = VK_NULL_HANDLE;
 
         OTR_VULKAN_VALIDATE(vkCreateSwapchainKHR(devicePair.LogicalDevice,
                                                  &createInfo,
                                                  allocator,
-                                                 &swapchain.Handle))
+                                                 &outSwapchain->Handle))
     }
 
     void QuerySwapchainSupport(const VkSurfaceKHR& surface,
                                const VkPhysicalDevice& physicalDevice,
-                               SwapchainSupportInfo& swapchainSupportInfo)
+                               SwapchainSupportInfo* outSwapchainSupportInfo)
     {
         OTR_INTERNAL_ASSERT_MSG(surface != VK_NULL_HANDLE,
                                 "Surface must be initialized before querying swapchain support")
@@ -81,7 +81,7 @@ namespace Otter::Graphics::Vulkan
 
         OTR_VULKAN_VALIDATE(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice,
                                                                       surface,
-                                                                      &swapchainSupportInfo.SurfaceCapabilities))
+                                                                      &outSwapchainSupportInfo->SurfaceCapabilities))
 
         UInt32 surfaceFormatCount;
         OTR_VULKAN_VALIDATE(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice,
@@ -100,7 +100,7 @@ namespace Otter::Graphics::Vulkan
 
             Collections::New<VkSurfaceFormatKHR>(surfaceFormats,
                                                  surfaceFormatCount,
-                                                 swapchainSupportInfo.SurfaceFormats);
+                                                 outSwapchainSupportInfo->SurfaceFormats);
         }
 
         UInt32 presentModeCount;
@@ -120,7 +120,7 @@ namespace Otter::Graphics::Vulkan
 
             Collections::New<VkPresentModeKHR>(presentModes,
                                                presentModeCount,
-                                               swapchainSupportInfo.PresentModes);
+                                               outSwapchainSupportInfo->PresentModes);
         }
     }
 

@@ -43,7 +43,7 @@ namespace Otter::MemorySystem
         OTR_INTERNAL_ASSERT_MSG(alignment >= OTR_PLATFORM_MEMORY_ALIGNMENT,
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
-        UnsafeHandle handle = { };
+        UnsafeHandle handle{ };
         handle.Pointer = g_Allocator.Allocate(size, alignment);
         handle.Size    = size;
 
@@ -63,7 +63,7 @@ namespace Otter::MemorySystem
         OTR_INTERNAL_ASSERT_MSG(alignment >= OTR_PLATFORM_MEMORY_ALIGNMENT,
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
-        UnsafeHandle newHandle = { };
+        UnsafeHandle newHandle{ };
         newHandle.Pointer = Platform::Reallocate(handle.Pointer, size);
         newHandle.Size    = size;
 

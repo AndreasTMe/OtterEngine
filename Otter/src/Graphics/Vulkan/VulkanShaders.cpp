@@ -49,11 +49,12 @@ namespace Otter::Graphics::Vulkan
 
     void DestroyShaderModule(const VkDevice& logicalDevice,
                              const VkAllocationCallbacks* allocator,
-                             VkShaderModule& shaderModule)
+                             VkShaderModule* outShaderModule)
     {
         OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE, "Logical device is null")
-        OTR_INTERNAL_ASSERT_MSG(shaderModule != VK_NULL_HANDLE, "Shader module handle is null")
+        OTR_INTERNAL_ASSERT_MSG(outShaderModule != VK_NULL_HANDLE, "Shader module handle is null")
 
-        vkDestroyShaderModule(logicalDevice, shaderModule, allocator);
+        vkDestroyShaderModule(logicalDevice, *outShaderModule, allocator);
+        outShaderModule = VK_NULL_HANDLE;
     }
 }

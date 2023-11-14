@@ -11,10 +11,10 @@ namespace Otter::Graphics::Vulkan
     void CreateSingleSwapchain(const VkSurfaceKHR& surface,
                                const VulkanDevicePair& devicePair,
                                const VkAllocationCallbacks* allocator,
-                               VulkanSwapchain& swapchain);
+                               VulkanSwapchain* outSwapchain);
     void QuerySwapchainSupport(const VkSurfaceKHR& surface,
                                const VkPhysicalDevice& physicalDevice,
-                               SwapchainSupportInfo& swapchainSupportInfo);
+                               SwapchainSupportInfo* outSwapchainSupportInfo);
     VkSurfaceFormatKHR SelectSwapchainSurfaceFormat(const List <VkSurfaceFormatKHR>& surfaceFormats);
     VkPresentModeKHR SelectSwapchainPresentMode(const List <VkPresentModeKHR>& presentModes);
     VkExtent2D SelectSwapchainExtent(const VkSurfaceCapabilitiesKHR& capabilities);

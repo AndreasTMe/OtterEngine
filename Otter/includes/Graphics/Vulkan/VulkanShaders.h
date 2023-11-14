@@ -12,7 +12,7 @@ namespace Otter::Graphics::Vulkan
                                VkShaderModule* outShaderModule);
     void DestroyShaderModule(const VkDevice& logicalDevice,
                              const VkAllocationCallbacks* allocator,
-                             VkShaderModule& shaderModule);
+                             VkShaderModule* outShaderModule);
 }
 
 #endif //OTTERENGINE_VULKANSHADERS_H
