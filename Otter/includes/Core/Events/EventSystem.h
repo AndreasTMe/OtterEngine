@@ -25,7 +25,14 @@ namespace Otter
         template<typename TEvent, typename... TArgs>
         static void Schedule(TArgs&& ... args)
         {
-            s_Events.Enqueue(TEvent(std::forward<TArgs>(args)...));
+            if (s_BlockEvents)
+                return;
+
+            TEvent e = TEvent(std::forward<TArgs>(args)...);
+            if (e.IsBlocking())
+                s_BlockEvents = true;
+
+            s_Events.Enqueue(e);
         }
 
         static void Process();
@@ -34,6 +41,7 @@ namespace Otter
         OTR_DISABLE_CONSTRUCTION(EventSystem)
 
         static Queue<Internal::Event> s_Events;
+        static bool                   s_BlockEvents;
     };
 }
 

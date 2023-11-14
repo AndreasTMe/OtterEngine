@@ -13,7 +13,7 @@ namespace Otter::GraphicsSystem
 
     GraphicsAPI g_GraphicsApi = GraphicsAPI::Vulkan; // TODO: Pass from configuration
 
-    bool TryInitialise(const void* platformContext)
+    bool TryInitialise(const void* const platformContext)
     {
         OTR_INTERNAL_ASSERT_MSG(gs_Renderer == nullptr, "Graphics system already initialised")
 

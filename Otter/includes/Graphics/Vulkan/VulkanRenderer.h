@@ -42,28 +42,28 @@ namespace Otter::Graphics::Vulkan
         VulkanBuffer m_VertexBuffer{ };
 
         // HELP: VkInstance related
-        void CreateVulkanInstance(const VkAllocationCallbacks* allocator, VkInstance* outInstance);
-        void DestroyVulkanInstance(const VkAllocationCallbacks* allocator, VkInstance* outInstance);
+        static void CreateVulkanInstance(const VkAllocationCallbacks* allocator, VkInstance* outInstance);
+        static void DestroyVulkanInstance(const VkAllocationCallbacks* allocator, VkInstance* outInstance);
 
         // HELP: VkSurfaceKHR related
-        void CreateSurface(const void* platformContext,
-                           const VkInstance& instance,
-                           const VkAllocationCallbacks* allocator,
-                           VkSurfaceKHR* outSurface);
-        void DestroySurface(const VkInstance& instance,
-                            const VkAllocationCallbacks* allocator,
-                            VkSurfaceKHR* outSurface);
+        static void CreateSurface(const void* platformContext,
+                                  const VkInstance& instance,
+                                  const VkAllocationCallbacks* allocator,
+                                  VkSurfaceKHR* outSurface);
+        static void DestroySurface(const VkInstance& instance,
+                                   const VkAllocationCallbacks* allocator,
+                                   VkSurfaceKHR* outSurface);
 
         // HELP: VkPhysicalDevice/VkDevice related
-        void SelectPhysicalDevice(const VkInstance& instance,
-                                  const VkSurfaceKHR& surface,
-                                  VulkanDevicePair* outDevicePair);
-        void CreateLogicalDevice(const VkAllocationCallbacks* allocator, VulkanDevicePair* outDevicePair);
-        void CreateDevicePairs(const VkInstance& instance,
-                               const VkSurfaceKHR& surface,
-                               const VkAllocationCallbacks* allocator,
-                               VulkanDevicePair* outDevicePair);
-        void DestroyDevicePairs(const VkAllocationCallbacks* allocator, VulkanDevicePair* outDevicePair);
+        static void SelectPhysicalDevice(const VkInstance& instance,
+                                         const VkSurfaceKHR& surface,
+                                         VulkanDevicePair* outDevicePair);
+        static void CreateLogicalDevice(const VkAllocationCallbacks* allocator, VulkanDevicePair* outDevicePair);
+        static void CreateDevicePairs(const VkInstance& instance,
+                                      const VkSurfaceKHR& surface,
+                                      const VkAllocationCallbacks* allocator,
+                                      VulkanDevicePair* outDevicePair);
+        static void DestroyDevicePairs(const VkAllocationCallbacks* allocator, VulkanDevicePair* outDevicePair);
 
         // HELP: VkSwapchainKHR related
         void CreateSwapchains();
@@ -71,26 +71,26 @@ namespace Otter::Graphics::Vulkan
         void DestroySwapchains();
 
         // HELP: VkRenderPass related
-        void CreateRenderPass(const VkDevice& logicalDevice,
-                              const VkAllocationCallbacks* allocator,
-                              const VulkanSwapchain& swapchain,
-                              VkRenderPass* outRenderPass);
-        void DestroyRenderPass(const VkDevice& logicalDevice,
-                               const VkAllocationCallbacks* allocator,
-                               VkRenderPass* outRenderPass);
+        static void CreateRenderPass(const VkDevice& logicalDevice,
+                                     const VkAllocationCallbacks* allocator,
+                                     const VulkanSwapchain& swapchain,
+                                     VkRenderPass* outRenderPass);
+        static void DestroyRenderPass(const VkDevice& logicalDevice,
+                                      const VkAllocationCallbacks* allocator,
+                                      VkRenderPass* outRenderPass);
 
         // HELP: VkCommandPool/VkCommandBuffer related
-        void CreateCommandPool(const VulkanDevicePair& devicePair,
-                               const VkAllocationCallbacks* allocator,
-                               VkCommandPool* outCommandPool);
-        void DestroyCommandPool(const VulkanDevicePair& devicePair,
-                                const VkAllocationCallbacks* allocator,
-                                VkCommandPool* outCommandPool);
-        void CreateCommandBuffers(const VkDevice& logicalDevice,
-                                  const VkCommandPool& commandPool,
-                                  const UInt32& commandBufferCount,
-                                  List <VkCommandBuffer>& outCommandBuffers);
-        void DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers);
+        static void CreateCommandPool(const VulkanDevicePair& devicePair,
+                                      const VkAllocationCallbacks* allocator,
+                                      VkCommandPool* outCommandPool);
+        static void DestroyCommandPool(const VulkanDevicePair& devicePair,
+                                       const VkAllocationCallbacks* allocator,
+                                       VkCommandPool* outCommandPool);
+        static void CreateCommandBuffers(const VkDevice& logicalDevice,
+                                         const VkCommandPool& commandPool,
+                                         const UInt32& commandBufferCount,
+                                         List <VkCommandBuffer>& outCommandBuffers);
+        static void DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers);
 
         // HELP: VkPipeline related
         void CreatePipelines();
@@ -105,20 +105,20 @@ namespace Otter::Graphics::Vulkan
 
 #if !OTR_RUNTIME
         // HELP: VkDebugUtilsMessengerEXT related
-        void CreateVulkanDebugMessenger(const VkInstance& instance,
-                                        const VkAllocationCallbacks* allocator,
-                                        VkDebugUtilsMessengerEXT* outDebugMessenger);
-        void DestroyVulkanDebugMessenger(const VkInstance& instance,
-                                         const VkAllocationCallbacks* allocator,
-                                         VkDebugUtilsMessengerEXT* outDebugMessenger);
-        void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
+        static void CreateVulkanDebugMessenger(const VkInstance& instance,
+                                               const VkAllocationCallbacks* allocator,
+                                               VkDebugUtilsMessengerEXT* outDebugMessenger);
+        static void DestroyVulkanDebugMessenger(const VkInstance& instance,
+                                                const VkAllocationCallbacks* allocator,
+                                                VkDebugUtilsMessengerEXT* outDebugMessenger);
+        static void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
 
         static VkBool32 DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                       [[maybe_unused]] VkDebugUtilsMessageTypeFlagsEXT messageType,
                                       const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
                                       void* userData);
 
-        void GetRequiredInstanceValidationLayers(List<const char*>& layers);
+        static void GetRequiredInstanceValidationLayers(List<const char*>& layers);
 #endif
     };
 }

@@ -26,7 +26,16 @@ namespace Otter::Graphics::Vulkan
         0, 1, 2, 2, 3, 0
     };
 
-    void Renderer::Initialise(const void* platformContext)
+    enum class WindowState : UInt8
+    {
+        Normal    = 0,
+        Minimized = 1,
+        Maximized = 2
+    };
+
+    static WindowState gs_WindowState = WindowState::Normal;
+
+    void Renderer::Initialise(const void* const platformContext)
     {
         CreateVulkanInstance(m_Allocator, &m_Instance);
 #if !OTR_RUNTIME
@@ -51,6 +60,34 @@ namespace Otter::Graphics::Vulkan
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateSyncObjects();
+
+        GlobalActions::OnWindowMinimized += [&](const Internal::WindowMinimizedEvent& event)
+        {
+            gs_WindowState = WindowState::Minimized;
+
+            return true;
+        };
+        GlobalActions::OnWindowMaximized += [&](const Internal::WindowMaximizedEvent& event)
+        {
+            gs_WindowState = WindowState::Maximized;
+
+            return true;
+        };
+        GlobalActions::OnWindowRestored += [&](const Internal::WindowRestoredEvent& event)
+        {
+            gs_WindowState = WindowState::Normal;
+
+            return true;
+        };
+        GlobalActions::OnWindowResize += [&](const Internal::WindowResizeEvent& event)
+        {
+            if (event.GetWidth() == 0 || event.GetHeight() == 0)
+                gs_WindowState = WindowState::Minimized;
+            else
+                gs_WindowState = WindowState::Normal;
+
+            return true;
+        };
     }
 
     void Renderer::Shutdown()
@@ -75,6 +112,9 @@ namespace Otter::Graphics::Vulkan
 
     void Renderer::RenderFrame()
     {
+        if (gs_WindowState == WindowState::Minimized)
+            return;
+
         const auto currentFrame = m_Swapchain.CurrentFrame;
 
         OTR_VULKAN_VALIDATE(vkWaitForFences(m_DevicePair.LogicalDevice,
