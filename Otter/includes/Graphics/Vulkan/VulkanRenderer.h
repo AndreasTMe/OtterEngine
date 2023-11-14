@@ -92,15 +92,16 @@ namespace Otter::Graphics::Vulkan
                                   List <VkCommandBuffer>& outCommandBuffers);
         void DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers);
 
-        // HELP: VkSemaphore/VkFence related
-        void CreateSyncObjects();
-        void DestroySyncObjects();
-
         // HELP: VkPipeline related
         void CreatePipelines();
 
         // HELP: VkBuffer related
-        void CreateBuffers();
+        void CreateVertexBuffer();
+        void CreateIndexBuffer();
+
+        // HELP: VkSemaphore/VkFence related
+        void CreateSyncObjects();
+        void DestroySyncObjects();
 
 #if !OTR_RUNTIME
         // HELP: VkDebugUtilsMessengerEXT related

@@ -26,17 +26,13 @@ namespace Otter
                 m_Values[i] = scalar;
         }
 
-        template<typename... TArgs>
-        requires((sizeof...(TArgs) == Tx * Ty - 1 && (AnyNumber<TArgs> && ...)))
-        constexpr explicit Matrix(TNumber x, TArgs... args)
+        constexpr Matrix(InitialiserList<TNumber> list)
         {
-            m_Values[0] = x;
+            OTR_ASSERT_MSG(list.size() == Tx * Ty, "Initialiser list size does not match Matrix size")
 
-            UInt8 i = 1;
-            ([&]
-            {
-                m_Values[i++] = args;
-            }(), ...);
+            UInt64 i = 0;
+            for (const TNumber& value: list)
+                m_Values[i++] = value;
         }
 
         Matrix(const Matrix<Tx, Ty, TNumber>& other)

@@ -118,8 +118,8 @@ namespace Otter::Graphics::Vulkan
         OTR_VULKAN_VALIDATE(vkBeginCommandBuffer(commandBuffer, &beginInfo))
 
         VkBufferCopy copyRegion{ };
-        copyRegion.srcOffset = 0; // Optional
-        copyRegion.dstOffset = 0; // Optional
+        copyRegion.srcOffset = 0;
+        copyRegion.dstOffset = 0;
         copyRegion.size      = size;
         vkCmdCopyBuffer(commandBuffer, sourceBuffer, *destinationBuffer, 1, &copyRegion);
 

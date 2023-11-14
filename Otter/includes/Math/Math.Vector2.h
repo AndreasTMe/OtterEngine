@@ -6,16 +6,16 @@
 namespace Otter::Math
 {
     template<>
-    OTR_INLINE constexpr Vector<2, Int32> Left() { return Vector<2, Int32>(-1, 0); }
+    OTR_INLINE constexpr Vector<2, Int32> Left() { return Vector<2, Int32>{ -1, 0 }; }
 
     template<>
-    OTR_INLINE constexpr Vector<2, Int32> Right() { return Vector<2, Int32>(1, 0); }
+    OTR_INLINE constexpr Vector<2, Int32> Right() { return Vector<2, Int32>{ 1, 0 }; }
 
     template<>
-    OTR_INLINE constexpr Vector<2, Int32> Down() { return Vector<2, Int32>(0, -1); }
+    OTR_INLINE constexpr Vector<2, Int32> Down() { return Vector<2, Int32>{ 0, -1 }; }
 
     template<>
-    OTR_INLINE constexpr Vector<2, Int32> Up() { return Vector<2, Int32>(0, 1); }
+    OTR_INLINE constexpr Vector<2, Int32> Up() { return Vector<2, Int32>{ 0, 1 }; }
 
     template<AnyNumber TNumber>
     OTR_INLINE bool IsApproximatelyZero(const Vector<2, TNumber>& vector)

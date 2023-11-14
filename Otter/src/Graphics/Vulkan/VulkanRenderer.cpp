@@ -2,6 +2,7 @@
 
 #include "Graphics/Vulkan/VulkanRenderer.h"
 #include "Graphics/Vulkan/Types/VulkanTypes.Shader.h"
+#include "Graphics/Vulkan/Types/VulkanTypes.Point.h"
 #include "Graphics/Vulkan/VulkanExtensions.h"
 #include "Graphics/Vulkan/VulkanSwapchains.h"
 #include "Graphics/Vulkan/VulkanShaders.h"
@@ -13,6 +14,17 @@
 namespace Otter::Graphics::Vulkan
 {
 #define OTR_VULKAN_SYNC_TIMEOUT 1000000000
+
+    const Span<Point, 4> gk_Vertices = {
+        {{ -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }},
+        {{ 0.5f,  -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f }},
+        {{ 0.5f,  0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }},
+        {{ -0.5f, 0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f, 1.0f }}
+    };
+
+    const Span<UInt16, 6> gk_Indices = {
+        0, 1, 2, 2, 3, 0
+    };
 
     void Renderer::Initialise(const void* platformContext)
     {
@@ -30,13 +42,14 @@ namespace Otter::Graphics::Vulkan
                                     m_SwapchainImageViews,
                                     m_RenderPass,
                                     m_SwapchainFrameBuffers);
+        CreatePipelines();
         CreateCommandPool(m_DevicePair, m_Allocator, &m_DevicePair.GraphicsCommandPool);
         CreateCommandBuffers(m_DevicePair.LogicalDevice,
                              m_DevicePair.GraphicsCommandPool,
                              m_Swapchain.MaxFramesInFlight,
                              m_DevicePair.CommandBuffers);
-        CreatePipelines();
-        CreateBuffers();
+        CreateVertexBuffer();
+        CreateIndexBuffer();
         CreateSyncObjects();
     }
 
@@ -66,18 +79,18 @@ namespace Otter::Graphics::Vulkan
 
         OTR_VULKAN_VALIDATE(vkWaitForFences(m_DevicePair.LogicalDevice,
                                             1,
-                                            &m_DevicePair.RenderInFlightFences[0],
+                                            &m_DevicePair.RenderInFlightFences[currentFrame],
                                             VK_TRUE,
                                             OTR_VULKAN_SYNC_TIMEOUT))
         OTR_VULKAN_VALIDATE(vkResetFences(m_DevicePair.LogicalDevice,
                                           1,
-                                          &m_DevicePair.RenderInFlightFences[0]))
+                                          &m_DevicePair.RenderInFlightFences[currentFrame]))
 
         UInt32   imageIndex;
         VkResult acquireNextImageResult = vkAcquireNextImageKHR(m_DevicePair.LogicalDevice,
                                                                 m_Swapchain.Handle,
                                                                 OTR_VULKAN_SYNC_TIMEOUT,
-                                                                m_DevicePair.ImageAvailableSemaphores[0],
+                                                                m_DevicePair.ImageAvailableSemaphores[currentFrame],
                                                                 VK_NULL_HANDLE,
                                                                 &imageIndex);
         if (acquireNextImageResult == VK_ERROR_OUT_OF_DATE_KHR)
@@ -90,16 +103,14 @@ namespace Otter::Graphics::Vulkan
             OTR_INTERNAL_ASSERT_MSG(false, "Failed to acquire swapchain image")
         }
 
-        // TODO: Add test triangle code here
-
-        OTR_VULKAN_VALIDATE(vkResetCommandBuffer(m_DevicePair.CommandBuffers[0], 0))
+        OTR_VULKAN_VALIDATE(vkResetCommandBuffer(m_DevicePair.CommandBuffers[currentFrame], 0))
 
         VkCommandBufferBeginInfo beginInfo{ };
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        OTR_VULKAN_VALIDATE(vkBeginCommandBuffer(m_DevicePair.CommandBuffers[0], &beginInfo))
+        OTR_VULKAN_VALIDATE(vkBeginCommandBuffer(m_DevicePair.CommandBuffers[currentFrame], &beginInfo))
 
-        VkClearValue clearColor = {{{ 0.3f, 0.2f, 0.5f, 1.0f }}}; // TODO: Remove this later
+        VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
 
         VkRenderPassBeginInfo renderPassInfo{ };
         renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -110,23 +121,55 @@ namespace Otter::Graphics::Vulkan
         renderPassInfo.clearValueCount   = 1;
         renderPassInfo.pClearValues      = &clearColor;
 
-        vkCmdBeginRenderPass(m_DevicePair.CommandBuffers[0], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(m_DevicePair.CommandBuffers[currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 
-        vkCmdBindPipeline(m_DevicePair.CommandBuffers[0], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-        vkCmdDraw(m_DevicePair.CommandBuffers[0], 3, 1, 0, 0);
+        VkViewport viewport{ };
+        viewport.x        = 0.0f;
+        viewport.y        = 0.0f;
+        viewport.width    = static_cast<Float32>(m_Swapchain.Extent.width);
+        viewport.height   = static_cast<Float32>(m_Swapchain.Extent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(m_DevicePair.CommandBuffers[currentFrame], 0, 1, &viewport);
 
-        vkCmdEndRenderPass(m_DevicePair.CommandBuffers[0]);
+        VkRect2D scissor{ };
+        scissor.offset = { 0, 0 };
+        scissor.extent = m_Swapchain.Extent;
+        vkCmdSetScissor(m_DevicePair.CommandBuffers[currentFrame], 0, 1, &scissor);
 
-        OTR_VULKAN_VALIDATE(vkEndCommandBuffer(m_DevicePair.CommandBuffers[0]))
+        VkBuffer     vertexBuffers[] = { m_VertexBuffer.Handle };
+        VkDeviceSize offsets[]       = { 0 };
+
+        vkCmdBindVertexBuffers(m_DevicePair.CommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(m_DevicePair.CommandBuffers[currentFrame],
+                             m_IndexBuffer.Handle,
+                             0,
+                             VK_INDEX_TYPE_UINT16);
+//        vkCmdBindDescriptorSets(m_DevicePair.CommandBuffers[currentFrame],
+//                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+//                                m_pipelineLayout,
+//                                0,
+//                                1,
+//                                &m_descriptorSets[currentFrame],
+//                                0,
+//                                nullptr);
+        vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame],
+                         static_cast<UInt32>(gk_Indices.Length()),
+                         1, 0, 0, 0);
+
+        vkCmdEndRenderPass(m_DevicePair.CommandBuffers[currentFrame]);
+
+        OTR_VULKAN_VALIDATE(vkEndCommandBuffer(m_DevicePair.CommandBuffers[currentFrame]))
 
         VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-        VkSemaphore          waitSemaphores[]   = { m_DevicePair.ImageAvailableSemaphores[0] };
-        VkSemaphore          signalSemaphores[] = { m_DevicePair.RenderFinishedSemaphores[0] };
+        VkSemaphore          waitSemaphores[]   = { m_DevicePair.ImageAvailableSemaphores[currentFrame] };
+        VkSemaphore          signalSemaphores[] = { m_DevicePair.RenderFinishedSemaphores[currentFrame] };
 
         VkSubmitInfo submitInfo{ };
         submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount   = 1;
-        submitInfo.pCommandBuffers      = &m_DevicePair.CommandBuffers[0];
+        submitInfo.pCommandBuffers      = &m_DevicePair.CommandBuffers[currentFrame];
         submitInfo.pWaitDstStageMask    = waitStages;
         submitInfo.waitSemaphoreCount   = 1;
         submitInfo.pWaitSemaphores      = waitSemaphores;
@@ -136,7 +179,7 @@ namespace Otter::Graphics::Vulkan
         OTR_VULKAN_VALIDATE(vkQueueSubmit(m_DevicePair.GraphicsQueueFamily.Handle,
                                           1,
                                           &submitInfo,
-                                          m_DevicePair.RenderInFlightFences[0]))
+                                          m_DevicePair.RenderInFlightFences[currentFrame]))
 
         VkSwapchainKHR swapChains[] = { m_Swapchain.Handle };
 
@@ -148,7 +191,15 @@ namespace Otter::Graphics::Vulkan
         presentInfo.pSwapchains        = swapChains;
         presentInfo.pImageIndices      = &imageIndex;
 
-        OTR_VULKAN_VALIDATE(vkQueuePresentKHR(m_DevicePair.PresentationQueueFamily.Handle, &presentInfo))
+        VkResult queuePresentResult = vkQueuePresentKHR(m_DevicePair.PresentationQueueFamily.Handle, &presentInfo);
+        if (queuePresentResult == VK_ERROR_OUT_OF_DATE_KHR || queuePresentResult == VK_SUBOPTIMAL_KHR)
+        {
+            RecreateSwapchains();
+        }
+        else if (queuePresentResult != VK_SUCCESS)
+        {
+            OTR_INTERNAL_ASSERT_MSG(false, "Failed to present swapchain image")
+        }
 
         m_Swapchain.CurrentFrame = (currentFrame + 1) % m_Swapchain.MaxFramesInFlight;
     }
@@ -191,8 +242,8 @@ namespace Otter::Graphics::Vulkan
         createInfo.pNext               = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
 #else
         createInfo.enabledLayerCount   = 0;
-            createInfo.ppEnabledLayerNames = VK_NULL_HANDLE;
-            createInfo.pNext               = VK_NULL_HANDLE;
+        createInfo.ppEnabledLayerNames = VK_NULL_HANDLE;
+        createInfo.pNext               = VK_NULL_HANDLE;
 #endif
 
         OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, allocator, outInstance))
@@ -350,8 +401,16 @@ namespace Otter::Graphics::Vulkan
         createInfo.pEnabledFeatures        = &deviceFeatures;
         createInfo.enabledExtensionCount   = requiredExtensions.GetCount();
         createInfo.ppEnabledExtensionNames = requiredExtensions.GetData();
-        createInfo.enabledLayerCount       = 0;
-        createInfo.ppEnabledLayerNames     = VK_NULL_HANDLE;
+#if !OTR_RUNTIME
+        List<const char*> layers;
+        GetRequiredInstanceValidationLayers(layers);
+
+        createInfo.enabledLayerCount   = layers.GetCount();
+        createInfo.ppEnabledLayerNames = layers.GetData();
+#else
+        createInfo.enabledLayerCount   = 0;
+        createInfo.ppEnabledLayerNames = VK_NULL_HANDLE;
+#endif
 
         OTR_VULKAN_VALIDATE(vkCreateDevice(outDevicePair->PhysicalDevice,
                                            &createInfo,
@@ -421,6 +480,8 @@ namespace Otter::Graphics::Vulkan
     void Renderer::RecreateSwapchains()
     {
         OTR_LOG_TRACE("Recreating Vulkan swapchains...")
+
+        vkDeviceWaitIdle(m_DevicePair.LogicalDevice);
 
         DestroySwapchains();
 
@@ -639,38 +700,96 @@ namespace Otter::Graphics::Vulkan
         m_DevicePair.RenderInFlightFences.ClearDestructive();
     }
 
-    void Renderer::CreateBuffers()
+    void Renderer::CreateVertexBuffer()
     {
-        const auto memoryPropertyFlags = VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        VkDeviceSize bufferSize = sizeof(gk_Vertices[0]) * gk_Vertices.Length();
 
-        const UInt64 vertexBufferSize = sizeof(Float32) * 3 * 3;
-        const UInt64 indexBufferSize  = sizeof(UInt32) * 3;
+        VulkanBuffer stagingBuffer;
+        if (!TryCreateBuffer(m_DevicePair,
+                             m_Allocator,
+                             bufferSize,
+                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &stagingBuffer))
+        {
+            OTR_LOG_FATAL("Failed to create staging buffer")
+            return;
+        }
+
+        BindBuffer(m_DevicePair.LogicalDevice, stagingBuffer, 0);
+
+        void* data;
+        vkMapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory, 0, bufferSize, 0, &data);
+        memcpy(data, (void*) gk_Vertices.GetData(), (Size) bufferSize);
+        vkUnmapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory);
 
         if (!TryCreateBuffer(m_DevicePair,
                              m_Allocator,
-                             vertexBufferSize,
-                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-                             | VK_BUFFER_USAGE_TRANSFER_DST_BIT
-                             | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             memoryPropertyFlags,
+                             bufferSize,
+                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                             VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                              &m_VertexBuffer))
         {
             OTR_LOG_FATAL("Failed to create vertex buffer")
+            DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
             return;
         }
 
+        BindBuffer(m_DevicePair.LogicalDevice, m_VertexBuffer, 0);
+        CopyBuffer(m_DevicePair.LogicalDevice,
+                   bufferSize,
+                   m_DevicePair.GraphicsQueueFamily.Handle,
+                   m_DevicePair.GraphicsCommandPool,
+                   stagingBuffer.Handle,
+                   &m_VertexBuffer.Handle);
+
+        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
+    }
+
+    void Renderer::CreateIndexBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(gk_Indices[0]) * gk_Indices.Length();
+
+        VulkanBuffer stagingBuffer;
         if (!TryCreateBuffer(m_DevicePair,
                              m_Allocator,
-                             indexBufferSize,
-                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT
-                             | VK_BUFFER_USAGE_TRANSFER_DST_BIT
-                             | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             memoryPropertyFlags,
+                             bufferSize,
+                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &stagingBuffer))
+        {
+            OTR_LOG_FATAL("Failed to create staging buffer")
+            return;
+        }
+
+        BindBuffer(m_DevicePair.LogicalDevice, stagingBuffer, 0);
+
+        void* data;
+        vkMapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory, 0, bufferSize, 0, &data);
+        memcpy(data, (void*) gk_Indices.GetData(), (Size) bufferSize);
+        vkUnmapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory);
+
+        if (!TryCreateBuffer(m_DevicePair,
+                             m_Allocator,
+                             bufferSize,
+                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                             VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                              &m_IndexBuffer))
         {
             OTR_LOG_FATAL("Failed to create index buffer")
+            DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
             return;
         }
+
+        BindBuffer(m_DevicePair.LogicalDevice, m_IndexBuffer, 0);
+        CopyBuffer(m_DevicePair.LogicalDevice,
+                   bufferSize,
+                   m_DevicePair.GraphicsQueueFamily.Handle,
+                   m_DevicePair.GraphicsCommandPool,
+                   stagingBuffer.Handle,
+                   &m_IndexBuffer.Handle);
+
+        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
     }
 
     void Renderer::CreatePipelines()
@@ -710,11 +829,14 @@ namespace Otter::Graphics::Vulkan
         fragShaderStageCreateInfo.pName  = "main";
         fragShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
 
+        // TODO: Create VkDescriptorSetLayout
+
         List <VkPipelineShaderStageCreateInfo> shaderStages{ vertShaderStageCreateInfo, fragShaderStageCreateInfo };
         CreatePipeline(m_DevicePair.LogicalDevice,
                        m_RenderPass,
                        m_Allocator,
                        shaderStages,
+                       List<VkDescriptorSetLayout>(),
                        m_Swapchain.Extent,
                        &m_PipelineLayout,
                        &m_Pipeline);
@@ -826,7 +948,6 @@ namespace Otter::Graphics::Vulkan
                 if (strcmp(layers[i], availableLayers[j].layerName) == 0)
                 {
                     found = true;
-                    OTR_LOG_TRACE("Required validation layer found: {0}", layers[i])
                     break;
                 }
             }

@@ -25,17 +25,13 @@ namespace Otter
                 m_Values[i] = scalar;
         }
 
-        template<typename... TArgs>
-        requires (sizeof...(TArgs) == 3 && (AnyNumber<TArgs>&& ...))
-        constexpr explicit Quaternion(TNumber x, TArgs... args)
+        constexpr Quaternion(InitialiserList<TNumber> list)
         {
-            m_Values[0] = x;
+            OTR_ASSERT_MSG(list.size() == 4, "Initialiser list size does not match Quaternion size")
 
-            UInt8 i = 1;
-            ([&]
-            {
-                m_Values[i++] = args;
-            }(), ...);
+            UInt64 i = 0;
+            for (const TNumber& value: list)
+                m_Values[i++] = value;
         }
 
         Quaternion(const Quaternion<TNumber>& other)

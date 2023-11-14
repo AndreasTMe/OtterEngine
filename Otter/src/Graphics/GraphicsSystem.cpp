@@ -7,6 +7,8 @@
 
 namespace Otter::GraphicsSystem
 {
+    using VulkanRenderer = Graphics::Vulkan::Renderer;
+
     static Graphics::AbstractRenderer* gs_Renderer = nullptr;
 
     GraphicsAPI g_GraphicsApi = GraphicsAPI::Vulkan; // TODO: Pass from configuration
@@ -19,7 +21,7 @@ namespace Otter::GraphicsSystem
         {
             case GraphicsAPI::Vulkan:
             {
-                gs_Renderer = New<Graphics::Vulkan::Renderer>();
+                gs_Renderer = New<VulkanRenderer>();
             }
                 break;
             default:
@@ -46,7 +48,7 @@ namespace Otter::GraphicsSystem
         {
             case GraphicsAPI::Vulkan:
             {
-                Delete<Graphics::Vulkan::Renderer>((Graphics::Vulkan::Renderer*) gs_Renderer);
+                Delete<VulkanRenderer>((VulkanRenderer*) gs_Renderer);
             }
                 break;
             default:

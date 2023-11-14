@@ -1,6 +1,7 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/Vulkan/VulkanPipelines.h"
+#include "Graphics/Vulkan/Types/VulkanTypes.Point.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -8,6 +9,7 @@ namespace Otter::Graphics::Vulkan
                         const VkRenderPass& renderPass,
                         const VkAllocationCallbacks* const allocator,
                         const Collection <VkPipelineShaderStageCreateInfo>& shaderStages,
+                        const Collection <VkDescriptorSetLayout>& descriptorSetLayouts,
                         const VkExtent2D& extent,
                         VkPipelineLayout* outPipelineLayout,
                         VkPipeline* outPipeline)
@@ -18,23 +20,15 @@ namespace Otter::Graphics::Vulkan
         OTR_INTERNAL_ASSERT_MSG(extent.width > 0 && extent.height > 0, "Extent is invalid")
 
         // Vertex Input
-        VkVertexInputBindingDescription bindingDescription{ };
-        bindingDescription.binding   = 0;
-        bindingDescription.stride    = sizeof(Float32) * 3;
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        VkVertexInputAttributeDescription attributeDescription{ };
-        attributeDescription.binding  = 0;
-        attributeDescription.location = 0;
-        attributeDescription.format   = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescription.offset   = 0;
+        const auto bindingDescription    = Point::GetBindingDescription();
+        const auto attributeDescriptions = Point::GetAttributeDescriptions();
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{ };
         vertexInputStateCreateInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputStateCreateInfo.vertexBindingDescriptionCount   = 1;
         vertexInputStateCreateInfo.pVertexBindingDescriptions      = &bindingDescription;
-        vertexInputStateCreateInfo.vertexAttributeDescriptionCount = 1;
-        vertexInputStateCreateInfo.pVertexAttributeDescriptions    = &attributeDescription;
+        vertexInputStateCreateInfo.vertexAttributeDescriptionCount = attributeDescriptions.Length();
+        vertexInputStateCreateInfo.pVertexAttributeDescriptions    = attributeDescriptions.GetData();
         vertexInputStateCreateInfo.pNext                           = VK_NULL_HANDLE;
 
         // Input Assembly
@@ -54,8 +48,8 @@ namespace Otter::Graphics::Vulkan
         VkViewport viewport{ };
         viewport.x        = 0.0f;
         viewport.y        = 0.0f;
-        viewport.width    = (float) extent.width;
-        viewport.height   = (float) extent.height;
+        viewport.width    = static_cast<Float32>(extent.width);
+        viewport.height   = static_cast<Float32>(extent.height);
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
@@ -118,11 +112,11 @@ namespace Otter::Graphics::Vulkan
                                                         | VK_COLOR_COMPONENT_B_BIT
                                                         | VK_COLOR_COMPONENT_A_BIT;
         colorBlendAttachmentState.blendEnable         = VK_TRUE;
-        colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+        colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
         colorBlendAttachmentState.colorBlendOp        = VK_BLEND_OP_ADD;
-        colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-        colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colorBlendAttachmentState.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+        colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         colorBlendAttachmentState.alphaBlendOp        = VK_BLEND_OP_ADD;
 
         VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo{ };
@@ -138,11 +132,10 @@ namespace Otter::Graphics::Vulkan
         colorBlendStateCreateInfo.pNext = VK_NULL_HANDLE;
 
         // Dynamic state
-        const UInt8    dynamicStatesCount                = 3;
+        const UInt8    dynamicStatesCount                = 2;
         VkDynamicState dynamicStates[dynamicStatesCount] = {
             VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
-            VK_DYNAMIC_STATE_LINE_WIDTH
+            VK_DYNAMIC_STATE_SCISSOR
         };
 
         VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{ };
@@ -155,8 +148,8 @@ namespace Otter::Graphics::Vulkan
         VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{ };
         pipelineLayoutCreateInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutCreateInfo.flags                  = 0;
-        pipelineLayoutCreateInfo.setLayoutCount         = 0;
-        pipelineLayoutCreateInfo.pSetLayouts            = VK_NULL_HANDLE;
+        pipelineLayoutCreateInfo.setLayoutCount         = descriptorSetLayouts.GetCount();
+        pipelineLayoutCreateInfo.pSetLayouts            = descriptorSetLayouts.GetData();
         pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
         pipelineLayoutCreateInfo.pPushConstantRanges    = VK_NULL_HANDLE;
         pipelineLayoutCreateInfo.pNext                  = VK_NULL_HANDLE;
