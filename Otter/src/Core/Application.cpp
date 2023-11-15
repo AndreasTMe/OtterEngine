@@ -24,6 +24,7 @@ namespace Otter
     void Application::Run()
     {
         MemorySystem::Initialise(gk_Args.MemoryRequirements);
+        EventSystem::Initialise();
 
         auto* platform = Platform::CreatePlatform();
         if (!platform->Startup(gk_Args.Title, gk_Args.Width, gk_Args.Height))
@@ -35,8 +36,6 @@ namespace Otter
 
             return;
         }
-
-        EventSystem::Initialise();
 
         if (GraphicsSystem::TryInitialise(platform->GetUnsafeContext()))
         {
@@ -57,11 +56,10 @@ namespace Otter
             OTR_LOG_FATAL("Failed to initialise graphics system")
         }
 
-        EventSystem::Shutdown();
-
         platform->Shutdown();
         Platform::DestroyPlatform(platform);
 
+        EventSystem::Shutdown();
         MemorySystem::Shutdown();
 
         OTR_LOG_DEBUG("Total allocation after system shutdown: {0}", MemorySystem::GetTotalAllocation())
