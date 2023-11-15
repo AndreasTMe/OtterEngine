@@ -34,6 +34,23 @@ namespace Otter
                 outCollection.m_Count++;
             }
         }
+
+        template<typename T>
+        static Collection<T> New(InitialiserList<T> list)
+        {
+            Collection<T> collection;
+            collection.m_Capacity = list.size();
+            collection.m_Data     = Buffer::New<T>(collection.m_Capacity);
+
+            collection.m_Count = 0;
+            for (const T& item: list)
+                collection.m_Data[collection.m_Count++] = item;
+
+            return collection;
+        }
+
+        template<typename T>
+        OTR_INLINE static Collection<T> Empty() { return Collection<T>(); }
     };
 
     template<typename T>

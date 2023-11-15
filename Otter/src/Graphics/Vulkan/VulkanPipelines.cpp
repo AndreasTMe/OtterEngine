@@ -10,6 +10,7 @@ namespace Otter::Graphics::Vulkan
                         const VkAllocationCallbacks* const allocator,
                         const Collection <VkPipelineShaderStageCreateInfo>& shaderStages,
                         const Collection <VkDescriptorSetLayout>& descriptorSetLayouts,
+                        const Collection <VkPushConstantRange>& pushConstantRanges,
                         const VkExtent2D& extent,
                         VkPipelineLayout* outPipelineLayout,
                         VkPipeline* outPipeline)
@@ -150,8 +151,8 @@ namespace Otter::Graphics::Vulkan
         pipelineLayoutCreateInfo.flags                  = 0;
         pipelineLayoutCreateInfo.setLayoutCount         = descriptorSetLayouts.GetCount();
         pipelineLayoutCreateInfo.pSetLayouts            = descriptorSetLayouts.GetData();
-        pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-        pipelineLayoutCreateInfo.pPushConstantRanges    = VK_NULL_HANDLE;
+        pipelineLayoutCreateInfo.pushConstantRangeCount = pushConstantRanges.GetCount();
+        pipelineLayoutCreateInfo.pPushConstantRanges    = pushConstantRanges.GetData();
         pipelineLayoutCreateInfo.pNext                  = VK_NULL_HANDLE;
 
         OTR_VULKAN_VALIDATE(vkCreatePipelineLayout(logicalDevice,

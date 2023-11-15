@@ -870,13 +870,15 @@ namespace Otter::Graphics::Vulkan
         fragShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
 
         // TODO: Create VkDescriptorSetLayout
+        // TODO: Create VkPushConstantRange
 
         List <VkPipelineShaderStageCreateInfo> shaderStages{ vertShaderStageCreateInfo, fragShaderStageCreateInfo };
         CreatePipeline(m_DevicePair.LogicalDevice,
                        m_RenderPass,
                        m_Allocator,
                        shaderStages,
-                       List<VkDescriptorSetLayout>(),
+                       Collections::Empty<VkDescriptorSetLayout>(),
+                       Collections::Empty<VkPushConstantRange>(),
                        m_Swapchain.Extent,
                        &m_PipelineLayout,
                        &m_Pipeline);

@@ -10,6 +10,7 @@ namespace Otter::Graphics::Vulkan
                         const VkAllocationCallbacks* allocator,
                         const Collection <VkPipelineShaderStageCreateInfo>& shaderStages,
                         const Collection <VkDescriptorSetLayout>& descriptorSetLayouts,
+                        const Collection <VkPushConstantRange>& pushConstantRanges,
                         const VkExtent2D& extent,
                         VkPipelineLayout* outPipelineLayout,
                         VkPipeline* outPipeline);
