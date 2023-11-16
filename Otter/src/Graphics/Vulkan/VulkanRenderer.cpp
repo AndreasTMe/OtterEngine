@@ -35,6 +35,8 @@ namespace Otter::Graphics::Vulkan
           0.0f, 0.0f, -5.0f, 1.0f },
     };
 
+    Matrix<4, 4, Float32> g_Model = Matrix<4, 4, Float32>::Identity();
+
     enum class WindowState : UInt8
     {
         Normal    = 0,
@@ -158,14 +160,14 @@ namespace Otter::Graphics::Vulkan
         }
 
         // TODO: Update uniform buffer (temp)
-        static Float32 movement = -0.001f;
+        static Float32 zMovement = -0.001f;
 
         if (g_GlobalUbo.View[3, 2] < -10.0f)
-            movement = 0.001f;
+            zMovement = 0.001f;
         else if (g_GlobalUbo.View[3, 2] > -2.0f)
-            movement = -0.001f;
+            zMovement = -0.001f;
 
-        g_GlobalUbo.View[3, 2] += movement;
+        g_GlobalUbo.View[3, 2] += zMovement;
 
         void* data;
         vkMapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory, 0, m_UniformBuffer.Size, 0, &data);
@@ -199,6 +201,24 @@ namespace Otter::Graphics::Vulkan
         OTR_VULKAN_VALIDATE(vkBeginCommandBuffer(m_DevicePair.CommandBuffers[currentFrame], &beginInfo))
 
         VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+
+        // TODO: Update uniform buffer (temp)
+        static Float32 xMovement = -0.001f;
+
+        if (g_Model[3, 0] < -3.0f)
+            xMovement = 0.001f;
+        else if (g_Model[3, 0] > 3.0f)
+            xMovement = -0.001f;
+
+        g_Model[3, 0] += xMovement;
+
+        vkCmdPushConstants(m_DevicePair.CommandBuffers[currentFrame],
+                           m_PipelineLayout,
+                           VK_SHADER_STAGE_VERTEX_BIT,
+                           0,
+                           sizeof(Matrix<4, 4, Float32>) * 2,
+                           &g_Model);
+        // TODO: End temp code
 
         VkRenderPassBeginInfo renderPassInfo{ };
         renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -1006,7 +1026,11 @@ namespace Otter::Graphics::Vulkan
         fragShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
 
         CreateDescriptorSetLayout();
-        // TODO: Create VkPushConstantRange
+
+        VkPushConstantRange pushConstantRange{ };
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        pushConstantRange.offset     = 0;
+        pushConstantRange.size       = sizeof(Matrix<4, 4, Float32>) * 2;
 
         CreatePipeline(m_DevicePair.LogicalDevice,
                        m_RenderPass,
@@ -1014,7 +1038,7 @@ namespace Otter::Graphics::Vulkan
                        Enumerable<VkPipelineShaderStageCreateInfo>::Of({ vertShaderStageCreateInfo,
                                                                          fragShaderStageCreateInfo }),
                        Enumerable<VkDescriptorSetLayout>::Of({ m_Descriptor.SetLayout }),
-                       Enumerable<VkPushConstantRange>::Empty(),
+                       Enumerable<VkPushConstantRange>::Of({ pushConstantRange }),
                        m_Swapchain.Extent,
                        &m_PipelineLayout,
                        &m_Pipeline);

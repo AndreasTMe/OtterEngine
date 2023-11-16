@@ -16,6 +16,6 @@ layout (location = 0) out vec4 outColor;
 
 void main()
 {
-    gl_Position = globalUBO.Projection * globalUBO.View * vec4(inPosition, 1.0);
+    gl_Position = globalUBO.Projection * globalUBO.View * globalPC.model * vec4(inPosition, 1.0);
     outColor = inColor;
 }
