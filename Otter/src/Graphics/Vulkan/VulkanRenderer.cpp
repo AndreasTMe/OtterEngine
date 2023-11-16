@@ -126,10 +126,10 @@ namespace Otter::Graphics::Vulkan
         DestroyVulkanInstance(m_Allocator, &m_Instance);
     }
 
-    void Renderer::RenderFrame()
+    bool Renderer::TryBeginFrame()
     {
         if (gs_WindowState == WindowState::Minimized)
-            return;
+            return false;
 
         const auto currentFrame = m_Swapchain.CurrentFrame;
 
@@ -142,33 +142,65 @@ namespace Otter::Graphics::Vulkan
                                           1,
                                           &m_DevicePair.RenderInFlightFences[currentFrame]))
 
-        UInt32   imageIndex;
         VkResult acquireNextImageResult = vkAcquireNextImageKHR(m_DevicePair.LogicalDevice,
                                                                 m_Swapchain.Handle,
                                                                 OTR_VULKAN_SYNC_TIMEOUT,
                                                                 m_DevicePair.ImageAvailableSemaphores[currentFrame],
                                                                 VK_NULL_HANDLE,
-                                                                &imageIndex);
+                                                                &m_Swapchain.CurrentImageIndex);
         if (acquireNextImageResult == VK_ERROR_OUT_OF_DATE_KHR)
         {
             RecreateSwapchains();
-            return;
+            return false;
         }
         else if (acquireNextImageResult != VK_SUCCESS && acquireNextImageResult != VK_SUBOPTIMAL_KHR)
         {
             OTR_INTERNAL_ASSERT_MSG(false, "Failed to acquire swapchain image")
         }
 
+        const auto commandBuffer = m_DevicePair.CommandBuffers[currentFrame];
+        OTR_VULKAN_VALIDATE(vkResetCommandBuffer(commandBuffer, 0))
+
+        VkCommandBufferBeginInfo beginInfo{ };
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        OTR_VULKAN_VALIDATE(vkBeginCommandBuffer(commandBuffer, &beginInfo))
+
+        VkViewport viewport{ };
+        viewport.x        = 0.0f;
+        viewport.y        = 0.0f;
+        viewport.width    = static_cast<Float32>(m_Swapchain.Extent.width);
+        viewport.height   = static_cast<Float32>(m_Swapchain.Extent.height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+
+        VkRect2D scissor{ };
+        scissor.offset = { 0, 0 };
+        scissor.extent = m_Swapchain.Extent;
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+        VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+
+        VkRenderPassBeginInfo renderPassInfo{ };
+        renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass        = m_RenderPass;
+        renderPassInfo.framebuffer       = m_SwapchainFrameBuffers[m_Swapchain.CurrentImageIndex];
+        renderPassInfo.renderArea.offset = { 0, 0 };
+        renderPassInfo.renderArea.extent = m_Swapchain.Extent;
+        renderPassInfo.clearValueCount   = 1;
+        renderPassInfo.pClearValues      = &clearColor;
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        return true;
+    }
+
+    void Renderer::DrawFrame()
+    {
+        const auto currentFrame = m_Swapchain.CurrentFrame;
+
         // TODO: Update uniform buffer (temp)
-        static Float32 zMovement = -0.001f;
-
-        if (g_GlobalUbo.View[3, 2] < -10.0f)
-            zMovement = 0.001f;
-        else if (g_GlobalUbo.View[3, 2] > -2.0f)
-            zMovement = -0.001f;
-
-        g_GlobalUbo.View[3, 2] += zMovement;
-
         void* data;
         vkMapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory, 0, m_UniformBuffer.Size, 0, &data);
         memcpy(data, &g_GlobalUbo, (Size) m_UniformBuffer.Size);
@@ -193,25 +225,7 @@ namespace Otter::Graphics::Vulkan
         vkUpdateDescriptorSets(m_DevicePair.LogicalDevice, 1, &descriptorWrite, 0, VK_NULL_HANDLE);
         // TODO: End temp code
 
-        OTR_VULKAN_VALIDATE(vkResetCommandBuffer(m_DevicePair.CommandBuffers[currentFrame], 0))
-
-        VkCommandBufferBeginInfo beginInfo{ };
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-        OTR_VULKAN_VALIDATE(vkBeginCommandBuffer(m_DevicePair.CommandBuffers[currentFrame], &beginInfo))
-
-        VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
-
-        // TODO: Update uniform buffer (temp)
-        static Float32 xMovement = -0.001f;
-
-        if (g_Model[3, 0] < -3.0f)
-            xMovement = 0.001f;
-        else if (g_Model[3, 0] > 3.0f)
-            xMovement = -0.001f;
-
-        g_Model[3, 0] += xMovement;
-
+        // TODO: Update push constants (temp)
         vkCmdPushConstants(m_DevicePair.CommandBuffers[currentFrame],
                            m_PipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT,
@@ -220,31 +234,7 @@ namespace Otter::Graphics::Vulkan
                            &g_Model);
         // TODO: End temp code
 
-        VkRenderPassBeginInfo renderPassInfo{ };
-        renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass        = m_RenderPass;
-        renderPassInfo.framebuffer       = m_SwapchainFrameBuffers[imageIndex];
-        renderPassInfo.renderArea.offset = { 0, 0 };
-        renderPassInfo.renderArea.extent = m_Swapchain.Extent;
-        renderPassInfo.clearValueCount   = 1;
-        renderPassInfo.pClearValues      = &clearColor;
-
-        vkCmdBeginRenderPass(m_DevicePair.CommandBuffers[currentFrame], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-
-        VkViewport viewport{ };
-        viewport.x        = 0.0f;
-        viewport.y        = 0.0f;
-        viewport.width    = static_cast<Float32>(m_Swapchain.Extent.width);
-        viewport.height   = static_cast<Float32>(m_Swapchain.Extent.height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(m_DevicePair.CommandBuffers[currentFrame], 0, 1, &viewport);
-
-        VkRect2D scissor{ };
-        scissor.offset = { 0, 0 };
-        scissor.extent = m_Swapchain.Extent;
-        vkCmdSetScissor(m_DevicePair.CommandBuffers[currentFrame], 0, 1, &scissor);
 
         VkBuffer     vertexBuffers[] = { m_VertexBuffer.Handle };
         VkDeviceSize offsets[]       = { 0 };
@@ -262,13 +252,20 @@ namespace Otter::Graphics::Vulkan
                                 &m_Descriptor.Set[currentFrame],
                                 0,
                                 nullptr);
+
         vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame],
                          static_cast<UInt32>(gk_Indices.Length()),
                          1, 0, 0, 0);
+    }
 
-        vkCmdEndRenderPass(m_DevicePair.CommandBuffers[currentFrame]);
+    void Renderer::EndFrame()
+    {
+        const auto currentFrame  = m_Swapchain.CurrentFrame;
+        const auto commandBuffer = m_DevicePair.CommandBuffers[currentFrame];
 
-        OTR_VULKAN_VALIDATE(vkEndCommandBuffer(m_DevicePair.CommandBuffers[currentFrame]))
+        vkCmdEndRenderPass(commandBuffer);
+
+        OTR_VULKAN_VALIDATE(vkEndCommandBuffer(commandBuffer))
 
         VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         VkSemaphore          waitSemaphores[]   = { m_DevicePair.ImageAvailableSemaphores[currentFrame] };
@@ -277,7 +274,7 @@ namespace Otter::Graphics::Vulkan
         VkSubmitInfo submitInfo{ };
         submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount   = 1;
-        submitInfo.pCommandBuffers      = &m_DevicePair.CommandBuffers[currentFrame];
+        submitInfo.pCommandBuffers      = &commandBuffer;
         submitInfo.pWaitDstStageMask    = waitStages;
         submitInfo.waitSemaphoreCount   = 1;
         submitInfo.pWaitSemaphores      = waitSemaphores;
@@ -297,7 +294,7 @@ namespace Otter::Graphics::Vulkan
         presentInfo.pWaitSemaphores    = signalSemaphores;
         presentInfo.swapchainCount     = 1;
         presentInfo.pSwapchains        = swapChains;
-        presentInfo.pImageIndices      = &imageIndex;
+        presentInfo.pImageIndices      = &m_Swapchain.CurrentImageIndex;
 
         VkResult queuePresentResult = vkQueuePresentKHR(m_DevicePair.PresentationQueueFamily.Handle, &presentInfo);
         if (queuePresentResult == VK_ERROR_OUT_OF_DATE_KHR || queuePresentResult == VK_SUBOPTIMAL_KHR)

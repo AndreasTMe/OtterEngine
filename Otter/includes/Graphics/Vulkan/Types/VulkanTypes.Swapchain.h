@@ -12,6 +12,7 @@ namespace Otter::Graphics::Vulkan
         VkExtent2D         Extent            = { };
         VkSurfaceFormatKHR SurfaceFormat     = { };
         VkPresentModeKHR   PresentMode       = VK_PRESENT_MODE_FIFO_KHR;
+        UInt32             CurrentImageIndex = 0;
         UInt8              CurrentFrame      = 0;
         UInt8              MaxFramesInFlight = 0;
     };

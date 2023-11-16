@@ -62,6 +62,10 @@ namespace Otter::GraphicsSystem
 
     void RenderFrame()
     {
-        gs_Renderer->RenderFrame();
+        if (!gs_Renderer->TryBeginFrame())
+            return;
+
+        gs_Renderer->DrawFrame();
+        gs_Renderer->EndFrame();
     }
 }
