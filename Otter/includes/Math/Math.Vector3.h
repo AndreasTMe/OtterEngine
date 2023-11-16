@@ -5,24 +5,6 @@
 
 namespace Otter::Math
 {
-    template<>
-    OTR_INLINE constexpr Vector<3, Int32> Left() { return Vector<3, Int32>{ -1, 0, 0 }; }
-
-    template<>
-    OTR_INLINE constexpr Vector<3, Int32> Right() { return Vector<3, Int32>{ 1, 0, 0 }; }
-
-    template<>
-    OTR_INLINE constexpr Vector<3, Int32> Down() { return Vector<3, Int32>{ 0, -1, 0 }; }
-
-    template<>
-    OTR_INLINE constexpr Vector<3, Int32> Up() { return Vector<3, Int32>{ 0, 1, 0 }; }
-
-    template<>
-    OTR_INLINE constexpr Vector<3, Int32> Back() { return Vector<3, Int32>{ 0, 0, -1 }; }
-
-    template<>
-    OTR_INLINE constexpr Vector<3, Int32> Forward() { return Vector<3, Int32>{ 0, 0, 1 }; }
-
     template<AnyNumber TNumber>
     OTR_INLINE bool IsApproximatelyZero(const Vector<3, TNumber>& vector)
     {
@@ -69,7 +51,7 @@ namespace Otter::Math
     {
         const auto magnitude = Magnitude(vector);
         if (magnitude < Epsilon<Double128>)
-            return VectorZero<3>;
+            return Vector<3, TNumber>::Zero();
 
         return vector / magnitude;
     }
@@ -165,7 +147,7 @@ namespace Otter::Math
     {
         const auto magnitudeSquared = MagnitudeSquared(normal);
         if (magnitudeSquared < Epsilon<Double128>)
-            return VectorZero<3>;
+            return Vector<3, decltype(vector[0] * normal[0])>::Zero();
 
         return (Dot(vector, normal) / magnitudeSquared) * normal;
     }

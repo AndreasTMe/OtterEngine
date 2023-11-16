@@ -204,24 +204,27 @@ namespace Otter
         [[nodiscard]] TNumber GetW() const noexcept { return m_Values[3]; }
         void SetW(const TNumber& w) noexcept { m_Values[3] = w; }
 
+        OTR_INLINE static constexpr Quaternion<TNumber> Zero() noexcept
+        {
+            return Quaternion<TNumber>(static_cast<TNumber>(0.0));
+        }
+
+        OTR_INLINE static constexpr Quaternion<TNumber> One() noexcept
+        {
+            return Quaternion<TNumber>(static_cast<TNumber>(1.0));
+        }
+
+        OTR_INLINE static constexpr Quaternion<TNumber> Identity() noexcept
+        {
+            return Quaternion<TNumber>{ static_cast<TNumber>(0.0),
+                                        static_cast<TNumber>(0.0),
+                                        static_cast<TNumber>(0.0),
+                                        static_cast<TNumber>(1.0) };
+        }
+
     private:
         TNumber m_Values[4];
     };
-
-    namespace Math
-    {
-        OTR_INLINE constexpr Quaternion<Int32> QuaternionZero() noexcept { return Quaternion<Int32>(0); }
-
-        OTR_INLINE constexpr Quaternion<Int32> QuaternionOne() noexcept { return Quaternion<Int32>(1); }
-
-        OTR_INLINE constexpr Quaternion<Int32> QuaternionI() noexcept { return Quaternion<Int32>{ 1, 0, 0, 0 }; }
-
-        OTR_INLINE constexpr Quaternion<Int32> QuaternionJ() noexcept { return Quaternion<Int32>{ 0, 1, 0, 0 }; }
-
-        OTR_INLINE constexpr Quaternion<Int32> QuaternionK() noexcept { return Quaternion<Int32>{ 0, 0, 1, 0 }; }
-
-        OTR_INLINE constexpr Quaternion<Int32> QuaternionIdentity() noexcept { return Quaternion<Int32>{ 0, 0, 0, 1 }; }
-    }
 }
 
 #include "Math/Quaternion.h"

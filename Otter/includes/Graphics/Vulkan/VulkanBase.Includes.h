@@ -29,4 +29,6 @@
                                 "'{0}' failed with error code: {1}", #vkCall, result)   \
     }
 
+#define OTR_VULKAN_BUFFERING_COUNT 3
+
 #endif //OTTERENGINE_VULKANBASE_INCLUDES_H

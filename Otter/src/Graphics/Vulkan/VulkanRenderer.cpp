@@ -9,7 +9,8 @@
 #include "Graphics/Vulkan/VulkanPipelines.h"
 #include "Graphics/Vulkan/VulkanBuffers.h"
 #include "Graphics/Vulkan/VulkanQueues.h"
-#include "Math/Core.h"
+#include "Graphics/Vulkan/Types/VulkanTypes.UniformBuffers.h"
+#include "Math/Matrix.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -24,6 +25,14 @@ namespace Otter::Graphics::Vulkan
 
     const Span<UInt16, 6> gk_Indices = {
         0, 1, 2, 2, 3, 0
+    };
+
+    GlobalUniformBufferObject g_GlobalUbo = {
+        Math::Perspective<Float32>(Math::DegToRad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f),
+        { 1.0f, 0.0f, 0.0f, 0.0f,
+          0.0f, 1.0f, 0.0f, 0.0f,
+          0.0f, 0.0f, 1.0f, 0.0f,
+          0.0f, 0.0f, -5.0f, 1.0f },
     };
 
     enum class WindowState : UInt8
@@ -59,6 +68,9 @@ namespace Otter::Graphics::Vulkan
                              m_DevicePair.CommandBuffers);
         CreateVertexBuffer();
         CreateIndexBuffer();
+        CreateUniformBuffer();
+        CreateDescriptorPool();
+        CreateDescriptorSets();
         CreateSyncObjects();
 
         GlobalActions::OnWindowMinimized += [&](const Internal::WindowMinimizedEvent& event)
@@ -97,6 +109,8 @@ namespace Otter::Graphics::Vulkan
         DestroyCommandBuffers(m_DevicePair.CommandBuffers);
         DestroyCommandPool(m_DevicePair, m_Allocator, &m_DevicePair.GraphicsCommandPool);
         DestroySyncObjects();
+        // TODO: DestroyUniformBuffers();
+        DestroyVulkanDescriptors();
         DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_VertexBuffer);
         DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_IndexBuffer);
         DestroyPipeline(m_DevicePair.LogicalDevice, m_Allocator, &m_PipelineLayout, &m_Pipeline);
@@ -143,6 +157,40 @@ namespace Otter::Graphics::Vulkan
             OTR_INTERNAL_ASSERT_MSG(false, "Failed to acquire swapchain image")
         }
 
+        // TODO: Update uniform buffer (temp)
+        static Float32 movement = -0.001f;
+
+        if (g_GlobalUbo.View[3, 2] < -10.0f)
+            movement = 0.001f;
+        else if (g_GlobalUbo.View[3, 2] > -2.0f)
+            movement = -0.001f;
+
+        g_GlobalUbo.View[3, 2] += movement;
+
+        void* data;
+        vkMapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory, 0, m_UniformBuffer.Size, 0, &data);
+        memcpy(data, &g_GlobalUbo, (Size) m_UniformBuffer.Size);
+        vkUnmapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory);
+
+        VkDescriptorBufferInfo bufferInfo{ };
+        bufferInfo.buffer = m_UniformBuffer.Handle;
+        bufferInfo.offset = 0;
+        bufferInfo.range  = sizeof(GlobalUniformBufferObject);
+
+        VkWriteDescriptorSet descriptorWrite{ };
+        descriptorWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet           = m_Descriptor.Set[currentFrame];
+        descriptorWrite.dstBinding       = 0;
+        descriptorWrite.dstArrayElement  = 0;
+        descriptorWrite.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount  = 1;
+        descriptorWrite.pBufferInfo      = &bufferInfo;
+        descriptorWrite.pImageInfo       = VK_NULL_HANDLE;
+        descriptorWrite.pTexelBufferView = VK_NULL_HANDLE;
+
+        vkUpdateDescriptorSets(m_DevicePair.LogicalDevice, 1, &descriptorWrite, 0, VK_NULL_HANDLE);
+        // TODO: End temp code
+
         OTR_VULKAN_VALIDATE(vkResetCommandBuffer(m_DevicePair.CommandBuffers[currentFrame], 0))
 
         VkCommandBufferBeginInfo beginInfo{ };
@@ -186,14 +234,14 @@ namespace Otter::Graphics::Vulkan
                              m_IndexBuffer.Handle,
                              0,
                              VK_INDEX_TYPE_UINT16);
-//        vkCmdBindDescriptorSets(m_DevicePair.CommandBuffers[currentFrame],
-//                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-//                                m_pipelineLayout,
-//                                0,
-//                                1,
-//                                &m_descriptorSets[currentFrame],
-//                                0,
-//                                nullptr);
+        vkCmdBindDescriptorSets(m_DevicePair.CommandBuffers[currentFrame],
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_PipelineLayout,
+                                0,
+                                1,
+                                &m_Descriptor.Set[currentFrame],
+                                0,
+                                nullptr);
         vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame],
                          static_cast<UInt32>(gk_Indices.Length()),
                          1, 0, 0, 0);
@@ -832,8 +880,96 @@ namespace Otter::Graphics::Vulkan
         DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
     }
 
+    void Renderer::CreateUniformBuffer()
+    {
+        VkDeviceSize bufferSize = sizeof(GlobalUniformBufferObject);
+
+        if (!TryCreateBuffer(m_DevicePair,
+                             m_Allocator,
+                             bufferSize,
+                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                             &m_UniformBuffer))
+        {
+            OTR_LOG_FATAL("Failed to create global uniform buffer")
+            return;
+        }
+
+        BindBuffer(m_DevicePair.LogicalDevice, m_UniformBuffer, 0);
+    }
+
+    void Renderer::CreateDescriptorSetLayout()
+    {
+        VkDescriptorSetLayoutBinding uboLayoutBinding{ };
+        uboLayoutBinding.binding            = 0;
+        uboLayoutBinding.descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        uboLayoutBinding.descriptorCount    = 1;
+        uboLayoutBinding.stageFlags         = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.pImmutableSamplers = VK_NULL_HANDLE;
+
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{ };
+        descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptorSetLayoutCreateInfo.bindingCount = 1;
+        descriptorSetLayoutCreateInfo.pBindings    = &uboLayoutBinding;
+        descriptorSetLayoutCreateInfo.pNext        = VK_NULL_HANDLE;
+
+        OTR_VULKAN_VALIDATE(vkCreateDescriptorSetLayout(m_DevicePair.LogicalDevice,
+                                                        &descriptorSetLayoutCreateInfo,
+                                                        m_Allocator,
+                                                        &m_Descriptor.SetLayout))
+    }
+
+    void Renderer::CreateDescriptorPool()
+    {
+        VkDescriptorPoolSize globalDescriptorPoolSize{ };
+        globalDescriptorPoolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        globalDescriptorPoolSize.descriptorCount = m_Swapchain.MaxFramesInFlight;
+
+        VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{ };
+        descriptorPoolCreateInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        descriptorPoolCreateInfo.poolSizeCount = 1;
+        descriptorPoolCreateInfo.pPoolSizes    = &globalDescriptorPoolSize;
+        descriptorPoolCreateInfo.maxSets       = m_Swapchain.MaxFramesInFlight;
+        descriptorPoolCreateInfo.pNext         = VK_NULL_HANDLE;
+
+        OTR_VULKAN_VALIDATE(vkCreateDescriptorPool(m_DevicePair.LogicalDevice,
+                                                   &descriptorPoolCreateInfo,
+                                                   m_Allocator,
+                                                   &m_Descriptor.Pool))
+    }
+
+    void Renderer::CreateDescriptorSets()
+    {
+        Enumerable <VkDescriptorSetLayout> layouts = Enumerable<VkDescriptorSetLayout>::Of({ m_Descriptor.SetLayout,
+                                                                                             m_Descriptor.SetLayout,
+                                                                                             m_Descriptor.SetLayout });
+        VkDescriptorSetAllocateInfo        descriptorSetAllocateInfo{ };
+        descriptorSetAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        descriptorSetAllocateInfo.descriptorPool     = m_Descriptor.Pool;
+        descriptorSetAllocateInfo.descriptorSetCount = m_Swapchain.MaxFramesInFlight;
+        descriptorSetAllocateInfo.pSetLayouts        = layouts.GetData();
+        descriptorSetAllocateInfo.pNext              = VK_NULL_HANDLE;
+
+        // TODO: "const_cast" usage reminder
+        OTR_VULKAN_VALIDATE(vkAllocateDescriptorSets(m_DevicePair.LogicalDevice,
+                                                     &descriptorSetAllocateInfo,
+                                                     const_cast<VkDescriptorSet*>(m_Descriptor.Set.GetData())))
+    }
+
+    void Renderer::DestroyVulkanDescriptors()
+    {
+        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_UniformBuffer);
+
+        vkDestroyDescriptorPool(m_DevicePair.LogicalDevice, m_Descriptor.Pool, m_Allocator);
+        vkDestroyDescriptorSetLayout(m_DevicePair.LogicalDevice, m_Descriptor.SetLayout, m_Allocator);
+
+        m_Descriptor.Pool      = VK_NULL_HANDLE;
+        m_Descriptor.SetLayout = VK_NULL_HANDLE;
+    }
+
     void Renderer::CreatePipelines()
     {
+        // HELP: Shader related
         VulkanShader shader{ };
         if (!TryCreateShaderModule(m_DevicePair.LogicalDevice,
                                    m_Allocator,
@@ -869,16 +1005,16 @@ namespace Otter::Graphics::Vulkan
         fragShaderStageCreateInfo.pName  = "main";
         fragShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
 
-        // TODO: Create VkDescriptorSetLayout
+        CreateDescriptorSetLayout();
         // TODO: Create VkPushConstantRange
 
-        List <VkPipelineShaderStageCreateInfo> shaderStages{ vertShaderStageCreateInfo, fragShaderStageCreateInfo };
         CreatePipeline(m_DevicePair.LogicalDevice,
                        m_RenderPass,
                        m_Allocator,
-                       shaderStages,
-                       Collections::Empty<VkDescriptorSetLayout>(),
-                       Collections::Empty<VkPushConstantRange>(),
+                       Enumerable<VkPipelineShaderStageCreateInfo>::Of({ vertShaderStageCreateInfo,
+                                                                         fragShaderStageCreateInfo }),
+                       Enumerable<VkDescriptorSetLayout>::Of({ m_Descriptor.SetLayout }),
+                       Enumerable<VkPushConstantRange>::Empty(),
                        m_Swapchain.Extent,
                        &m_PipelineLayout,
                        &m_Pipeline);

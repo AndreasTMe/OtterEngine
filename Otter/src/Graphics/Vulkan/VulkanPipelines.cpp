@@ -8,9 +8,9 @@ namespace Otter::Graphics::Vulkan
     void CreatePipeline(const VkDevice& logicalDevice,
                         const VkRenderPass& renderPass,
                         const VkAllocationCallbacks* const allocator,
-                        const Collection <VkPipelineShaderStageCreateInfo>& shaderStages,
-                        const Collection <VkDescriptorSetLayout>& descriptorSetLayouts,
-                        const Collection <VkPushConstantRange>& pushConstantRanges,
+                        const Enumerable <VkPipelineShaderStageCreateInfo>& shaderStages,
+                        const Enumerable <VkDescriptorSetLayout>& descriptorSetLayouts,
+                        const Enumerable <VkPushConstantRange>& pushConstantRanges,
                         const VkExtent2D& extent,
                         VkPipelineLayout* outPipelineLayout,
                         VkPipeline* outPipeline)

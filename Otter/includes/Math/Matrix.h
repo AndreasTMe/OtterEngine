@@ -278,19 +278,30 @@ namespace Otter
                 m_Values[index + i * Tx] = column[i];
         }
 
+        OTR_INLINE static constexpr Matrix<Tx, Ty, TNumber> Zero()
+        {
+            return Matrix<Tx, Ty, TNumber>(static_cast<TNumber>(0.0));
+        }
+
+        OTR_INLINE static constexpr Matrix<Tx, Ty, TNumber> Identity()
+        requires Dimension<Tx>
+                 && Dimension<Ty>
+                 && (Tx == Ty)
+        {
+            Matrix<Tx, Ty, TNumber> result;
+
+            for (UInt8 i = 0; i < Tx; ++i)
+                result[i, i] = static_cast<TNumber>(1.0);
+
+            return result;
+        }
+
     private:
         TNumber m_Values[Tx * Ty];
     };
 
     namespace Math
     {
-        template<UInt8 Tx, UInt8 Ty>
-        OTR_INLINE constexpr Matrix<Tx, Ty, Int32> MatrixZero() { return Matrix<Tx, Ty, Int32>(0); }
-
-        template<UInt8 Tx, UInt8 Ty>
-        requires Dimension<Tx> && Dimension<Ty> && (Tx == Ty)
-        constexpr Matrix<Tx, Ty, Int32> MatrixIdentity();
-
         template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
         requires Dimension<Tx> && Dimension<Ty>
         TNumber Determinant(const Matrix<Tx, Ty, TNumber>& matrix);

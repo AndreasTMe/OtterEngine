@@ -32,6 +32,8 @@ namespace Otter
             OTR_LOG_FATAL("Failed to initialise platform. Shutting down...")
 
             Platform::DestroyPlatform(platform);
+
+            EventSystem::Shutdown();
             MemorySystem::Shutdown();
 
             return;

@@ -7,6 +7,7 @@
 #include "Graphics/Vulkan/Types/VulkanTypes.Buffer.h"
 #include "Graphics/Vulkan/Types/VulkanTypes.Device.h"
 #include "Graphics/Vulkan/Types/VulkanTypes.Swapchain.h"
+#include "Graphics/Vulkan/Types/VulkanTypes.Descriptors.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -33,13 +34,14 @@ namespace Otter::Graphics::Vulkan
         List <VkImage>       m_SwapchainImages;
         List <VkImageView>   m_SwapchainImageViews;
         List <VkFramebuffer> m_SwapchainFrameBuffers;
-
-        VkRenderPass     m_RenderPass     = VK_NULL_HANDLE;
-        VkPipelineLayout m_PipelineLayout = VK_NULL_HANDLE;
-        VkPipeline       m_Pipeline       = VK_NULL_HANDLE;
+        VkRenderPass         m_RenderPass     = VK_NULL_HANDLE;
+        VulkanDescriptor     m_Descriptor;
+        VkPipelineLayout     m_PipelineLayout = VK_NULL_HANDLE;
+        VkPipeline           m_Pipeline       = VK_NULL_HANDLE;
 
         VulkanBuffer m_IndexBuffer{ };
         VulkanBuffer m_VertexBuffer{ };
+        VulkanBuffer m_UniformBuffer{ };
 
         // HELP: VkInstance related
         static void CreateVulkanInstance(const VkAllocationCallbacks* allocator, VkInstance* outInstance);
@@ -92,12 +94,19 @@ namespace Otter::Graphics::Vulkan
                                          List <VkCommandBuffer>& outCommandBuffers);
         static void DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers);
 
+        // HELP: VkDescriptorSet related
+        void CreateDescriptorSetLayout();
+        void CreateDescriptorPool();
+        void CreateDescriptorSets();
+        void DestroyVulkanDescriptors();
+
         // HELP: VkPipeline related
         void CreatePipelines();
 
         // HELP: VkBuffer related
         void CreateVertexBuffer();
         void CreateIndexBuffer();
+        void CreateUniformBuffer();
 
         // HELP: VkSemaphore/VkFence related
         void CreateSyncObjects();
