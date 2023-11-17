@@ -1,31 +1,32 @@
 #include "Otter.PCH.h"
 
-#include "Graphics/Vulkan/VulkanRenderer.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Shader.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Point.h"
-#include "Graphics/Vulkan/VulkanExtensions.h"
-#include "Graphics/Vulkan/VulkanSwapchains.h"
-#include "Graphics/Vulkan/VulkanShaders.h"
-#include "Graphics/Vulkan/VulkanPipelines.h"
-#include "Graphics/Vulkan/VulkanBuffers.h"
-#include "Graphics/Vulkan/VulkanQueues.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.UniformBuffers.h"
+#include "Graphics/API/Vulkan/VulkanRenderer.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Shader.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Point.h"
+#include "Graphics/API/Vulkan/VulkanExtensions.h"
+#include "Graphics/API/Vulkan/VulkanSwapchains.h"
+#include "Graphics/API/Vulkan/VulkanShaders.h"
+#include "Graphics/API/Vulkan/VulkanPipelines.h"
+#include "Graphics/API/Vulkan/VulkanBuffers.h"
+#include "Graphics/API/Vulkan/VulkanQueues.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.UniformBuffers.h"
 #include "Math/Matrix.h"
+
+// TODO: Remove later
+#include "Graphics/2D/Sprite.h"
 
 namespace Otter::Graphics::Vulkan
 {
 #define OTR_VULKAN_SYNC_TIMEOUT 1000000000
 
-    const Span<Point, 4> gk_Vertices = {
-        {{ -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, 1.0f, 1.0f }},
-        {{ 0.5f,  -0.5f, 0.0f }, { 0.0f, 1.0f, 0.0f, 1.0f }},
-        {{ 0.5f,  0.5f,  0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }},
-        {{ -0.5f, 0.5f,  0.0f }, { 0.0f, 0.0f, 0.0f, 1.0f }}
+    Sprite g_Sprite = {
+        { 0.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.5f, 0.2f, 0.2f, 1.0f }
     };
 
-    const Span<UInt16, 6> gk_Indices = {
-        0, 1, 2, 2, 3, 0
-    };
+    Span<Point2D, 4>      g_Vertices = { };
+    const Span<UInt16, 6> gk_Indices = { 0, 1, 2, 2, 3, 0 };
 
     GlobalUniformBufferObject g_GlobalUbo = {
         Math::Perspective<Float32>(Math::DegToRad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f),
@@ -62,18 +63,19 @@ namespace Otter::Graphics::Vulkan
                                     m_SwapchainImageViews,
                                     m_RenderPass,
                                     m_SwapchainFrameBuffers);
-        CreatePipelines();
         CreateCommandPool(m_DevicePair, m_Allocator, &m_DevicePair.GraphicsCommandPool);
         CreateCommandBuffers(m_DevicePair.LogicalDevice,
                              m_DevicePair.GraphicsCommandPool,
                              m_Swapchain.MaxFramesInFlight,
                              m_DevicePair.CommandBuffers);
+        CreateSyncObjects();
+
+        CreatePipelines();
         CreateVertexBuffer();
         CreateIndexBuffer();
         CreateUniformBuffer();
         CreateDescriptorPool();
         CreateDescriptorSets();
-        CreateSyncObjects();
 
         GlobalActions::OnWindowMinimized += [&](const Internal::WindowMinimizedEvent& event)
         {
@@ -199,6 +201,7 @@ namespace Otter::Graphics::Vulkan
     void Renderer::DrawFrame()
     {
         const auto currentFrame = m_Swapchain.CurrentFrame;
+        vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 
         // TODO: Update uniform buffer (temp)
         void* data;
@@ -234,7 +237,6 @@ namespace Otter::Graphics::Vulkan
                            &g_Model);
         // TODO: End temp code
 
-        vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
 
         VkBuffer     vertexBuffers[] = { m_VertexBuffer.Handle };
         VkDeviceSize offsets[]       = { 0 };
@@ -316,10 +318,10 @@ namespace Otter::Graphics::Vulkan
         VkApplicationInfo appInfo{ };
         appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName   = "Otter Engine";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        appInfo.applicationVersion = VK_MAKE_API_VERSION(1, 0, 0, 0);
         appInfo.pEngineName        = "Otter Engine";
-        appInfo.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion         = VK_API_VERSION_1_0;
+        appInfo.engineVersion      = VK_MAKE_API_VERSION(1, 0, 0, 0);
+        appInfo.apiVersion         = VK_API_VERSION_1_3;
 
         VkInstanceCreateInfo createInfo{ };
         createInfo.sType            = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -807,7 +809,7 @@ namespace Otter::Graphics::Vulkan
 
     void Renderer::CreateVertexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(gk_Vertices[0]) * gk_Vertices.Length();
+        VkDeviceSize bufferSize = sizeof(g_Vertices[0]) * g_Vertices.Length();
 
         VulkanBuffer stagingBuffer;
         if (!TryCreateBuffer(m_DevicePair,
@@ -823,9 +825,16 @@ namespace Otter::Graphics::Vulkan
 
         BindBuffer(m_DevicePair.LogicalDevice, stagingBuffer, 0);
 
+        const auto  spriteVertices = g_Sprite.GetVertices();
+        for (UInt64 i              = 0; i < spriteVertices.Length(); i++)
+        {
+            g_Vertices[i].Position = { spriteVertices[i][0], spriteVertices[i][1], 0.0f };
+            g_Vertices[i].Color    = g_Sprite.GetColor();
+        }
+
         void* data;
         vkMapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory, 0, bufferSize, 0, &data);
-        memcpy(data, (void*) gk_Vertices.GetData(), (Size) bufferSize);
+        memcpy(data, (void*) g_Vertices.GetData(), (Size) bufferSize);
         vkUnmapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory);
 
         if (!TryCreateBuffer(m_DevicePair,

@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_VULKANQUEUES_H
 #define OTTERENGINE_VULKANQUEUES_H
 
-#include "Graphics/Vulkan/VulkanBase.Includes.h"
+#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 
 namespace Otter::Graphics::Vulkan
 {

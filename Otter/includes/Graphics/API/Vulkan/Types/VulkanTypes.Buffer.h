@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_VULKANTYPES_BUFFER_H
 #define OTTERENGINE_VULKANTYPES_BUFFER_H
 
-#include "Graphics/Vulkan/VulkanBase.Includes.h"
+#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 
 namespace Otter::Graphics::Vulkan
 {

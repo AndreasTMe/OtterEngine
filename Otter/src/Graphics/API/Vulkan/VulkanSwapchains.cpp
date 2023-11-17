@@ -1,6 +1,6 @@
 #include "Otter.PCH.h"
 
-#include "Graphics/Vulkan/VulkanSwapchains.h"
+#include "Graphics/API/Vulkan/VulkanSwapchains.h"
 #include "Math/Core.h"
 
 namespace Otter::Graphics::Vulkan
@@ -55,7 +55,7 @@ namespace Otter::Graphics::Vulkan
         {
             createInfo.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
             createInfo.queueFamilyIndexCount = 0;
-            createInfo.pQueueFamilyIndices   = nullptr;
+            createInfo.pQueueFamilyIndices   = VK_NULL_HANDLE;
         }
 
         createInfo.preTransform   = swapchainSupportInfo.SurfaceCapabilities.currentTransform;
@@ -226,17 +226,18 @@ namespace Otter::Graphics::Vulkan
 
         VkFramebuffer tempSwapchainFrameBuffers[swapchainImageViews.GetCount()];
 
+        VkFramebufferCreateInfo framebufferInfo{ };
+        framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass      = renderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.width           = swapChainExtent.width;
+        framebufferInfo.height          = swapChainExtent.height;
+        framebufferInfo.layers          = 1;
+        framebufferInfo.pNext           = VK_NULL_HANDLE;
+
         for (size_t i = 0; i < swapchainImageViews.GetCount(); i++)
         {
-            VkFramebufferCreateInfo framebufferInfo{ };
-            framebufferInfo.sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass      = renderPass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments    = &swapchainImageViews[i];
-            framebufferInfo.width           = swapChainExtent.width;
-            framebufferInfo.height          = swapChainExtent.height;
-            framebufferInfo.layers          = 1;
-            framebufferInfo.pNext           = nullptr;
+            framebufferInfo.pAttachments = &swapchainImageViews[i];
 
             OTR_VULKAN_VALIDATE(vkCreateFramebuffer(logicalDevice,
                                                     &framebufferInfo,

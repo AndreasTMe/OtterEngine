@@ -238,7 +238,7 @@ namespace Otter
 #pragma clang diagnostic pop
         }
 
-        [[nodiscard]] Vector<Ty, TNumber> GetRow(UInt8 index) const noexcept
+        [[nodiscard]] OTR_INLINE Vector<Ty, TNumber> GetRow(UInt8 index) const noexcept
         {
             OTR_ASSERT_MSG(index < Ty, "Row index {0} is out of range", index)
 
@@ -250,7 +250,7 @@ namespace Otter
             return row;
         }
 
-        void SetRow(const UInt8& index, const Vector<Ty, TNumber>& row) noexcept
+        OTR_INLINE void SetRow(const UInt8& index, const Vector<Ty, TNumber>& row) noexcept
         {
             OTR_ASSERT_MSG(index < Ty, "Row index {0} is out of range", index)
 
@@ -258,7 +258,7 @@ namespace Otter
                 m_Values[i + index * Ty] = row[i];
         }
 
-        [[nodiscard]] Vector<Tx, TNumber> GetColumn(UInt8 index) const noexcept
+        [[nodiscard]] OTR_INLINE Vector<Tx, TNumber> GetColumn(UInt8 index) const noexcept
         {
             OTR_ASSERT_MSG(index < Tx, "Column index {0} is out of range", index)
 
@@ -270,7 +270,7 @@ namespace Otter
             return column;
         }
 
-        void SetColumn(const UInt8& index, const Vector<Tx, TNumber>& column) noexcept
+        OTR_INLINE void SetColumn(const UInt8& index, const Vector<Tx, TNumber>& column) noexcept
         {
             OTR_ASSERT_MSG(index < Tx, "Column index {0} is out of range", index)
 

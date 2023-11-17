@@ -2,7 +2,7 @@
 #define OTTERENGINE_VULKANPIPELINES_H
 
 #include "Core/Collections/Enumerable.h"
-#include "Graphics/Vulkan/VulkanBase.Includes.h"
+#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 
 namespace Otter::Graphics::Vulkan
 {

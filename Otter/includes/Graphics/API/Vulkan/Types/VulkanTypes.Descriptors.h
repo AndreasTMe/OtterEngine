@@ -2,7 +2,7 @@
 #define OTTERENGINE_VULKANTYPES_DESCRIPTORS_H
 
 #include "Core/Collections/Span.h"
-#include "Graphics/Vulkan/VulkanBase.Includes.h"
+#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 
 namespace Otter::Graphics::Vulkan
 {

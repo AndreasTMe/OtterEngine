@@ -3,11 +3,11 @@
 
 #include "Core/Defines.h"
 #include "Graphics/AbstractRenderer.h"
-#include "Graphics/Vulkan/VulkanBase.Includes.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Buffer.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Device.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Swapchain.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Descriptors.h"
+#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Buffer.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Device.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Swapchain.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Descriptors.h"
 
 namespace Otter::Graphics::Vulkan
 {

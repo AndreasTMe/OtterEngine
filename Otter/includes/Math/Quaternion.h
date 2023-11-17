@@ -192,17 +192,17 @@ namespace Otter
 #pragma clang diagnostic pop
         }
 
-        [[nodiscard]] TNumber GetX() const noexcept { return m_Values[0]; }
-        void SetX(const TNumber& x) noexcept { m_Values[0] = x; }
+        [[nodiscard]] OTR_INLINE TNumber GetX() const noexcept { return m_Values[0]; }
+        OTR_INLINE void SetX(const TNumber& x) noexcept { m_Values[0] = x; }
 
-        [[nodiscard]] TNumber GetY() const noexcept { return m_Values[1]; }
-        void SetY(const TNumber& y) noexcept { m_Values[1] = y; }
+        [[nodiscard]] OTR_INLINE TNumber GetY() const noexcept { return m_Values[1]; }
+        OTR_INLINE void SetY(const TNumber& y) noexcept { m_Values[1] = y; }
 
-        [[nodiscard]] TNumber GetZ() const noexcept { return m_Values[2]; }
-        void SetZ(const TNumber& z) noexcept { m_Values[2] = z; }
+        [[nodiscard]] OTR_INLINE TNumber GetZ() const noexcept { return m_Values[2]; }
+        OTR_INLINE void SetZ(const TNumber& z) noexcept { m_Values[2] = z; }
 
-        [[nodiscard]] TNumber GetW() const noexcept { return m_Values[3]; }
-        void SetW(const TNumber& w) noexcept { m_Values[3] = w; }
+        [[nodiscard]] OTR_INLINE TNumber GetW() const noexcept { return m_Values[3]; }
+        OTR_INLINE void SetW(const TNumber& w) noexcept { m_Values[3] = w; }
 
         OTR_INLINE static constexpr Quaternion<TNumber> Zero() noexcept
         {

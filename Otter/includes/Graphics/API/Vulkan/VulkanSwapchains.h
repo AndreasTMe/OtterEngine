@@ -2,9 +2,9 @@
 #define OTTERENGINE_VULKANSWAPCHAINS_H
 
 #include "Core/Collections/List.h"
-#include "Graphics/Vulkan/VulkanBase.Includes.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Device.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Swapchain.h"
+#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Device.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Swapchain.h"
 
 namespace Otter::Graphics::Vulkan
 {

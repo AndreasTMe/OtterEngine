@@ -3,7 +3,7 @@
 #include "Graphics/GraphicsSystem.h"
 
 #include "Graphics/Common/Types.GraphicsAPI.h"
-#include "Graphics/Vulkan/VulkanRenderer.h"
+#include "Graphics/API/Vulkan/VulkanRenderer.h"
 
 namespace Otter::GraphicsSystem
 {

@@ -1,8 +1,8 @@
 #ifndef OTTERENGINE_VULKANBUFFERS_H
 #define OTTERENGINE_VULKANBUFFERS_H
 
-#include "Graphics/Vulkan/Types/VulkanTypes.Buffer.h"
-#include "Graphics/Vulkan/Types/VulkanTypes.Device.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Buffer.h"
+#include "Graphics/API/Vulkan/Types/VulkanTypes.Device.h"
 
 namespace Otter::Graphics::Vulkan
 {

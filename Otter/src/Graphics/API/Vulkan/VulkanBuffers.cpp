@@ -1,6 +1,6 @@
 #include "Otter.PCH.h"
 
-#include "Graphics/Vulkan/VulkanBuffers.h"
+#include "Graphics/API/Vulkan/VulkanBuffers.h"
 
 namespace Otter::Graphics::Vulkan
 {
