@@ -16,7 +16,7 @@ namespace Otter
     {
     public:
         template<typename T>
-        static void New(const T* const data, const UInt64& count, Collection<T>& outCollection)
+        static void New(const T* const data, const UInt64 count, Collection<T>& outCollection)
         {
             OTR_INTERNAL_ASSERT_MSG(data != nullptr, "Data cannot be null!")
             OTR_INTERNAL_ASSERT_MSG(count > 0, "Count must be greater than 0!")
@@ -80,7 +80,7 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        void Reserve(const UInt64& capacity)
+        void Reserve(const UInt64 capacity)
         {
             if (capacity <= m_Capacity)
                 return;

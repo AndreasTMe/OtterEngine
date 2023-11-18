@@ -7,7 +7,7 @@ namespace Otter::MemorySystem
     static bool       gs_HasInitialised = false;
     FreeListAllocator g_Allocator;
 
-    void Initialise(const UInt64& memoryRequirements)
+    void Initialise(const UInt64 memoryRequirements)
     {
         OTR_INTERNAL_ASSERT_MSG(!gs_HasInitialised, "Memory has already been initialised")
 
@@ -34,7 +34,7 @@ namespace Otter::MemorySystem
         gs_HasInitialised = false;
     }
 
-    UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
+    UnsafeHandle Allocate(const UInt64 size, const UInt64 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!gs_HasInitialised)
             return { };
@@ -52,8 +52,8 @@ namespace Otter::MemorySystem
 
     // TODO: Use FreeListAllocator to reallocate memory
     UnsafeHandle Reallocate(UnsafeHandle& handle,
-                            const UInt64& size,
-                            const UInt64& alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
+                            const UInt64 size,
+                            const UInt64 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!gs_HasInitialised)
             return { };
@@ -81,7 +81,7 @@ namespace Otter::MemorySystem
     }
 
     // TODO: Use FreeListAllocator to clear memory
-    void MemoryClear(void* block, const UInt64& size)
+    void MemoryClear(void* block, const UInt64 size)
     {
         if (!gs_HasInitialised)
         {

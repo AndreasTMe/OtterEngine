@@ -8,7 +8,7 @@ namespace Otter::Internal
 
     void PopulatePrimes();
 
-    UInt64 HashUtils::GetNextPrime(const UInt64& value)
+    UInt64 HashUtils::GetNextPrime(const UInt64 value)
     {
         if (g_Primes[0] == 0)
             PopulatePrimes();
@@ -25,7 +25,7 @@ namespace Otter::Internal
         return g_Primes[g_Primes.Length() - 1];
     }
 
-    UInt64 HashUtils::GetPreviousPrime(const UInt64& value)
+    UInt64 HashUtils::GetPreviousPrime(const UInt64 value)
     {
         if (g_Primes[0] == 0)
             PopulatePrimes();

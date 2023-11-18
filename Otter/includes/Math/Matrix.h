@@ -250,7 +250,7 @@ namespace Otter
             return row;
         }
 
-        OTR_INLINE void SetRow(const UInt8& index, const Vector<Ty, TNumber>& row) noexcept
+        OTR_INLINE void SetRow(const UInt8 index, const Vector<Ty, TNumber>& row) noexcept
         {
             OTR_ASSERT_MSG(index < Ty, "Row index {0} is out of range", index)
 
@@ -270,7 +270,7 @@ namespace Otter
             return column;
         }
 
-        OTR_INLINE void SetColumn(const UInt8& index, const Vector<Tx, TNumber>& column) noexcept
+        OTR_INLINE void SetColumn(const UInt8 index, const Vector<Tx, TNumber>& column) noexcept
         {
             OTR_ASSERT_MSG(index < Tx, "Column index {0} is out of range", index)
 

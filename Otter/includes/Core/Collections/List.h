@@ -65,7 +65,7 @@ namespace Otter
             return false;
         }
 
-        bool TryRemoveAt(const UInt64& index)
+        bool TryRemoveAt(const UInt64 index)
         {
             if (index >= base::m_Count)
                 return false;

@@ -6,9 +6,9 @@ namespace Otter::Graphics::Vulkan
 {
     bool TryCreateBuffer(const VulkanDevicePair& devicePair,
                          const VkAllocationCallbacks* const allocator,
-                         const UInt64& size,
-                         const UInt32& bufferUsage,
-                         const UInt32& memoryProperties,
+                         const UInt64 size,
+                         const UInt32 bufferUsage,
+                         const UInt32 memoryProperties,
                          VulkanBuffer* outBuffer)
     {
         OTR_INTERNAL_ASSERT_MSG(devicePair.PhysicalDevice != VK_NULL_HANDLE, "Vulkan physical device is null!")
@@ -77,7 +77,7 @@ namespace Otter::Graphics::Vulkan
         outBuffer->MemoryProperties   = 0;
     }
 
-    void BindBuffer(VkDevice const& logicalDevice, const VulkanBuffer& buffer, const UInt32& memoryOffset)
+    void BindBuffer(VkDevice const& logicalDevice, const VulkanBuffer& buffer, const UInt32 memoryOffset)
     {
         OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE, "Vulkan logical device is null!")
         OTR_INTERNAL_ASSERT_MSG(buffer.Handle != VK_NULL_HANDLE, "Vulkan buffer handle is null!")
