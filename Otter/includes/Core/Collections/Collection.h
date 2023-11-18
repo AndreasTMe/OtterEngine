@@ -50,6 +50,20 @@ namespace Otter
         }
 
         template<typename T>
+        static void New(InitialiserList<T> list, Collection<T>& outCollection)
+        {
+            if (outCollection.m_Data != nullptr && outCollection.m_Capacity > 0)
+                Buffer::Delete(outCollection.m_Data, outCollection.m_Capacity);
+
+            outCollection.m_Capacity = list.size();
+            outCollection.m_Data     = Buffer::New<T>(outCollection.m_Capacity);
+
+            outCollection.m_Count = 0;
+            for (const T& item: list)
+                outCollection.m_Data[outCollection.m_Count++] = item;
+        }
+
+        template<typename T>
         OTR_INLINE static Collection<T> Empty() { return Collection<T>(); }
     };
 
