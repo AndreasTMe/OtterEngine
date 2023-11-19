@@ -43,7 +43,7 @@ namespace Otter
     template<typename T>
     OTR_INLINE void Delete(T* ptr)
     {
-        if (!std::is_destructible<T>::value)
+        if (!std::is_trivially_destructible_v<T> && ptr != nullptr)
             ptr->~T();
 
         MemorySystem::MemoryClear(ptr, sizeof(T));
@@ -82,12 +82,14 @@ namespace Otter
             OTR_INTERNAL_ASSERT_MSG(ptr != nullptr, "Buffer pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(length * sizeof(T) > 0, "Buffer length must be greater than 0")
 
-            if (!std::is_destructible<T>::value)
+            if (!std::is_trivially_destructible_v<T>)
             {
                 T* ptrCopy = ptr;
                 for (UInt64 i = 0; i < length; i++)
                 {
-                    ptrCopy->~T();
+                    if (ptrCopy != nullptr)
+                        ptrCopy->~T();
+                    
                     ++ptrCopy;
                 }
             }

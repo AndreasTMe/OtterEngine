@@ -1,7 +1,7 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/API/Vulkan/VulkanPipelines.h"
-#include "Graphics/API/Vulkan/Types/VulkanTypes.Point.h"
+#include "Graphics/API/Vulkan/VulkanPoint.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -21,8 +21,8 @@ namespace Otter::Graphics::Vulkan
         OTR_INTERNAL_ASSERT_MSG(extent.width > 0 && extent.height > 0, "Extent is invalid")
 
         // Vertex Input
-        const auto bindingDescriptions   = Point2D::GetBindingDescriptions();
-        const auto attributeDescriptions = Point2D::GetAttributeDescriptions();
+        const auto bindingDescriptions   = VulkanPoint::GetBindingDescriptions();
+        const auto attributeDescriptions = VulkanPoint::GetAttributeDescriptions();
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{ };
         vertexInputStateCreateInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

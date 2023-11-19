@@ -31,8 +31,14 @@ namespace Otter::GraphicsSystem
             }
         }
 
-        gs_Renderer->Initialise(platformContext);
+        List < Graphics::AbstractShader * > shaders;
+        shaders.Reserve(2);
+        shaders.Add(Graphics::AbstractShader::Create("Assets/Shaders/default.glsl"));
+
+        gs_Renderer->Initialise(platformContext, shaders);
         OTR_LOG_DEBUG("Graphics system initialised ({0})", g_GraphicsApi)
+
+        // TODO: Initialise Global Uniform Buffer/Camera
 
         return true;
     }
@@ -65,7 +71,16 @@ namespace Otter::GraphicsSystem
         if (!gs_Renderer->TryBeginFrame())
             return;
 
+        // TODO: Remove this
         gs_Renderer->DrawFrame();
+
+        // TODO: Step 1: Bind Pipeline
+        // TODO: Step 2a: Update Uniform Buffer
+        // TODO: Step 2b: Update Push Constants
+        // TODO: Step 3a: Bind Vertex Buffer
+        // TODO: Step 3b: Bind Index Buffer
+        // TODO: Step 4: Draw Indexed
+
         gs_Renderer->EndFrame();
     }
 }

@@ -1,25 +1,26 @@
-#ifndef OTTERENGINE_VULKANTYPES_POINT_H
-#define OTTERENGINE_VULKANTYPES_POINT_H
+#ifndef OTTERENGINE_VULKANPOINT_H
+#define OTTERENGINE_VULKANPOINT_H
 
 #include "Core/Types.h"
 #include "Core/Collections/Span.h"
+#include "Core/Collections/ReadOnly/ReadOnlySpan.h"
 #include "Math/Vector.h"
+#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
+#include "Graphics/2D/Point.h"
 
 namespace Otter::Graphics::Vulkan
 {
 #define OTR_VULKAN_POINT2D_BINDINGS_COUNT 1
 #define OTR_VULKAN_POINT2D_ATTRIBUTES_COUNT 2
 
-    struct Point2D
+    class VulkanPoint
     {
-        Vector<3, Float32> Position;
-        Vector<4, Float32> Color;
-
+    public:
         OTR_INLINE static auto GetBindingDescriptions()
         {
             Span<VkVertexInputBindingDescription, OTR_VULKAN_POINT2D_BINDINGS_COUNT> bindingDescriptions{ };
             bindingDescriptions[0].binding   = 0;
-            bindingDescriptions[0].stride    = sizeof(Point2D);
+            bindingDescriptions[0].stride    = sizeof(Point);
             bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
             return bindingDescriptions;
@@ -33,12 +34,12 @@ namespace Otter::Graphics::Vulkan
             attributeDescriptions[0].binding  = 0;
             attributeDescriptions[0].location = 0;
             attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[0].offset   = offsetof(Point2D, Position);
+            attributeDescriptions[0].offset   = offsetof(Point, Position);
             // Color
             attributeDescriptions[1].binding  = 0;
             attributeDescriptions[1].location = 1;
             attributeDescriptions[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
-            attributeDescriptions[1].offset   = offsetof(Point2D, Color);
+            attributeDescriptions[1].offset   = offsetof(Point, Color);
 
             return attributeDescriptions.AsReadOnly();
         }
@@ -48,4 +49,4 @@ namespace Otter::Graphics::Vulkan
 #undef OTR_VULKAN_POINT2D_ATTRIBUTES_COUNT
 }
 
-#endif //OTTERENGINE_VULKANTYPES_POINT_H
+#endif //OTTERENGINE_VULKANPOINT_H

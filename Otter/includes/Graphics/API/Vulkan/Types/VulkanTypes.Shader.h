@@ -5,7 +5,7 @@
 
 namespace Otter::Graphics::Vulkan
 {
-    struct VulkanShader
+    struct VulkanShaderOld
     {
         VkShaderModule VertexModule   = VK_NULL_HANDLE;
         VkShaderModule FragmentModule = VK_NULL_HANDLE;

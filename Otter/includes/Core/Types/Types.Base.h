@@ -35,6 +35,12 @@ typedef std::float128_t Double128;
 template<typename T>
 using InitialiserList = std::initializer_list<T>;
 
+template<typename TBase, typename TDerived>
+concept IsBaseOf = std::is_base_of_v<TBase, TDerived>;
+
+template<typename TBase, typename TDerived>
+concept IsDerivedFrom = std::derived_from<TDerived, TBase>;
+
 template<typename T>
 struct TypeOf
 {

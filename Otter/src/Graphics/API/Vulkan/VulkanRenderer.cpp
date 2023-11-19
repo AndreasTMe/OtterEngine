@@ -1,11 +1,10 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/API/Vulkan/VulkanRenderer.h"
-#include "Graphics/API/Vulkan/Types/VulkanTypes.Shader.h"
-#include "Graphics/API/Vulkan/Types/VulkanTypes.Point.h"
+#include "Graphics/API/Vulkan/VulkanPoint.h"
 #include "Graphics/API/Vulkan/VulkanExtensions.h"
 #include "Graphics/API/Vulkan/VulkanSwapchains.h"
-#include "Graphics/API/Vulkan/VulkanShaders.h"
+#include "Graphics/API/Vulkan/VulkanShader.h"
 #include "Graphics/API/Vulkan/VulkanPipelines.h"
 #include "Graphics/API/Vulkan/VulkanBuffers.h"
 #include "Graphics/API/Vulkan/VulkanQueues.h"
@@ -19,14 +18,15 @@ namespace Otter::Graphics::Vulkan
 {
 #define OTR_VULKAN_SYNC_TIMEOUT 1000000000
 
-    Sprite g_Sprite = {
+    static List<VulkanShader*> gs_Shaders;
+
+    static Sprite gs_Sprite = {
         { 0.0f, 0.0f },
         { 1.0f, 1.0f },
         { 0.5f, 0.2f, 0.2f, 1.0f }
     };
 
-    Span<Point2D, 4>      g_Vertices = { };
-    const Span<UInt16, 6> gk_Indices = { 0, 1, 2, 2, 3, 0 };
+    static UInt32 gs_TrianglesCount = 0;
 
     GlobalUniformBufferObject g_GlobalUbo = {
         Math::Perspective<Float32>(Math::DegToRad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f),
@@ -47,7 +47,7 @@ namespace Otter::Graphics::Vulkan
 
     static WindowState gs_WindowState = WindowState::Normal;
 
-    void Renderer::Initialise(const void* const platformContext)
+    void Renderer::Initialise(const void* const platformContext, const Collection<AbstractShader*>& shaders)
     {
         CreateVulkanInstance(m_Allocator, &m_Instance);
 #if !OTR_RUNTIME
@@ -70,12 +70,56 @@ namespace Otter::Graphics::Vulkan
                              m_DevicePair.CommandBuffers);
         CreateSyncObjects();
 
-        CreatePipelines();
-        CreateVertexBuffer();
-        CreateIndexBuffer();
-        CreateUniformBuffer();
-        CreateDescriptorPool();
-        CreateDescriptorSets();
+        Collections::New(reinterpret_cast<VulkanShader* const* const>(shaders.GetData()),
+                         shaders.GetCount(),
+                         gs_Shaders);
+
+        if (gs_Shaders.GetCount() > 0)
+        {
+            for (const auto& shader: shaders)
+            {
+                auto* vulkanShader = (VulkanShader*) shader;
+                vulkanShader->SetLogicalDevice(m_DevicePair.LogicalDevice);
+                vulkanShader->SetAllocator(m_Allocator);
+
+                vulkanShader->Bind();
+            }
+
+            CreatePipelines();
+            CreateVertexBuffer();
+            CreateIndexBuffer();
+            CreateUniformBuffer();
+            CreateDescriptorPool();
+            CreateDescriptorSets();
+
+            // TODO: Temporary code, remove later
+            void* data;
+            vkMapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory, 0, m_UniformBuffer.Size, 0, &data);
+            memcpy(data, &g_GlobalUbo, (Size) m_UniformBuffer.Size);
+            vkUnmapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory);
+
+            VkDescriptorBufferInfo bufferInfo{ };
+            bufferInfo.buffer = m_UniformBuffer.Handle;
+            bufferInfo.offset = 0;
+            bufferInfo.range  = sizeof(GlobalUniformBufferObject);
+
+            for (UInt64 i = 0; i < m_Swapchain.MaxFramesInFlight; i++)
+            {
+                VkWriteDescriptorSet descriptorWrite{ };
+                descriptorWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWrite.dstSet           = m_Descriptor.Set[i];
+                descriptorWrite.dstBinding       = 0;
+                descriptorWrite.dstArrayElement  = 0;
+                descriptorWrite.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                descriptorWrite.descriptorCount  = 1;
+                descriptorWrite.pBufferInfo      = &bufferInfo;
+                descriptorWrite.pImageInfo       = VK_NULL_HANDLE;
+                descriptorWrite.pTexelBufferView = VK_NULL_HANDLE;
+
+                vkUpdateDescriptorSets(m_DevicePair.LogicalDevice, 1, &descriptorWrite, 0, VK_NULL_HANDLE);
+            }
+            // TODO: Temporary code end
+        }
 
         GlobalActions::OnWindowMinimized += [&](const Internal::WindowMinimizedEvent& event)
         {
@@ -113,11 +157,21 @@ namespace Otter::Graphics::Vulkan
         DestroyCommandBuffers(m_DevicePair.CommandBuffers);
         DestroyCommandPool(m_DevicePair, m_Allocator, &m_DevicePair.GraphicsCommandPool);
         DestroySyncObjects();
-        // TODO: DestroyUniformBuffers();
-        DestroyVulkanDescriptors();
-        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_VertexBuffer);
-        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_IndexBuffer);
-        DestroyPipeline(m_DevicePair.LogicalDevice, m_Allocator, &m_PipelineLayout, &m_Pipeline);
+
+        if (gs_Shaders.GetCount() > 0)
+        {
+            for (auto& shader: gs_Shaders)
+                Delete(shader);
+
+            gs_Shaders.ClearDestructive();
+
+            // TODO: DestroyUniformBuffers();
+            DestroyVulkanDescriptors();
+            DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_VertexBuffer);
+            DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_IndexBuffer);
+            DestroyPipeline(m_DevicePair.LogicalDevice, m_Allocator, &m_PipelineLayout, &m_Pipeline);
+        }
+
         DestroyRenderPass(m_DevicePair.LogicalDevice, m_Allocator, &m_RenderPass);
         DestroySwapchains();
         DestroyDevicePairs(m_Allocator, &m_DevicePair);
@@ -200,33 +254,11 @@ namespace Otter::Graphics::Vulkan
 
     void Renderer::DrawFrame()
     {
+        if (gs_Shaders.GetCount() == 0)
+            return;
+
         const auto currentFrame = m_Swapchain.CurrentFrame;
         vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-
-        // TODO: Update uniform buffer (temp)
-        void* data;
-        vkMapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory, 0, m_UniformBuffer.Size, 0, &data);
-        memcpy(data, &g_GlobalUbo, (Size) m_UniformBuffer.Size);
-        vkUnmapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory);
-
-        VkDescriptorBufferInfo bufferInfo{ };
-        bufferInfo.buffer = m_UniformBuffer.Handle;
-        bufferInfo.offset = 0;
-        bufferInfo.range  = sizeof(GlobalUniformBufferObject);
-
-        VkWriteDescriptorSet descriptorWrite{ };
-        descriptorWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptorWrite.dstSet           = m_Descriptor.Set[currentFrame];
-        descriptorWrite.dstBinding       = 0;
-        descriptorWrite.dstArrayElement  = 0;
-        descriptorWrite.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptorWrite.descriptorCount  = 1;
-        descriptorWrite.pBufferInfo      = &bufferInfo;
-        descriptorWrite.pImageInfo       = VK_NULL_HANDLE;
-        descriptorWrite.pTexelBufferView = VK_NULL_HANDLE;
-
-        vkUpdateDescriptorSets(m_DevicePair.LogicalDevice, 1, &descriptorWrite, 0, VK_NULL_HANDLE);
-        // TODO: End temp code
 
         // TODO: Update push constants (temp)
         vkCmdPushConstants(m_DevicePair.CommandBuffers[currentFrame],
@@ -255,9 +287,7 @@ namespace Otter::Graphics::Vulkan
                                 0,
                                 nullptr);
 
-        vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame],
-                         static_cast<UInt32>(gk_Indices.Length()),
-                         1, 0, 0, 0);
+        vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame], gs_TrianglesCount, 1, 0, 0, 0);
     }
 
     void Renderer::EndFrame()
@@ -726,7 +756,7 @@ namespace Otter::Graphics::Vulkan
 
     void Renderer::CreateCommandBuffers(const VkDevice& logicalDevice,
                                         const VkCommandPool& commandPool,
-                                        const UInt32& commandBufferCount,
+                                        UInt32 commandBufferCount,
                                         List <VkCommandBuffer>& outCommandBuffers)
     {
         VkCommandBufferAllocateInfo commandBufferAllocateInfo{ };
@@ -809,7 +839,10 @@ namespace Otter::Graphics::Vulkan
 
     void Renderer::CreateVertexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(g_Vertices[0]) * g_Vertices.Length();
+        List <Point> vertices;
+        Point::GetVertices(gs_Sprite, vertices);
+
+        VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.GetCount();
 
         VulkanBuffer stagingBuffer;
         if (!TryCreateBuffer(m_DevicePair,
@@ -825,16 +858,9 @@ namespace Otter::Graphics::Vulkan
 
         BindBuffer(m_DevicePair.LogicalDevice, stagingBuffer, 0);
 
-        const auto  spriteVertices = g_Sprite.GetVertices();
-        for (UInt64 i              = 0; i < spriteVertices.Length(); i++)
-        {
-            g_Vertices[i].Position = { spriteVertices[i][0], spriteVertices[i][1], 0.0f };
-            g_Vertices[i].Color    = g_Sprite.GetColor();
-        }
-
         void* data;
         vkMapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory, 0, bufferSize, 0, &data);
-        memcpy(data, (void*) g_Vertices.GetData(), (Size) bufferSize);
+        memcpy(data, (void*) vertices.GetData(), (Size) bufferSize);
         vkUnmapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory);
 
         if (!TryCreateBuffer(m_DevicePair,
@@ -862,7 +888,11 @@ namespace Otter::Graphics::Vulkan
 
     void Renderer::CreateIndexBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(gk_Indices[0]) * gk_Indices.Length();
+        List <UInt16> triangles;
+        Point::GetTriangles(gs_Sprite, triangles);
+        gs_TrianglesCount = triangles.GetCount();
+
+        VkDeviceSize bufferSize = sizeof(triangles[0]) * gs_TrianglesCount;
 
         VulkanBuffer stagingBuffer;
         if (!TryCreateBuffer(m_DevicePair,
@@ -880,7 +910,7 @@ namespace Otter::Graphics::Vulkan
 
         void* data;
         vkMapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory, 0, bufferSize, 0, &data);
-        memcpy(data, (void*) gk_Indices.GetData(), (Size) bufferSize);
+        memcpy(data, (void*) triangles.GetData(), (Size) bufferSize);
         vkUnmapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory);
 
         if (!TryCreateBuffer(m_DevicePair,
@@ -996,38 +1026,17 @@ namespace Otter::Graphics::Vulkan
     void Renderer::CreatePipelines()
     {
         // HELP: Shader related
-        VulkanShader shader{ };
-        if (!TryCreateShaderModule(m_DevicePair.LogicalDevice,
-                                   m_Allocator,
-                                   "Assets/Shaders/default.vert.spv", // TODO: Remove hardcoded path
-                                   &shader.VertexModule))
-        {
-            OTR_LOG_FATAL("Error when building the vertex shader module")
-            return;
-        }
-
-        if (!TryCreateShaderModule(m_DevicePair.LogicalDevice,
-                                   m_Allocator,
-                                   "Assets/Shaders/default.frag.spv", // TODO: Remove hardcoded path
-                                   &shader.FragmentModule))
-        {
-            DestroyShaderModule(m_DevicePair.LogicalDevice, m_Allocator, &shader.VertexModule);
-
-            OTR_LOG_FATAL("Error when building the fragment shader module")
-            return;
-        }
-
         VkPipelineShaderStageCreateInfo vertShaderStageCreateInfo{ };
         vertShaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertShaderStageCreateInfo.stage  = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageCreateInfo.module = shader.VertexModule;
+        vertShaderStageCreateInfo.module = gs_Shaders[0]->GetVertexModule();
         vertShaderStageCreateInfo.pName  = "main";
         vertShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
 
         VkPipelineShaderStageCreateInfo fragShaderStageCreateInfo{ };
         fragShaderStageCreateInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragShaderStageCreateInfo.stage  = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageCreateInfo.module = shader.FragmentModule;
+        fragShaderStageCreateInfo.module = gs_Shaders[0]->GetFragmentModule();
         fragShaderStageCreateInfo.pName  = "main";
         fragShaderStageCreateInfo.pNext  = VK_NULL_HANDLE;
 
@@ -1048,9 +1057,6 @@ namespace Otter::Graphics::Vulkan
                        m_Swapchain.Extent,
                        &m_PipelineLayout,
                        &m_Pipeline);
-
-        DestroyShaderModule(m_DevicePair.LogicalDevice, m_Allocator, &shader.VertexModule);
-        DestroyShaderModule(m_DevicePair.LogicalDevice, m_Allocator, &shader.FragmentModule);
     }
 
 #if !OTR_RUNTIME

@@ -8,12 +8,17 @@ list(REMOVE_ITEM HEADERS includes/Otter.PCH.h)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
 
-find_package(Vulkan REQUIRED)
+find_package(Vulkan)
 if (Vulkan_FOUND)
     message(STATUS "Vulkan found, linking ${PROJECT_NAME} with Vulkan...")
 
     target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
+    target_compile_definitions(${PROJECT_NAME} PRIVATE OTR_VULKAN_ENABLED=1)
+else ()
+    message(STATUS "Vulkan not found. If you want to use Vulkan, please install it or add it to your path variables.")
+
+    target_compile_definitions(${PROJECT_NAME} PRIVATE OTR_VULKAN_ENABLED=0)
 endif ()
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE includes/Otter.PCH.h)

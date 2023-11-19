@@ -8,6 +8,7 @@
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Device.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Swapchain.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Descriptors.h"
+#include "Graphics/API/Vulkan/VulkanShader.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -16,7 +17,7 @@ namespace Otter::Graphics::Vulkan
     public:
         OTR_WITH_DEFAULT_CONSTRUCTOR_AND_FINAL_DESTRUCTOR(Renderer)
 
-        void Initialise(const void* platformContext) final;
+        void Initialise(const void* platformContext, const Collection<AbstractShader*>& shaders) final;
         void Shutdown() final;
 
         bool TryBeginFrame() final;
@@ -31,15 +32,15 @@ namespace Otter::Graphics::Vulkan
 #if !OTR_RUNTIME
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 #endif
-        VulkanDevicePair    m_DevicePair;
-        VulkanSwapchain     m_Swapchain;
-        List<VkImage>       m_SwapchainImages;
-        List<VkImageView>   m_SwapchainImageViews;
-        List<VkFramebuffer> m_SwapchainFrameBuffers;
-        VkRenderPass        m_RenderPass     = VK_NULL_HANDLE;
-        VulkanDescriptor    m_Descriptor;
-        VkPipelineLayout    m_PipelineLayout = VK_NULL_HANDLE;
-        VkPipeline          m_Pipeline       = VK_NULL_HANDLE;
+        VulkanDevicePair     m_DevicePair;
+        VulkanSwapchain      m_Swapchain;
+        List <VkImage>       m_SwapchainImages;
+        List <VkImageView>   m_SwapchainImageViews;
+        List <VkFramebuffer> m_SwapchainFrameBuffers;
+        VkRenderPass         m_RenderPass     = VK_NULL_HANDLE;
+        VulkanDescriptor     m_Descriptor;
+        VkPipelineLayout     m_PipelineLayout = VK_NULL_HANDLE;
+        VkPipeline           m_Pipeline       = VK_NULL_HANDLE;
 
         VulkanBuffer m_IndexBuffer{ };
         VulkanBuffer m_VertexBuffer{ };
@@ -92,9 +93,9 @@ namespace Otter::Graphics::Vulkan
                                        VkCommandPool* outCommandPool);
         static void CreateCommandBuffers(const VkDevice& logicalDevice,
                                          const VkCommandPool& commandPool,
-                                         const UInt32& commandBufferCount,
-                                         List<VkCommandBuffer>& outCommandBuffers);
-        static void DestroyCommandBuffers(List<VkCommandBuffer>& outCommandBuffers);
+                                         UInt32 commandBufferCount,
+                                         List <VkCommandBuffer>& outCommandBuffers);
+        static void DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers);
 
         // HELP: VkDescriptorSet related
         void CreateDescriptorSetLayout();
