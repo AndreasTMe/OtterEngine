@@ -1,18 +1,18 @@
 #ifndef OTTERENGINE_VULKANSHADER_H
 #define OTTERENGINE_VULKANSHADER_H
 
-#include "Graphics/AbstractShader.h"
+#include "Graphics/Abstractions/Shader.h"
 #include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 
 namespace Otter::Graphics::Vulkan
 {
-    class VulkanShader final : public AbstractShader
+    class VulkanShader final : public Shader
     {
     public:
         ~VulkanShader() final;
 
         explicit VulkanShader(const char* const filePath)
-            : AbstractShader(filePath)
+            : Shader(filePath)
         {
         }
 

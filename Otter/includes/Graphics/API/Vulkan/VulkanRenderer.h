@@ -2,29 +2,32 @@
 #define OTTERENGINE_VULKANRENDERER_H
 
 #include "Core/Defines.h"
-#include "Graphics/AbstractRenderer.h"
+#include "Graphics/Abstractions/Renderer.h"
 #include "Graphics/API/Vulkan/VulkanBase.Includes.h"
-#include "Graphics/API/Vulkan/Types/VulkanTypes.Buffer.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Device.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Swapchain.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Descriptors.h"
 #include "Graphics/API/Vulkan/VulkanShader.h"
+#include "VulkanDataBuffer.h"
 
 namespace Otter::Graphics::Vulkan
 {
-    class Renderer final : public AbstractRenderer
+    class VulkanRenderer final : public Renderer
     {
     public:
-        OTR_WITH_DEFAULT_CONSTRUCTOR_AND_FINAL_DESTRUCTOR(Renderer)
+        VulkanRenderer() : Renderer() { }
+        ~VulkanRenderer() final = default;
 
-        void Initialise(const void* platformContext, const Collection<AbstractShader*>& shaders) final;
+        void Initialise(const void* platformContext, const Collection<Shader*>& shaders) final;
         void Shutdown() final;
 
         bool TryBeginFrame() final;
-        void DrawFrame() final;
         void EndFrame() final;
 
+        void DrawIndexed() final;
+
     private:
+
         VkAllocationCallbacks* m_Allocator = VK_NULL_HANDLE;
 
         VkInstance   m_Instance = VK_NULL_HANDLE;
@@ -42,9 +45,9 @@ namespace Otter::Graphics::Vulkan
         VkPipelineLayout     m_PipelineLayout = VK_NULL_HANDLE;
         VkPipeline           m_Pipeline       = VK_NULL_HANDLE;
 
-        VulkanBuffer m_IndexBuffer{ };
-        VulkanBuffer m_VertexBuffer{ };
-        VulkanBuffer m_UniformBuffer{ };
+        VulkanVertexBuffer * m_VertexBuffer  = nullptr;
+        VulkanIndexBuffer  * m_IndexBuffer   = nullptr;
+        VulkanUniformBuffer* m_UniformBuffer = nullptr;
 
         // HELP: VkInstance related
         static void CreateVulkanInstance(const VkAllocationCallbacks* allocator, VkInstance* outInstance);
@@ -101,7 +104,7 @@ namespace Otter::Graphics::Vulkan
         void CreateDescriptorSetLayout();
         void CreateDescriptorPool();
         void CreateDescriptorSets();
-        void DestroyVulkanDescriptors();
+        void DestroyVulkanDescriptorData();
 
         // HELP: VkPipeline related
         void CreatePipelines();

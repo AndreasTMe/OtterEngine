@@ -23,7 +23,7 @@ namespace Otter
         }
 
         Sprite(const Vector<2, Float32>& position, const Vector<2, Float32>& size, const Vector<4, Float32>& color)
-            : m_Bounds({ position, size }), m_Color(color)
+            : m_Bounds({ position - size * 0.5f, size }), m_Color(color)
         {
         }
 
@@ -63,8 +63,8 @@ namespace Otter
 
             vertices[0] = m_Bounds.GetBottomLeft();
             vertices[1] = m_Bounds.GetBottomRight();
-            vertices[2] = m_Bounds.GetTopLeft();
-            vertices[3] = m_Bounds.GetTopRight();
+            vertices[2] = m_Bounds.GetTopRight();
+            vertices[3] = m_Bounds.GetTopLeft();
 
             return vertices;
         }

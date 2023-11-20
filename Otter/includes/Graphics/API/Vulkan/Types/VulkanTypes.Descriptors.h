@@ -8,11 +8,9 @@ namespace Otter::Graphics::Vulkan
 {
     struct VulkanDescriptor
     {
-        Span<VkDescriptorSet, OTR_VULKAN_BUFFERING_COUNT> Set       = { VK_NULL_HANDLE,
-                                                                        VK_NULL_HANDLE,
-                                                                        VK_NULL_HANDLE };
-        VkDescriptorSetLayout                             SetLayout = VK_NULL_HANDLE;
-        VkDescriptorPool                                  Pool      = VK_NULL_HANDLE;
+        List <VkDescriptorSet> Sets      = { };
+        VkDescriptorSetLayout  SetLayout = VK_NULL_HANDLE;
+        VkDescriptorPool       Pool      = VK_NULL_HANDLE;
     };
 }
 

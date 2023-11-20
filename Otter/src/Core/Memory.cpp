@@ -86,7 +86,7 @@ namespace Otter::MemorySystem
         if (!gs_HasInitialised)
         {
             OTR_LOG_WARNING(
-                "Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
+                "Memory has not been initialised. Make sure to call Memory::TryInitialise() before using any"
                 " memory functions. Note that there might be some global/static variables that use memory.")
             return;
         }

@@ -6,13 +6,31 @@
 #include "Graphics/API/Vulkan/VulkanSwapchains.h"
 #include "Graphics/API/Vulkan/VulkanShader.h"
 #include "Graphics/API/Vulkan/VulkanPipelines.h"
-#include "Graphics/API/Vulkan/VulkanBuffers.h"
+#include "Graphics/API/Vulkan/VulkanDataBuffer.h"
 #include "Graphics/API/Vulkan/VulkanQueues.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.UniformBuffers.h"
 #include "Math/Matrix.h"
 
 // TODO: Remove later
 #include "Graphics/2D/Sprite.h"
+
+#if OTR_VULKAN_ENABLED
+
+namespace Otter::Graphics
+{
+    Renderer* Renderer::Create()
+    {
+        return New<Vulkan::VulkanRenderer>();
+    }
+
+    void Renderer::Destroy(Renderer* outRenderer)
+    {
+        Delete<Vulkan::VulkanRenderer>((Vulkan::VulkanRenderer*) outRenderer);
+        outRenderer = nullptr;
+    }
+}
+
+#endif
 
 namespace Otter::Graphics::Vulkan
 {
@@ -25,8 +43,6 @@ namespace Otter::Graphics::Vulkan
         { 1.0f, 1.0f },
         { 0.5f, 0.2f, 0.2f, 1.0f }
     };
-
-    static UInt32 gs_TrianglesCount = 0;
 
     GlobalUniformBufferObject g_GlobalUbo = {
         Math::Perspective<Float32>(Math::DegToRad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f),
@@ -47,7 +63,7 @@ namespace Otter::Graphics::Vulkan
 
     static WindowState gs_WindowState = WindowState::Normal;
 
-    void Renderer::Initialise(const void* const platformContext, const Collection<AbstractShader*>& shaders)
+    void VulkanRenderer::Initialise(const void* const platformContext, const Collection<Shader*>& shaders)
     {
         CreateVulkanInstance(m_Allocator, &m_Instance);
 #if !OTR_RUNTIME
@@ -93,31 +109,11 @@ namespace Otter::Graphics::Vulkan
             CreateDescriptorSets();
 
             // TODO: Temporary code, remove later
-            void* data;
-            vkMapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory, 0, m_UniformBuffer.Size, 0, &data);
-            memcpy(data, &g_GlobalUbo, (Size) m_UniformBuffer.Size);
-            vkUnmapMemory(m_DevicePair.LogicalDevice, m_UniformBuffer.DeviceMemory);
-
-            VkDescriptorBufferInfo bufferInfo{ };
-            bufferInfo.buffer = m_UniformBuffer.Handle;
-            bufferInfo.offset = 0;
-            bufferInfo.range  = sizeof(GlobalUniformBufferObject);
-
-            for (UInt64 i = 0; i < m_Swapchain.MaxFramesInFlight; i++)
-            {
-                VkWriteDescriptorSet descriptorWrite{ };
-                descriptorWrite.sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                descriptorWrite.dstSet           = m_Descriptor.Set[i];
-                descriptorWrite.dstBinding       = 0;
-                descriptorWrite.dstArrayElement  = 0;
-                descriptorWrite.descriptorType   = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                descriptorWrite.descriptorCount  = 1;
-                descriptorWrite.pBufferInfo      = &bufferInfo;
-                descriptorWrite.pImageInfo       = VK_NULL_HANDLE;
-                descriptorWrite.pTexelBufferView = VK_NULL_HANDLE;
-
-                vkUpdateDescriptorSets(m_DevicePair.LogicalDevice, 1, &descriptorWrite, 0, VK_NULL_HANDLE);
-            }
+            m_UniformBuffer->Overwrite(&g_GlobalUbo, sizeof(GlobalUniformBufferObject), 0);
+            m_UniformBuffer->UpdateAll(m_Descriptor.Sets,
+                                       m_Swapchain.MaxFramesInFlight,
+                                       sizeof(GlobalUniformBufferObject),
+                                       0);
             // TODO: Temporary code end
         }
 
@@ -150,7 +146,7 @@ namespace Otter::Graphics::Vulkan
         };
     }
 
-    void Renderer::Shutdown()
+    void VulkanRenderer::Shutdown()
     {
         vkDeviceWaitIdle(m_DevicePair.LogicalDevice);
 
@@ -165,10 +161,10 @@ namespace Otter::Graphics::Vulkan
 
             gs_Shaders.ClearDestructive();
 
-            // TODO: DestroyUniformBuffers();
-            DestroyVulkanDescriptors();
-            DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_VertexBuffer);
-            DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_IndexBuffer);
+            DataBuffer::Destroy(BufferType::Uniform, m_UniformBuffer);
+            DataBuffer::Destroy(BufferType::Index, m_IndexBuffer);
+            DataBuffer::Destroy(BufferType::Vertex, m_VertexBuffer);
+            DestroyVulkanDescriptorData();
             DestroyPipeline(m_DevicePair.LogicalDevice, m_Allocator, &m_PipelineLayout, &m_Pipeline);
         }
 
@@ -182,7 +178,7 @@ namespace Otter::Graphics::Vulkan
         DestroyVulkanInstance(m_Allocator, &m_Instance);
     }
 
-    bool Renderer::TryBeginFrame()
+    bool VulkanRenderer::TryBeginFrame()
     {
         if (gs_WindowState == WindowState::Minimized)
             return false;
@@ -252,45 +248,7 @@ namespace Otter::Graphics::Vulkan
         return true;
     }
 
-    void Renderer::DrawFrame()
-    {
-        if (gs_Shaders.GetCount() == 0)
-            return;
-
-        const auto currentFrame = m_Swapchain.CurrentFrame;
-        vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-
-        // TODO: Update push constants (temp)
-        vkCmdPushConstants(m_DevicePair.CommandBuffers[currentFrame],
-                           m_PipelineLayout,
-                           VK_SHADER_STAGE_VERTEX_BIT,
-                           0,
-                           sizeof(Matrix<4, 4, Float32>) * 2,
-                           &g_Model);
-        // TODO: End temp code
-
-
-        VkBuffer     vertexBuffers[] = { m_VertexBuffer.Handle };
-        VkDeviceSize offsets[]       = { 0 };
-
-        vkCmdBindVertexBuffers(m_DevicePair.CommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(m_DevicePair.CommandBuffers[currentFrame],
-                             m_IndexBuffer.Handle,
-                             0,
-                             VK_INDEX_TYPE_UINT16);
-        vkCmdBindDescriptorSets(m_DevicePair.CommandBuffers[currentFrame],
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                m_PipelineLayout,
-                                0,
-                                1,
-                                &m_Descriptor.Set[currentFrame],
-                                0,
-                                nullptr);
-
-        vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame], gs_TrianglesCount, 1, 0, 0, 0);
-    }
-
-    void Renderer::EndFrame()
+    void VulkanRenderer::EndFrame()
     {
         const auto currentFrame  = m_Swapchain.CurrentFrame;
         const auto commandBuffer = m_DevicePair.CommandBuffers[currentFrame];
@@ -341,7 +299,44 @@ namespace Otter::Graphics::Vulkan
         m_Swapchain.CurrentFrame = (currentFrame + 1) % m_Swapchain.MaxFramesInFlight;
     }
 
-    void Renderer::CreateVulkanInstance(const VkAllocationCallbacks* const allocator, VkInstance* outInstance)
+    void VulkanRenderer::DrawIndexed()
+    {
+        if (gs_Shaders.GetCount() == 0)
+            return;
+
+        const auto currentFrame = m_Swapchain.CurrentFrame;
+        vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+
+        // TODO: Update push constants (temp)
+        vkCmdPushConstants(m_DevicePair.CommandBuffers[currentFrame],
+                           m_PipelineLayout,
+                           VK_SHADER_STAGE_VERTEX_BIT,
+                           0,
+                           sizeof(Matrix<4, 4, Float32>) * 2,
+                           &g_Model);
+        // TODO: End temp code
+
+        VkBuffer     vertexBuffers[] = { m_VertexBuffer->GetHandle() };
+        VkDeviceSize offsets[]       = { 0 };
+
+        vkCmdBindVertexBuffers(m_DevicePair.CommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(m_DevicePair.CommandBuffers[currentFrame],
+                             m_IndexBuffer->GetHandle(),
+                             0,
+                             VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(m_DevicePair.CommandBuffers[currentFrame],
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_PipelineLayout,
+                                0,
+                                1,
+                                &m_Descriptor.Sets[currentFrame],
+                                0,
+                                nullptr);
+
+        vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame], m_IndexBuffer->GetCount(), 1, 0, 0, 0);
+    }
+
+    void VulkanRenderer::CreateVulkanInstance(const VkAllocationCallbacks* const allocator, VkInstance* outInstance)
     {
         OTR_LOG_TRACE("Creating Vulkan instance...")
 
@@ -386,7 +381,7 @@ namespace Otter::Graphics::Vulkan
         OTR_VULKAN_VALIDATE(vkCreateInstance(&createInfo, allocator, outInstance))
     }
 
-    void Renderer::DestroyVulkanInstance(const VkAllocationCallbacks* const allocator, VkInstance* outInstance)
+    void VulkanRenderer::DestroyVulkanInstance(const VkAllocationCallbacks* const allocator, VkInstance* outInstance)
     {
         OTR_INTERNAL_ASSERT_MSG(*outInstance != VK_NULL_HANDLE,
                                 "Instance must be initialized before being destroyed")
@@ -395,10 +390,10 @@ namespace Otter::Graphics::Vulkan
         *outInstance = VK_NULL_HANDLE;
     }
 
-    void Renderer::CreateSurface(const void* const platformContext,
-                                 const VkInstance& instance,
-                                 const VkAllocationCallbacks* const allocator,
-                                 VkSurfaceKHR* outSurface)
+    void VulkanRenderer::CreateSurface(const void* const platformContext,
+                                       const VkInstance& instance,
+                                       const VkAllocationCallbacks* const allocator,
+                                       VkSurfaceKHR* outSurface)
     {
 #if OTR_PLATFORM_WINDOWS
         const auto* const platformContextData       = ((PlatformContext*) platformContext)->Data;
@@ -416,9 +411,9 @@ namespace Otter::Graphics::Vulkan
 #endif
     }
 
-    void Renderer::DestroySurface(const VkInstance& instance,
-                                  const VkAllocationCallbacks* const allocator,
-                                  VkSurfaceKHR* outSurface)
+    void VulkanRenderer::DestroySurface(const VkInstance& instance,
+                                        const VkAllocationCallbacks* const allocator,
+                                        VkSurfaceKHR* outSurface)
     {
         OTR_INTERNAL_ASSERT_MSG(instance != VK_NULL_HANDLE,
                                 "Instance must be initialized before destroying surface")
@@ -429,9 +424,9 @@ namespace Otter::Graphics::Vulkan
         *outSurface = VK_NULL_HANDLE;
     }
 
-    void Renderer::SelectPhysicalDevice(const VkInstance& instance,
-                                        const VkSurfaceKHR& surface,
-                                        VulkanDevicePair* outDevicePair)
+    void VulkanRenderer::SelectPhysicalDevice(const VkInstance& instance,
+                                              const VkSurfaceKHR& surface,
+                                              VulkanDevicePair* outDevicePair)
     {
         UInt32 deviceCount = 0;
         OTR_VULKAN_VALIDATE(vkEnumeratePhysicalDevices(instance, &deviceCount, VK_NULL_HANDLE))
@@ -502,7 +497,8 @@ namespace Otter::Graphics::Vulkan
         OTR_INTERNAL_ASSERT_MSG(outDevicePair->PhysicalDevice != VK_NULL_HANDLE, "Failed to find a suitable GPU")
     }
 
-    void Renderer::CreateLogicalDevice(const VkAllocationCallbacks* const allocator, VulkanDevicePair* outDevicePair)
+    void
+    VulkanRenderer::CreateLogicalDevice(const VkAllocationCallbacks* const allocator, VulkanDevicePair* outDevicePair)
     {
         List <VkDeviceQueueCreateInfo> queueCreateInfos;
 
@@ -572,10 +568,10 @@ namespace Otter::Graphics::Vulkan
                                 "Failed to get presentation queue")
     }
 
-    void Renderer::CreateDevicePairs(const VkInstance& instance,
-                                     const VkSurfaceKHR& surface,
-                                     const VkAllocationCallbacks* const allocator,
-                                     VulkanDevicePair* outDevicePair)
+    void VulkanRenderer::CreateDevicePairs(const VkInstance& instance,
+                                           const VkSurfaceKHR& surface,
+                                           const VkAllocationCallbacks* const allocator,
+                                           VulkanDevicePair* outDevicePair)
     {
         OTR_INTERNAL_ASSERT_MSG(instance != VK_NULL_HANDLE,
                                 "Instance must be initialized before creating device pairs")
@@ -588,7 +584,8 @@ namespace Otter::Graphics::Vulkan
         CreateLogicalDevice(allocator, outDevicePair);
     }
 
-    void Renderer::DestroyDevicePairs(const VkAllocationCallbacks* const allocator, VulkanDevicePair* outDevicePair)
+    void
+    VulkanRenderer::DestroyDevicePairs(const VkAllocationCallbacks* const allocator, VulkanDevicePair* outDevicePair)
     {
         OTR_INTERNAL_ASSERT_MSG(outDevicePair->LogicalDevice != VK_NULL_HANDLE,
                                 "Logical device must be initialized before destroying device pairs")
@@ -601,7 +598,7 @@ namespace Otter::Graphics::Vulkan
         outDevicePair->PresentationQueueFamily.Handle = VK_NULL_HANDLE;
     }
 
-    void Renderer::CreateSwapchains()
+    void VulkanRenderer::CreateSwapchains()
     {
         OTR_LOG_TRACE("Creating Vulkan swapchains...")
 
@@ -614,7 +611,7 @@ namespace Otter::Graphics::Vulkan
                                   m_SwapchainImageViews);
     }
 
-    void Renderer::RecreateSwapchains()
+    void VulkanRenderer::RecreateSwapchains()
     {
         OTR_LOG_TRACE("Recreating Vulkan swapchains...")
 
@@ -637,7 +634,7 @@ namespace Otter::Graphics::Vulkan
                                     m_SwapchainFrameBuffers);
     }
 
-    void Renderer::DestroySwapchains()
+    void VulkanRenderer::DestroySwapchains()
     {
         OTR_INTERNAL_ASSERT_MSG(m_DevicePair.LogicalDevice != VK_NULL_HANDLE,
                                 "Logical device must be initialized before destroying its swapchain")
@@ -656,10 +653,10 @@ namespace Otter::Graphics::Vulkan
         vkDestroySwapchainKHR(m_DevicePair.LogicalDevice, m_Swapchain.Handle, m_Allocator);
     }
 
-    void Renderer::CreateRenderPass(const VkDevice& logicalDevice,
-                                    const VkAllocationCallbacks* const allocator,
-                                    const VulkanSwapchain& swapchain,
-                                    VkRenderPass* outRenderPass)
+    void VulkanRenderer::CreateRenderPass(const VkDevice& logicalDevice,
+                                          const VkAllocationCallbacks* const allocator,
+                                          const VulkanSwapchain& swapchain,
+                                          VkRenderPass* outRenderPass)
     {
         OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
                                 "Logical device must be initialized before creating render pass")
@@ -715,9 +712,9 @@ namespace Otter::Graphics::Vulkan
         OTR_VULKAN_VALIDATE(vkCreateRenderPass(logicalDevice, &renderPassInfo, allocator, outRenderPass))
     }
 
-    void Renderer::DestroyRenderPass(const VkDevice& logicalDevice,
-                                     const VkAllocationCallbacks* const allocator,
-                                     VkRenderPass* outRenderPass)
+    void VulkanRenderer::DestroyRenderPass(const VkDevice& logicalDevice,
+                                           const VkAllocationCallbacks* const allocator,
+                                           VkRenderPass* outRenderPass)
     {
         OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
                                 "Logical device must be initialized before destroying render pass")
@@ -728,9 +725,9 @@ namespace Otter::Graphics::Vulkan
         *outRenderPass = VK_NULL_HANDLE;
     }
 
-    void Renderer::CreateCommandPool(const VulkanDevicePair& devicePair,
-                                     const VkAllocationCallbacks* const allocator,
-                                     VkCommandPool* outCommandPool)
+    void VulkanRenderer::CreateCommandPool(const VulkanDevicePair& devicePair,
+                                           const VkAllocationCallbacks* const allocator,
+                                           VkCommandPool* outCommandPool)
     {
         VkCommandPoolCreateInfo commandPoolCreateInfo{ };
         commandPoolCreateInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -744,9 +741,9 @@ namespace Otter::Graphics::Vulkan
                                                 outCommandPool))
     }
 
-    void Renderer::DestroyCommandPool(const VulkanDevicePair& devicePair,
-                                      const VkAllocationCallbacks* const allocator,
-                                      VkCommandPool* outCommandPool)
+    void VulkanRenderer::DestroyCommandPool(const VulkanDevicePair& devicePair,
+                                            const VkAllocationCallbacks* const allocator,
+                                            VkCommandPool* outCommandPool)
     {
         OTR_INTERNAL_ASSERT_MSG(devicePair.LogicalDevice != VK_NULL_HANDLE, "Vulkan logical device is null!")
         OTR_INTERNAL_ASSERT_MSG(*outCommandPool != VK_NULL_HANDLE, "Vulkan command pool is null!")
@@ -754,10 +751,10 @@ namespace Otter::Graphics::Vulkan
         vkDestroyCommandPool(devicePair.LogicalDevice, *outCommandPool, allocator);
     }
 
-    void Renderer::CreateCommandBuffers(const VkDevice& logicalDevice,
-                                        const VkCommandPool& commandPool,
-                                        UInt32 commandBufferCount,
-                                        List <VkCommandBuffer>& outCommandBuffers)
+    void VulkanRenderer::CreateCommandBuffers(const VkDevice& logicalDevice,
+                                              const VkCommandPool& commandPool,
+                                              UInt32 commandBufferCount,
+                                              List <VkCommandBuffer>& outCommandBuffers)
     {
         VkCommandBufferAllocateInfo commandBufferAllocateInfo{ };
         commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -772,12 +769,12 @@ namespace Otter::Graphics::Vulkan
         Collections::New<VkCommandBuffer>(tempCommandBuffers, commandBufferCount, outCommandBuffers);
     }
 
-    void Renderer::DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers)
+    void VulkanRenderer::DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers)
     {
         outCommandBuffers.ClearDestructive();
     }
 
-    void Renderer::CreateSyncObjects()
+    void VulkanRenderer::CreateSyncObjects()
     {
         m_DevicePair.ImageAvailableSemaphores.Reserve(m_Swapchain.MaxFramesInFlight);
         m_DevicePair.RenderFinishedSemaphores.Reserve(m_Swapchain.MaxFramesInFlight);
@@ -823,7 +820,7 @@ namespace Otter::Graphics::Vulkan
                                   m_DevicePair.RenderInFlightFences);
     }
 
-    void Renderer::DestroySyncObjects()
+    void VulkanRenderer::DestroySyncObjects()
     {
         for (size_t i = 0; i < m_Swapchain.MaxFramesInFlight; i++)
         {
@@ -837,124 +834,41 @@ namespace Otter::Graphics::Vulkan
         m_DevicePair.RenderInFlightFences.ClearDestructive();
     }
 
-    void Renderer::CreateVertexBuffer()
+    void VulkanRenderer::CreateVertexBuffer()
     {
         List <Point> vertices;
         Point::GetVertices(gs_Sprite, vertices);
 
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.GetCount();
 
-        VulkanBuffer stagingBuffer;
-        if (!TryCreateBuffer(m_DevicePair,
-                             m_Allocator,
-                             bufferSize,
-                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &stagingBuffer))
-        {
-            OTR_LOG_FATAL("Failed to create staging buffer")
-            return;
-        }
-
-        BindBuffer(m_DevicePair.LogicalDevice, stagingBuffer, 0);
-
-        void* data;
-        vkMapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory, 0, bufferSize, 0, &data);
-        memcpy(data, (void*) vertices.GetData(), (Size) bufferSize);
-        vkUnmapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory);
-
-        if (!TryCreateBuffer(m_DevicePair,
-                             m_Allocator,
-                             bufferSize,
-                             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             &m_VertexBuffer))
-        {
-            OTR_LOG_FATAL("Failed to create vertex buffer")
-            DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
-            return;
-        }
-
-        BindBuffer(m_DevicePair.LogicalDevice, m_VertexBuffer, 0);
-        CopyBuffer(m_DevicePair.LogicalDevice,
-                   bufferSize,
-                   m_DevicePair.GraphicsQueueFamily.Handle,
-                   m_DevicePair.GraphicsCommandPool,
-                   stagingBuffer.Handle,
-                   &m_VertexBuffer.Handle);
-
-        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
+        m_VertexBuffer = (VulkanVertexBuffer*) DataBuffer::Create(BufferType::Vertex);
+        m_VertexBuffer->SetDevicePair(&m_DevicePair);
+        m_VertexBuffer->SetAllocator(m_Allocator);
+        m_VertexBuffer->Write(vertices.GetData(), bufferSize);
     }
 
-    void Renderer::CreateIndexBuffer()
+    void VulkanRenderer::CreateIndexBuffer()
     {
         List <UInt16> triangles;
         Point::GetTriangles(gs_Sprite, triangles);
-        gs_TrianglesCount = triangles.GetCount();
 
-        VkDeviceSize bufferSize = sizeof(triangles[0]) * gs_TrianglesCount;
+        VkDeviceSize bufferSize = sizeof(triangles[0]) * triangles.GetCount();
 
-        VulkanBuffer stagingBuffer;
-        if (!TryCreateBuffer(m_DevicePair,
-                             m_Allocator,
-                             bufferSize,
-                             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &stagingBuffer))
-        {
-            OTR_LOG_FATAL("Failed to create staging buffer")
-            return;
-        }
-
-        BindBuffer(m_DevicePair.LogicalDevice, stagingBuffer, 0);
-
-        void* data;
-        vkMapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory, 0, bufferSize, 0, &data);
-        memcpy(data, (void*) triangles.GetData(), (Size) bufferSize);
-        vkUnmapMemory(m_DevicePair.LogicalDevice, stagingBuffer.DeviceMemory);
-
-        if (!TryCreateBuffer(m_DevicePair,
-                             m_Allocator,
-                             bufferSize,
-                             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                             &m_IndexBuffer))
-        {
-            OTR_LOG_FATAL("Failed to create index buffer")
-            DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
-            return;
-        }
-
-        BindBuffer(m_DevicePair.LogicalDevice, m_IndexBuffer, 0);
-        CopyBuffer(m_DevicePair.LogicalDevice,
-                   bufferSize,
-                   m_DevicePair.GraphicsQueueFamily.Handle,
-                   m_DevicePair.GraphicsCommandPool,
-                   stagingBuffer.Handle,
-                   &m_IndexBuffer.Handle);
-
-        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &stagingBuffer);
+        m_IndexBuffer = (VulkanIndexBuffer*) DataBuffer::Create(BufferType::Index);
+        m_IndexBuffer->SetDevicePair(&m_DevicePair);
+        m_IndexBuffer->SetAllocator(m_Allocator);
+        m_IndexBuffer->Write(triangles.GetData(), bufferSize);
     }
 
-    void Renderer::CreateUniformBuffer()
+    void VulkanRenderer::CreateUniformBuffer()
     {
-        VkDeviceSize bufferSize = sizeof(GlobalUniformBufferObject);
-
-        if (!TryCreateBuffer(m_DevicePair,
-                             m_Allocator,
-                             bufferSize,
-                             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                             &m_UniformBuffer))
-        {
-            OTR_LOG_FATAL("Failed to create global uniform buffer")
-            return;
-        }
-
-        BindBuffer(m_DevicePair.LogicalDevice, m_UniformBuffer, 0);
+        m_UniformBuffer = (VulkanUniformBuffer*) DataBuffer::Create(BufferType::Uniform);
+        m_UniformBuffer->SetDevicePair(&m_DevicePair);
+        m_UniformBuffer->SetAllocator(m_Allocator);
+        m_UniformBuffer->Write(nullptr, sizeof(GlobalUniformBufferObject));
     }
 
-    void Renderer::CreateDescriptorSetLayout()
+    void VulkanRenderer::CreateDescriptorSetLayout()
     {
         VkDescriptorSetLayoutBinding uboLayoutBinding{ };
         uboLayoutBinding.binding            = 0;
@@ -975,7 +889,7 @@ namespace Otter::Graphics::Vulkan
                                                         &m_Descriptor.SetLayout))
     }
 
-    void Renderer::CreateDescriptorPool()
+    void VulkanRenderer::CreateDescriptorPool()
     {
         VkDescriptorPoolSize globalDescriptorPoolSize{ };
         globalDescriptorPoolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -994,7 +908,7 @@ namespace Otter::Graphics::Vulkan
                                                    &m_Descriptor.Pool))
     }
 
-    void Renderer::CreateDescriptorSets()
+    void VulkanRenderer::CreateDescriptorSets()
     {
         Enumerable <VkDescriptorSetLayout> layouts = Enumerable<VkDescriptorSetLayout>::Of({ m_Descriptor.SetLayout,
                                                                                              m_Descriptor.SetLayout,
@@ -1006,16 +920,16 @@ namespace Otter::Graphics::Vulkan
         descriptorSetAllocateInfo.pSetLayouts        = layouts.GetData();
         descriptorSetAllocateInfo.pNext              = VK_NULL_HANDLE;
 
-        // TODO: "const_cast" usage reminder
+        VkDescriptorSet tempDescriptorSets[m_Swapchain.MaxFramesInFlight];
         OTR_VULKAN_VALIDATE(vkAllocateDescriptorSets(m_DevicePair.LogicalDevice,
                                                      &descriptorSetAllocateInfo,
-                                                     const_cast<VkDescriptorSet*>(m_Descriptor.Set.GetData())))
+                                                     tempDescriptorSets))
+
+        Collections::New<VkDescriptorSet>(tempDescriptorSets, m_Swapchain.MaxFramesInFlight, m_Descriptor.Sets);
     }
 
-    void Renderer::DestroyVulkanDescriptors()
+    void VulkanRenderer::DestroyVulkanDescriptorData()
     {
-        DestroyBuffer(m_DevicePair.LogicalDevice, m_Allocator, &m_UniformBuffer);
-
         vkDestroyDescriptorPool(m_DevicePair.LogicalDevice, m_Descriptor.Pool, m_Allocator);
         vkDestroyDescriptorSetLayout(m_DevicePair.LogicalDevice, m_Descriptor.SetLayout, m_Allocator);
 
@@ -1023,7 +937,7 @@ namespace Otter::Graphics::Vulkan
         m_Descriptor.SetLayout = VK_NULL_HANDLE;
     }
 
-    void Renderer::CreatePipelines()
+    void VulkanRenderer::CreatePipelines()
     {
         // HELP: Shader related
         VkPipelineShaderStageCreateInfo vertShaderStageCreateInfo{ };
@@ -1060,9 +974,9 @@ namespace Otter::Graphics::Vulkan
     }
 
 #if !OTR_RUNTIME
-    void Renderer::CreateVulkanDebugMessenger(const VkInstance& instance,
-                                              const VkAllocationCallbacks* const allocator,
-                                              VkDebugUtilsMessengerEXT* outDebugMessenger)
+    void VulkanRenderer::CreateVulkanDebugMessenger(const VkInstance& instance,
+                                                    const VkAllocationCallbacks* const allocator,
+                                                    VkDebugUtilsMessengerEXT* outDebugMessenger)
     {
         OTR_INTERNAL_ASSERT_MSG(instance != VK_NULL_HANDLE,
                                 "Instance must be initialized before creating debug messenger")
@@ -1080,9 +994,9 @@ namespace Otter::Graphics::Vulkan
         }
     }
 
-    void Renderer::DestroyVulkanDebugMessenger(const VkInstance& instance,
-                                               const VkAllocationCallbacks* const allocator,
-                                               VkDebugUtilsMessengerEXT* outDebugMessenger)
+    void VulkanRenderer::DestroyVulkanDebugMessenger(const VkInstance& instance,
+                                                     const VkAllocationCallbacks* const allocator,
+                                                     VkDebugUtilsMessengerEXT* outDebugMessenger)
     {
         OTR_INTERNAL_ASSERT_MSG(instance != VK_NULL_HANDLE,
                                 "Instance must be initialized before destroying debug messenger")
@@ -1099,10 +1013,10 @@ namespace Otter::Graphics::Vulkan
         *outDebugMessenger = VK_NULL_HANDLE;
     }
 
-    VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                           VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                           const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
-                                                           [[maybe_unused]] void* userData)
+    VKAPI_ATTR VkBool32 VKAPI_CALL VulkanRenderer::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+                                                                 VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                                 const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
+                                                                 [[maybe_unused]] void* userData)
     {
         // TODO: Also use the message type to filter out messages
         switch (messageSeverity)
@@ -1127,7 +1041,7 @@ namespace Otter::Graphics::Vulkan
         return VK_FALSE;
     }
 
-    void Renderer::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    void VulkanRenderer::PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
     {
         createInfo = { };
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -1144,7 +1058,7 @@ namespace Otter::Graphics::Vulkan
         createInfo.pfnUserCallback = DebugCallback;
     }
 
-    void Renderer::GetRequiredInstanceValidationLayers(List<const char*>& layers)
+    void VulkanRenderer::GetRequiredInstanceValidationLayers(List<const char*>& layers)
     {
         layers.Add("VK_LAYER_KHRONOS_validation");
 

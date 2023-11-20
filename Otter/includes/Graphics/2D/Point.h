@@ -18,15 +18,12 @@ namespace Otter::Graphics
         OTR_INLINE static void GetVertices(const Sprite& sprite, List<Point>& vertices)
         {
             const auto spriteVertices = sprite.GetVertices();
-            const auto spriteCenter   = sprite.GetCenter();
             vertices.Reserve(spriteVertices.Length());
 
             for (UInt64 i = 0; i < spriteVertices.Length(); i++)
             {
                 vertices.Add({
-                                 { spriteVertices[i][0] - spriteCenter.GetX(),
-                                   spriteVertices[i][1] - spriteCenter.GetY(),
-                                   0.0f },
+                                 { spriteVertices[i][0], spriteVertices[i][1], 0.0f },
                                  sprite.GetColor()
                              });
             }
@@ -35,7 +32,7 @@ namespace Otter::Graphics
         OTR_INLINE static void GetTriangles(const Sprite& sprite, List<UInt16>& triangles)
         {
             // TODO: This is a temporary solution, only for square sprites
-            Collections::New<UInt16>({ 0, 1, 2, 1, 2, 3 }, triangles);
+            Collections::New<UInt16>({ 0, 1, 2, 2, 3, 0 }, triangles);
         }
     };
 }

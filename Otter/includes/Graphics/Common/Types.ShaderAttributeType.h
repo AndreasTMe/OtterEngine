@@ -48,7 +48,7 @@ namespace Otter
 
         return os;
     }
-#undef KEYCODE_LIST
+#undef SHADER_ATTRIBUTE_TYPE_LIST
 }
 
 #endif //OTTERENGINE_TYPES_SHADERATTRIBUTETYPE_H

@@ -97,9 +97,12 @@ namespace Otter
             m_Capacity = capacity;
         }
 
-        void Expand()
+        void Expand(const UInt64 amount = 0)
         {
-            m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
+            if (amount == 0)
+                m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
+            else
+                m_Capacity += amount;
 
             T* newData = Buffer::New<T>(m_Capacity);
 
