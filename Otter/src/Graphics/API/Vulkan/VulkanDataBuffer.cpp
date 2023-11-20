@@ -2,7 +2,7 @@
 
 #include "Graphics/API/Vulkan/VulkanDataBuffer.h"
 
-#if OTR_VULKAN_ENABLED
+#if OTR_GRAPHICS_VULKAN_ENABLED
 
 namespace Otter::Graphics
 {

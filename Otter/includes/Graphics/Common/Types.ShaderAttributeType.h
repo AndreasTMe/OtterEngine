@@ -3,7 +3,7 @@
 
 #include "Core/Types.h"
 
-namespace Otter
+namespace Otter::Graphics
 {
 #define SHADER_ATTRIBUTE_TYPE_LIST  \
     REPLACE_WITH(Float, 0x01)       \
@@ -35,11 +35,11 @@ namespace Otter
 #pragma clang diagnostic pop
 
     template<typename OStream>
-    OStream& operator<<(OStream& os, const Otter::ShaderAttributeType& attributeType)
+    OStream& operator<<(OStream& os, const Otter::Graphics::ShaderAttributeType& attributeType)
     {
         switch (attributeType)
         {
-#define REPLACE_WITH(Item, Value) case Otter::ShaderAttributeType::Item: os << "ShaderAttributeType::" << #Item; break;
+#define REPLACE_WITH(Item, Value) case Otter::Graphics::ShaderAttributeType::Item: os << "ShaderAttributeType::" << #Item; break;
             SHADER_ATTRIBUTE_TYPE_LIST
 #undef REPLACE_WITH
             default:

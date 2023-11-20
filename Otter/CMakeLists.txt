@@ -1,6 +1,7 @@
 project(Otter VERSION 0.1.0)
 
 message(STATUS "Configuring ${PROJECT_NAME} library...")
+set(GRAPHICS_API_FOUND 0)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 file(GLOB_RECURSE HEADERS includes/*.h)
@@ -14,11 +15,26 @@ if (Vulkan_FOUND)
 
     target_include_directories(${PROJECT_NAME} PUBLIC ${Vulkan_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PRIVATE ${Vulkan_LIBRARIES})
-    target_compile_definitions(${PROJECT_NAME} PRIVATE OTR_VULKAN_ENABLED=1)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE OTR_GRAPHICS_VULKAN_ENABLED=1)
+
+    set(GRAPHICS_API_FOUND 1)
 else ()
     message(STATUS "Vulkan not found. If you want to use Vulkan, please install it or add it to your path variables.")
+endif ()
 
-    target_compile_definitions(${PROJECT_NAME} PRIVATE OTR_VULKAN_ENABLED=0)
+if (NOT GRAPHICS_API_FOUND)
+    get_target_property(PREPROCESSORS ${PROJECT_NAME} COMPILE_DEFINITIONS)
+    foreach (PREPROCESSOR ${PREPROCESSORS})
+        if (PREPROCESSOR MATCHES "^OTR_GRAPHICS_")
+            set(GRAPHICS_API_FOUND 1)
+            break()
+        endif ()
+    endforeach ()
+
+    if (NOT GRAPHICS_API_FOUND)
+        message(WARNING "No graphics API found! Application will not initialise.")
+        target_compile_definitions(${PROJECT_NAME} PRIVATE OTR_GRAPHICS_NULL=1)
+    endif ()
 endif ()
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE includes/Otter.PCH.h)

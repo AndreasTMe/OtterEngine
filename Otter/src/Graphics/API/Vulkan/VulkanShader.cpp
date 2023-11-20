@@ -3,7 +3,7 @@
 #include "Graphics/API/Vulkan/VulkanShader.h"
 #include "Platform/FileSystem.h"
 
-#if OTR_VULKAN_ENABLED
+#if OTR_GRAPHICS_VULKAN_ENABLED
 
 namespace Otter::Graphics
 {

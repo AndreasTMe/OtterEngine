@@ -3,12 +3,12 @@
 
 #include "Core/Types.h"
 
-namespace Otter
+namespace Otter::Graphics
 {
 #define BUFFER_TYPE_LIST        \
     REPLACE_WITH(Vertex, 0x01)  \
     REPLACE_WITH(Index, 0x02)   \
-    REPLACE_WITH(Uniform, 0x11)
+    REPLACE_WITH(Uniform, 0x03)
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "OCInconsistentNamingInspection"
@@ -27,11 +27,11 @@ namespace Otter
 #pragma clang diagnostic pop
 
     template<typename OStream>
-    OStream& operator<<(OStream& os, const Otter::BufferType& bufferType)
+    OStream& operator<<(OStream& os, const Otter::Graphics::BufferType& bufferType)
     {
         switch (bufferType)
         {
-#define REPLACE_WITH(Item, Value) case Otter::BufferType::Item: os << "BufferType::" << #Item; break;
+#define REPLACE_WITH(Item, Value) case Otter::Graphics::BufferType::Item: os << "BufferType::" << #Item; break;
             BUFFER_TYPE_LIST
 #undef REPLACE_WITH
             default:

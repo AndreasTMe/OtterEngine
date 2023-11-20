@@ -14,7 +14,7 @@
 // TODO: Remove later
 #include "Graphics/2D/Sprite.h"
 
-#if OTR_VULKAN_ENABLED
+#if OTR_GRAPHICS_VULKAN_ENABLED
 
 namespace Otter::Graphics
 {
@@ -836,21 +836,34 @@ namespace Otter::Graphics::Vulkan
 
     void VulkanRenderer::CreateVertexBuffer()
     {
-        List <Point> vertices;
-        Point::GetVertices(gs_Sprite, vertices);
+        const auto spriteVertices = gs_Sprite.GetVertices();
+
+        List <Vertex> vertices;
+        vertices.Reserve(spriteVertices.Length());
+
+        for (UInt64 i = 0; i < spriteVertices.Length(); i++)
+        {
+            vertices.Add({
+                             { spriteVertices[i][0], spriteVertices[i][1], 0.0f },
+                             gs_Sprite.GetColor()
+                         });
+        }
 
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.GetCount();
 
         m_VertexBuffer = (VulkanVertexBuffer*) DataBuffer::Create(BufferType::Vertex);
         m_VertexBuffer->SetDevicePair(&m_DevicePair);
         m_VertexBuffer->SetAllocator(m_Allocator);
+        m_VertexBuffer->SetAttributeLayout({{ ShaderAttributeType::Float3, ShaderAttributeSize::Bit32, 0 },
+                                            { ShaderAttributeType::Float4, ShaderAttributeSize::Bit32, 1 },
+                                            { ShaderAttributeType::Float2, ShaderAttributeSize::Bit32, 2 }});
         m_VertexBuffer->Write(vertices.GetData(), bufferSize);
     }
 
     void VulkanRenderer::CreateIndexBuffer()
     {
         List <UInt16> triangles;
-        Point::GetTriangles(gs_Sprite, triangles);
+        Collections::New<UInt16>({ 0, 1, 2, 2, 3, 0 }, triangles);
 
         VkDeviceSize bufferSize = sizeof(triangles[0]) * triangles.GetCount();
 

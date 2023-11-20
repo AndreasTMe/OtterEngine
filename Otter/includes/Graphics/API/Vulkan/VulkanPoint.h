@@ -6,12 +6,12 @@
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
 #include "Math/Vector.h"
 #include "Graphics/API/Vulkan/VulkanBase.Includes.h"
-#include "Graphics/2D/Point.h"
+#include "Graphics/2D/Vertex.h"
 
 namespace Otter::Graphics::Vulkan
 {
 #define OTR_VULKAN_POINT2D_BINDINGS_COUNT 1
-#define OTR_VULKAN_POINT2D_ATTRIBUTES_COUNT 2
+#define OTR_VULKAN_POINT2D_ATTRIBUTES_COUNT 3
 
     class VulkanPoint
     {
@@ -20,7 +20,7 @@ namespace Otter::Graphics::Vulkan
         {
             Span<VkVertexInputBindingDescription, OTR_VULKAN_POINT2D_BINDINGS_COUNT> bindingDescriptions{ };
             bindingDescriptions[0].binding   = 0;
-            bindingDescriptions[0].stride    = sizeof(Point);
+            bindingDescriptions[0].stride    = sizeof(Vertex);
             bindingDescriptions[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
             return bindingDescriptions;
@@ -34,12 +34,17 @@ namespace Otter::Graphics::Vulkan
             attributeDescriptions[0].binding  = 0;
             attributeDescriptions[0].location = 0;
             attributeDescriptions[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
-            attributeDescriptions[0].offset   = offsetof(Point, Position);
+            attributeDescriptions[0].offset   = offsetof(Vertex, Position);
             // Color
             attributeDescriptions[1].binding  = 0;
             attributeDescriptions[1].location = 1;
             attributeDescriptions[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
-            attributeDescriptions[1].offset   = offsetof(Point, Color);
+            attributeDescriptions[1].offset   = offsetof(Vertex, Color);
+            // TexCoord
+            attributeDescriptions[2].binding  = 0;
+            attributeDescriptions[2].location = 2;
+            attributeDescriptions[2].format   = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[2].offset   = offsetof(Vertex, TexCoord);
 
             return attributeDescriptions.AsReadOnly();
         }

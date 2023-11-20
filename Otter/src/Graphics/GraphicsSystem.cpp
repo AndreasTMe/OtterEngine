@@ -13,6 +13,8 @@ namespace Otter::GraphicsSystem
         OTR_INTERNAL_ASSERT_MSG(gs_Renderer == nullptr, "Graphics system already initialised")
 
         gs_Renderer = Graphics::Renderer::Create();
+        if (!gs_Renderer)
+            return false;
 
         List < Graphics::Shader * > shaders;
         shaders.Reserve(2);
@@ -43,7 +45,7 @@ namespace Otter::GraphicsSystem
         if (!gs_Renderer->TryBeginFrame())
             return;
 
-        // TODO: Step 1: Bind Pipeline
+        // TODO: Step 1: Bind Pipelines
         // TODO: Step 2a: Update Uniform Buffer
         // TODO: Step 2b: Update Push Constants
         // TODO: Step 3a: Bind Vertex Buffer

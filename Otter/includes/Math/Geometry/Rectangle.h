@@ -41,33 +41,11 @@ namespace Otter
         constexpr Rectangle(const Vector<2, TNumber>& position, const Vector<2, TNumber>& size)
             : Position(position), Size(size)
         {
-            OTR_DEBUG_BLOCK(
-                if (position.GetX() < 0 || position.GetY() < 0)
-                {
-                    OTR_LOG_WARNING("Negative values for the position of a rectangle might have unexpected results")
-                }
-
-                if (size.GetX() < 0 || size.GetY() < 0)
-                {
-                    OTR_LOG_WARNING("Negative values for the size of a rectangle might have unexpected results")
-                }
-            )
         }
 
         constexpr Rectangle(const TNumber& x, const TNumber& y, const TNumber& width, const TNumber& height)
             : X(x), Y(y), Width(width), Height(height)
         {
-            OTR_DEBUG_BLOCK(
-                if (x < 0 || y < 0)
-                {
-                    OTR_LOG_WARNING("Negative values for the position of a rectangle might have unexpected results")
-                }
-
-                if (width < 0 || height < 0)
-                {
-                    OTR_LOG_WARNING("Negative values for the size of a rectangle might have unexpected results")
-                }
-            )
         }
 
         Rectangle(const Rectangle& other)
