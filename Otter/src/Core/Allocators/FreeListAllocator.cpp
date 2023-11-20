@@ -4,7 +4,7 @@
 
 namespace Otter
 {
-    void* FreeListAllocator::Allocate(const UInt64& size, const UInt64& alignment)
+    void* FreeListAllocator::Allocate(const UInt64 size, const UInt64 alignment)
     {
         if (size < sizeof(Node))
         {
@@ -98,8 +98,8 @@ namespace Otter
 
     FreeListAllocator::Node* FreeListAllocator::FindFirstFit(Node** previous,
                                                              UInt16* padding,
-                                                             const UInt64& size,
-                                                             const UInt16& alignment)
+                                                             const UInt64 size,
+                                                             const UInt16 alignment)
     {
         Node* itCurrent  = m_Head;
         Node* itPrevious = nullptr;
@@ -128,8 +128,8 @@ namespace Otter
 
     FreeListAllocator::Node* FreeListAllocator::FindBestFit(Node** previous,
                                                             UInt16* padding,
-                                                            const UInt64& size,
-                                                            const UInt16& alignment)
+                                                            const UInt64 size,
+                                                            const UInt16 alignment)
     {
         UInt64 smallestDifference = ~(UInt64) 0;
 
@@ -223,7 +223,7 @@ namespace Otter
         }
     }
 
-    UIntPtr FreeListAllocator::GetAlignmentPadding(const UIntPtr& address, const UInt16& alignment)
+    UIntPtr FreeListAllocator::GetAlignmentPadding(const UIntPtr& address, const UInt16 alignment)
     {
         OTR_INTERNAL_ASSERT_MSG(OTR_IS_POWER_OF_TWO(alignment), "Alignment must be a power of two")
 

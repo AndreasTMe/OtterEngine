@@ -17,15 +17,13 @@ namespace Otter
 
     namespace MemorySystem
     {
-        void Initialise(const UInt64& memoryRequirements);
+        void Initialise(UInt64 memoryRequirements);
         void Shutdown();
 
-        UnsafeHandle Allocate(const UInt64& size, const UInt64& alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
-        UnsafeHandle Reallocate(UnsafeHandle& handle,
-                                const UInt64& size,
-                                const UInt64& alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        UnsafeHandle Allocate(UInt64 size, UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        UnsafeHandle Reallocate(UnsafeHandle& handle, UInt64 size, UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
         void Free(void* block);
-        void MemoryClear(void* block, const UInt64& size);
+        void MemoryClear(void* block, UInt64 size);
 
         // TODO: Will probably be removed
         [[nodiscard]] std::string GetTotalAllocation();
@@ -45,7 +43,7 @@ namespace Otter
     template<typename T>
     OTR_INLINE void Delete(T* ptr)
     {
-        if (!std::is_destructible<T>::value)
+        if (!std::is_trivially_destructible_v<T> && ptr != nullptr)
             ptr->~T();
 
         MemorySystem::MemoryClear(ptr, sizeof(T));
@@ -56,7 +54,7 @@ namespace Otter
     {
     public:
         template<typename T>
-        OTR_INLINE static T* New(const UInt64& length)
+        OTR_INLINE static T* New(const UInt64 length)
         {
             OTR_INTERNAL_ASSERT_MSG(length * sizeof(T) > 0, "Buffer length must be greater than 0")
 
@@ -79,17 +77,19 @@ namespace Otter
         }
 
         template<typename T>
-        OTR_INLINE static void Delete(T* ptr, const UInt64& length)
+        OTR_INLINE static void Delete(T* ptr, const UInt64 length)
         {
             OTR_INTERNAL_ASSERT_MSG(ptr != nullptr, "Buffer pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(length * sizeof(T) > 0, "Buffer length must be greater than 0")
 
-            if (!std::is_destructible<T>::value)
+            if (!std::is_trivially_destructible_v<T>)
             {
                 T* ptrCopy = ptr;
                 for (UInt64 i = 0; i < length; i++)
                 {
-                    ptrCopy->~T();
+                    if (ptrCopy != nullptr)
+                        ptrCopy->~T();
+                    
                     ++ptrCopy;
                 }
             }
@@ -102,7 +102,7 @@ namespace Otter
     class Unsafe final
     {
     public:
-        OTR_INLINE static UnsafeHandle New(const UInt64& size)
+        OTR_INLINE static UnsafeHandle New(const UInt64 size)
         {
             OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0 bytes")
 

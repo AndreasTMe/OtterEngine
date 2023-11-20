@@ -302,7 +302,7 @@ namespace Otter
         UInt64 m_Capacity;
         UInt64 m_Count;
 
-        void InitialiseBucketWithItem(Bucket* bucket, const TKey& key, const TValue& value, const UInt64& hash) const
+        void InitialiseBucketWithItem(Bucket* bucket, const TKey& key, const TValue& value, const UInt64 hash) const
         {
             bucket->Items               = Buffer::New<BucketItem>(k_InitialBucketCapacity);
             bucket->Items[0].Pair.Key   = key;

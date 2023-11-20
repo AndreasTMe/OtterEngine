@@ -16,7 +16,7 @@ namespace Otter
     {
     public:
         template<typename T>
-        static void New(const T* const data, const UInt64& count, Collection<T>& outCollection)
+        static void New(const T* const data, const UInt64 count, Collection<T>& outCollection)
         {
             OTR_INTERNAL_ASSERT_MSG(data != nullptr, "Data cannot be null!")
             OTR_INTERNAL_ASSERT_MSG(count > 0, "Count must be greater than 0!")
@@ -34,6 +34,37 @@ namespace Otter
                 outCollection.m_Count++;
             }
         }
+
+        template<typename T>
+        static Collection<T> New(InitialiserList<T> list)
+        {
+            Collection<T> collection;
+            collection.m_Capacity = list.size();
+            collection.m_Data     = Buffer::New<T>(collection.m_Capacity);
+
+            collection.m_Count = 0;
+            for (const T& item: list)
+                collection.m_Data[collection.m_Count++] = item;
+
+            return collection;
+        }
+
+        template<typename T>
+        static void New(InitialiserList<T> list, Collection<T>& outCollection)
+        {
+            if (outCollection.m_Data != nullptr && outCollection.m_Capacity > 0)
+                Buffer::Delete(outCollection.m_Data, outCollection.m_Capacity);
+
+            outCollection.m_Capacity = list.size();
+            outCollection.m_Data     = Buffer::New<T>(outCollection.m_Capacity);
+
+            outCollection.m_Count = 0;
+            for (const T& item: list)
+                outCollection.m_Data[outCollection.m_Count++] = item;
+        }
+
+        template<typename T>
+        OTR_INLINE static Collection<T> Empty() { return Collection<T>(); }
     };
 
     template<typename T>
@@ -49,7 +80,7 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
         OTR_DISABLE_HEAP_ALLOCATION
 
-        void Reserve(const UInt64& capacity)
+        void Reserve(const UInt64 capacity)
         {
             if (capacity <= m_Capacity)
                 return;
@@ -66,9 +97,12 @@ namespace Otter
             m_Capacity = capacity;
         }
 
-        void Expand()
+        void Expand(const UInt64 amount = 0)
         {
-            m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
+            if (amount == 0)
+                m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
+            else
+                m_Capacity += amount;
 
             T* newData = Buffer::New<T>(m_Capacity);
 

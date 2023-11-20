@@ -53,7 +53,7 @@ namespace Otter::Math
     {
         const auto magnitude = Magnitude(vector);
         if (magnitude < Epsilon<Double128>)
-            return VectorZero<4>;
+            return Vector<4, TNumber>::Zero();
 
         return vector / magnitude;
     }
@@ -121,7 +121,7 @@ namespace Otter::Math
     {
         const auto magnitudeSquared = MagnitudeSquared(normal);
         if (magnitudeSquared < Epsilon<Double128>)
-            return VectorZero<4>;
+            return Vector<4, decltype(vector[0] * normal[0])>::Zero();
 
         return (Dot(vector, normal) / magnitudeSquared) * normal;
     }

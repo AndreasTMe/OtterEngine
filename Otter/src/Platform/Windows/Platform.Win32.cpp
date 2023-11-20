@@ -99,10 +99,9 @@ namespace Otter::Internal
             m_Width  = event.GetWidth();
             m_Height = event.GetHeight();
 
-            return true;
+            // HELP: Pass the new width and height to the renderer
+            return false;
         };
-
-        // TODO: Add functionality for the rest of the window events
     }
 
     bool WindowsPlatform::InitialiseWindow(const char* const title,
@@ -224,6 +223,21 @@ namespace Otter::Internal
                 break;
             case WM_SIZE:
             {
+                switch (wParam)
+                {
+                    case SIZE_MINIMIZED:
+                        EventSystem::Schedule<WindowMinimizedEvent>();
+                        break;
+                    case SIZE_MAXIMIZED:
+                        EventSystem::Schedule<WindowMaximizedEvent>();
+                        break;
+                    case SIZE_RESTORED:
+                        EventSystem::Schedule<WindowRestoredEvent>();
+                        break;
+                    default:
+                        break;
+                }
+
                 RECT clientRect;
                 GetClientRect(window, &clientRect);
                 EventSystem::Schedule<WindowResizeEvent>(clientRect.right - clientRect.left,

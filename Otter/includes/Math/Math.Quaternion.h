@@ -43,7 +43,7 @@ namespace Otter::Math
     {
         const auto magnitude = Magnitude(quaternion);
         if (magnitude < Epsilon<Double128>)
-            return QuaternionZero();
+            return Quaternion<TNumber>::Zero();
 
         return quaternion / magnitude;
     }
@@ -64,7 +64,7 @@ namespace Otter::Math
             };
         }
 
-        return QuaternionZero();
+        return Quaternion<TNumber>::Zero();
     }
 
     template<AnyNumber Tx, AnyNumber Ty>
@@ -120,7 +120,7 @@ namespace Otter::Math
     {
         return Slerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
-    
+
     // TODO: Quaternion::MoveTowards
 }
 

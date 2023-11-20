@@ -13,7 +13,7 @@ namespace Otter
             : m_Memory(nullptr), m_MemorySize(0), m_MemoryUsed(0)
         {
         }
-        explicit AbstractAllocator(void* memory, const UInt64& memorySize)
+        explicit AbstractAllocator(void* memory, const UInt64 memorySize)
             : m_Memory(memory), m_MemorySize(memorySize), m_MemoryUsed(0)
         {
             OTR_INTERNAL_ASSERT_MSG((m_Memory && m_MemorySize) || (!m_Memory && !m_MemorySize),
@@ -21,7 +21,7 @@ namespace Otter
         }
         virtual ~AbstractAllocator() = default;
 
-        virtual void* Allocate(const UInt64& size, const UInt64& alignment) = 0;
+        virtual void* Allocate(UInt64 size, UInt64 alignment) = 0;
         virtual void Free(void* block) = 0;
 
         [[nodiscard]] OTR_INLINE constexpr void* GetMemoryUnsafePointer() const { return m_Memory; }

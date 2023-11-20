@@ -26,17 +26,13 @@ namespace Otter
                 m_Values[i] = scalar;
         }
 
-        template<typename... TArgs>
-        requires((sizeof...(TArgs) == Tx * Ty - 1 && (AnyNumber<TArgs> && ...)))
-        constexpr explicit Matrix(TNumber x, TArgs... args)
+        constexpr Matrix(InitialiserList<TNumber> list)
         {
-            m_Values[0] = x;
+            OTR_ASSERT_MSG(list.size() == Tx * Ty, "Initialiser list size does not match Matrix size")
 
-            UInt8 i = 1;
-            ([&]
-            {
-                m_Values[i++] = args;
-            }(), ...);
+            UInt64 i = 0;
+            for (const TNumber& value: list)
+                m_Values[i++] = value;
         }
 
         Matrix(const Matrix<Tx, Ty, TNumber>& other)
@@ -242,7 +238,7 @@ namespace Otter
 #pragma clang diagnostic pop
         }
 
-        [[nodiscard]] Vector<Ty, TNumber> GetRow(UInt8 index) const noexcept
+        [[nodiscard]] OTR_INLINE Vector<Ty, TNumber> GetRow(UInt8 index) const noexcept
         {
             OTR_ASSERT_MSG(index < Ty, "Row index {0} is out of range", index)
 
@@ -254,7 +250,7 @@ namespace Otter
             return row;
         }
 
-        void SetRow(const UInt8& index, const Vector<Ty, TNumber>& row) noexcept
+        OTR_INLINE void SetRow(const UInt8 index, const Vector<Ty, TNumber>& row) noexcept
         {
             OTR_ASSERT_MSG(index < Ty, "Row index {0} is out of range", index)
 
@@ -262,7 +258,7 @@ namespace Otter
                 m_Values[i + index * Ty] = row[i];
         }
 
-        [[nodiscard]] Vector<Tx, TNumber> GetColumn(UInt8 index) const noexcept
+        [[nodiscard]] OTR_INLINE Vector<Tx, TNumber> GetColumn(UInt8 index) const noexcept
         {
             OTR_ASSERT_MSG(index < Tx, "Column index {0} is out of range", index)
 
@@ -274,12 +270,30 @@ namespace Otter
             return column;
         }
 
-        void SetColumn(const UInt8& index, const Vector<Tx, TNumber>& column) noexcept
+        OTR_INLINE void SetColumn(const UInt8 index, const Vector<Tx, TNumber>& column) noexcept
         {
             OTR_ASSERT_MSG(index < Tx, "Column index {0} is out of range", index)
 
             for (UInt8 i = 0; i < Tx; ++i)
                 m_Values[index + i * Tx] = column[i];
+        }
+
+        OTR_INLINE static constexpr Matrix<Tx, Ty, TNumber> Zero()
+        {
+            return Matrix<Tx, Ty, TNumber>(static_cast<TNumber>(0.0));
+        }
+
+        OTR_INLINE static constexpr Matrix<Tx, Ty, TNumber> Identity()
+        requires Dimension<Tx>
+                 && Dimension<Ty>
+                 && (Tx == Ty)
+        {
+            Matrix<Tx, Ty, TNumber> result;
+
+            for (UInt8 i = 0; i < Tx; ++i)
+                result[i, i] = static_cast<TNumber>(1.0);
+
+            return result;
         }
 
     private:
@@ -288,13 +302,6 @@ namespace Otter
 
     namespace Math
     {
-        template<UInt8 Tx, UInt8 Ty>
-        OTR_INLINE constexpr Matrix<Tx, Ty, Int32> MatrixZero() { return Matrix<Tx, Ty, Int32>(0); }
-
-        template<UInt8 Tx, UInt8 Ty>
-        requires Dimension<Tx> && Dimension<Ty> && (Tx == Ty)
-        constexpr Matrix<Tx, Ty, Int32> MatrixIdentity();
-
         template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
         requires Dimension<Tx> && Dimension<Ty>
         TNumber Determinant(const Matrix<Tx, Ty, TNumber>& matrix);

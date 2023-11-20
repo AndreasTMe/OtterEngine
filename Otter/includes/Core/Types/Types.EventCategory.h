@@ -16,6 +16,7 @@ namespace Otter::Internal
         // TODO: Some categories to think about for later?
         // File     = OTR_BIT(5),
         // System   = OTR_BIT(6),
+        Blocking = OTR_BITMASK(30),
 
         All = OTR_BITMASK(31)
     };

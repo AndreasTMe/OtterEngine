@@ -2,66 +2,57 @@
 
 #include "Graphics/GraphicsSystem.h"
 
-#include "Graphics/Common/Types.GraphicsAPI.h"
-#include "Graphics/Vulkan/VulkanRenderer.h"
+#include "Graphics/Abstractions/Renderer.h"
 
 namespace Otter::GraphicsSystem
 {
-    GraphicsAPI g_GraphicsApi = GraphicsAPI::Vulkan; // TODO: Pass from configuration
+    static Graphics::Renderer* gs_Renderer = nullptr;
 
-    bool TryInitialise(const void* platformContext)
+    bool TryInitialise(const void* const platformContext)
     {
-        switch (g_GraphicsApi)
-        {
-            case GraphicsAPI::Vulkan:
-            {
-                Graphics::Vulkan::Initialise(platformContext);
-            }
-                break;
-            default:
-            {
-                OTR_LOG_FATAL("Unsupported graphics API: {0}", g_GraphicsApi)
-                return false;
-            }
-        }
+        OTR_INTERNAL_ASSERT_MSG(gs_Renderer == nullptr, "Graphics system already initialised")
 
-        OTR_LOG_DEBUG("Graphics system initialised ({0})", g_GraphicsApi)
+        gs_Renderer = Graphics::Renderer::Create();
+        if (!gs_Renderer)
+            return false;
+
+        List < Graphics::Shader * > shaders;
+        shaders.Reserve(2);
+        shaders.AddRange({
+                             Graphics::Shader::Create("Assets/Shaders/default.glsl")
+                         });
+
+        gs_Renderer->Initialise(platformContext, shaders);
+        // TODO: Initialise Global Uniform Buffer/Camera
+
+        OTR_LOG_DEBUG("Graphics system initialised...")
 
         return true;
     }
 
     void Shutdown()
     {
-        OTR_LOG_DEBUG("Shutting down graphics system...")
+        OTR_INTERNAL_ASSERT_MSG(gs_Renderer != nullptr, "Graphics system not initialised")
 
-        switch (g_GraphicsApi)
-        {
-            case GraphicsAPI::Vulkan:
-            {
-                Graphics::Vulkan::Shutdown();
-            }
-                break;
-            default:
-            {
-                OTR_LOG_FATAL("Unsupported graphics API: {0}. Possible memory leak on deletion.", g_GraphicsApi)
-            }
-        }
+        OTR_LOG_DEBUG("Shutting down graphics system...")
+        gs_Renderer->Shutdown();
+
+        Graphics::Renderer::Destroy(gs_Renderer);
     }
 
     void RenderFrame()
     {
-        // TODO: Use function pointers for this, switch is not ideal
-        switch (g_GraphicsApi)
-        {
-            case GraphicsAPI::Vulkan:
-            {
-                Graphics::Vulkan::RenderFrame();
-            }
-                break;
-            default:
-            {
-                OTR_LOG_FATAL("Unsupported graphics API: {0}", g_GraphicsApi)
-            }
-        }
+        if (!gs_Renderer->TryBeginFrame())
+            return;
+
+        // TODO: Step 1: Bind Pipeline
+        // TODO: Step 2a: Update Uniform Buffer
+        // TODO: Step 2b: Update Push Constants
+        // TODO: Step 3a: Bind Vertex Buffer
+        // TODO: Step 3b: Bind Index Buffer
+        // TODO: Step 4: Draw Indexed
+        gs_Renderer->DrawIndexed();
+
+        gs_Renderer->EndFrame();
     }
 }

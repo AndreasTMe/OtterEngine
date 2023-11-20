@@ -2,20 +2,11 @@
 #define OTTERENGINE_MATH_MATRIX4X4_H
 
 #include "Math/Matrix.h"
+#include "Math/Vector.h"
+#include "Math/Quaternion.h"
 
 namespace Otter::Math
 {
-    template<>
-    OTR_INLINE constexpr Matrix<4, 4, Int32> MatrixIdentity<4, 4>()
-    {
-        return Matrix<4, 4, Int32>{
-            1, 0, 0, 0,
-            0, 1, 0, 0,
-            0, 0, 1, 0,
-            0, 0, 0, 1
-        };
-    }
-
     template<AnyNumber TNumber>
     OTR_INLINE TNumber Determinant(const Matrix<4, 4, TNumber>& matrix)
     {
@@ -117,7 +108,7 @@ namespace Otter::Math
 
         const auto determinant = s0 * c5 - s1 * c4 + s2 * c3 + s3 * c2 - s4 * c1 + s5 * c0;
         if (determinant == 0)
-            return Math::MatrixZero<4, 4>();
+            return Matrix<4, 4, TNumber>::Zero();
 
         const auto detReversed = 1.0 / determinant;
 
@@ -141,6 +132,69 @@ namespace Otter::Math
             detReversed * (matrix[0] * c3 - matrix[1] * c1 + matrix[2] * c0),
             detReversed * -(matrix[0] * s3 - matrix[1] * s1 + matrix[2] * s0),
             detReversed * (matrix[0] * s2 - matrix[1] * s0 + matrix[2] * s0)
+        };
+    }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE Matrix<4, 4, TNumber> Orthographic(const TNumber& left,
+                                                  const TNumber& right,
+                                                  const TNumber& bottom,
+                                                  const TNumber& top,
+                                                  const TNumber& nearClip,
+                                                  const TNumber& farClip)
+    {
+        Matrix<4, 4, TNumber> result = Matrix<4, 4, TNumber>::Identity();
+
+        const auto lr = static_cast<TNumber>(1.0 / (left - right));
+        const auto bt = static_cast<TNumber>(1.0 / (bottom - top));
+        const auto nf = static_cast<TNumber>(1.0 / (nearClip - farClip));
+
+        result[0]  = static_cast<TNumber>(-2.0 * lr);
+        result[5]  = static_cast<TNumber>(-2.0 * bt);
+        result[10] = static_cast<TNumber>(2.0 * nf);
+        result[12] = static_cast<TNumber>((left + right) * lr);
+        result[13] = static_cast<TNumber>((top + bottom) * bt);
+        result[14] = static_cast<TNumber>((farClip + nearClip) * nf);
+
+        return result;
+    }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE Matrix<4, 4, TNumber> Perspective(const TNumber& fieldOfView,
+                                                 const TNumber& aspectRatio,
+                                                 const TNumber& nearClip,
+                                                 const TNumber& farClip)
+    {
+        const auto tanHalfFov = std::tan(fieldOfView * 0.5);
+
+        Matrix<4, 4, TNumber> result = Matrix<4, 4, TNumber>::Zero();
+
+        result[0]  = static_cast<TNumber>(1.0 / (aspectRatio * tanHalfFov));
+        result[5]  = static_cast<TNumber>(1.0 / tanHalfFov);
+        result[10] = static_cast<TNumber>(-(farClip + nearClip) / (farClip - nearClip));
+        result[11] = static_cast<TNumber>(-1.0);
+        result[14] = static_cast<TNumber>(-(2.0 * farClip * nearClip) / (farClip - nearClip));
+
+        return result;
+    }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE Matrix<4, 4, TNumber> LookAt(Vector<3, TNumber> position,
+                                            Vector<3, TNumber> target,
+                                            Vector<3, TNumber> up)
+    {
+        const auto zAxis = Math::Normalise(position - target);
+        const auto xAxis = Math::Normalise(Math::Cross(up, zAxis));
+        const auto yAxis = Math::Cross(zAxis, xAxis);
+
+        return Matrix<4, 4, TNumber>{
+            xAxis.x, yAxis.x, -zAxis.x, static_cast<TNumber>(0.0),
+            xAxis.y, yAxis.y, -zAxis.y, static_cast<TNumber>(0.0),
+            xAxis.z, yAxis.z, -zAxis.z, static_cast<TNumber>(0.0),
+            -Math::Dot(xAxis, position),
+            -Math::Dot(yAxis, position),
+            Math::Dot(zAxis, position),
+            static_cast<TNumber>(1.0)
         };
     }
 }

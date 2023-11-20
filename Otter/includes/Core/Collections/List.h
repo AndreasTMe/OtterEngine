@@ -47,6 +47,53 @@ namespace Otter
             base::m_Data[base::m_Count++] = std::move(item);
         }
 
+        void AddAt(const UInt64 index, const T& item)
+        {
+            if (index >= base::m_Count)
+                return;
+
+            if (base::m_Count >= base::m_Capacity)
+                base::Expand();
+
+            for (UInt64 i = base::m_Count; i > index; i--)
+                base::m_Data[i] = base::m_Data[i - 1];
+
+            base::m_Data[index] = item;
+            base::m_Count++;
+        }
+
+        void AddAt(const UInt64 index, T&& item)
+        {
+            if (index >= base::m_Count)
+                return;
+
+            if (base::m_Count >= base::m_Capacity)
+                base::Expand();
+
+            for (UInt64 i = base::m_Count; i > index; i--)
+                base::m_Data[i] = base::m_Data[i - 1];
+
+            base::m_Data[index] = std::move(item);
+            base::m_Count++;
+        }
+
+        void AddRange(InitialiserList<T> items, bool allOrNothing = false)
+        {
+            if (items.size() == 0)
+                return;
+
+            if (items.size() > base::m_Capacity - base::m_Count)
+            {
+                if (allOrNothing)
+                    return;
+
+                base::Expand(items.size() - (base::m_Capacity - base::m_Count));
+            }
+
+            for (const T& item: items)
+                Add(item);
+        }
+
         bool TryRemove(const T& item)
         {
             for (UInt64 i = 0; i < base::m_Count; i++)
@@ -65,7 +112,7 @@ namespace Otter
             return false;
         }
 
-        bool TryRemoveAt(const UInt64& index)
+        bool TryRemoveAt(const UInt64 index)
         {
             if (index >= base::m_Count)
                 return false;
