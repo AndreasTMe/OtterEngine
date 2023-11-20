@@ -5,15 +5,6 @@
 
 namespace Otter::Math
 {
-    template<>
-    OTR_INLINE constexpr Matrix<2, 2, Int32> MatrixIdentity<2, 2>()
-    {
-        return Matrix<2, 2, Int32>{
-            1, 0,
-            0, 1,
-        };
-    }
-
     template<AnyNumber TNumber>
     OTR_INLINE TNumber Determinant(const Matrix<2, 2, TNumber>& matrix)
     {
@@ -34,7 +25,7 @@ namespace Otter::Math
     {
         const auto determinant = matrix[0] * matrix[3] - matrix[1] * matrix[2];
         if (determinant == 0)
-            return Math::MatrixZero<2, 2>();
+            return Matrix<2, 2, TNumber>::Zero();
 
         const auto detReversed = 1.0 / determinant;
 

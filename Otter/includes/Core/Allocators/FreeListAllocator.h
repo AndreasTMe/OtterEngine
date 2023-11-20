@@ -23,16 +23,14 @@ namespace Otter
             : AbstractAllocator(), m_Head(nullptr), m_Policy(Policy::FirstFit)
         {
         }
-        explicit FreeListAllocator(void* memory,
-                                   const UInt64& memorySize,
-                                   const Policy& policy = Policy::FirstFit)
+        explicit FreeListAllocator(void* memory, UInt64 memorySize, Policy policy = Policy::FirstFit)
             : AbstractAllocator(memory, memorySize), m_Head(nullptr), m_Policy(policy)
         {
             Clear();
         }
         ~FreeListAllocator() final { m_Memory = nullptr; }
 
-        void* Allocate(const UInt64& size, const UInt64& alignment) final;
+        void* Allocate(UInt64 size, UInt64 alignment) final;
         void Free(void* block) final;
 
         void Clear();
@@ -96,13 +94,13 @@ namespace Otter
         Node* m_Head;
         Policy m_Policy;
 
-        Node* FindFirstFit(Node** previous, UInt16* padding, const UInt64& size, const UInt16& alignment);
-        Node* FindBestFit(Node** previous, UInt16* padding, const UInt64& size, const UInt16& alignment);
+        Node* FindFirstFit(Node** previous, UInt16* padding, UInt64 size, UInt16 alignment);
+        Node* FindBestFit(Node** previous, UInt16* padding, UInt64 size, UInt16 alignment);
         void Insert(Node* node, Node* previous);
         void Remove(Node* node, Node* previous);
         void Merge(Node* toMerge, Node* previousNode);
 
-        static UIntPtr GetAlignmentPadding(const UIntPtr& address, const UInt16& alignment);
+        static UIntPtr GetAlignmentPadding(const UIntPtr& address, UInt16 alignment);
     };
 
     template<typename OStream>

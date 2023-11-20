@@ -9,8 +9,8 @@ namespace Otter::Internal
     class HashUtils final
     {
     public:
-        [[nodiscard]] static UInt64 GetNextPrime(const UInt64& value);
-        [[nodiscard]] static UInt64 GetPreviousPrime(const UInt64& value);
+        [[nodiscard]] static UInt64 GetNextPrime(UInt64 value);
+        [[nodiscard]] static UInt64 GetPreviousPrime(UInt64 value);
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(HashUtils)

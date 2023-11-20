@@ -248,7 +248,7 @@ namespace Otter
         UInt64 m_Capacity;
         UInt64 m_Count;
 
-        void InitialiseBucketWithItem(Bucket* bucket, const T& value, const UInt64& hash) const
+        void InitialiseBucketWithItem(Bucket* bucket, const T& value, const UInt64 hash) const
         {
             bucket->Items         = Buffer::New<BucketItem>(k_InitialBucketCapacity);
             bucket->Items[0].Data = value;
@@ -271,7 +271,7 @@ namespace Otter
             bucket->Capacity = newCapacity;
         }
 
-        [[nodiscard]] bool ExistsInBucket(const T& value, const UInt64& hash, const Bucket& bucket) const
+        [[nodiscard]] bool ExistsInBucket(const T& value, const UInt64 hash, const Bucket& bucket) const
         {
             for (UInt64 i = 0; i < bucket.Count; i++)
                 if (bucket.Items[i].Data == value && bucket.Items[i].Hash == hash)

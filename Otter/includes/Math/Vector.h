@@ -25,17 +25,13 @@ namespace Otter
                 m_Values[i] = scalar;
         }
 
-        template<typename... TArgs>
-        requires (sizeof...(TArgs) == TDimension - 1 && (AnyNumber<TArgs>&& ...))
-        constexpr explicit Vector(TNumber x, TArgs... args)
+        constexpr Vector(InitialiserList<TNumber> list)
         {
-            m_Values[0] = x;
+            OTR_ASSERT_MSG(list.size() == TDimension, "Initialiser list size does not match Vector size")
 
-            UInt8 i = 1;
-            ([&]
-            {
-                m_Values[i++] = args;
-            }(), ...);
+            UInt64 i = 0;
+            for (const TNumber& value: list)
+                m_Values[i++] = value;
         }
 
         Vector(const Vector<TDimension, TNumber>& other)
@@ -211,70 +207,92 @@ namespace Otter
 #pragma clang diagnostic pop
         }
 
-        [[nodiscard]] TNumber GetX() const noexcept { return m_Values[0]; }
-        void SetX(const TNumber& x) noexcept { m_Values[0] = x; }
+        [[nodiscard]] OTR_INLINE TNumber GetX() const noexcept { return m_Values[0]; }
+        OTR_INLINE void SetX(const TNumber& x) noexcept { m_Values[0] = x; }
 
-        [[nodiscard]] TNumber GetY() const noexcept { return m_Values[1]; }
-        void SetY(const TNumber& y) noexcept { m_Values[1] = y; }
+        [[nodiscard]] OTR_INLINE TNumber GetY() const noexcept { return m_Values[1]; }
+        OTR_INLINE void SetY(const TNumber& y) noexcept { m_Values[1] = y; }
 
-        [[nodiscard]] TNumber GetZ() const noexcept requires (TDimension >= 3) { return m_Values[2]; }
-        void SetZ(const TNumber& z) noexcept requires (TDimension >= 3) { m_Values[2] = z; }
+        [[nodiscard]] OTR_INLINE TNumber GetZ() const noexcept requires (TDimension >= 3) { return m_Values[2]; }
+        OTR_INLINE void SetZ(const TNumber& z) noexcept requires (TDimension >= 3) { m_Values[2] = z; }
 
-        [[nodiscard]] TNumber GetW() const noexcept requires (TDimension == 4) { return m_Values[3]; }
-        void SetW(const TNumber& w) noexcept requires (TDimension == 4) { m_Values[3] = w; }
+        [[nodiscard]] OTR_INLINE TNumber GetW() const noexcept requires (TDimension == 4) { return m_Values[3]; }
+        OTR_INLINE void SetW(const TNumber& w) noexcept requires (TDimension == 4) { m_Values[3] = w; }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> Left() requires (TDimension < 4)
+        {
+            if constexpr (TDimension == 2)
+                return Vector<2, TNumber>(static_cast<TNumber>(-1.0),
+                                          static_cast<TNumber>(0.0));
+            else
+                return Vector<3, TNumber>(static_cast<TNumber>(-1.0),
+                                          static_cast<TNumber>(0.0),
+                                          static_cast<TNumber>(0.0));
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> Right() requires (TDimension < 4)
+        {
+            if constexpr (TDimension == 2)
+                return Vector<2, TNumber>(static_cast<TNumber>(1.0), static_cast<TNumber>(0.0));
+            else
+                return Vector<3, TNumber>(static_cast<TNumber>(1.0),
+                                          static_cast<TNumber>(0.0),
+                                          static_cast<TNumber>(0.0));
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> Down() requires (TDimension < 4)
+        {
+            if constexpr (TDimension == 2)
+                return Vector<2, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(-1.0));
+            else
+                return Vector<3, TNumber>(static_cast<TNumber>(0.0),
+                                          static_cast<TNumber>(-1.0),
+                                          static_cast<TNumber>(0.0));
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> Up() requires (TDimension < 4)
+        {
+            if constexpr (TDimension == 2)
+                return Vector<2, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(1.0));
+            else
+                return Vector<3, TNumber>(static_cast<TNumber>(0.0),
+                                          static_cast<TNumber>(1.0),
+                                          static_cast<TNumber>(0.0));
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> Back() requires (TDimension == 3)
+        {
+            return Vector<3, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(0.0), static_cast<TNumber>(-1.0));
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> Forward() requires (TDimension == 3)
+        {
+            return Vector<3, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(0.0), static_cast<TNumber>(1.0));
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> One()
+        {
+            return Vector<TDimension, TNumber>(static_cast<TNumber>(1.0));
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> Zero()
+        {
+            return Vector<TDimension, TNumber>(static_cast<TNumber>(0.0));
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> PositiveInfinity()
+        {
+            return Vector<TDimension, TNumber>(Math::PositiveInfinity<TNumber>());
+        }
+
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> NegativeInfinity()
+        {
+            return Vector<TDimension, TNumber>(Math::NegativeInfinity<TNumber>());
+        }
 
     private:
         TNumber m_Values[TDimension];
     };
-
-    namespace Math
-    {
-        template<UInt8 TDimension>
-        requires Dimension<TDimension> && (TDimension < 4)
-        constexpr Vector<TDimension, Int32> Left();
-
-        template<UInt8 TDimension>
-        requires Dimension<TDimension> && (TDimension < 4)
-        constexpr Vector<TDimension, Int32> Right();
-
-        template<UInt8 TDimension>
-        requires Dimension<TDimension> && (TDimension < 4)
-        constexpr Vector<TDimension, Int32> Down();
-
-        template<UInt8 TDimension>
-        requires Dimension<TDimension> && (TDimension < 4)
-        constexpr Vector<TDimension, Int32> Up();
-
-        template<UInt8 TDimension>
-        requires Dimension<TDimension> && (TDimension == 3)
-        constexpr Vector<TDimension, Int32> Back();
-
-        template<UInt8 TDimension>
-        requires Dimension<TDimension> && (TDimension == 3)
-        constexpr Vector<TDimension, Int32> Forward();
-
-        template<UInt8 TDimension>
-        requires Dimension<TDimension>
-        OTR_INLINE constexpr Vector<TDimension, Int32> VectorOne() { return Vector<TDimension, Int32>(1); }
-
-        template<UInt8 TDimension>
-        requires Dimension<TDimension>
-        OTR_INLINE constexpr Vector<TDimension, Int32> VectorZero() { return Vector<TDimension, Int32>(0); }
-
-        template<UInt8 TDimension, AnyNumber TNumber>
-        requires Dimension<TDimension>
-        OTR_INLINE constexpr Vector<TDimension, TNumber> VectorPositiveInfinity()
-        {
-            return Vector<TDimension, TNumber>(PositiveInfinity<TNumber>());
-        }
-
-        template<UInt8 TDimension, AnyNumber TNumber>
-        requires Dimension<TDimension>
-        OTR_INLINE constexpr Vector<TDimension, TNumber> VectorNegativeInfinity()
-        {
-            return Vector<TDimension, TNumber>(NegativeInfinity<TNumber>());
-        }
-    }
 }
 
 #include "Math/Math.Vector2.h"

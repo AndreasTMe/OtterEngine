@@ -110,10 +110,16 @@ namespace Otter::Math
     OTR_INLINE constexpr auto Ln(TNumber x) { return std::log(x); }
 
     template<AnyNumber TNumber>
-    OTR_INLINE constexpr auto DegToRad(TNumber degrees) { return degrees * (Pi<Double128> / 180); }
+    OTR_INLINE constexpr auto DegToRad(TNumber degrees)
+    {
+        return static_cast<TNumber>(degrees * (Pi<Double128> / 180));
+    }
 
     template<AnyNumber TNumber>
-    OTR_INLINE constexpr auto RadToDeg(TNumber radians) { return radians * (180 / Pi<Double128>); }
+    OTR_INLINE constexpr auto RadToDeg(TNumber radians)
+    {
+        return static_cast<TNumber>(radians * (180 / Pi<Double128>));
+    }
 
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto Sin(TNumber x) { return std::sin(x); }

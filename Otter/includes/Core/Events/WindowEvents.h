@@ -5,12 +5,15 @@
 
 namespace Otter::Internal
 {
-#define OTR_WINDOW_EVENT_CLASS(Type)                                                        \
-    class Window##Type##Event final : public Event                                          \
-    {                                                                                       \
-    public:                                                                                 \
-        Window##Type##Event() : Event(EventType::Window##Type, EventCategory::Window) { }   \
-        ~Window##Type##Event() final = default;                                             \
+#define OTR_WINDOW_EVENT_CLASS(Type)                                                                            \
+    class Window##Type##Event final : public Event                                                              \
+    {                                                                                                           \
+    public:                                                                                                     \
+        Window##Type##Event()                                                                                   \
+            : Event(EventType::Window##Type, (EventCategory) (EventCategory::Window | EventCategory::Blocking)) \
+            {                                                                                                   \
+            }                                                                                                   \
+        ~Window##Type##Event() final = default;                                                                 \
     };
 
     OTR_WINDOW_EVENT_CLASS(Close)
@@ -19,7 +22,7 @@ namespace Otter::Internal
     {
     public:
         WindowResizeEvent(UInt16 width, UInt16 height, bool isInitiatedByUser)
-            : Event(EventType::WindowResize, EventCategory::Window),
+            : Event(EventType::WindowResize, (EventCategory) (EventCategory::Window | EventCategory::Blocking)),
               m_Width(width), m_Height(height), m_IsInitiatedByUser(isInitiatedByUser)
         {
         }
