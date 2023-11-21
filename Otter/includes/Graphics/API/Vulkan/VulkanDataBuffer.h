@@ -22,12 +22,12 @@ namespace Otter::Graphics::Vulkan
         void SetDevicePair(VulkanDevicePair* const devicePair) { m_DevicePair = devicePair; }
         void SetAllocator(VkAllocationCallbacks* const allocator) { m_Allocator = allocator; }
 
-        [[nodiscard]] VkBuffer GetHandle() const { return m_Handle; }
-        [[nodiscard]] VkDeviceMemory GetDeviceMemory() const { return m_DeviceMemory; }
-        [[nodiscard]] VkMemoryRequirements GetMemoryRequirements() const { return m_MemoryRequirements; }
-        [[nodiscard]] UInt32 GetSize() const { return m_Size; }
-        [[nodiscard]] UInt32 GetBufferUsage() const { return m_BufferUsage; }
-        [[nodiscard]] UInt32 GetMemoryProperties() const { return m_MemoryProperties; }
+        [[nodiscard]] OTR_INLINE VkBuffer GetHandle() const { return m_Handle; }
+        [[nodiscard]] OTR_INLINE VkDeviceMemory GetDeviceMemory() const { return m_DeviceMemory; }
+        [[nodiscard]] OTR_INLINE VkMemoryRequirements GetMemoryRequirements() const { return m_MemoryRequirements; }
+        [[nodiscard]] OTR_INLINE UInt32 GetSize() const { return m_Size; }
+        [[nodiscard]] OTR_INLINE UInt32 GetBufferUsage() const { return m_BufferUsage; }
+        [[nodiscard]] OTR_INLINE UInt32 GetMemoryProperties() const { return m_MemoryProperties; }
 
     protected:
         VulkanDevicePair     * m_DevicePair = nullptr;

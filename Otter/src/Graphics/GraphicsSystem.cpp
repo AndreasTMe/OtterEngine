@@ -22,7 +22,13 @@ namespace Otter::GraphicsSystem
                              Graphics::Shader::Create("Assets/Shaders/default.glsl")
                          });
 
-        gs_Renderer->Initialise(platformContext, shaders);
+        List < Graphics::Texture * > textures;
+        textures.Reserve(2);
+        textures.AddRange({
+                              Graphics::Texture::Create("Assets/Textures/texture.jpg")
+                          });
+
+        gs_Renderer->Initialise(platformContext, shaders, textures);
         // TODO: Initialise Global Uniform Buffer/Camera
 
         OTR_LOG_DEBUG("Graphics system initialised...")

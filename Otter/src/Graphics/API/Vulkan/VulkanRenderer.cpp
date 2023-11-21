@@ -1,21 +1,19 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/API/Vulkan/VulkanRenderer.h"
-#include "Graphics/API/Vulkan/VulkanPoint.h"
 #include "Graphics/API/Vulkan/VulkanExtensions.h"
 #include "Graphics/API/Vulkan/VulkanSwapchains.h"
 #include "Graphics/API/Vulkan/VulkanShader.h"
-#include "Graphics/API/Vulkan/VulkanPipelines.h"
+#include "Graphics/API/Vulkan/VulkanTexture.h"
 #include "Graphics/API/Vulkan/VulkanDataBuffer.h"
+#include "Graphics/API/Vulkan/VulkanPipelines.h"
 #include "Graphics/API/Vulkan/VulkanQueues.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.UniformBuffers.h"
 #include "Math/Matrix.h"
 
 // TODO: Remove later
+#include "Graphics/2D/Vertex.h"
 #include "Graphics/2D/Sprite.h"
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
 #if OTR_GRAPHICS_VULKAN_ENABLED
 
@@ -39,11 +37,12 @@ namespace Otter::Graphics::Vulkan
 {
 #define OTR_VULKAN_SYNC_TIMEOUT 1000000000
 
-    static List<VulkanShader*> gs_Shaders;
+    static List<VulkanShader*>  gs_Shaders;
+    static List<VulkanTexture*> gs_Textures;
 
     static Sprite gs_Sprite = {
         { 0.0f, 0.0f },
-        { 1.0f, 1.0f },
+        { 3.0f, 3.0f },
         { 0.5f, 0.2f, 0.2f, 1.0f }
     };
 
@@ -57,11 +56,6 @@ namespace Otter::Graphics::Vulkan
 
     Matrix<4, 4, Float32> g_Model = Matrix<4, 4, Float32>::Identity();
 
-    VkImage        g_TextureImage       = VK_NULL_HANDLE;
-    VkDeviceMemory g_TextureImageMemory = VK_NULL_HANDLE;
-    VkImageView    g_TextureImageView   = VK_NULL_HANDLE;
-    VkSampler      g_TextureSampler     = VK_NULL_HANDLE;
-
     enum class WindowState : UInt8
     {
         Normal    = 0,
@@ -71,7 +65,9 @@ namespace Otter::Graphics::Vulkan
 
     static WindowState gs_WindowState = WindowState::Normal;
 
-    void VulkanRenderer::Initialise(const void* const platformContext, const Collection<Shader*>& shaders)
+    void VulkanRenderer::Initialise(const void* const platformContext,
+                                    const Collection<Shader*>& shaders,
+                                    const Collection<Texture*>& textures)
     {
         CreateVulkanInstance(m_Allocator, &m_Instance);
 #if !OTR_RUNTIME
@@ -94,11 +90,26 @@ namespace Otter::Graphics::Vulkan
                              m_DevicePair.CommandBuffers);
         CreateSyncObjects();
 
-        Collections::New(reinterpret_cast<VulkanShader* const* const>(shaders.GetData()),
-                         shaders.GetCount(),
-                         gs_Shaders);
+        if (!shaders.IsEmpty())
+            Collections::New(reinterpret_cast<VulkanShader* const* const>(shaders.GetData()),
+                             shaders.GetCount(),
+                             gs_Shaders);
 
-        if (gs_Shaders.GetCount() > 0)
+        if (!textures.IsEmpty())
+            Collections::New(reinterpret_cast<VulkanTexture* const* const>(textures.GetData()),
+                             textures.GetCount(),
+                             gs_Textures);
+
+        for (const auto& texture: textures)
+        {
+            auto* vulkanTexture = (VulkanTexture*) texture;
+            vulkanTexture->SetDevicePair(&m_DevicePair);
+            vulkanTexture->SetAllocator(m_Allocator);
+
+            vulkanTexture->Bind();
+        }
+
+        if (!gs_Shaders.IsEmpty())
         {
             for (const auto& shader: shaders)
             {
@@ -110,10 +121,6 @@ namespace Otter::Graphics::Vulkan
             }
 
             CreatePipelines();
-
-            CreateTextureImage();
-            CreateTextureImageView();
-            CreateTextureSampler();
 
             CreateVertexBuffer();
             CreateIndexBuffer();
@@ -167,20 +174,22 @@ namespace Otter::Graphics::Vulkan
         DestroyCommandPool(m_DevicePair, m_Allocator, &m_DevicePair.GraphicsCommandPool);
         DestroySyncObjects();
 
-        if (gs_Shaders.GetCount() > 0)
+        if (!gs_Textures.IsEmpty())
+            for (const auto& texture: gs_Textures)
+                Texture::Destroy(texture);
+
+        gs_Textures.ClearDestructive();
+
+        if (!gs_Shaders.IsEmpty())
         {
             for (auto& shader: gs_Shaders)
-                Delete(shader);
+                Shader::Destroy(shader);
 
             gs_Shaders.ClearDestructive();
 
             DataBuffer::Destroy(BufferType::Uniform, m_UniformBuffer);
             DataBuffer::Destroy(BufferType::Index, m_IndexBuffer);
             DataBuffer::Destroy(BufferType::Vertex, m_VertexBuffer);
-
-            DestroyTextureSampler();
-            DestroyTextureImageView();
-            DestroyTextureImage();
 
             DestroyVulkanDescriptorData();
             DestroyPipeline(m_DevicePair.LogicalDevice, m_Allocator, &m_PipelineLayout, &m_Pipeline);
@@ -902,310 +911,6 @@ namespace Otter::Graphics::Vulkan
         m_UniformBuffer->Write(nullptr, sizeof(GlobalUniformBufferObject));
     }
 
-    void VulkanRenderer::CreateTextureImage()
-    {
-        int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load("Assets/Textures/texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        VkDeviceSize imageSize = texWidth * texHeight * 4;
-
-        if (!pixels)
-        {
-            throw std::runtime_error("failed to load texture image!");
-        }
-
-        VulkanDataBuffer stagingBuffer;
-        stagingBuffer.SetDevicePair(&m_DevicePair);
-        stagingBuffer.SetAllocator(m_Allocator);
-        if (!stagingBuffer.TryInitialise(imageSize,
-                                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-                                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT))
-        {
-            OTR_LOG_FATAL("Failed to create staging buffer")
-            return;
-        }
-
-        OTR_VULKAN_VALIDATE(vkBindBufferMemory(m_DevicePair.LogicalDevice,
-                                               stagingBuffer.GetHandle(),
-                                               stagingBuffer.GetDeviceMemory(),
-                                               0))
-
-        void* data;
-        vkMapMemory(m_DevicePair.LogicalDevice, stagingBuffer.GetDeviceMemory(), 0, imageSize, 0, &data);
-        memcpy(data, pixels, static_cast<Size>(imageSize));
-        vkUnmapMemory(m_DevicePair.LogicalDevice, stagingBuffer.GetDeviceMemory());
-
-        stbi_image_free(pixels);
-
-        // HELP: Create Image
-        VkImageCreateInfo imageInfo{ };
-        imageInfo.sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        imageInfo.imageType     = VK_IMAGE_TYPE_2D;
-        imageInfo.extent.width  = texWidth;
-        imageInfo.extent.height = texHeight;
-        imageInfo.extent.depth  = 1;
-        imageInfo.mipLevels     = 1;
-        imageInfo.arrayLayers   = 1;
-        imageInfo.format        = VK_FORMAT_R8G8B8A8_SRGB;
-        imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        imageInfo.usage         = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        imageInfo.samples       = VK_SAMPLE_COUNT_1_BIT;
-        imageInfo.sharingMode   = VK_SHARING_MODE_EXCLUSIVE;
-
-        OTR_VULKAN_VALIDATE(vkCreateImage(m_DevicePair.LogicalDevice, &imageInfo, m_Allocator, &g_TextureImage))
-
-        VkMemoryRequirements memRequirements;
-        vkGetImageMemoryRequirements(m_DevicePair.LogicalDevice, g_TextureImage, &memRequirements);
-
-        VkMemoryAllocateInfo allocInfo{ };
-        allocInfo.sType          = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = memRequirements.size;
-
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(m_DevicePair.PhysicalDevice, &memProperties);
-
-        for (UInt32 i = 0; i < memProperties.memoryTypeCount; i++)
-        {
-            if ((memRequirements.memoryTypeBits & (1 << i))
-                && (memProperties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ==
-                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-            {
-                allocInfo.memoryTypeIndex = i;
-                break;
-            }
-        }
-
-        OTR_VULKAN_VALIDATE(vkAllocateMemory(m_DevicePair.LogicalDevice,
-                                             &allocInfo,
-                                             m_Allocator,
-                                             &g_TextureImageMemory))
-
-        vkBindImageMemory(m_DevicePair.LogicalDevice, g_TextureImage, g_TextureImageMemory, 0);
-
-        // HELP: Transition Image Layout
-        VkCommandBufferAllocateInfo allocInfoA{ };
-        allocInfoA.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfoA.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfoA.commandPool        = m_DevicePair.GraphicsCommandPool;
-        allocInfoA.commandBufferCount = 1;
-
-        VkCommandBuffer commandBufferA;
-        vkAllocateCommandBuffers(m_DevicePair.LogicalDevice, &allocInfoA, &commandBufferA);
-
-        VkCommandBufferBeginInfo beginInfoA{ };
-        beginInfoA.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfoA.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(commandBufferA, &beginInfoA);
-
-        VkImageMemoryBarrier barrierA{ };
-        barrierA.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrierA.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
-        barrierA.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrierA.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrierA.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrierA.image                           = g_TextureImage;
-        barrierA.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrierA.subresourceRange.baseMipLevel   = 0;
-        barrierA.subresourceRange.levelCount     = 1;
-        barrierA.subresourceRange.baseArrayLayer = 0;
-        barrierA.subresourceRange.layerCount     = 1;
-        barrierA.srcAccessMask                   = 0;
-        barrierA.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        VkPipelineStageFlags sourceStageA;
-        sourceStageA = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-
-        VkPipelineStageFlags destinationStageA;
-        destinationStageA = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-        vkCmdPipelineBarrier(
-            commandBufferA,
-            sourceStageA, destinationStageA,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrierA
-        );
-
-        vkEndCommandBuffer(commandBufferA);
-
-        VkSubmitInfo submitInfoA{ };
-        submitInfoA.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfoA.commandBufferCount = 1;
-        submitInfoA.pCommandBuffers    = &commandBufferA;
-
-        vkQueueSubmit(m_DevicePair.GraphicsQueueFamily.Handle, 1, &submitInfoA, VK_NULL_HANDLE);
-        vkQueueWaitIdle(m_DevicePair.GraphicsQueueFamily.Handle);
-
-        vkFreeCommandBuffers(m_DevicePair.LogicalDevice, m_DevicePair.GraphicsCommandPool, 1, &commandBufferA);
-
-        // HELP: Copy Buffer to Image
-        VkCommandBufferAllocateInfo allocInfoB{ };
-        allocInfoB.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfoB.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfoB.commandPool        = m_DevicePair.GraphicsCommandPool;
-        allocInfoB.commandBufferCount = 1;
-
-        VkCommandBuffer commandBufferB;
-        vkAllocateCommandBuffers(m_DevicePair.LogicalDevice, &allocInfoB, &commandBufferB);
-
-        VkCommandBufferBeginInfo beginInfoB{ };
-        beginInfoB.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfoB.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(commandBufferB, &beginInfoB);
-
-        VkBufferImageCopy region{ };
-        region.bufferOffset                    = 0;
-        region.bufferRowLength                 = 0;
-        region.bufferImageHeight               = 0;
-        region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel       = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount     = 1;
-        region.imageOffset                     = { 0, 0, 0 };
-        region.imageExtent                     = {
-            static_cast<UInt32>(texWidth),
-            static_cast<UInt32>(texHeight),
-            1
-        };
-
-        vkCmdCopyBufferToImage(commandBufferB,
-                               stagingBuffer.GetHandle(),
-                               g_TextureImage,
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                               1,
-                               &region);
-
-        vkEndCommandBuffer(commandBufferB);
-
-        VkSubmitInfo submitInfoB{ };
-        submitInfoB.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfoB.commandBufferCount = 1;
-        submitInfoB.pCommandBuffers    = &commandBufferB;
-
-        vkQueueSubmit(m_DevicePair.GraphicsQueueFamily.Handle, 1, &submitInfoB, VK_NULL_HANDLE);
-        vkQueueWaitIdle(m_DevicePair.GraphicsQueueFamily.Handle);
-
-        vkFreeCommandBuffers(m_DevicePair.LogicalDevice, m_DevicePair.GraphicsCommandPool, 1, &commandBufferB);
-
-        // HELP: Transition Image Layout
-        VkCommandBufferAllocateInfo allocInfoC{ };
-        allocInfoC.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfoC.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfoC.commandPool        = m_DevicePair.GraphicsCommandPool;
-        allocInfoC.commandBufferCount = 1;
-
-        VkCommandBuffer commandBufferC;
-        vkAllocateCommandBuffers(m_DevicePair.LogicalDevice, &allocInfoC, &commandBufferC);
-
-        VkCommandBufferBeginInfo beginInfoC{ };
-        beginInfoC.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        beginInfoC.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(commandBufferC, &beginInfoC);
-
-        VkImageMemoryBarrier barrierC{ };
-        barrierC.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrierC.oldLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        barrierC.newLayout                       = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        barrierC.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrierC.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-        barrierC.image                           = g_TextureImage;
-        barrierC.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        barrierC.subresourceRange.baseMipLevel   = 0;
-        barrierC.subresourceRange.levelCount     = 1;
-        barrierC.subresourceRange.baseArrayLayer = 0;
-        barrierC.subresourceRange.layerCount     = 1;
-        barrierC.srcAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrierC.dstAccessMask                   = VK_ACCESS_SHADER_READ_BIT;
-
-        VkPipelineStageFlags sourceStageC;
-        sourceStageC = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-        VkPipelineStageFlags destinationStageC;
-        destinationStageC = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-        vkCmdPipelineBarrier(
-            commandBufferC,
-            sourceStageC, destinationStageC,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrierC
-        );
-
-        vkEndCommandBuffer(commandBufferC);
-
-        VkSubmitInfo submitInfoC{ };
-        submitInfoC.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submitInfoC.commandBufferCount = 1;
-        submitInfoC.pCommandBuffers    = &commandBufferC;
-
-        vkQueueSubmit(m_DevicePair.GraphicsQueueFamily.Handle, 1, &submitInfoC, VK_NULL_HANDLE);
-        vkQueueWaitIdle(m_DevicePair.GraphicsQueueFamily.Handle);
-
-        vkFreeCommandBuffers(m_DevicePair.LogicalDevice, m_DevicePair.GraphicsCommandPool, 1, &commandBufferC);
-
-        stagingBuffer.CleanUp();
-    }
-
-    void VulkanRenderer::CreateTextureImageView()
-    {
-        VkImageViewCreateInfo viewInfo{ };
-        viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        viewInfo.image                           = g_TextureImage;
-        viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-        viewInfo.format                          = VK_FORMAT_R8G8B8A8_SRGB;
-        viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-        viewInfo.subresourceRange.baseMipLevel   = 0;
-        viewInfo.subresourceRange.levelCount     = 1;
-        viewInfo.subresourceRange.baseArrayLayer = 0;
-        viewInfo.subresourceRange.layerCount     = 1;
-
-        OTR_VULKAN_VALIDATE(vkCreateImageView(m_DevicePair.LogicalDevice, &viewInfo, m_Allocator, &g_TextureImageView))
-    }
-
-    void VulkanRenderer::CreateTextureSampler()
-    {
-        VkPhysicalDeviceProperties properties{ };
-        vkGetPhysicalDeviceProperties(m_DevicePair.PhysicalDevice, &properties);
-
-        VkSamplerCreateInfo samplerInfo{ };
-        samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-        samplerInfo.magFilter               = VK_FILTER_LINEAR;
-        samplerInfo.minFilter               = VK_FILTER_LINEAR;
-        samplerInfo.addressModeU            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeV            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.addressModeW            = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        samplerInfo.anisotropyEnable        = VK_TRUE;
-        samplerInfo.maxAnisotropy           = properties.limits.maxSamplerAnisotropy;
-        samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-        samplerInfo.unnormalizedCoordinates = VK_FALSE;
-        samplerInfo.compareEnable           = VK_FALSE;
-        samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
-        samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-        OTR_VULKAN_VALIDATE(vkCreateSampler(m_DevicePair.LogicalDevice, &samplerInfo, m_Allocator, &g_TextureSampler))
-    }
-
-    void VulkanRenderer::DestroyTextureImage()
-    {
-        vkDestroyImage(m_DevicePair.LogicalDevice, g_TextureImage, m_Allocator);
-        vkFreeMemory(m_DevicePair.LogicalDevice, g_TextureImageMemory, m_Allocator);
-    }
-
-    void VulkanRenderer::DestroyTextureImageView()
-    {
-        vkDestroyImageView(m_DevicePair.LogicalDevice, g_TextureImageView, m_Allocator);
-    }
-
-    void VulkanRenderer::DestroyTextureSampler()
-    {
-        vkDestroySampler(m_DevicePair.LogicalDevice, g_TextureSampler, m_Allocator);
-    }
-
     void VulkanRenderer::CreateDescriptorSetLayout()
     {
         VkDescriptorSetLayoutBinding uboLayoutBinding{ };
@@ -1285,8 +990,8 @@ namespace Otter::Graphics::Vulkan
 
             VkDescriptorImageInfo imageInfo{ };
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView   = g_TextureImageView;
-            imageInfo.sampler     = g_TextureSampler;
+            imageInfo.imageView   = gs_Textures[0]->GetImageView();
+            imageInfo.sampler     = gs_Textures[0]->GetSampler();
 
             Span<VkWriteDescriptorSet, 2> descriptorWrites;
 

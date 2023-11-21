@@ -8,7 +8,8 @@
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Swapchain.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Descriptors.h"
 #include "Graphics/API/Vulkan/VulkanShader.h"
-#include "VulkanDataBuffer.h"
+#include "Graphics/API/Vulkan/VulkanTexture.h"
+#include "Graphics/API/Vulkan/VulkanDataBuffer.h"
 
 namespace Otter::Graphics::Vulkan
 {
@@ -18,7 +19,9 @@ namespace Otter::Graphics::Vulkan
         VulkanRenderer() : Renderer() { }
         ~VulkanRenderer() final = default;
 
-        void Initialise(const void* platformContext, const Collection<Shader*>& shaders) final;
+        void Initialise(const void* platformContext,
+                        const Collection<Shader*>& shaders,
+                        const Collection<Texture*>& textures) final;
         void Shutdown() final;
 
         bool TryBeginFrame() final;
@@ -113,14 +116,6 @@ namespace Otter::Graphics::Vulkan
         void CreateVertexBuffer();
         void CreateIndexBuffer();
         void CreateUniformBuffer();
-
-        // HELP: Textures related
-        void CreateTextureImage();
-        void CreateTextureImageView();
-        void CreateTextureSampler();
-        void DestroyTextureImage();
-        void DestroyTextureImageView();
-        void DestroyTextureSampler();
 
         // HELP: VkSemaphore/VkFence related
         void CreateSyncObjects();

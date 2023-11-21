@@ -11,6 +11,12 @@ namespace Otter::Graphics
     {
         return New<Vulkan::VulkanShader>(filePath);
     }
+
+    void Shader::Destroy(Shader* outShader)
+    {
+        Delete<Vulkan::VulkanShader>((Vulkan::VulkanShader*) outShader);
+        outShader = nullptr;
+    }
 }
 
 #endif

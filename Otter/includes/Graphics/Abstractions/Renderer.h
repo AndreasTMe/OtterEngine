@@ -4,6 +4,7 @@
 #include "Core/Defines.h"
 #include "Core/Collections/Collection.h"
 #include "Graphics/Abstractions/Shader.h"
+#include "Graphics/Abstractions/Texture.h"
 
 namespace Otter::Graphics
 {
@@ -12,7 +13,9 @@ namespace Otter::Graphics
     public:
         virtual ~Renderer() = default;
 
-        virtual void Initialise(const void* platformContext, const Collection<Shader*>& shaders) = 0;
+        virtual void Initialise(const void* platformContext,
+                                const Collection<Shader*>& shaders,
+                                const Collection<Texture*>& textures) = 0;
         virtual void Shutdown() = 0;
 
         virtual bool TryBeginFrame() = 0;

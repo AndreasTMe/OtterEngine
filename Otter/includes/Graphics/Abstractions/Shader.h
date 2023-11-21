@@ -11,6 +11,7 @@ namespace Otter::Graphics
         virtual void Bind() = 0;
 
         [[nodiscard]] static Shader* Create(const char* filePath);
+        static void Destroy(Shader* outShader);
 
     protected:
         explicit Shader(const char* const filePath)
