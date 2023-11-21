@@ -69,6 +69,14 @@ namespace Otter
             return vertices;
         }
 
+        OTR_INLINE Span<Vector<2, Float32>, 4> GetTexCoords() const
+        {
+            return {{ 0.0f, 1.0f },
+                    { 1.0f, 1.0f },
+                    { 1.0f, 0.0f },
+                    { 0.0f, 0.0f }};
+        }
+
     private:
         Rectangle<Float32> m_Bounds;
         Vector<4, Float32> m_Color;

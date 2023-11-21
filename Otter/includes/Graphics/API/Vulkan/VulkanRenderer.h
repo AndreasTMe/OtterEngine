@@ -114,6 +114,14 @@ namespace Otter::Graphics::Vulkan
         void CreateIndexBuffer();
         void CreateUniformBuffer();
 
+        // HELP: Textures related
+        void CreateTextureImage();
+        void CreateTextureImageView();
+        void CreateTextureSampler();
+        void DestroyTextureImage();
+        void DestroyTextureImageView();
+        void DestroyTextureSampler();
+
         // HELP: VkSemaphore/VkFence related
         void CreateSyncObjects();
         void DestroySyncObjects();

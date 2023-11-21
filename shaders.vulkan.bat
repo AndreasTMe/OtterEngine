@@ -2,6 +2,9 @@ REM Used in Debug only
 REM Compile shaders to SPIR-V
 
 if not exist "%cd%\bin\Debug-Windows\OtterEngine\Assets\Shaders" mkdir "%cd%\bin\Debug-Windows\OtterEngine\Assets\Shaders"
+if not exist "%cd%\bin\Debug-Windows\OtterEngine\Assets\Textures" mkdir "%cd%\bin\Debug-Windows\OtterEngine\Assets\Textures"
+
+xcopy /s "%cd%\Assets\Textures" "%cd%\bin\Debug-Windows\OtterEngine\Assets\Textures" /Y
 
 echo "Compiling shaders..."
 
