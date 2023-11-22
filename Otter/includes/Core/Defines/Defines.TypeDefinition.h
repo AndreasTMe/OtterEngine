@@ -28,16 +28,6 @@
     OTR_INLINE Iterator rbegin() const noexcept { return Iterator(pointer + size - 1); }    \
     OTR_INLINE Iterator rend() const noexcept { return Iterator(pointer - 1); }
 
-#define OTR_WITH_TYPENAME(T)                    \
-    template<>                                  \
-    struct TypeOf<T>                            \
-    {                                           \
-        OTR_INLINE static const char* GetName() \
-        {                                       \
-            return #T;                          \
-        }                                       \
-    };
-
 #define OTR_DISABLE_CONSTRUCTION(Type)      \
     Type() = delete;                        \
     ~Type() = delete;

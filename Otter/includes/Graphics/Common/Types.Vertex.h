@@ -1,11 +1,8 @@
-#ifndef OTTERENGINE_VERTEX_H
-#define OTTERENGINE_VERTEX_H
+#ifndef OTTERENGINE_TYPES_VERTEX_H
+#define OTTERENGINE_TYPES_VERTEX_H
 
-#include "Core/Defines.h"
 #include "Core/Types.h"
-#include "Core/Collections/Collection.h"
 #include "Math/Vector.h"
-#include "Graphics/2D/Sprite.h"
 
 namespace Otter::Graphics
 {
@@ -18,4 +15,4 @@ namespace Otter::Graphics
     };
 }
 
-#endif //OTTERENGINE_VERTEX_H
+#endif //OTTERENGINE_TYPES_VERTEX_H

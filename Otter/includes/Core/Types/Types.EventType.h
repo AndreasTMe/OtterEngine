@@ -3,8 +3,6 @@
 
 #include "Core/Types/Types.Base.h"
 
-namespace Otter::Internal
-{
 #define EVENT_TYPE_LIST                     \
     /* Window Events (Use 0x01 - 0x10) */   \
     REPLACE_WITH(WindowClose,0x01)          \
@@ -27,18 +25,20 @@ namespace Otter::Internal
     REPLACE_WITH(MouseDragged,0x25)         \
     REPLACE_WITH(MouseDragStarted,0x26)     \
     REPLACE_WITH(MouseDragEnded,0x27)
-    // TODO: Maybe implement these events later?
-    // MouseEnter         = 0x28,
-    // MouseExit          = 0x29,
-    // MouseDragEntered   = 0x2A,
-    // MouseDragExited    = 0x2B,
+// TODO: Maybe implement these events later?
+// MouseEnter         = 0x28,
+// MouseExit          = 0x29,
+// MouseDragEntered   = 0x2A,
+// MouseDragExited    = 0x2B,
 
-    // Joystick Events (Use 0x30 - 0x40)
-    // Controller Events (Use 0x40 - 0x50)
-    // Touch Events (Use 0x50 - 0x60)
-    // File Events (Use 0x60 - 0x70)
-    // Log Events (Use 0x70 - 0x80)
+// Joystick Events (Use 0x30 - 0x40)
+// Controller Events (Use 0x40 - 0x50)
+// Touch Events (Use 0x50 - 0x60)
+// File Events (Use 0x60 - 0x70)
+// Log Events (Use 0x70 - 0x80)
 
+namespace Otter::Internal
+{
     enum class EventType : UInt8
     {
         None = 0x00,
@@ -49,22 +49,22 @@ namespace Otter::Internal
 
         Max = 0xFF
     };
-
-    template<typename OStream>
-    OStream& operator<<(OStream& os, const Otter::Internal::EventType& eventType)
-    {
-        switch (eventType)
-        {
-#define REPLACE_WITH(Item, Value) case Otter::Internal::EventType::Item: os << "EventType::" << #Item; break;
-            EVENT_TYPE_LIST
-#undef REPLACE_WITH
-            default:
-                os << "EventType[Unknown]";
-        }
-
-        return os;
-    }
-#undef KEYCODE_LIST
 }
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const Otter::Internal::EventType& eventType)
+{
+    switch (eventType)
+    {
+#define REPLACE_WITH(Item, Value) case Otter::Internal::EventType::Item: os << "EventType::" << #Item; break;
+        EVENT_TYPE_LIST
+#undef REPLACE_WITH
+        default:
+            os << "EventType[Unknown]";
+    }
+
+    return os;
+}
+#undef KEYCODE_LIST
 
 #endif //OTTERENGINE_TYPES_EVENTTYPE_H
