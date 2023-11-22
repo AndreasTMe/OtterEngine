@@ -10,9 +10,6 @@
 
 namespace Otter::Graphics
 {
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
-
     enum class BufferType : UInt8
     {
         None = 0x00,
@@ -24,8 +21,6 @@ namespace Otter::Graphics
         Max = 0xFF
     };
 }
-
-#pragma clang diagnostic pop
 
 template<typename OStream>
 OStream& operator<<(OStream& os, const Otter::Graphics::BufferType& bufferType)

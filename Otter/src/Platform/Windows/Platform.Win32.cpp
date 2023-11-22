@@ -11,13 +11,8 @@ namespace Otter::Internal
 {
     static LRESULT CALLBACK WindowProcedureCallbackOverride(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
-
     Double64      s_ClockFrequency = 0.0;
     LARGE_INTEGER s_ClockStart     = { 0 };
-
-#pragma clang diagnostic pop
 
     UnsafeHandle g_PlatformMemoryHandle;
 
