@@ -6,7 +6,7 @@
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
 #include "Math/Vector.h"
 #include "Graphics/API/Vulkan/VulkanBase.Includes.h"
-#include "Graphics/2D/Vertex.h"
+#include "Graphics/Common/Types.Vertex.h"
 
 namespace Otter::Graphics::Vulkan
 {

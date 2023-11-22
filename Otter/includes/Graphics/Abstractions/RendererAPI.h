@@ -1,5 +1,5 @@
-#ifndef OTTERENGINE_RENDERER_H
-#define OTTERENGINE_RENDERER_H
+#ifndef OTTERENGINE_RENDERERAPI_H
+#define OTTERENGINE_RENDERERAPI_H
 
 #include "Core/Defines.h"
 #include "Core/Collections/Collection.h"
@@ -8,10 +8,10 @@
 
 namespace Otter::Graphics
 {
-    class Renderer
+    class RendererAPI
     {
     public:
-        virtual ~Renderer() = default;
+        virtual ~RendererAPI() = default;
 
         virtual void Initialise(const void* platformContext,
                                 const Collection<Shader*>& shaders,
@@ -23,12 +23,12 @@ namespace Otter::Graphics
 
         virtual void DrawIndexed() = 0;
 
-        [[nodiscard]] static Renderer* Create();
-        static void Destroy(Renderer* outRenderer);
+        [[nodiscard]] static RendererAPI* Create();
+        static void Destroy(RendererAPI* outRenderer);
 
     protected:
-        Renderer() = default;
+        RendererAPI() = default;
     };
 }
 
-#endif //OTTERENGINE_RENDERER_H
+#endif //OTTERENGINE_RENDERERAPI_H

@@ -9,22 +9,22 @@
 #include "Graphics/API/Vulkan/VulkanPipelines.h"
 #include "Graphics/API/Vulkan/VulkanQueues.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.UniformBuffers.h"
+#include "Graphics/Common/Types.Vertex.h"
 #include "Math/Matrix.h"
 
 // TODO: Remove later
-#include "Graphics/2D/Vertex.h"
-#include "Graphics/2D/Sprite.h"
+#include "2D/Sprite.h"
 
 #if OTR_GRAPHICS_VULKAN_ENABLED
 
 namespace Otter::Graphics
 {
-    Renderer* Renderer::Create()
+    RendererAPI* RendererAPI::Create()
     {
         return New<Vulkan::VulkanRenderer>();
     }
 
-    void Renderer::Destroy(Renderer* outRenderer)
+    void RendererAPI::Destroy(RendererAPI* outRenderer)
     {
         Delete<Vulkan::VulkanRenderer>((Vulkan::VulkanRenderer*) outRenderer);
         outRenderer = nullptr;
@@ -100,7 +100,7 @@ namespace Otter::Graphics::Vulkan
                              textures.GetCount(),
                              gs_Textures);
 
-        for (const auto& texture: textures)
+        for (const auto& texture: gs_Textures)
         {
             auto* vulkanTexture = (VulkanTexture*) texture;
             vulkanTexture->SetDevicePair(&m_DevicePair);
@@ -111,7 +111,7 @@ namespace Otter::Graphics::Vulkan
 
         if (!gs_Shaders.IsEmpty())
         {
-            for (const auto& shader: shaders)
+            for (const auto& shader: gs_Shaders)
             {
                 auto* vulkanShader = (VulkanShader*) shader;
                 vulkanShader->SetLogicalDevice(m_DevicePair.LogicalDevice);
@@ -988,31 +988,40 @@ namespace Otter::Graphics::Vulkan
             bufferInfo.offset = 0;
             bufferInfo.range  = sizeof(GlobalUniformBufferObject);
 
-            VkDescriptorImageInfo imageInfo{ };
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView   = gs_Textures[0]->GetImageView();
-            imageInfo.sampler     = gs_Textures[0]->GetSampler();
+            VkWriteDescriptorSet descriptorWrite{ };
+            descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWrite.dstSet          = m_Descriptor.Sets[i];
+            descriptorWrite.dstBinding      = 0;
+            descriptorWrite.dstArrayElement = 0;
+            descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWrite.descriptorCount = 1;
+            descriptorWrite.pBufferInfo     = &bufferInfo;
 
-            Span<VkWriteDescriptorSet, 2> descriptorWrites;
+            List <VkWriteDescriptorSet> descriptorWrites;
+            descriptorWrites.Reserve(1 + gs_Textures.GetCount());
+            descriptorWrites.Add(descriptorWrite);
 
-            descriptorWrites[0].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[0].dstSet          = m_Descriptor.Sets[i];
-            descriptorWrites[0].dstBinding      = 0;
-            descriptorWrites[0].dstArrayElement = 0;
-            descriptorWrites[0].descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptorWrites[0].descriptorCount = 1;
-            descriptorWrites[0].pBufferInfo     = &bufferInfo;
+            for (UInt8 j = 0; j < gs_Textures.GetCount(); j++)
+            {
+                VkDescriptorImageInfo imageInfo{ };
+                imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                imageInfo.imageView   = gs_Textures[j]->GetImageView();
+                imageInfo.sampler     = gs_Textures[j]->GetSampler();
 
-            descriptorWrites[1].sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWrites[1].dstSet          = m_Descriptor.Sets[i];
-            descriptorWrites[1].dstBinding      = 1;
-            descriptorWrites[1].dstArrayElement = 0;
-            descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = 1;
-            descriptorWrites[1].pImageInfo      = &imageInfo;
+                descriptorWrite = { };
+                descriptorWrite.sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWrite.dstSet          = m_Descriptor.Sets[i];
+                descriptorWrite.dstBinding      = j + 1;
+                descriptorWrite.dstArrayElement = 0;
+                descriptorWrite.descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                descriptorWrite.descriptorCount = 1;
+                descriptorWrite.pImageInfo      = &imageInfo;
+
+                descriptorWrites.Add(descriptorWrite);
+            }
 
             vkUpdateDescriptorSets(m_DevicePair.LogicalDevice,
-                                   descriptorWrites.Length(),
+                                   descriptorWrites.GetCount(),
                                    descriptorWrites.GetData(),
                                    0,
                                    nullptr);

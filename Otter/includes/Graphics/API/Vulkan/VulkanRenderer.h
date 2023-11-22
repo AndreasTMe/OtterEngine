@@ -2,7 +2,7 @@
 #define OTTERENGINE_VULKANRENDERER_H
 
 #include "Core/Defines.h"
-#include "Graphics/Abstractions/Renderer.h"
+#include "Graphics/Abstractions/RendererAPI.h"
 #include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Device.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Swapchain.h"
@@ -13,10 +13,10 @@
 
 namespace Otter::Graphics::Vulkan
 {
-    class VulkanRenderer final : public Renderer
+    class VulkanRenderer final : public RendererAPI
     {
     public:
-        VulkanRenderer() : Renderer() { }
+        VulkanRenderer() : RendererAPI() { }
         ~VulkanRenderer() final = default;
 
         void Initialise(const void* platformContext,
