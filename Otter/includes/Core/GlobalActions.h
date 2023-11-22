@@ -12,9 +12,6 @@ namespace Otter
     class GlobalActions final
     {
     public:
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
-
         static Func<bool, const Internal::WindowCloseEvent&>     OnWindowClose;
         static Func<bool, const Internal::WindowResizeEvent&>    OnWindowResize;
         static Func<bool, const Internal::WindowMinimizedEvent&> OnWindowMinimized;
@@ -31,8 +28,6 @@ namespace Otter
         static Func<bool, const Internal::MouseScrollEvent&>         OnMouseScroll;
         static Func<bool, const Internal::MouseMovedEvent&>          OnMouseMoved;
         static Func<bool, const Internal::MouseDraggedEvent&>        OnMouseDragged;
-
-#pragma clang diagnostic pop
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(GlobalActions)

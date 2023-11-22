@@ -45,10 +45,6 @@ namespace Otter::Internal
     };
 }
 
-OTR_WITH_TYPENAME(Otter::Internal::WindowsPlatform)
-
-OTR_WITH_TYPENAME(Otter::Internal::WindowsPlatformWindowData)
-
 #endif // OTR_PLATFORM_WINDOWS
 
 #endif //OTTERENGINE_PLATFORM_WIN32_H

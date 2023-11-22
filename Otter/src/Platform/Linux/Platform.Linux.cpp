@@ -29,6 +29,4 @@ namespace Otter::Internal
     }
 }
 
-OTR_WITH_TYPENAME(Otter::Internal::LinuxPlatformWindowData)
-
 #endif

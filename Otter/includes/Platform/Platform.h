@@ -42,6 +42,4 @@ namespace Otter
     };
 }
 
-OTR_WITH_TYPENAME(Otter::PlatformContext)
-
 #endif //OTTERENGINE_PLATFORM_H

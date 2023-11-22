@@ -60,10 +60,4 @@ namespace Otter::Internal
     };
 }
 
-OTR_WITH_TYPENAME(Otter::Internal::KeyPressedEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::KeyReleasedEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::KeyHoldEvent)
-
 #endif //OTTERENGINE_KEYBOARDEVENTS_H

@@ -9,7 +9,7 @@
 
 #define OTR_USING_BASE(BaseType) using base = BaseType;
 
-#define OTR_NAME_OF(value) #value
+#define OTR_NAME_OF(...) #__VA_ARGS__
 
 #define OTR_BIT_STRING(value, length) std::bitset<length>(value)
 #define OTR_HEX_STRING(type, value, length)             \

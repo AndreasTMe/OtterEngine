@@ -89,7 +89,7 @@ namespace Otter
                 {
                     if (ptrCopy != nullptr)
                         ptrCopy->~T();
-                    
+
                     ++ptrCopy;
                 }
             }
@@ -130,7 +130,5 @@ namespace Otter
         }
     };
 }
-
-OTR_WITH_TYPENAME(Otter::UnsafeHandle)
 
 #endif //OTTERENGINE_MEMORY_H

@@ -13,9 +13,6 @@
 // TODO: Add SIMD support.
 namespace Otter::Math
 {
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
-
     template<FloatingPointNumber TNumber>
     OTR_INLINE constexpr TNumber Pi = static_cast<TNumber>(3.141592653589793238462643383279502884L);
 
@@ -36,8 +33,6 @@ namespace Otter::Math
 
     template<AnyNumber TNumber>
     OTR_INLINE constexpr TNumber NegativeInfinity = -std::numeric_limits<TNumber>::infinity();
-
-#pragma clang diagnostic pop
 
     template<AnyNumber Tx, AnyNumber Ty>
     OTR_INLINE constexpr auto Max(Tx x, Ty y) { return x > y ? x : y; }

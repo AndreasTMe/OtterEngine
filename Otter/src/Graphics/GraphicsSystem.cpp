@@ -1,28 +1,35 @@
 #include "Otter.PCH.h"
 
 #include "Graphics/GraphicsSystem.h"
+#include "Assets/Asset.h"
 
-#include "Graphics/Abstractions/Renderer.h"
+#include "Graphics/Abstractions/RendererAPI.h"
 
 namespace Otter::GraphicsSystem
 {
-    static Graphics::Renderer* gs_Renderer = nullptr;
+    static Graphics::RendererAPI* gs_Renderer = nullptr;
 
     bool TryInitialise(const void* const platformContext)
     {
         OTR_INTERNAL_ASSERT_MSG(gs_Renderer == nullptr, "Graphics system already initialised")
 
-        gs_Renderer = Graphics::Renderer::Create();
+        gs_Renderer = Graphics::RendererAPI::Create();
         if (!gs_Renderer)
             return false;
 
         List < Graphics::Shader * > shaders;
         shaders.Reserve(2);
         shaders.AddRange({
-                             Graphics::Shader::Create("Assets/Shaders/default.glsl")
+                             Asset::Create<AssetType::Shader>("Assets/Shaders/default.glsl")
                          });
 
-        gs_Renderer->Initialise(platformContext, shaders);
+        List < Graphics::Texture * > textures;
+        textures.Reserve(2);
+        textures.AddRange({
+                              Asset::Create<AssetType::Texture>("Assets/Textures/texture.jpg")
+                          });
+
+        gs_Renderer->Initialise(platformContext, shaders, textures);
         // TODO: Initialise Global Uniform Buffer/Camera
 
         OTR_LOG_DEBUG("Graphics system initialised...")
@@ -37,7 +44,7 @@ namespace Otter::GraphicsSystem
         OTR_LOG_DEBUG("Shutting down graphics system...")
         gs_Renderer->Shutdown();
 
-        Graphics::Renderer::Destroy(gs_Renderer);
+        Graphics::RendererAPI::Destroy(gs_Renderer);
     }
 
     void RenderFrame()
@@ -45,7 +52,7 @@ namespace Otter::GraphicsSystem
         if (!gs_Renderer->TryBeginFrame())
             return;
 
-        // TODO: Step 1: Bind Pipeline
+        // TODO: Step 1: Bind Pipelines
         // TODO: Step 2a: Update Uniform Buffer
         // TODO: Step 2b: Update Push Constants
         // TODO: Step 3a: Bind Vertex Buffer

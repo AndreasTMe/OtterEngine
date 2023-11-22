@@ -119,14 +119,4 @@ namespace Otter::Internal
     };
 }
 
-OTR_WITH_TYPENAME(Otter::Internal::MouseButtonPressedEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::MouseButtonReleasedEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::MouseScrollEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::MouseMovedEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::MouseDraggedEvent)
-
 #endif //OTTERENGINE_MOUSEEVENTS_H

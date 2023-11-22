@@ -3,9 +3,7 @@
 
 #include "Core/Types/Types.Base.h"
 
-namespace Otter
-{
-    // HELP: Using Windows Virtual-Key Codes
+// HELP: Using Windows Virtual-Key Codes
 #define KEYCODE_LIST                    \
     REPLACE_WITH(Backspace,0x08)        \
     REPLACE_WITH(Tab,0x09)              \
@@ -146,6 +144,8 @@ namespace Otter
     REPLACE_WITH(Apostrophe,0xDE)       \
     REPLACE_WITH(Tilde,0xE7)
 
+namespace Otter
+{
     enum class KeyCode : UInt8
     {
         None = 0x00,
@@ -156,22 +156,22 @@ namespace Otter
 
         Max = 0xFF
     };
-
-    template<typename OStream>
-    OStream& operator<<(OStream& os, const Otter::KeyCode& keyCode)
-    {
-        switch (keyCode)
-        {
-#define REPLACE_WITH(Item, Value) case Otter::KeyCode::Item: os << "KeyCode::" << #Item; break;
-            KEYCODE_LIST
-#undef REPLACE_WITH
-            default:
-                os << "KeyCode[Unknown]";
-        }
-
-        return os;
-    }
-#undef KEYCODE_LIST
 }
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const Otter::KeyCode& keyCode)
+{
+    switch (keyCode)
+    {
+#define REPLACE_WITH(Item, Value) case Otter::KeyCode::Item: os << "KeyCode::" << #Item; break;
+        KEYCODE_LIST
+#undef REPLACE_WITH
+        default:
+            os << "KeyCode[Unknown]";
+    }
+
+    return os;
+}
+#undef KEYCODE_LIST
 
 #endif //OTTERENGINE_TYPES_KEYCODE_H
