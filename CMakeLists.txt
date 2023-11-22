@@ -28,6 +28,9 @@ endforeach ()
 
 # Main Engine
 add_subdirectory(Otter)
+# Test Setup
+add_subdirectory(ThirdParty/stb)
+target_include_directories(Otter PRIVATE ThirdParty/stb)
 
 # Sandbox configuration
 add_subdirectory(Sandbox)

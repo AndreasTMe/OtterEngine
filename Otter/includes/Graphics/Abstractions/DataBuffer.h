@@ -1,10 +1,11 @@
 #ifndef OTTERENGINE_DATABUFFER_H
 #define OTTERENGINE_DATABUFFER_H
 
+#include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Collections/List.h"
+#include "Graphics/Abstractions/ShaderAttribute.h"
 #include "Graphics/Common/Types.BufferType.h"
-#include "Graphics/Common/Types.ShaderAttributeType.h"
 
 namespace Otter::Graphics
 {
@@ -31,13 +32,18 @@ namespace Otter::Graphics
             m_AttributeLayout.ClearDestructive();
         }
 
-        [[nodiscard]] const List<ShaderAttributeType>& GetAttributeLayout() const { return m_AttributeLayout; }
-        void SetAttributeLayout(InitialiserList<ShaderAttributeType> attributes) { m_AttributeLayout = attributes; }
+        [[nodiscard]] OTR_INLINE const List <ShaderAttribute>& GetAttributeLayout() const { return m_AttributeLayout; }
+        OTR_INLINE void SetAttributeLayout(InitialiserList<ShaderAttribute> attributes)
+        {
+            m_AttributeLayout.ClearDestructive();
+            m_AttributeLayout.Reserve(attributes.size());
+            m_AttributeLayout.AddRange(attributes);
+        }
 
     protected:
         VertexBuffer() : DataBuffer(), m_AttributeLayout() { }
 
-        List<ShaderAttributeType> m_AttributeLayout;
+        List <ShaderAttribute> m_AttributeLayout;
     };
 
     class IndexBuffer : public DataBuffer
@@ -45,7 +51,7 @@ namespace Otter::Graphics
     public:
         ~IndexBuffer() override = default;
 
-        [[nodiscard]] UInt32 GetCount() const { return m_Count; }
+        [[nodiscard]] OTR_INLINE UInt32 GetCount() const { return m_Count; }
 
     protected:
         IndexBuffer() : DataBuffer(), m_Count(0) { }

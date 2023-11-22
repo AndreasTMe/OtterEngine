@@ -41,59 +41,6 @@ concept IsBaseOf = std::is_base_of_v<TBase, TDerived>;
 template<typename TDerived, typename TBase>
 concept IsDerivedFrom = std::derived_from<TDerived, TBase>;
 
-template<typename T>
-struct TypeOf
-{
-public:
-    static const char* GetName() { return typeid(T).name(); }
-};
-
-#define  OTR_TYPEOF_DEFINITION(T)                   \
-    template<>                                      \
-    struct TypeOf<T>                                \
-    {                                               \
-    public:                                         \
-        static const char* GetName() { return #T; } \
-    };
-
-OTR_TYPEOF_DEFINITION(void)
-
-OTR_TYPEOF_DEFINITION(bool)
-
-OTR_TYPEOF_DEFINITION(char)
-
-OTR_TYPEOF_DEFINITION(Char8)
-
-OTR_TYPEOF_DEFINITION(Char16)
-
-OTR_TYPEOF_DEFINITION(Char32)
-
-OTR_TYPEOF_DEFINITION(UInt8)
-
-OTR_TYPEOF_DEFINITION(UInt16)
-
-OTR_TYPEOF_DEFINITION(UInt32)
-
-OTR_TYPEOF_DEFINITION(UInt64)
-
-OTR_TYPEOF_DEFINITION(Int8)
-
-OTR_TYPEOF_DEFINITION(Int16)
-
-OTR_TYPEOF_DEFINITION(Int32)
-
-OTR_TYPEOF_DEFINITION(Int64)
-
-OTR_TYPEOF_DEFINITION(Float16)
-
-OTR_TYPEOF_DEFINITION(Float32)
-
-OTR_TYPEOF_DEFINITION(Double64)
-
-OTR_TYPEOF_DEFINITION(Double128)
-
-#undef OTR_TYPEOF_DEFINITION
-
 template<typename... TArgs>
 struct VariadicArgs
 {

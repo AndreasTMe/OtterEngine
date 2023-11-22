@@ -4,9 +4,6 @@
 
 namespace Otter
 {
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
-
     Func<bool, const Internal::WindowCloseEvent&>     GlobalActions::OnWindowClose;
     Func<bool, const Internal::WindowResizeEvent&>    GlobalActions::OnWindowResize;
     Func<bool, const Internal::WindowMinimizedEvent&> GlobalActions::OnWindowMinimized;
@@ -23,6 +20,4 @@ namespace Otter
     Func<bool, const Internal::MouseScrollEvent&>         GlobalActions::OnMouseScroll;
     Func<bool, const Internal::MouseMovedEvent&>          GlobalActions::OnMouseMoved;
     Func<bool, const Internal::MouseDraggedEvent&>        GlobalActions::OnMouseDragged;
-
-#pragma clang diagnostic pop
 }

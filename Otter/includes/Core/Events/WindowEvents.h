@@ -49,16 +49,4 @@ namespace Otter::Internal
 #undef OTR_WINDOW_EVENT_CLASS
 }
 
-OTR_WITH_TYPENAME(Otter::Internal::WindowCloseEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::WindowResizeEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::WindowMinimizedEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::WindowMaximizedEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::WindowRestoredEvent)
-
-OTR_WITH_TYPENAME(Otter::Internal::WindowRefreshEvent)
-
 #endif //OTTERENGINE_WINDOWEVENTS_H

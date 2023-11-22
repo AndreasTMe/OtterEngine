@@ -41,13 +41,8 @@ namespace Otter
         }
         [[nodiscard]] OTR_INLINE constexpr Policy GetAllocationPolicy() const { return m_Policy; }
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
-
         [[nodiscard]] OTR_INLINE Iterator begin() const noexcept { return Iterator(m_Head); }
         [[nodiscard]] OTR_INLINE Iterator end() const noexcept { return Iterator(nullptr); }
-
-#pragma clang diagnostic pop
 
     private:
         struct Header

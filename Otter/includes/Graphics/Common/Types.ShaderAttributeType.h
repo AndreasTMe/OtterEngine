@@ -3,8 +3,6 @@
 
 #include "Core/Types.h"
 
-namespace Otter
-{
 #define SHADER_ATTRIBUTE_TYPE_LIST  \
     REPLACE_WITH(Float, 0x01)       \
     REPLACE_WITH(Float2, 0x02)      \
@@ -18,9 +16,8 @@ namespace Otter
     REPLACE_WITH(Int4, 0x10)        \
     REPLACE_WITH(Bool, 0x11)
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "OCInconsistentNamingInspection"
-
+namespace Otter::Graphics
+{
     enum class ShaderAttributeType : UInt8
     {
         None = 0x00,
@@ -31,24 +28,22 @@ namespace Otter
 
         Max = 0xFF
     };
-
-#pragma clang diagnostic pop
-
-    template<typename OStream>
-    OStream& operator<<(OStream& os, const Otter::ShaderAttributeType& attributeType)
-    {
-        switch (attributeType)
-        {
-#define REPLACE_WITH(Item, Value) case Otter::ShaderAttributeType::Item: os << "ShaderAttributeType::" << #Item; break;
-            SHADER_ATTRIBUTE_TYPE_LIST
-#undef REPLACE_WITH
-            default:
-                os << "ShaderAttributeType[Unknown]";
-        }
-
-        return os;
-    }
-#undef SHADER_ATTRIBUTE_TYPE_LIST
 }
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const Otter::Graphics::ShaderAttributeType& attributeType)
+{
+    switch (attributeType)
+    {
+#define REPLACE_WITH(Item, Value) case Otter::Graphics::ShaderAttributeType::Item: os << "ShaderAttributeType::" << #Item; break;
+        SHADER_ATTRIBUTE_TYPE_LIST
+#undef REPLACE_WITH
+        default:
+            os << "ShaderAttributeType[Unknown]";
+    }
+
+    return os;
+}
+#undef SHADER_ATTRIBUTE_TYPE_LIST
 
 #endif //OTTERENGINE_TYPES_SHADERATTRIBUTETYPE_H

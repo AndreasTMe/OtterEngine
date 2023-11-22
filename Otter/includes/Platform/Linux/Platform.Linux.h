@@ -31,8 +31,6 @@ namespace Otter::Internal
     };
 }
 
-OTR_WITH_TYPENAME(Otter::Internal::LinuxPlatform)
-
 #endif // OTR_PLATFORM_LINUX
 
 #endif //OTTERENGINE_PLATFORM_LINUX_H
