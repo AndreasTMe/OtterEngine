@@ -24,7 +24,7 @@ namespace Otter::FileSystem
     bool TryGetFileSize(const File* file, Size* outFileSize);
 
     bool TryOpenFile(const char* filePath, const OpenMode& openMode, const bool& isBinary, File* outFile);
-    void CloseFile(File * file);
+    void CloseFile(File* file);
 
     bool TryReadFile(const File* file, const Size& bufferSize, void* outBuffer, Size* outBytesRead);
     bool TryWriteFile(const File* file, const Size& bufferSize, const void* buffer, Size* outBytesWritten);
