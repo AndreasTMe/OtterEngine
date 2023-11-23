@@ -41,12 +41,4 @@
     Type(Type&&) = delete;                  \
     Type& operator=(Type&&) = delete;
 
-#define OTR_DISABLE_HEAP_ALLOCATION                 \
-    void* operator new(::Size size) = delete;       \
-    void* operator new[](::Size size) = delete;     \
-    void operator delete(void* block) = delete;     \
-    void operator delete[](void* block) = delete;
-
-#define ENABLE_TYPENAME(A) template<> struct TypeName<A> { static const char *Get() { return #A; }}
-
 #endif //OTTERENGINE_DEFINES_TYPEDEFINITION_H

@@ -34,7 +34,6 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
         OTR_DISABLE_OBJECT_COPIES(ReadOnlySpan)
         OTR_DISABLE_OBJECT_MOVES(ReadOnlySpan)
-        OTR_DISABLE_HEAP_ALLOCATION
 
         ReadOnlySpan(InitialiserList<T> list)
         {

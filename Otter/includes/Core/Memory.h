@@ -15,19 +15,31 @@ namespace Otter
         UInt64 Size;
     };
 
-    namespace MemorySystem
+    class MemorySystem final
     {
-        void Initialise(UInt64 memoryRequirements);
-        void Shutdown();
+    public:
+        OTR_DISABLE_OBJECT_COPIES(MemorySystem)
+        OTR_DISABLE_OBJECT_MOVES(MemorySystem)
 
-        UnsafeHandle Allocate(UInt64 size, UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
-        UnsafeHandle Reallocate(UnsafeHandle& handle, UInt64 size, UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
-        void Free(void* block);
-        void MemoryClear(void* block, UInt64 size);
+        static void Initialise(UInt64 memoryRequirements);
+        static void Shutdown();
+
+        static UnsafeHandle Allocate(UInt64 size, UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        static UnsafeHandle Reallocate(UnsafeHandle& handle,
+                                       UInt64 size,
+                                       UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        static void Free(void* block);
+        static void MemoryClear(void* block, UInt64 size);
 
         // TODO: Will probably be removed
-        [[nodiscard]] std::string GetTotalAllocation();
-    }
+        [[nodiscard]] static std::string GetTotalAllocation();
+
+    private:
+        OTR_DISABLE_CONSTRUCTION(MemorySystem)
+
+        static bool              s_HasInitialised;
+        static FreeListAllocator s_Allocator;
+    };
 
     template<typename T, typename... TArgs>
     OTR_INLINE T* New(TArgs&& ... args)

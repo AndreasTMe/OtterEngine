@@ -15,8 +15,6 @@ namespace Otter
         Sprite() = default;
         ~Sprite() = default;
 
-        OTR_DISABLE_HEAP_ALLOCATION
-
         Sprite(const Rectangle<Float32>& bounds, const Vector<4, Float32>& color)
             : m_Bounds(bounds), m_Color(color)
         {

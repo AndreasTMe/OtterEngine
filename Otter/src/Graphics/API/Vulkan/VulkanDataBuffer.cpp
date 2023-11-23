@@ -2,53 +2,6 @@
 
 #include "Graphics/API/Vulkan/VulkanDataBuffer.h"
 
-#if OTR_GRAPHICS_VULKAN_ENABLED
-
-namespace Otter::Graphics
-{
-    DataBuffer* DataBuffer::Create(BufferType type)
-    {
-        switch (type)
-        {
-            case BufferType::Vertex:
-                return New<Vulkan::VulkanVertexBuffer>();
-            case BufferType::Index:
-                return New<Vulkan::VulkanIndexBuffer>();
-            case BufferType::Uniform:
-                return New<Vulkan::VulkanUniformBuffer>();
-            default:
-            {
-                OTR_INTERNAL_ASSERT_MSG(false, "Invalid buffer type")
-            }
-                return nullptr;
-        }
-    }
-
-    void DataBuffer::Destroy(BufferType type, DataBuffer* outBuffer)
-    {
-        switch (type)
-        {
-            case BufferType::Vertex:
-                Delete<Vulkan::VulkanVertexBuffer>((Vulkan::VulkanVertexBuffer*) outBuffer);
-                break;
-            case BufferType::Index:
-                Delete<Vulkan::VulkanIndexBuffer>((Vulkan::VulkanIndexBuffer*) outBuffer);
-                break;
-            case BufferType::Uniform:
-                Delete<Vulkan::VulkanUniformBuffer>((Vulkan::VulkanUniformBuffer*) outBuffer);
-                break;
-            default:
-            {
-                OTR_INTERNAL_ASSERT_MSG(false, "Invalid buffer type")
-            }
-                return;
-        }
-        outBuffer = nullptr;
-    }
-}
-
-#endif
-
 namespace Otter::Graphics::Vulkan
 {
     bool VulkanDataBuffer::TryInitialise(const UInt64 size, const UInt32 bufferUsage, const UInt32 memoryProperties)

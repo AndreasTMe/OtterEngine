@@ -7,14 +7,14 @@
 
 namespace Otter::GraphicsSystem
 {
-    static Graphics::RendererAPI* gs_Renderer = nullptr;
+    Graphics::RendererAPI* GraphicsSystem::s_Renderer = nullptr;
 
-    bool TryInitialise(const void* const platformContext)
+    bool GraphicsSystem::TryInitialise(const void* const platformContext)
     {
-        OTR_INTERNAL_ASSERT_MSG(gs_Renderer == nullptr, "Graphics system already initialised")
+        OTR_INTERNAL_ASSERT_MSG(s_Renderer == nullptr, "Graphics system already initialised")
 
-        gs_Renderer = Graphics::RendererAPI::Create();
-        if (!gs_Renderer)
+        s_Renderer = Graphics::RendererAPI::Create();
+        if (!s_Renderer)
             return false;
 
         List < Graphics::Shader * > shaders;
@@ -29,7 +29,7 @@ namespace Otter::GraphicsSystem
                               Asset::Create<AssetType::Texture>("Assets/Textures/texture.jpg")
                           });
 
-        gs_Renderer->Initialise(platformContext, shaders, textures);
+        s_Renderer->Initialise(platformContext, shaders, textures);
         // TODO: Initialise Global Uniform Buffer/Camera
 
         OTR_LOG_DEBUG("Graphics system initialised...")
@@ -37,19 +37,19 @@ namespace Otter::GraphicsSystem
         return true;
     }
 
-    void Shutdown()
+    void GraphicsSystem::Shutdown()
     {
-        OTR_INTERNAL_ASSERT_MSG(gs_Renderer != nullptr, "Graphics system not initialised")
+        OTR_INTERNAL_ASSERT_MSG(s_Renderer != nullptr, "Graphics system not initialised")
 
         OTR_LOG_DEBUG("Shutting down graphics system...")
-        gs_Renderer->Shutdown();
+        s_Renderer->Shutdown();
 
-        Graphics::RendererAPI::Destroy(gs_Renderer);
+        Graphics::RendererAPI::Destroy(s_Renderer);
     }
 
-    void RenderFrame()
+    void GraphicsSystem::RenderFrame()
     {
-        if (!gs_Renderer->TryBeginFrame())
+        if (!s_Renderer->TryBeginFrame())
             return;
 
         // TODO: Step 1: Bind Pipelines
@@ -58,8 +58,8 @@ namespace Otter::GraphicsSystem
         // TODO: Step 3a: Bind Vertex Buffer
         // TODO: Step 3b: Bind Index Buffer
         // TODO: Step 4: Draw Indexed
-        gs_Renderer->DrawIndexed();
+        s_Renderer->DrawIndexed();
 
-        gs_Renderer->EndFrame();
+        s_Renderer->EndFrame();
     }
 }

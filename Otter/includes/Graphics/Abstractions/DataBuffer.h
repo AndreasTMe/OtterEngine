@@ -17,9 +17,6 @@ namespace Otter::Graphics
         virtual void Write(const void* data, UInt32 size) = 0;
         virtual void Bind() const = 0;
 
-        [[nodiscard]] static DataBuffer* Create(BufferType type);
-        static void Destroy(BufferType type, DataBuffer* outBuffer);
-
     protected:
         DataBuffer() = default;
     };
