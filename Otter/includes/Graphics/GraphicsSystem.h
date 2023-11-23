@@ -1,12 +1,26 @@
 #ifndef OTTERENGINE_GRAPHICSSYSTEM_H
 #define OTTERENGINE_GRAPHICSSYSTEM_H
 
-namespace Otter::GraphicsSystem
-{
-    bool TryInitialise(const void* platformContext);
-    void Shutdown();
+#include "Graphics/Abstractions/RendererAPI.h"
 
-    void RenderFrame();
+namespace Otter
+{
+    class GraphicsSystem final
+    {
+    public:
+        OTR_DISABLE_OBJECT_COPIES(GraphicsSystem)
+        OTR_DISABLE_OBJECT_MOVES(GraphicsSystem)
+
+        static bool TryInitialise(const void* platformContext);
+        static void Shutdown();
+
+        static void RenderFrame();
+
+    private:
+        OTR_DISABLE_CONSTRUCTION(GraphicsSystem)
+
+        static Graphics::RendererAPI* s_Renderer;
+    };
 }
 
 #endif //OTTERENGINE_GRAPHICSSYSTEM_H

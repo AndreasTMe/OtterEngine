@@ -36,8 +36,6 @@ namespace Otter
         }
         ~Rectangle() = default;
 
-        OTR_DISABLE_HEAP_ALLOCATION
-
         constexpr Rectangle(const Vector<2, TNumber>& position, const Vector<2, TNumber>& size)
             : Position(position), Size(size)
         {

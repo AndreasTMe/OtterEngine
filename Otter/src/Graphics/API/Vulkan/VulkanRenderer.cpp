@@ -187,9 +187,9 @@ namespace Otter::Graphics::Vulkan
 
             gs_Shaders.ClearDestructive();
 
-            DataBuffer::Destroy(BufferType::Uniform, m_UniformBuffer);
-            DataBuffer::Destroy(BufferType::Index, m_IndexBuffer);
-            DataBuffer::Destroy(BufferType::Vertex, m_VertexBuffer);
+            Delete<VulkanIndexBuffer>(m_IndexBuffer);
+            Delete<VulkanVertexBuffer>(m_VertexBuffer);
+            Delete<VulkanUniformBuffer>(m_UniformBuffer);
 
             DestroyVulkanDescriptorData();
             DestroyPipeline(m_DevicePair.LogicalDevice, m_Allocator, &m_PipelineLayout, &m_Pipeline);
@@ -881,7 +881,7 @@ namespace Otter::Graphics::Vulkan
 
         VkDeviceSize bufferSize = sizeof(Vertex) * vertices.GetCount();
 
-        m_VertexBuffer = (VulkanVertexBuffer*) DataBuffer::Create(BufferType::Vertex);
+        m_VertexBuffer = New<VulkanVertexBuffer>();
         m_VertexBuffer->SetDevicePair(&m_DevicePair);
         m_VertexBuffer->SetAllocator(m_Allocator);
         m_VertexBuffer->SetAttributeLayout({{ ShaderAttributeType::Float3, ShaderAttributeSize::Bit32, 0 },
@@ -897,7 +897,7 @@ namespace Otter::Graphics::Vulkan
 
         VkDeviceSize bufferSize = sizeof(triangles[0]) * triangles.GetCount();
 
-        m_IndexBuffer = (VulkanIndexBuffer*) DataBuffer::Create(BufferType::Index);
+        m_IndexBuffer = New<VulkanIndexBuffer>();
         m_IndexBuffer->SetDevicePair(&m_DevicePair);
         m_IndexBuffer->SetAllocator(m_Allocator);
         m_IndexBuffer->Write(triangles.GetData(), bufferSize);
@@ -905,7 +905,7 @@ namespace Otter::Graphics::Vulkan
 
     void VulkanRenderer::CreateUniformBuffer()
     {
-        m_UniformBuffer = (VulkanUniformBuffer*) DataBuffer::Create(BufferType::Uniform);
+        m_UniformBuffer = New<VulkanUniformBuffer>();
         m_UniformBuffer->SetDevicePair(&m_DevicePair);
         m_UniformBuffer->SetAllocator(m_Allocator);
         m_UniformBuffer->Write(nullptr, sizeof(GlobalUniformBufferObject));
