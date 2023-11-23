@@ -27,7 +27,6 @@ namespace Otter
 
         OTR_WITH_ITERATOR(Iterator, m_Data, m_Count)
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
-        OTR_DISABLE_HEAP_ALLOCATION
 
         static Enumerable Of(InitialiserList<T> list)
         {
