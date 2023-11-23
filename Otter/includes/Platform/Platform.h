@@ -4,8 +4,32 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 
+#define WINDOW_STATE_LIST           \
+    REPLACE_WITH(Default, 0x01)     \
+    REPLACE_WITH(Maximised, 0x02)   \
+    REPLACE_WITH(Minimised, 0x03)
+
 namespace Otter
 {
+    enum class WindowState : UInt8
+    {
+        None = 0x00,
+
+#define REPLACE_WITH(Item, Value) Item = Value,
+        WINDOW_STATE_LIST
+#undef REPLACE_WITH
+
+        Max = 0xFF
+    };
+
+    struct PlatformConfiguration final
+    {
+        const char* Title = nullptr;
+        UInt16      Width  = 0;
+        UInt16      Height = 0;
+        WindowState State  = WindowState::Default;
+    };
+
     struct PlatformContext
     {
         void* Data;
@@ -16,7 +40,7 @@ namespace Otter
     public:
         OTR_WITH_DEFAULT_CONSTRUCTOR_AND_VIRTUAL_DESTRUCTOR(Platform);
 
-        virtual bool Startup(const char* title, UInt16 width, UInt16 height) = 0;
+        virtual bool TryInitialise() = 0;
         virtual void Shutdown() = 0;
         virtual void CaptureWindowEvents() = 0;
 
@@ -27,7 +51,7 @@ namespace Otter
 
         [[nodiscard]] const void* GetUnsafeContext() const { return m_Context; }
 
-        [[nodiscard]] static Platform* CreatePlatform();
+        [[nodiscard]] static Platform* CreatePlatform(const PlatformConfiguration& configuration);
         static void DestroyPlatform(Platform* platform);
 
         static void* Allocate(UInt64 size);
@@ -41,5 +65,21 @@ namespace Otter
         PlatformContext* m_Context{ };
     };
 }
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const Otter::WindowState& windowState)
+{
+    switch (windowState)
+    {
+#define REPLACE_WITH(Item, Value) case Otter::WindowState::Item: os << "WindowState::" << #Item; break;
+        WINDOW_STATE_LIST
+#undef REPLACE_WITH
+        default:
+            os << "WindowState[Unknown]";
+    }
+
+    return os;
+}
+#undef ASSET_TYPE_LIST
 
 #endif //OTTERENGINE_PLATFORM_H

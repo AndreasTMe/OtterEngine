@@ -20,6 +20,7 @@ namespace Otter::Graphics::Vulkan
         SwapchainSupportInfo swapchainSupportInfo;
         QuerySwapchainSupport(surface, devicePair.PhysicalDevice, &swapchainSupportInfo);
 
+        // BUG: Validation error when "outSwapchain->Extent.width == 0" or "outSwapchain->Extent.height == 0"
         outSwapchain->Extent        = SelectSwapchainExtent(swapchainSupportInfo.SurfaceCapabilities);
         outSwapchain->SurfaceFormat = SelectSwapchainSurfaceFormat(swapchainSupportInfo.SurfaceFormats);
         outSwapchain->PresentMode   = SelectSwapchainPresentMode(swapchainSupportInfo.PresentModes);

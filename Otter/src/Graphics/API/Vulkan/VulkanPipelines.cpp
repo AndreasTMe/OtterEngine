@@ -18,7 +18,6 @@ namespace Otter::Graphics::Vulkan
         OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE, "Logical device is null")
         OTR_INTERNAL_ASSERT_MSG(renderPass != VK_NULL_HANDLE, "Render pass is null")
         OTR_INTERNAL_ASSERT_MSG(shaderStages.GetCount() > 0, "Shader stages is empty")
-        OTR_INTERNAL_ASSERT_MSG(extent.width > 0 && extent.height > 0, "Extent is invalid")
 
         // Vertex Input
         const auto bindingDescriptions   = VulkanPoint::GetBindingDescriptions();

@@ -14,9 +14,9 @@ namespace Otter
 {
 #if OTR_PLATFORM_WINDOWS
 
-    Platform* Platform::CreatePlatform()
+    Platform* Platform::CreatePlatform(const PlatformConfiguration& configuration)
     {
-        return New<Internal::WindowsPlatform>();
+        return New<Internal::WindowsPlatform>(configuration);
     }
 
     void Platform::DestroyPlatform(Platform* platform)
@@ -88,7 +88,7 @@ namespace Otter
 
 #elif OTR_PLATFORM_LINUX
 
-    Platform* Platform::CreatePlatform()
+    Platform* Platform::CreatePlatform(const PlatformConfiguration& configuration)
     {
         return New<Internal::LinuxPlatform>();
     }
@@ -153,7 +153,7 @@ namespace Otter
 
 #else
 
-    Platform* Platform::CreatePlatform()
+    Platform* Platform::CreatePlatform(const PlatformConfiguration& configuration)
     {
         OTR_LOG_FATAL("'Platform::CreatePlatform' not supported for this platform")
 

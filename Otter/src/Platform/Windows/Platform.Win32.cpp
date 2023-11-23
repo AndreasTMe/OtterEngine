@@ -16,7 +16,7 @@ namespace Otter::Internal
 
     UnsafeHandle g_PlatformMemoryHandle;
 
-    bool WindowsPlatform::Startup(const char* const title, UInt16 width, UInt16 height)
+    bool WindowsPlatform::TryInitialise()
     {
         UInt64 platformContextSize    = OTR_ALIGNED_OFFSET(sizeof(PlatformContext), OTR_PLATFORM_MEMORY_ALIGNMENT);
         UInt64 platformWindowDataSize = OTR_ALIGNED_OFFSET(sizeof(WindowsPlatformWindowData),
@@ -27,17 +27,9 @@ namespace Otter::Internal
         m_Context = (PlatformContext*) g_PlatformMemoryHandle.Pointer;
         m_Context->Data = (WindowsPlatformWindowData*) ((UIntPtr*) g_PlatformMemoryHandle.Pointer + 1);
 
-        m_Width  = width;
-        m_Height = height;
-
         RegisterEvents();
 
-        RECT rect;
-        GetClientRect(GetDesktopWindow(), &rect);
-        rect.left = (rect.right / 2) - (width / 2);
-        rect.top  = (rect.bottom / 2) - (height / 2);
-
-        if (!InitialiseWindow(title, rect.left, rect.top, width, height))
+        if (!TryInitialiseWindow())
         {
             Unsafe::Delete(g_PlatformMemoryHandle);
             return false;
@@ -99,11 +91,7 @@ namespace Otter::Internal
         };
     }
 
-    bool WindowsPlatform::InitialiseWindow(const char* const title,
-                                           UInt16 left,
-                                           UInt16 top,
-                                           UInt16 width,
-                                           UInt16 height)
+    bool WindowsPlatform::TryInitialiseWindow()
     {
         auto windowData = static_cast<WindowsPlatformWindowData*>(m_Context->Data);
         windowData->InstanceHandle = GetModuleHandleA(nullptr);
@@ -132,15 +120,13 @@ namespace Otter::Internal
             return false;
         }
 
-        int clientLeft   = left;
-        int clientTop    = top;
-        int clientWidth  = width;
-        int clientHeight = height;
+        RECT rect;
+        GetClientRect(GetDesktopWindow(), &rect);
 
-        int windowLeft   = clientLeft;
-        int windowTop    = clientTop;
-        int windowWidth  = clientWidth;
-        int windowHeight = clientHeight;
+        int windowLeft   = (rect.right / 2) - (m_Width / 2);
+        int windowTop    = (rect.bottom / 2) - (m_Height / 2);
+        int windowWidth  = m_Width;
+        int windowHeight = m_Height;
 
         int windowStyle   = WS_OVERLAPPEDWINDOW;
         int windowExStyle = WS_EX_APPWINDOW;
@@ -155,7 +141,7 @@ namespace Otter::Internal
 
         HWND window = CreateWindowExA(windowExStyle,
                                       className,
-                                      title,
+                                      m_Title,
                                       windowStyle,
                                       windowLeft,
                                       windowTop,
@@ -178,10 +164,13 @@ namespace Otter::Internal
             windowData->WindowHandle = window;
         }
 
-        // TODO: If the window should not accept input, use SW_SHOWNOACTIVATE instead of SW_SHOW
-        // TODO: If the window should be initially minimized, use SW_SHOWMINIMIZED instead of SW_SHOW
-        // TODO: If the window should be initially maximized, use SW_SHOWMAXIMIZED instead of SW_SHOW
-        ShowWindow(window, SW_SHOW);
+        OTR_INTERNAL_ASSERT_MSG(m_State != WindowState::None && m_State != WindowState::Max,
+                                "Window state cannot be None or Max")
+        ShowWindow(window, m_State == WindowState::Maximised
+                           ? SW_SHOWMAXIMIZED
+                           : m_State == WindowState::Minimised
+                             ? SW_SHOWMINIMIZED
+                             : SW_SHOW);
 
         return true;
     }
