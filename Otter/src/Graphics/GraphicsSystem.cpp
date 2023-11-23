@@ -3,9 +3,7 @@
 #include "Graphics/GraphicsSystem.h"
 #include "Assets/Asset.h"
 
-#include "Graphics/Abstractions/RendererAPI.h"
-
-namespace Otter::GraphicsSystem
+namespace Otter
 {
     Graphics::RendererAPI* GraphicsSystem::s_Renderer = nullptr;
 
