@@ -37,7 +37,7 @@
 // File Events (Use 0x60 - 0x70)
 // Log Events (Use 0x70 - 0x80)
 
-namespace Otter::Internal
+namespace Otter
 {
     enum class EventType : UInt8
     {
@@ -52,11 +52,11 @@ namespace Otter::Internal
 }
 
 template<typename OStream>
-OStream& operator<<(OStream& os, const Otter::Internal::EventType& eventType)
+OStream& operator<<(OStream& os, const Otter::EventType& eventType)
 {
     switch (eventType)
     {
-#define REPLACE_WITH(Item, Value) case Otter::Internal::EventType::Item: os << "EventType::" << #Item; break;
+#define REPLACE_WITH(Item, Value) case Otter::EventType::Item: os << "EventType::" << #Item; break;
         EVENT_TYPE_LIST
 #undef REPLACE_WITH
         default:

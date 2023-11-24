@@ -3,17 +3,17 @@
 
 #include "Core/Events/Event.h"
 
-namespace Otter::Internal
+namespace Otter
 {
-#define OTR_WINDOW_EVENT_CLASS(Type)                                                                            \
-    class Window##Type##Event final : public Event                                                              \
-    {                                                                                                           \
-    public:                                                                                                     \
-        Window##Type##Event()                                                                                   \
-            : Event(EventType::Window##Type, (EventCategory) (EventCategory::Window | EventCategory::Blocking)) \
-            {                                                                                                   \
-            }                                                                                                   \
-        ~Window##Type##Event() final = default;                                                                 \
+#define OTR_WINDOW_EVENT_CLASS(Type)                                                            \
+    class Window##Type##Event final : public Event                                              \
+    {                                                                                           \
+    public:                                                                                     \
+        Window##Type##Event()                                                                   \
+            : Event(static_cast<EventCategory>(EventCategory::Window | EventCategory::Blocking),\
+                    EventType::Window##Type)                                                    \
+            {                                                                                   \
+            }                                                                                   \
     };
 
     OTR_WINDOW_EVENT_CLASS(Close)
@@ -21,21 +21,18 @@ namespace Otter::Internal
     class WindowResizeEvent final : public Event
     {
     public:
-        WindowResizeEvent(UInt16 width, UInt16 height, bool isInitiatedByUser)
-            : Event(EventType::WindowResize, (EventCategory) (EventCategory::Window | EventCategory::Blocking)),
-              m_Width(width), m_Height(height), m_IsInitiatedByUser(isInitiatedByUser)
+        WindowResizeEvent(const UInt16 width, const UInt16 height, const bool isInitiatedByUser)
+            : Event(static_cast<EventCategory>(EventCategory::Window | EventCategory::Blocking),
+                    EventType::WindowResize)
         {
+            Capture(width, 8);
+            Capture(height, 10);
+            Capture(isInitiatedByUser, 5);
         }
-        ~WindowResizeEvent() final = default;
 
-        [[nodiscard]] OTR_INLINE UInt16 GetWidth() const { return m_Width; }
-        [[nodiscard]] OTR_INLINE UInt16 GetHeight() const { return m_Height; }
-        [[nodiscard]] OTR_INLINE bool IsInitiatedByUser() const { return m_IsInitiatedByUser; }
-
-    private:
-        UInt16 m_Width;
-        UInt16 m_Height;
-        bool   m_IsInitiatedByUser;
+        [[nodiscard]] OTR_INLINE UInt16 GetWidth() const { return Get<UInt16>(8); }
+        [[nodiscard]] OTR_INLINE UInt16 GetHeight() const { return Get<UInt16>(10); }
+        [[nodiscard]] OTR_INLINE bool IsInitiatedByUser() const { return Get<bool>(5); }
     };
 
     OTR_WINDOW_EVENT_CLASS(Minimized)

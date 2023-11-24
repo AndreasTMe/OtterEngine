@@ -3,7 +3,7 @@
 
 #include "Core/Defines.h"
 
-namespace Otter::Internal
+namespace Otter
 {
     enum EventCategory
     {

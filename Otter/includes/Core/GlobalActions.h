@@ -12,22 +12,22 @@ namespace Otter
     class GlobalActions final
     {
     public:
-        static Func<bool, const Internal::WindowCloseEvent&>     OnWindowClose;
-        static Func<bool, const Internal::WindowResizeEvent&>    OnWindowResize;
-        static Func<bool, const Internal::WindowMinimizedEvent&> OnWindowMinimized;
-        static Func<bool, const Internal::WindowMaximizedEvent&> OnWindowMaximized;
-        static Func<bool, const Internal::WindowRestoredEvent&>  OnWindowRestored;
-        static Func<bool, const Internal::WindowRefreshEvent&>   OnWindowRefresh;
+        static Func<bool, const WindowCloseEvent&>     OnWindowClose;
+        static Func<bool, const WindowResizeEvent&>    OnWindowResize;
+        static Func<bool, const WindowMinimizedEvent&> OnWindowMinimized;
+        static Func<bool, const WindowMaximizedEvent&> OnWindowMaximized;
+        static Func<bool, const WindowRestoredEvent&>  OnWindowRestored;
+        static Func<bool, const WindowRefreshEvent&>   OnWindowRefresh;
 
-        static Func<bool, const Internal::KeyPressedEvent&>  OnKeyPressed;
-        static Func<bool, const Internal::KeyReleasedEvent&> OnKeyReleased;
-        static Func<bool, const Internal::KeyHoldEvent&>     OnKeyHold;
+        static Func<bool, const KeyPressedEvent&>  OnKeyPressed;
+        static Func<bool, const KeyReleasedEvent&> OnKeyReleased;
+        static Func<bool, const KeyHoldEvent&>     OnKeyHold;
 
-        static Func<bool, const Internal::MouseButtonPressedEvent&>  OnMouseButtonPressed;
-        static Func<bool, const Internal::MouseButtonReleasedEvent&> OnMouseButtonReleased;
-        static Func<bool, const Internal::MouseScrollEvent&>         OnMouseScroll;
-        static Func<bool, const Internal::MouseMovedEvent&>          OnMouseMoved;
-        static Func<bool, const Internal::MouseDraggedEvent&>        OnMouseDragged;
+        static Func<bool, const MouseButtonPressedEvent&>  OnMouseButtonPressed;
+        static Func<bool, const MouseButtonReleasedEvent&> OnMouseButtonReleased;
+        static Func<bool, const MouseScrollEvent&>         OnMouseScroll;
+        static Func<bool, const MouseMovedEvent&>          OnMouseMoved;
+        static Func<bool, const MouseDraggedEvent&>        OnMouseDragged;
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(GlobalActions)

@@ -137,25 +137,25 @@ namespace Otter::Graphics::Vulkan
             // TODO: Temporary code end
         }
 
-        GlobalActions::OnWindowMinimized += [&](const Internal::WindowMinimizedEvent& event)
+        GlobalActions::OnWindowMinimized += [&](const WindowMinimizedEvent& event)
         {
             gs_WindowState = WindowState::Minimized;
 
             return true;
         };
-        GlobalActions::OnWindowMaximized += [&](const Internal::WindowMaximizedEvent& event)
+        GlobalActions::OnWindowMaximized += [&](const WindowMaximizedEvent& event)
         {
             gs_WindowState = WindowState::Maximized;
 
             return true;
         };
-        GlobalActions::OnWindowRestored += [&](const Internal::WindowRestoredEvent& event)
+        GlobalActions::OnWindowRestored += [&](const WindowRestoredEvent& event)
         {
             gs_WindowState = WindowState::Normal;
 
             return true;
         };
-        GlobalActions::OnWindowResize += [&](const Internal::WindowResizeEvent& event)
+        GlobalActions::OnWindowResize += [&](const WindowResizeEvent& event)
         {
             if (event.GetWidth() == 0 || event.GetHeight() == 0)
                 gs_WindowState = WindowState::Minimized;

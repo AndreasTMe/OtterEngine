@@ -59,9 +59,18 @@ namespace Otter
         HeapFree(GetProcessHeap(), 0, block);
     }
 
+    void Platform::MemoryCopy(void* destination, const void* source, UInt64 size)
+    {
+        OTR_INTERNAL_ASSERT(source != nullptr)
+        OTR_INTERNAL_ASSERT_MSG(size > 0, "Copy size must be greater than 0")
+
+        CopyMemory(destination, source, size);
+    }
+
     void Platform::MemoryClear(void* block, UInt64 size)
     {
         OTR_INTERNAL_ASSERT(block != nullptr)
+        OTR_INTERNAL_ASSERT_MSG(size > 0, "Clear size must be greater than 0")
 
         ZeroMemory(block, size);
     }
@@ -135,6 +144,16 @@ namespace Otter
         free(block);
     }
 
+    void Platform::MemoryCopy(void* destination, const void* source, UInt64 size)
+    {
+        OTR_LOG_FATAL("'Platform::MemoryCopy' not supported for this platform")
+
+        OTR_INTERNAL_ASSERT(source != nullptr)
+        OTR_INTERNAL_ASSERT_MSG(size > 0, "Copy size must be greater than 0")
+
+        memcpy(destination, source, size);
+    }
+
     void Platform::MemoryClear(void* block, UInt64 size)
     {
         OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform")
@@ -182,6 +201,11 @@ namespace Otter
     void Platform::Free(void* block)
     {
         OTR_LOG_FATAL("'Platform::Free' not supported for this platform")
+    }
+
+    void Platform::MemoryCopy(void* destination, const void* source, UInt64 size)
+    {
+        OTR_LOG_FATAL("'Platform::MemoryCopy' not supported for this platform")
     }
 
     void Platform::MemoryClear(void* block, UInt64 size)

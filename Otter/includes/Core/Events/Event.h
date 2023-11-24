@@ -3,31 +3,10 @@
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
+#include "Core/Memory.h"
 
-namespace Otter::Internal
+namespace Otter
 {
-    class Event
-    {
-    public:
-        OTR_WITH_DEFAULT_CONSTRUCTOR_AND_VIRTUAL_DESTRUCTOR(Event)
-
-        [[nodiscard]] OTR_INLINE constexpr EventType GetEventType() const { return m_EventType; }
-        [[nodiscard]] OTR_INLINE constexpr EventCategory GetEventCategory() const { return m_EventCategory; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsBlocking() const
-        {
-            return (m_EventCategory & EventCategory::Blocking) == EventCategory::Blocking;
-        }
-
-    protected:
-        Event(const EventType& type, const EventCategory& category)
-            : m_EventType(type), m_EventCategory(category)
-        {
-        }
-
-        EventType     m_EventType     = EventType::None;
-        EventCategory m_EventCategory = EventCategory::None;
-    };
-
     template<EventType TEventType>
     concept IsKeyPressEvent = TEventType == EventType::KeyPressed;
 
@@ -128,253 +107,121 @@ namespace Otter::Internal
      * [E]: -               | -                     |
      * [F]: -               | -                     |
      */
-    class EventData
+    class Event
     {
     public:
+        OTR_WITH_DEFAULT_CONSTRUCTOR(Event)
+
+        Event(const Event& other)
+        {
+            for (UInt64 i = 0; i < 16; i++)
+                m_Data[i] = other.m_Data[i];
+        }
+
+        Event(Event&& other) noexcept
+        {
+            for (UInt64 i = 0; i < 16; i++)
+                m_Data[i] = other.m_Data[i];
+        }
+
+        Event& operator=(const Event& other)
+        {
+            if (this != &other)
+            {
+                for (UInt64 i = 0; i < 16; i++)
+                    m_Data[i] = other.m_Data[i];
+            }
+
+            return *this;
+        }
+
+        Event& operator=(Event&& other) noexcept
+        {
+            if (this != &other)
+            {
+                for (UInt64 i = 0; i < 16; i++)
+                    m_Data[i] = other.m_Data[i];
+            }
+
+            return *this;
+        }
+
         template<typename TEvent>
-        requires IsBaseOf<EventData, TEvent>
+        requires IsBaseOf<Event, TEvent>
         [[nodiscard]] OTR_INLINE constexpr explicit operator TEvent() const
         {
             return *static_cast<const TEvent*>(this);
         }
 
-        template<EventCategory TCategory, EventType TType, typename... TArgs>
-        requires IsValidEvent<TCategory, TType>
-        [[nodiscard]] OTR_INLINE static EventData Create(TArgs&& ... args);
-
-        [[nodiscard]] OTR_INLINE constexpr EventCategory GetEventCategory() const
-        {
-            return static_cast<EventCategory>(m_Int32[0]);
-        }
+        [[nodiscard]] OTR_INLINE constexpr EventCategory GetEventCategory() const { return Get<EventCategory>(0); }
+        [[nodiscard]] OTR_INLINE constexpr EventType GetEventType() const { return Get<EventType>(4); }
 
         [[nodiscard]] OTR_INLINE constexpr bool IsOfCategory(const EventCategory& category) const
         {
-            return (static_cast<EventCategory>(m_Int32[0]) & category) == category;
+            return (GetEventCategory() & category) == category;
         }
 
         [[nodiscard]] OTR_INLINE constexpr bool IsBlocking() const
         {
-            return (static_cast<EventCategory>(m_Int32[0]) & EventCategory::Blocking) == EventCategory::Blocking;
+            return (GetEventCategory() & EventCategory::Blocking) == EventCategory::Blocking;
         }
-
-        [[nodiscard]] OTR_INLINE constexpr EventType GetEventType() const
-        {
-            return static_cast<EventType>(m_Byte[4]);
-        }
-
-        template<EventType TEventType>
-        struct As
-        {
-            template<EventType T = TEventType, typename = EnableIf<IsKeyEvent < T>>>
-            OTR_INLINE static KeyCode GetKeyCode(const EventData& data)
-            {
-                return static_cast<KeyCode>(data.m_UInt8[5]);
-            }
-
-            template<EventType T = TEventType, typename = EnableIf<IsKeyHoldEvent<T>>>
-            OTR_INLINE static Float32 GetHoldTime(const EventData& data) noexcept { return data.m_Float32[3]; }
-
-            template<EventType T = TEventType,
-                typename = EnableIf<IsMouseButtonEvent<T> || IsMouseDraggedEvent<T>>>
-            OTR_INLINE static MouseButton GetMouseButton(const EventData& data)
-            {
-                return static_cast<MouseButton>(data.m_UInt8[5]);
-            }
-
-            template<EventType T = TEventType, typename = EnableIf<IsMouseButtonPressEvent<T>>>
-            OTR_INLINE static UInt8 GetCount(const EventData& data) noexcept { return data.m_UInt8[6]; }
-
-            template<EventType T = TEventType, typename = EnableIf<IsMouseScrollEvent<T>>>
-            OTR_INLINE static bool IsPositive(const EventData& data) noexcept { return data.m_Bool[7]; }
-
-            template<EventType T = TEventType,
-                typename = EnableIf<IsMouseEvent<T> && !IsMouseScrollEvent<T>>>
-            OTR_INLINE static UInt16 GetX(const EventData& data) noexcept { return data.m_UInt16[4]; }
-
-            template<EventType T = TEventType,
-                typename = EnableIf<IsMouseEvent<T> && !IsMouseScrollEvent<T>>>
-            OTR_INLINE static UInt16 GetY(const EventData& data) noexcept { return data.m_UInt16[5]; }
-
-            template<EventType T = TEventType, typename = EnableIf<IsWindowSizeEvent<T>>>
-            OTR_INLINE static UInt16 GetWidth(const EventData& data) noexcept { return data.m_UInt16[4]; }
-
-            template<EventType T = TEventType, typename = EnableIf<IsWindowSizeEvent<T>>>
-            OTR_INLINE static UInt16 GetHeight(const EventData& data) noexcept { return data.m_UInt16[5]; }
-        };
 
     protected:
-        EventData(const EventCategory category, const EventType type)
+        Event(const EventCategory category, const EventType type)
+            : Event()
         {
-            m_Int32[0] = static_cast<Int32>(category);
-            m_UInt8[4] = static_cast<UInt8>(type);
+            Capture(category, 0);
+            Capture(type, 4);
         }
 
-        EventData(const EventCategory category,
-                  const EventType type,
-                  const KeyCode keyCode)
-            : EventData(category, type)
+        template<typename T>
+        constexpr void Capture(const T& value, const UInt64 offset)
         {
-            OTR_INTERNAL_ASSERT_MSG((category & EventCategory::Keyboard) == EventCategory::Keyboard,
-                                    "EventCategory must be a keyboard event.")
-            OTR_INTERNAL_ASSERT_MSG(type == EventType::KeyPressed
-                                    || type == EventType::KeyReleased
-                                    || type == EventType::KeyHold,
-                                    "EventType must be a key event.")
-
-            m_UInt8[5] = static_cast<UInt8>(keyCode);
+            if constexpr (IsSame<T, bool> || IsSame<T, UInt8> || IsSame<T, Int8>)
+            {
+                m_Data[offset] = static_cast<Byte>(value);
+            }
+            else if constexpr (IsSame<T, UInt16> || IsSame<T, Int16>
+                               || IsSame<T, UInt32> || IsSame<T, Int32>
+                               || IsSame<T, UInt64> || IsSame<T, Int64>)
+            {
+                for (Size i = 0; i < sizeof(T); i++)
+                    m_Data[i + offset] = ((value >> (i * 8)) & 0xFF);
+            }
+            else
+            {
+                MemorySystem::MemoryCopy(m_Data + offset, &value, sizeof(T));
+            }
         }
 
-        EventData(const EventCategory category,
-                  const EventType type,
-                  const KeyCode keyCode,
-                  const Float32 time)
-            : EventData(category, type, keyCode)
+        template<typename T>
+        [[nodiscard]] constexpr T Get(const UInt64 offset) const
         {
-            OTR_INTERNAL_ASSERT_MSG(type == EventType::KeyHold, "EventType must be a key hold event.")
+            T value;
 
-            m_Float32[3] = time;
+            if constexpr (IsSame<T, bool> || IsSame<T, UInt8> || IsSame<T, Int8>)
+            {
+                value = static_cast<T>(m_Data[offset]);
+            }
+            else if constexpr (IsSame<T, UInt16> || IsSame<T, Int16>
+                               || IsSame<T, UInt32> || IsSame<T, Int32>
+                               || IsSame<T, UInt64> || IsSame<T, Int64>)
+            {
+                value = 0;
+                for (Size i = 0; i < sizeof(T); i++)
+                    value |= (static_cast<T>(m_Data[i + offset]) << (i * 8));
+            }
+            else
+            {
+                MemorySystem::MemoryCopy(&value, m_Data + offset, sizeof(T));
+            }
+
+            return value;
         }
 
-        EventData(const EventCategory category,
-                  const EventType type,
-                  const MouseButton button)
-            : EventData(category, type)
-        {
-            OTR_INTERNAL_ASSERT_MSG((category & EventCategory::Mouse) == EventCategory::Mouse,
-                                    "EventCategory must be a mouse event.")
-            OTR_INTERNAL_ASSERT_MSG(type == EventType::MouseButtonPressed
-                                    || type == EventType::MouseButtonReleased,
-                                    "EventType must be a mouse button event.")
-
-            m_UInt8[5] = static_cast<UInt8>(button);
-        }
-
-        EventData(const EventCategory category,
-                  const EventType type,
-                  const MouseButton button,
-                  const UInt8 count)
-            : EventData(category, type, button)
-        {
-            OTR_INTERNAL_ASSERT_MSG(type == EventType::MouseButtonPressed,
-                                    "EventType must be a mouse button pressed event.")
-
-            m_UInt8[6] = count;
-        }
-
-        EventData(const EventCategory category,
-                  const EventType type,
-                  const bool isPositive)
-            : EventData(category, type)
-        {
-            OTR_INTERNAL_ASSERT_MSG((category & EventCategory::Mouse) == EventCategory::Mouse,
-                                    "EventCategory must be a mouse event.")
-            OTR_INTERNAL_ASSERT_MSG(type == EventType::MouseScroll,
-                                    "EventType must be a mouse scroll event.")
-
-            m_Bool[7] = isPositive;
-        }
-
-        EventData(const EventCategory category,
-                  const EventType type,
-                  const UInt16 x,
-                  const UInt16 y)
-            : EventData(category, type)
-        {
-            OTR_INTERNAL_ASSERT_MSG((category & EventCategory::Mouse) == EventCategory::Mouse,
-                                    "EventCategory must be a mouse event.")
-            OTR_INTERNAL_ASSERT_MSG(type == EventType::MouseMoved,
-                                    "EventType must be a mouse move event.")
-
-            m_UInt16[4] = x;
-            m_UInt16[5] = y;
-        }
-
-        EventData(const EventCategory category,
-                  const EventType type,
-                  const UInt16 width,
-                  const UInt16 height,
-                  const Float32 dragTime)
-            : EventData(category, type)
-        {
-            OTR_INTERNAL_ASSERT_MSG((category & EventCategory::Mouse) == EventCategory::Mouse,
-                                    "EventCategory must be a mouse event.")
-            OTR_INTERNAL_ASSERT_MSG(type == EventType::MouseDragged
-                                    || type == EventType::MouseDragStarted
-                                    || type == EventType::MouseDragEnded,
-                                    "EventType must be a mouse drag event.")
-
-            m_UInt16[4]  = width;
-            m_UInt16[5]  = height;
-            m_Float32[3] = dragTime;
-        }
-
-        EventData(const EventCategory category,
-                  const EventType type,
-                  const UInt16 width,
-                  const UInt16 height,
-                  const bool isInitiatedByUser)
-            : EventData(category, type)
-        {
-            m_UInt16[4] = width;
-            m_UInt16[5] = height;
-            m_Bool[5]   = isInitiatedByUser;
-        }
-
-        union
-        {
-            // 8 bytes
-            bool      m_Bool[16];
-            Byte      m_Byte[16];
-            UInt8     m_UInt8[16];
-            Int8      m_Int8[16];
-            // 16 bytes
-            Int16     m_Int16[8];
-            UInt16    m_UInt16[8];
-            Float16   m_Float16[8];
-            // 32 bytes
-            Int32     m_Int32[4];
-            UInt32    m_UInt32[4];
-            Float32   m_Float32[4];
-            // 64 bytes
-            Int64     m_Int64[2];
-            UInt64    m_UInt64[2];
-            Double64  m_Double64[2];
-            // 128 bytes
-            Double128 m_Double128[1] = { 0.0 };
-        };
+    private:
+        Byte m_Data[16] = { 0, 0, 0, 0, 0, 0, 0, 0,
+                            0, 0, 0, 0, 0, 0, 0, 0 };
     };
-
-#define OTR_WINDOW_EVENT_CLASS(Type)                                                                            \
-    class Window##Type##EventData final : public EventData                                                      \
-    {                                                                                                           \
-    public:                                                                                                     \
-        Window##Type##EventData()                                                                               \
-            : EventData((EventCategory) (EventCategory::Window | EventCategory::Blocking),                      \
-                        EventType::Window##Type)                                                                \
-            {                                                                                                   \
-            }                                                                                                   \
-    };
-
-    OTR_WINDOW_EVENT_CLASS(Close)
-
-    OTR_WINDOW_EVENT_CLASS(Minimized)
-
-    OTR_WINDOW_EVENT_CLASS(Maximized)
-
-    OTR_WINDOW_EVENT_CLASS(Restored)
-
-    OTR_WINDOW_EVENT_CLASS(Refresh)
-
-#undef OTR_WINDOW_EVENT_CLASS
-
-    template<EventCategory TCategory, EventType TType, typename... TArgs>
-    requires IsValidEvent<TCategory, TType>
-    EventData EventData::Create(TArgs&& ... args)
-    {
-        WindowCloseEventData eventData;
-        auto                 eventData1 = (WindowMinimizedEventData) eventData;
-
-        return { TCategory, TType, std::forward<TArgs>(args)... };
-    }
 }
 #endif //OTTERENGINE_EVENT_H

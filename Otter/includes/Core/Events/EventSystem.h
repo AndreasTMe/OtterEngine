@@ -23,12 +23,13 @@ namespace Otter
         static void Shutdown();
 
         template<typename TEvent, typename... TArgs>
+        requires IsBaseOf<Event, TEvent>
         static void Schedule(TArgs&& ... args)
         {
             if (s_BlockEvents)
                 return;
 
-            TEvent e = TEvent(std::forward<TArgs>(args)...);
+            auto e = (Event) TEvent(std::forward<TArgs>(args)...);
             if (e.IsBlocking())
                 s_BlockEvents = true;
 
@@ -40,8 +41,8 @@ namespace Otter
     private:
         OTR_DISABLE_CONSTRUCTION(EventSystem)
 
-        static Queue<Internal::Event> s_Events;
-        static bool                   s_BlockEvents;
+        static Queue<Event> s_Events;
+        static bool         s_BlockEvents;
     };
 }
 
