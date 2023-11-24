@@ -29,6 +29,7 @@ namespace Otter
                                        UInt64 size,
                                        UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
         static void Free(void* block);
+        static void MemoryCopy(void* destination, const void* source, UInt64 size);
         static void MemoryClear(void* block, UInt64 size);
 
         // TODO: Will probably be removed
@@ -75,7 +76,7 @@ namespace Otter
 
             UnsafeHandle handle = MemorySystem::Allocate(bufferSize);
 
-            if (std::is_default_constructible<T>::value)
+            if (!std::is_trivially_constructible<T>::value)
             {
                 T* ptrCopy = (T*) handle.Pointer;
                 for (UInt64 i = 0; i < length; i++)

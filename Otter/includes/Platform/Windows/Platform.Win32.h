@@ -18,9 +18,15 @@ namespace Otter::Internal
     class WindowsPlatform final : public Platform
     {
     public:
-        OTR_WITH_DEFAULT_CONSTRUCTOR_AND_FINAL_DESTRUCTOR(WindowsPlatform);
+        explicit WindowsPlatform(const PlatformConfiguration& configuration)
+            : Platform(), m_Title(configuration.Title),
+              m_Width(configuration.Width), m_Height(configuration.Height),
+              m_State(configuration.State), m_IsRunning(false)
+        {
+        }
+        ~WindowsPlatform() final = default;
 
-        bool Startup(const char* title, UInt16 width, UInt16 height) final;
+        bool TryInitialise() final;
         void Shutdown() final;
         void CaptureWindowEvents() final;
 
@@ -31,17 +37,16 @@ namespace Otter::Internal
         [[nodiscard]] Double64 GetAbsoluteTime() const final;
 
     private:
-        UInt16 m_Width     = 0;
-        UInt16 m_Height    = 0;
-        bool   m_IsRunning = false;
+        const char* m_Title = nullptr;
+        UInt16      m_Width     = 0;
+        UInt16      m_Height    = 0;
+        WindowState m_State     = WindowState::Default;
+        bool        m_IsRunning = false;
 
         void RegisterEvents();
-        bool InitialiseWindow(const char* title,
-                              UInt16 left,
-                              UInt16 top,
-                              UInt16 width,
-                              UInt16 height);
-        void InitialiseInternalClock();
+        bool TryInitialiseWindow();
+
+        static void InitialiseInternalClock();
     };
 }
 

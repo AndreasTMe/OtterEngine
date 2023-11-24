@@ -41,6 +41,12 @@ concept IsBaseOf = std::is_base_of_v<TBase, TDerived>;
 template<typename TDerived, typename TBase>
 concept IsDerivedFrom = std::derived_from<TDerived, TBase>;
 
+template<typename TLeft, typename TRight>
+concept IsSame = std::is_same_v<TLeft, TRight>;
+
+template<bool Condition, typename T = void>
+using EnableIf = std::enable_if_t<Condition, T>;
+
 template<typename... TArgs>
 struct VariadicArgs
 {

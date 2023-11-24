@@ -4,20 +4,20 @@
 
 namespace Otter
 {
-    Func<bool, const Internal::WindowCloseEvent&>     GlobalActions::OnWindowClose;
-    Func<bool, const Internal::WindowResizeEvent&>    GlobalActions::OnWindowResize;
-    Func<bool, const Internal::WindowMinimizedEvent&> GlobalActions::OnWindowMinimized;
-    Func<bool, const Internal::WindowMaximizedEvent&> GlobalActions::OnWindowMaximized;
-    Func<bool, const Internal::WindowRestoredEvent&>  GlobalActions::OnWindowRestored;
-    Func<bool, const Internal::WindowRefreshEvent&>   GlobalActions::OnWindowRefresh;
+    Func<bool, const WindowCloseEvent&>     GlobalActions::OnWindowClose;
+    Func<bool, const WindowResizeEvent&>    GlobalActions::OnWindowResize;
+    Func<bool, const WindowMinimizedEvent&> GlobalActions::OnWindowMinimized;
+    Func<bool, const WindowMaximizedEvent&> GlobalActions::OnWindowMaximized;
+    Func<bool, const WindowRestoredEvent&>  GlobalActions::OnWindowRestored;
+    Func<bool, const WindowRefreshEvent&>   GlobalActions::OnWindowRefresh;
 
-    Func<bool, const Internal::KeyPressedEvent&>  GlobalActions::OnKeyPressed;
-    Func<bool, const Internal::KeyReleasedEvent&> GlobalActions::OnKeyReleased;
-    Func<bool, const Internal::KeyHoldEvent&>     GlobalActions::OnKeyHold;
+    Func<bool, const KeyPressedEvent&>  GlobalActions::OnKeyPressed;
+    Func<bool, const KeyReleasedEvent&> GlobalActions::OnKeyReleased;
+    Func<bool, const KeyHoldEvent&>     GlobalActions::OnKeyHold;
 
-    Func<bool, const Internal::MouseButtonPressedEvent&>  GlobalActions::OnMouseButtonPressed;
-    Func<bool, const Internal::MouseButtonReleasedEvent&> GlobalActions::OnMouseButtonReleased;
-    Func<bool, const Internal::MouseScrollEvent&>         GlobalActions::OnMouseScroll;
-    Func<bool, const Internal::MouseMovedEvent&>          GlobalActions::OnMouseMoved;
-    Func<bool, const Internal::MouseDraggedEvent&>        GlobalActions::OnMouseDragged;
+    Func<bool, const MouseButtonPressedEvent&>  GlobalActions::OnMouseButtonPressed;
+    Func<bool, const MouseButtonReleasedEvent&> GlobalActions::OnMouseButtonReleased;
+    Func<bool, const MouseScrollEvent&>         GlobalActions::OnMouseScroll;
+    Func<bool, const MouseMovedEvent&>          GlobalActions::OnMouseMoved;
+    Func<bool, const MouseDraggedEvent&>        GlobalActions::OnMouseDragged;
 }

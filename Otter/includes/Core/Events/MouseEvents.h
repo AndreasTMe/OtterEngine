@@ -4,78 +4,62 @@
 #include "Core/Types.h"
 #include "Core/Events/Event.h"
 
-namespace Otter::Internal
+namespace Otter
 {
     class MouseButtonPressedEvent final : public Event
     {
     public:
         explicit MouseButtonPressedEvent(const MouseButton button, const UInt8 count = 1)
-            : Event(EventType::MouseButtonPressed,
-                    static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
-              m_Button(button), m_Count(count)
+            : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse),
+                    EventType::MouseButtonPressed)
         {
+            Capture(button, 5);
+            Capture(count, 6);
         }
-        ~MouseButtonPressedEvent() final = default;
 
-        [[nodiscard]] OTR_INLINE MouseButton GetButton() const { return m_Button; }
-        [[nodiscard]] OTR_INLINE UInt8 GetClickCount() const { return m_Count; }
-
-    private:
-        MouseButton m_Button = MouseButton::None;
-        UInt8       m_Count  = 0;
+        [[nodiscard]] OTR_INLINE MouseButton GetMouseButton() const { return Get<MouseButton>(5); }
+        [[nodiscard]] OTR_INLINE UInt8 GetCount() const { return Get<UInt8>(6); }
     };
 
     class MouseButtonReleasedEvent final : public Event
     {
     public:
         explicit MouseButtonReleasedEvent(const MouseButton button)
-            : Event(EventType::MouseButtonReleased,
-                    static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
-              m_Button(button)
+            : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse),
+                    EventType::MouseButtonReleased)
         {
+            Capture(button, 5);
         }
-        ~MouseButtonReleasedEvent() final = default;
 
-        [[nodiscard]] OTR_INLINE MouseButton GetButton() const { return m_Button; }
-
-    private:
-        MouseButton m_Button = MouseButton::None;
+        [[nodiscard]] OTR_INLINE MouseButton GetMouseButton() const { return Get<MouseButton>(5); }
     };
 
     class MouseScrollEvent final : public Event
     {
     public:
         explicit MouseScrollEvent(const bool isPositive)
-            : Event(EventType::MouseScroll,
-                    static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
-              m_IsPositive(isPositive)
+            : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse),
+                    EventType::MouseScroll)
         {
+            Capture(isPositive, 7);
         }
-        ~MouseScrollEvent() final = default;
 
-        [[nodiscard]] OTR_INLINE bool IsPositive() const { return m_IsPositive; }
-
-    private:
-        bool m_IsPositive = false;
+        [[nodiscard]] OTR_INLINE bool IsPositive() const { return Get<bool>(7); }
     };
 
     class MouseMovedEvent final : public Event
     {
     public:
         explicit MouseMovedEvent(const UInt32 x, const UInt32 y)
-            : Event(EventType::MouseMoved,
-                    static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
-              m_X(x), m_Y(y)
+            : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse),
+                    EventType::MouseMoved)
         {
+            Capture(x, 8);
+            Capture(y, 10);
         }
-        ~MouseMovedEvent() final = default;
 
-        [[nodiscard]] OTR_INLINE UInt16 GetX() const { return m_X; }
-        [[nodiscard]] OTR_INLINE UInt16 GetY() const { return m_Y; }
-
-    private:
-        UInt16 m_X = 0;
-        UInt16 m_Y = 0;
+        [[nodiscard]] OTR_INLINE UInt32 GetX() const { return Get<UInt32>(8); }
+        [[nodiscard]] OTR_INLINE UInt32 GetY() const { return Get<UInt32>(10); }
     };
 
     class MouseDraggedEvent final : public Event
@@ -84,38 +68,61 @@ namespace Otter::Internal
         explicit MouseDraggedEvent(const MouseButton button,
                                    const UInt16 x,
                                    const UInt16 y,
-                                   const Float32 dragTime = 0,
-                                   const bool stopped = false)
-            : Event(EventType::MouseDragEnded,
-                    static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse)),
-              m_Button(button), m_X(x), m_Y(y), m_DragTime(dragTime), m_Stopped(stopped)
+                                   const Float32 dragTime)
+            : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse),
+                    EventType::MouseDragged)
         {
+            Capture(button, 5);
+            Capture(x, 8);
+            Capture(y, 10);
+            Capture(dragTime, 12);
         }
-        ~MouseDraggedEvent() final = default;
 
-        // TODO: Implement DragStarted/Ended events.
-//        [[nodiscard]] OTR_INLINE EventType GetEventType() const final
-//        {
-//            if (m_Stopped)
-//                return EventType::MouseDragEnded;
-//            else if (m_DragTime == 0.0)
-//                return EventType::MouseDragStarted;
-//            else
-//                return EventType::MouseDragged;
-//        }
+        [[nodiscard]] OTR_INLINE MouseButton GetMouseButton() const { return Get<MouseButton>(5); }
+        [[nodiscard]] OTR_INLINE UInt16 GetX() const { return Get<UInt16>(8); }
+        [[nodiscard]] OTR_INLINE UInt16 GetY() const { return Get<UInt16>(10); }
+        [[nodiscard]] OTR_INLINE Float32 GetDragTime() const { return Get<Float32>(12); }
+    };
 
-        [[nodiscard]] OTR_INLINE MouseButton GetButton() const { return m_Button; }
-        [[nodiscard]] OTR_INLINE UInt16 GetX() const { return m_X; }
-        [[nodiscard]] OTR_INLINE UInt16 GetY() const { return m_Y; }
-        [[nodiscard]] OTR_INLINE Float32 GetDragTime() const { return m_DragTime; }
+    class MouseDragStartedEvent final : public Event
+    {
+    public:
+        explicit MouseDragStartedEvent(const MouseButton button,
+                                       const UInt16 x,
+                                       const UInt16 y)
+            : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse),
+                    EventType::MouseDragStarted)
+        {
+            Capture(button, 5);
+            Capture(x, 8);
+            Capture(y, 10);
+        }
 
-    private:
-        MouseButton m_Button = MouseButton::None;
+        [[nodiscard]] OTR_INLINE MouseButton GetMouseButton() const { return Get<MouseButton>(5); }
+        [[nodiscard]] OTR_INLINE UInt16 GetX() const { return Get<UInt16>(8); }
+        [[nodiscard]] OTR_INLINE UInt16 GetY() const { return Get<UInt16>(10); }
+    };
 
-        UInt16  m_X        = 0;
-        UInt16  m_Y        = 0;
-        Float32 m_DragTime = 0;
-        bool    m_Stopped  = false;
+    class MouseDragEndedEvent final : public Event
+    {
+    public:
+        explicit MouseDragEndedEvent(const MouseButton button,
+                                     const UInt16 x,
+                                     const UInt16 y,
+                                     const Float32 dragTime)
+            : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Mouse),
+                    EventType::MouseDragEnded)
+        {
+            Capture(button, 5);
+            Capture(x, 8);
+            Capture(y, 10);
+            Capture(dragTime, 12);
+        }
+
+        [[nodiscard]] OTR_INLINE MouseButton GetMouseButton() const { return Get<MouseButton>(5); }
+        [[nodiscard]] OTR_INLINE UInt16 GetX() const { return Get<UInt16>(8); }
+        [[nodiscard]] OTR_INLINE UInt16 GetY() const { return Get<UInt16>(10); }
+        [[nodiscard]] OTR_INLINE Float32 GetDragTime() const { return Get<Float32>(12); }
     };
 }
 

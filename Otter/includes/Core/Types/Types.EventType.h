@@ -25,7 +25,7 @@
     REPLACE_WITH(MouseDragged,0x25)         \
     REPLACE_WITH(MouseDragStarted,0x26)     \
     REPLACE_WITH(MouseDragEnded,0x27)
-// TODO: Maybe implement these events later?
+// TODO: Maybe implement these events later? Update Event methods if necessary.
 // MouseEnter         = 0x28,
 // MouseExit          = 0x29,
 // MouseDragEntered   = 0x2A,
@@ -37,7 +37,7 @@
 // File Events (Use 0x60 - 0x70)
 // Log Events (Use 0x70 - 0x80)
 
-namespace Otter::Internal
+namespace Otter
 {
     enum class EventType : UInt8
     {
@@ -52,11 +52,11 @@ namespace Otter::Internal
 }
 
 template<typename OStream>
-OStream& operator<<(OStream& os, const Otter::Internal::EventType& eventType)
+OStream& operator<<(OStream& os, const Otter::EventType& eventType)
 {
     switch (eventType)
     {
-#define REPLACE_WITH(Item, Value) case Otter::Internal::EventType::Item: os << "EventType::" << #Item; break;
+#define REPLACE_WITH(Item, Value) case Otter::EventType::Item: os << "EventType::" << #Item; break;
         EVENT_TYPE_LIST
 #undef REPLACE_WITH
         default:
@@ -65,6 +65,6 @@ OStream& operator<<(OStream& os, const Otter::Internal::EventType& eventType)
 
     return os;
 }
-#undef KEYCODE_LIST
+#undef EVENT_TYPE_LIST
 
 #endif //OTTERENGINE_TYPES_EVENTTYPE_H

@@ -4,15 +4,13 @@
 
 namespace Otter
 {
-    using Event = Internal::Event;
-    using EventType = Internal::EventType;
-
-    Queue<Event> EventSystem::s_Events{ };
-    bool         EventSystem::s_BlockEvents = false;
+    Queue<Event>    EventSystem::s_Events{ };
+    bool            EventSystem::s_BlockEvents = false;
 
     Dictionary<EventType, Func<bool, const Event&>*> g_Listeners;
 
     template<typename TEvent = Event, typename TActionArg = const TEvent&>
+    requires IsBaseOf<Event, TEvent>
     void AddListener(EventType type, Func<bool, TActionArg>* action);
 
     void EventSystem::Initialise()
@@ -90,6 +88,7 @@ namespace Otter
     }
 
     template<typename TEvent, typename TActionArg>
+    requires IsBaseOf<Event, TEvent>
     void AddListener(EventType type, Func<bool, TActionArg>* action)
     {
         OTR_INTERNAL_ASSERT_MSG(type != EventType::None, "Event type cannot be None")
