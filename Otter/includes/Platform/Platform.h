@@ -81,6 +81,6 @@ OStream& operator<<(OStream& os, const Otter::WindowState& windowState)
 
     return os;
 }
-#undef ASSET_TYPE_LIST
+#undef WINDOW_STATE_LIST
 
 #endif //OTTERENGINE_PLATFORM_H

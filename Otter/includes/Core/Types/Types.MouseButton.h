@@ -36,6 +36,6 @@ OStream& operator<<(OStream& os, const Otter::MouseButton& mouseButton)
 
     return os;
 }
-#undef KEYCODE_LIST
+#undef MOUSE_BUTTON_LIST
 
 #endif //OTTERENGINE_TYPES_MOUSEBUTTON_H

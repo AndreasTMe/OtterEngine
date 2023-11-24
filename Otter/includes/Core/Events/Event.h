@@ -190,7 +190,7 @@ namespace Otter
             }
             else
             {
-                MemorySystem::MemoryCopy(m_Data + offset, &value, sizeof(T));
+                MemorySystem::MemoryCopy(&m_Data[offset], &value, sizeof(T));
             }
         }
 
@@ -213,7 +213,7 @@ namespace Otter
             }
             else
             {
-                MemorySystem::MemoryCopy(&value, m_Data + offset, sizeof(T));
+                MemorySystem::MemoryCopy(&value, &m_Data[offset], sizeof(T));
             }
 
             return value;

@@ -65,6 +65,6 @@ OStream& operator<<(OStream& os, const Otter::EventType& eventType)
 
     return os;
 }
-#undef KEYCODE_LIST
+#undef EVENT_TYPE_LIST
 
 #endif //OTTERENGINE_TYPES_EVENTTYPE_H

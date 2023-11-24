@@ -35,6 +35,6 @@ OStream& operator<<(OStream& os, const Otter::LogLevel& logLevel)
 
     return os;
 }
-#undef KEYCODE_LIST
+#undef LOG_LEVEL_LIST
 
 #endif //OTTERENGINE_TYPES_LOGLEVEL_H
