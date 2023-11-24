@@ -9,10 +9,15 @@
 #include "Core/Logger.h"
 #include "Math.Concepts.h"
 
-// TODO: Remove native math functions and replace with custom implementations.
 // TODO: Add SIMD support.
 namespace Otter::Math
 {
+    enum class AngleType
+    {
+        Radians,
+        Degrees
+    };
+
     template<FloatingPointNumber TNumber>
     OTR_INLINE constexpr TNumber Pi = static_cast<TNumber>(3.141592653589793238462643383279502884L);
 
@@ -72,6 +77,9 @@ namespace Otter::Math
 
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto Sign(TNumber x) { return x < 0 ? -1 : 1; }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE constexpr auto Mod(TNumber x, TNumber y) { return std::fmod(x, y); }
 
     template<AnyNumber Tx, AnyNumber Ty>
     OTR_INLINE constexpr auto Power(Tx x, Ty y) { return (y == 0) ? 1 : std::pow(x, y); }
@@ -180,8 +188,42 @@ namespace Otter::Math
         return t * t * (3 - 2 * t);
     }
 
-    // TODO: Core::LerpAngle
-    // TODO: Core::InverseLerpAngle
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE constexpr auto LerpAngle(Tx a, Ty b, Tz t, AngleType angleType = AngleType::Radians)
+    {
+        const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+
+        auto delta = Mod(b - a, fullAngle);
+        if (delta > halfAngle)
+            delta -= fullAngle;
+        else if (delta < -halfAngle)
+            delta += fullAngle;
+
+        auto result = a + delta * t;
+
+        result = Mod(result, fullAngle);
+        if (result < 0.0)
+            result += fullAngle;
+
+        return result;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE constexpr auto InverseLerpAngle(Tx a, Ty b, Tz value, AngleType angleType = AngleType::Radians)
+    {
+        const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+
+        auto delta = Mod(b - a, fullAngle);
+        if (delta > halfAngle)
+            delta -= fullAngle;
+        else if (delta < -halfAngle)
+            delta += fullAngle;
+
+        return InverseLerp(a, a + delta, value);
+    }
+
     // TODO: Core::SmoothDamp
     // TODO: Core::SmoothDampAngle
     // TODO: Core::MoveTowards
