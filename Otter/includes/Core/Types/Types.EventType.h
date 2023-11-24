@@ -25,7 +25,7 @@
     REPLACE_WITH(MouseDragged,0x25)         \
     REPLACE_WITH(MouseDragStarted,0x26)     \
     REPLACE_WITH(MouseDragEnded,0x27)
-// TODO: Maybe implement these events later?
+// TODO: Maybe implement these events later? Update Event methods if necessary.
 // MouseEnter         = 0x28,
 // MouseExit          = 0x29,
 // MouseDragEntered   = 0x2A,
