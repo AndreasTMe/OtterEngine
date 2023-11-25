@@ -47,14 +47,14 @@ namespace Otter::Graphics::Vulkan
     };
 
     GlobalUniformBufferObject g_GlobalUbo = {
-        Math::Perspective<Float32>(Math::DegToRad(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f),
-        { 1.0f, 0.0f, 0.0f, 0.0f,
-          0.0f, 1.0f, 0.0f, 0.0f,
-          0.0f, 0.0f, 1.0f, 0.0f,
-          0.0f, 0.0f, -5.0f, 1.0f },
+        Matrix4x4Utils::Perspective(static_cast<Float32>(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f,
+                                    Math::AngleType::Degrees),
+        Matrix4x4Utils::TRS(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
+                            Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
+                            Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
     };
 
-    Matrix<4, 4, Float32> g_Model = Matrix<4, 4, Float32>::Identity();
+    Matrix4x4<Float32> g_Model = Matrix4x4<Float32>::Identity();
 
     enum class WindowState : UInt8
     {
@@ -339,7 +339,7 @@ namespace Otter::Graphics::Vulkan
                            m_PipelineLayout,
                            VK_SHADER_STAGE_VERTEX_BIT,
                            0,
-                           sizeof(Matrix<4, 4, Float32>) * 2,
+                           sizeof(Matrix4x4<Float32>) * 2,
                            &g_Model);
         // TODO: End temp code
 
@@ -1059,7 +1059,7 @@ namespace Otter::Graphics::Vulkan
         VkPushConstantRange pushConstantRange{ };
         pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
         pushConstantRange.offset     = 0;
-        pushConstantRange.size       = sizeof(Matrix<4, 4, Float32>) * 2;
+        pushConstantRange.size       = sizeof(Matrix4x4<Float32>) * 2;
 
         CreatePipeline(m_DevicePair.LogicalDevice,
                        m_RenderPass,

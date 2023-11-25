@@ -7,12 +7,24 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Logger.h"
-#include "Math.Concepts.h"
+#include "Math/Math.Concepts.h"
 
-// TODO: Remove native math functions and replace with custom implementations.
 // TODO: Add SIMD support.
 namespace Otter::Math
 {
+    enum class AngleType
+    {
+        Radians,
+        Degrees
+    };
+
+    enum class Axis
+    {
+        X,
+        Y,
+        Z
+    };
+
     template<FloatingPointNumber TNumber>
     OTR_INLINE constexpr TNumber Pi = static_cast<TNumber>(3.141592653589793238462643383279502884L);
 
@@ -74,7 +86,10 @@ namespace Otter::Math
     OTR_INLINE constexpr auto Sign(TNumber x) { return x < 0 ? -1 : 1; }
 
     template<AnyNumber Tx, AnyNumber Ty>
-    OTR_INLINE constexpr auto Power(Tx x, Ty y) { return (y == 0) ? 1 : std::pow(x, y); }
+    OTR_INLINE constexpr auto FMod(Tx x, Ty y) { return std::fmod(x, y); }
+
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE constexpr auto Power(Tx x, Ty y) { return (IsApproximatelyZero(y)) ? 1 : std::pow(x, y); }
 
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto Square(TNumber x) { return x * x; }
@@ -83,13 +98,13 @@ namespace Otter::Math
     OTR_INLINE constexpr auto Cube(TNumber x) { return x * x * x; }
 
     template<IntegerNumber TNumber>
-    OTR_INLINE constexpr bool IsPowerOfTwo(TNumber x) { return x > 0 && (x & (x - 1)) == 0; }
+    OTR_INLINE constexpr bool IsPowerOfTwo(TNumber x) { return x > 0 && IsApproximatelyZero(x & (x - 1)); }
 
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto Exp(TNumber x) { return std::exp(x); }
 
     template<AnyNumber TNumber>
-    OTR_INLINE constexpr auto Sqrt(TNumber x)
+    OTR_INLINE constexpr auto SquareRoot(TNumber x)
     {
         OTR_ASSERT_MSG(x >= 0, "Cannot take the square root of a negative number")
         return std::sqrt(x);
@@ -164,8 +179,8 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto InverseLerp(Tx a, Ty b, Tz value)
     {
-        if (a == b)
-            return 0.0;
+        if (AreApproximatelyEqual(a, b))
+            return static_cast<decltype(a * b * value)>(0.0);
 
         return (value - a) / (b - a);
     }
@@ -180,12 +195,108 @@ namespace Otter::Math
         return t * t * (3 - 2 * t);
     }
 
-    // TODO: Core::LerpAngle
-    // TODO: Core::InverseLerpAngle
-    // TODO: Core::SmoothDamp
-    // TODO: Core::SmoothDampAngle
-    // TODO: Core::MoveTowards
-    // TODO: Core::MoveTowardsAngle
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE constexpr auto InverseSmoothStep(Tx min, Ty max, Tz smoothenedValue)
+    {
+        if (AreApproximatelyEqual(min, max))
+            return min;
+
+        smoothenedValue = Clamp((smoothenedValue - min) / (max - min), 0.0, 1.0);
+        return min + smoothenedValue * smoothenedValue * (3 - 2 * smoothenedValue) * (max - min);
+    }
+
+    template<AnyNumber TNumber>
+    OTR_INLINE auto NormaliseAngle(TNumber angle, AngleType angleType = AngleType::Radians)
+    {
+        const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+
+        while (angle > halfCircle)
+            angle -= fullCircle;
+
+        while (angle <= -halfCircle)
+            angle += fullCircle;
+
+        return angle;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto LerpAngle(Tx angleA, Ty angleB, Tz t, AngleType angleType = AngleType::Radians)
+    {
+        const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+
+        auto angleAMod = FMod(angleA, fullCircle);
+        auto angleBMod = FMod(angleB, fullCircle);
+
+        auto angleDifference = angleBMod - angleAMod;
+
+        if (angleDifference > halfCircle)
+            angleDifference -= fullCircle;
+        else if (angleDifference < -halfCircle)
+            angleDifference += fullCircle;
+
+        auto result = angleAMod + angleDifference * t;
+
+        result = FMod(result, fullCircle);
+        if (result < 0.0)
+            result += fullCircle;
+
+        return result;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto InverseLerpAngle(Tx angleA, Ty angleB, Tz angleC, AngleType angleType = AngleType::Radians)
+    {
+        const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+
+        auto angleAMod = FMod(angleA, fullCircle);
+        auto angleBMod = FMod(angleB, fullCircle);
+        auto angleCMod = FMod(angleC, fullCircle);
+
+        auto angleDifference = angleBMod - angleAMod;
+
+        if (angleDifference > halfCircle)
+            angleDifference -= fullCircle;
+        else if (angleDifference < -halfCircle)
+            angleDifference += fullCircle;
+
+        if (IsApproximatelyZero(angleDifference))
+            return static_cast<decltype(angleA * angleB * angleC)>(0.0);
+
+        return (angleCMod - angleAMod) / angleDifference;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto MoveTowards(Tx current, Ty target, Tz speed)
+    {
+        if (AreApproximatelyEqual(current, target))
+            return target;
+
+        const auto direction = (target - current > 0) ? 1.0 : -1.0;
+        current += direction * speed;
+
+        if ((direction > 0 && current > target) || (direction < 0 && current < target))
+            return target;
+
+        return current;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto MoveTowardsAngle(Tx current, Ty target, Tz maxDeltaAngle, AngleType angleType = AngleType::Radians)
+    {
+        const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+
+        current = FMod(current, fullCircle);
+        target  = FMod(target, fullCircle);
+
+        const auto angleDifference = FMod(target - current + fullCircle, fullCircle) - halfCircle;
+        const auto clampedAngle    = Clamp(angleDifference, -maxDeltaAngle, maxDeltaAngle);
+
+        return FMod(current + clampedAngle + fullCircle, fullCircle);
+    }
 }
 
 #endif //OTTERENGINE_CORE_H

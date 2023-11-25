@@ -11,16 +11,19 @@ namespace Otter
 {
     class Sprite
     {
+        template<AnyNumber TNumber>
+        using Rectangle = Math::Rectangle<TNumber>;
+
     public:
         Sprite() = default;
         ~Sprite() = default;
 
-        Sprite(const Rectangle<Float32>& bounds, const Vector<4, Float32>& color)
+        Sprite(const Rectangle<Float32>& bounds, const Vector4D<Float32>& color)
             : m_Bounds(bounds), m_Color(color)
         {
         }
 
-        Sprite(const Vector<2, Float32>& position, const Vector<2, Float32>& size, const Vector<4, Float32>& color)
+        Sprite(const Vector2D<Float32>& position, const Vector2D<Float32>& size, const Vector4D<Float32>& color)
             : m_Bounds({ position - size * 0.5f, size }), m_Color(color)
         {
         }
@@ -50,14 +53,14 @@ namespace Otter
         OTR_INLINE Rectangle<Float32> GetBounds() const { return m_Bounds; }
         OTR_INLINE void SetBounds(const Rectangle<Float32>& bounds) { m_Bounds = bounds; }
 
-        OTR_INLINE Vector<4, Float32> GetColor() const { return m_Color; }
-        OTR_INLINE void SetColor(const Vector<4, Float32>& color) { m_Color = color; }
+        OTR_INLINE Vector4D<Float32> GetColor() const { return m_Color; }
+        OTR_INLINE void SetColor(const Vector4D<Float32>& color) { m_Color = color; }
 
-        OTR_INLINE Vector<2, Float32> GetCenter() const { return m_Bounds.GetCenter(); }
+        OTR_INLINE Vector2D<Float32> GetCenter() const { return m_Bounds.GetCenter(); }
 
-        OTR_INLINE Span<Vector<2, Float32>, 4> GetVertices() const
+        OTR_INLINE Span<Vector2D<Float32>, 4> GetVertices() const
         {
-            Span<Vector<2, Float32>, 4> vertices{ };
+            Span<Vector2D<Float32>, 4> vertices{ };
 
             vertices[0] = m_Bounds.GetBottomLeft();
             vertices[1] = m_Bounds.GetBottomRight();
@@ -67,7 +70,7 @@ namespace Otter
             return vertices;
         }
 
-        OTR_INLINE Span<Vector<2, Float32>, 4> GetTexCoords() const
+        OTR_INLINE Span<Vector2D<Float32>, 4> GetTexCoords() const
         {
             return {{ 0.0f, 1.0f },
                     { 1.0f, 1.0f },
@@ -77,7 +80,7 @@ namespace Otter
 
     private:
         Rectangle<Float32> m_Bounds;
-        Vector<4, Float32> m_Color;
+        Vector4D<Float32>  m_Color;
     };
 }
 
