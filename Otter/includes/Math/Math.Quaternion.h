@@ -36,8 +36,7 @@ namespace Otter::Math
     }
 
     template<AnyNumber TNumber>
-    OTR_INLINE auto
-    Magnitude(const Quaternion<TNumber>& quaternion) { return SquareRoot(MagnitudeSquared(quaternion)); }
+    OTR_INLINE auto Magnitude(const Quaternion<TNumber>& quaternion) { return Sqrt(MagnitudeSquared(quaternion)); }
 
     template<AnyNumber TNumber>
     OTR_INLINE auto Normalise(const Quaternion<TNumber>& quaternion)

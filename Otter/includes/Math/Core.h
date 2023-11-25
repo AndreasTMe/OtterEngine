@@ -78,11 +78,11 @@ namespace Otter::Math
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto Sign(TNumber x) { return x < 0 ? -1 : 1; }
 
-    template<AnyNumber Tx, AnyNumber Ty>
-    OTR_INLINE constexpr auto FMod(Tx x, Ty y) { return std::fmod(x, y); }
+    template<AnyNumber TNumber>
+    OTR_INLINE constexpr auto Mod(TNumber x, TNumber y) { return std::fmod(x, y); }
 
     template<AnyNumber Tx, AnyNumber Ty>
-    OTR_INLINE constexpr auto Power(Tx x, Ty y) { return (IsApproximatelyZero(y)) ? 1 : std::pow(x, y); }
+    OTR_INLINE constexpr auto Power(Tx x, Ty y) { return (y == 0) ? 1 : std::pow(x, y); }
 
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto Square(TNumber x) { return x * x; }
@@ -91,13 +91,13 @@ namespace Otter::Math
     OTR_INLINE constexpr auto Cube(TNumber x) { return x * x * x; }
 
     template<IntegerNumber TNumber>
-    OTR_INLINE constexpr bool IsPowerOfTwo(TNumber x) { return x > 0 && IsApproximatelyZero(x & (x - 1)); }
+    OTR_INLINE constexpr bool IsPowerOfTwo(TNumber x) { return x > 0 && (x & (x - 1)) == 0; }
 
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto Exp(TNumber x) { return std::exp(x); }
 
     template<AnyNumber TNumber>
-    OTR_INLINE constexpr auto SquareRoot(TNumber x)
+    OTR_INLINE constexpr auto Sqrt(TNumber x)
     {
         OTR_ASSERT_MSG(x >= 0, "Cannot take the square root of a negative number")
         return std::sqrt(x);
@@ -172,8 +172,8 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto InverseLerp(Tx a, Ty b, Tz value)
     {
-        if (AreApproximatelyEqual(a, b))
-            return static_cast<decltype(a * b * value)>(0.0);
+        if (a == b)
+            return 0.0;
 
         return (value - a) / (b - a);
     }
@@ -189,24 +189,20 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto LerpAngle(Tx angleA, Ty angleB, Tz t, AngleType angleType = AngleType::Radians)
+    OTR_INLINE constexpr auto LerpAngle(Tx a, Ty b, Tz t, AngleType angleType = AngleType::Radians)
     {
         const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
         const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
 
-        auto angleAMod = FMod(angleA, fullAngle);
-        auto angleBMod = FMod(angleB, fullAngle);
+        auto delta = Mod(b - a, fullAngle);
+        if (delta > halfAngle)
+            delta -= fullAngle;
+        else if (delta < -halfAngle)
+            delta += fullAngle;
 
-        auto angleDifference = angleBMod - angleAMod;
+        auto result = a + delta * t;
 
-        if (angleDifference > halfAngle)
-            angleDifference -= fullAngle;
-        else if (angleDifference < -halfAngle)
-            angleDifference += fullAngle;
-
-        auto result = angleAMod + angleDifference * t;
-
-        result = FMod(result, fullAngle);
+        result = Mod(result, fullAngle);
         if (result < 0.0)
             result += fullAngle;
 
@@ -214,118 +210,24 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto InverseLerpAngle(Tx angleA,
-                                               Ty angleB,
-                                               Tz angleC,
-                                               AngleType angleType = AngleType::Radians)
+    OTR_INLINE constexpr auto InverseLerpAngle(Tx a, Ty b, Tz value, AngleType angleType = AngleType::Radians)
     {
         const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
         const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
 
-        auto angleAMod = FMod(angleA, fullAngle);
-        auto angleBMod = FMod(angleB, fullAngle);
-        auto angleCMod = FMod(angleC, fullAngle);
+        auto delta = Mod(b - a, fullAngle);
+        if (delta > halfAngle)
+            delta -= fullAngle;
+        else if (delta < -halfAngle)
+            delta += fullAngle;
 
-        auto angleDifference = angleBMod - angleAMod;
-
-        if (angleDifference > halfAngle)
-            angleDifference -= fullAngle;
-        else if (angleDifference < -halfAngle)
-            angleDifference += fullAngle;
-
-        if (IsApproximatelyZero(angleDifference))
-            return static_cast<decltype(angleA * angleB * angleC)>(0.0);
-
-        return (angleCMod - angleAMod) / angleDifference;
+        return InverseLerp(a, a + delta, value);
     }
 
-    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz, AnyNumber Tu, AnyNumber Tv, AnyNumber Tw>
-    OTR_INLINE constexpr auto SmoothDamp(Tx current,
-                                         Ty target,
-                                         Tz& currentVelocity,
-                                         Tu smoothTime,
-                                         Tv deltaTime,
-                                         Tw maxSpeed = PositiveInfinity<Tw>)
-    {
-        OTR_INTERNAL_ASSERT_MSG(smoothTime > Epsilon<Tu>, "Smooth time must be greater than zero")
-        OTR_INTERNAL_ASSERT_MSG(deltaTime > Epsilon<Tv>, "Delta time must be greater than zero")
-
-        const auto springFactor     = 2.0 / smoothTime;
-        const auto dampingRatio     = 1.0;
-        const auto angularFrequency = SquareRoot(Square(springFactor) - Square(dampingRatio));
-        const auto difference       = current - target;
-
-        currentVelocity -= angularFrequency * difference;
-
-        const auto decay = Exp(dampingRatio * springFactor * deltaTime);
-        const auto a     = angularFrequency * deltaTime * decay;
-        const auto b     = Exp(-springFactor * deltaTime);
-
-        current         = target + (difference * (a + currentVelocity) + target * b) / (a + b + Epsilon<Tv>);
-        currentVelocity = (currentVelocity + angularFrequency * difference) * decay + springFactor * (current - target);
-
-        if (!IsInfinity(maxSpeed))
-        {
-            const auto maxDelta = maxSpeed * smoothTime;
-            currentVelocity = Clamp(currentVelocity, -maxDelta, maxDelta);
-        }
-
-        return current;
-    }
-
-    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz, AnyNumber Tu, AnyNumber Tv, AnyNumber Tw>
-    OTR_INLINE constexpr auto SmoothDampAngle(Tx current,
-                                              Ty target,
-                                              Tz& currentVelocity,
-                                              Tu smoothTime,
-                                              Tv deltaTime,
-                                              Tw maxSpeed = PositiveInfinity<Tw>,
-                                              AngleType angleType = AngleType::Radians)
-    {
-        const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
-        const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
-
-        current = FMod(current, fullAngle);
-        target  = FMod(target, fullAngle);
-
-        auto angleDifference = FMod(target - current + fullAngle, fullAngle) - halfAngle;
-        angleDifference = SmoothDamp(0.0, angleDifference, currentVelocity, smoothTime, maxSpeed, deltaTime);
-
-        return FMod(current + angleDifference + fullAngle, fullAngle);
-    }
-
-    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto MoveTowards(Tx current, Ty target, Tz speed)
-    {
-        if (AreApproximatelyEqual(current, target))
-            return current;
-
-        const auto direction = (target - current > 0) ? 1.0 : -1.0;
-        current += direction * speed;
-
-        if ((direction > 0 && current > target) || (direction < 0 && current < target))
-            return target;
-
-        return current;
-    }
-
-    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto MoveTowardsAngle(Tx current,
-                                               Ty target,
-                                               Tz maxDeltaAngle,
-                                               AngleType angleType = AngleType::Radians)
-    {
-        const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
-        const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
-
-        current = FMod(current, fullAngle);
-        target  = FMod(target, fullAngle);
-
-        const auto angleDifference = FMod(target - current + fullAngle, fullAngle) - halfAngle;
-        const auto clampedAngle    = Clamp(angleDifference, -maxDeltaAngle, maxDeltaAngle);
-
-        return FMod(current + clampedAngle + fullAngle, fullAngle);
-    }
+    // TODO: Core::SmoothDamp
+    // TODO: Core::SmoothDampAngle
+    // TODO: Core::MoveTowards
+    // TODO: Core::MoveTowardsAngle
 }
 
 #endif //OTTERENGINE_CORE_H

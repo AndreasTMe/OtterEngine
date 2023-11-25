@@ -34,14 +34,14 @@ namespace Otter::Math
     }
 
     template<AnyNumber TNumber>
-    OTR_INLINE auto Magnitude(const Vector<3, TNumber>& vector) { return SquareRoot(MagnitudeSquared(vector)); }
+    OTR_INLINE auto Magnitude(const Vector<3, TNumber>& vector) { return Sqrt(MagnitudeSquared(vector)); }
 
     template<AnyNumber TNumber, AnyNumber TMaxMagnitude>
     OTR_INLINE auto ClampMagnitude(const Vector<3, TNumber>& vector, const TMaxMagnitude& maxMagnitude)
     {
         const auto magnitudeSquared = MagnitudeSquared(vector);
         if (magnitudeSquared > Square(maxMagnitude))
-            return vector * Min(maxMagnitude / SquareRoot(magnitudeSquared), 1);
+            return vector * Min(maxMagnitude / Sqrt(magnitudeSquared), 1);
 
         return vector;
     }
