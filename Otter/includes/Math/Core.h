@@ -189,6 +189,16 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE constexpr auto InverseSmoothStep(Tx min, Ty max, Tz smoothenedValue)
+    {
+        if (AreApproximatelyEqual(min, max))
+            return min;
+
+        smoothenedValue = Clamp((smoothenedValue - min) / (max - min), 0.0, 1.0);
+        return min + smoothenedValue * smoothenedValue * (3 - 2 * smoothenedValue) * (max - min);
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto LerpAngle(Tx angleA, Ty angleB, Tz t, AngleType angleType = AngleType::Radians)
     {
         const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
@@ -239,66 +249,11 @@ namespace Otter::Math
         return (angleCMod - angleAMod) / angleDifference;
     }
 
-    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz, AnyNumber Tu, AnyNumber Tv, AnyNumber Tw>
-    OTR_INLINE constexpr auto SmoothDamp(Tx current,
-                                         Ty target,
-                                         Tz& currentVelocity,
-                                         Tu smoothTime,
-                                         Tv deltaTime,
-                                         Tw maxSpeed = PositiveInfinity<Tw>)
-    {
-        OTR_INTERNAL_ASSERT_MSG(smoothTime > Epsilon<Tu>, "Smooth time must be greater than zero")
-        OTR_INTERNAL_ASSERT_MSG(deltaTime > Epsilon<Tv>, "Delta time must be greater than zero")
-
-        const auto springFactor     = 2.0 / smoothTime;
-        const auto dampingRatio     = 1.0;
-        const auto angularFrequency = SquareRoot(Square(springFactor) - Square(dampingRatio));
-        const auto difference       = current - target;
-
-        currentVelocity -= angularFrequency * difference;
-
-        const auto decay = Exp(dampingRatio * springFactor * deltaTime);
-        const auto a     = angularFrequency * deltaTime * decay;
-        const auto b     = Exp(-springFactor * deltaTime);
-
-        current         = target + (difference * (a + currentVelocity) + target * b) / (a + b + Epsilon<Tv>);
-        currentVelocity = (currentVelocity + angularFrequency * difference) * decay + springFactor * (current - target);
-
-        if (!IsInfinity(maxSpeed))
-        {
-            const auto maxDelta = maxSpeed * smoothTime;
-            currentVelocity = Clamp(currentVelocity, -maxDelta, maxDelta);
-        }
-
-        return current;
-    }
-
-    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz, AnyNumber Tu, AnyNumber Tv, AnyNumber Tw>
-    OTR_INLINE constexpr auto SmoothDampAngle(Tx current,
-                                              Ty target,
-                                              Tz& currentVelocity,
-                                              Tu smoothTime,
-                                              Tv deltaTime,
-                                              Tw maxSpeed = PositiveInfinity<Tw>,
-                                              AngleType angleType = AngleType::Radians)
-    {
-        const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
-        const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
-
-        current = FMod(current, fullAngle);
-        target  = FMod(target, fullAngle);
-
-        auto angleDifference = FMod(target - current + fullAngle, fullAngle) - halfAngle;
-        angleDifference = SmoothDamp(0.0, angleDifference, currentVelocity, smoothTime, maxSpeed, deltaTime);
-
-        return FMod(current + angleDifference + fullAngle, fullAngle);
-    }
-
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto MoveTowards(Tx current, Ty target, Tz speed)
     {
         if (AreApproximatelyEqual(current, target))
-            return current;
+            return target;
 
         const auto direction = (target - current > 0) ? 1.0 : -1.0;
         current += direction * speed;

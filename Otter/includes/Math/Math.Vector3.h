@@ -168,9 +168,28 @@ namespace Otter::Math
         return Sign(Dot(axis, Cross(from, to))) * Angle(from, to);
     }
 
-    // TODO: Vector3::SmoothStep
-    // TODO: Vector3::SmoothDamp
-    // TODO: Vector3::SmoothDampAngle
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto SmoothStep(const Vector<3, Tx>& min, const Vector<3, Ty>& max, const Vector<3, Tz>& value)
+    {
+        return Vector<3, decltype(Math::SmoothStep(min[0], max[0], value[0]))>{
+            Math::SmoothStep(min[0], max[0], value[0]),
+            Math::SmoothStep(min[1], max[1], value[1]),
+            Math::SmoothStep(min[2], max[2], value[2])
+        };
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE constexpr auto InverseSmoothStep(const Vector<3, Tx>& min,
+                                                const Vector<3, Ty>& max,
+                                                const Vector<3, Tz>& smoothenedValue)
+    {
+        return Vector<3, decltype(Math::InverseSmoothStep(min, max, smoothenedValue[0]))>{
+            Math::InverseSmoothStep(min[0], max[0], smoothenedValue[0]),
+            Math::InverseSmoothStep(min[1], max[1], smoothenedValue[1]),
+            Math::InverseSmoothStep(min[2], max[2], smoothenedValue[2])
+        };
+    }
+
     // TODO: Vector3::MoveTowards
     // TODO: Vector3::RotateTowards
     // TODO: Vector3::ProjectOnPlane

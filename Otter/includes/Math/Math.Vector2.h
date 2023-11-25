@@ -125,9 +125,26 @@ namespace Otter::Math
         return Sign(from[0] * to[1] - from[1] * to[0]) * Angle(from, to);
     }
 
-    // TODO: Vector2::SmoothStep
-    // TODO: Vector2::SmoothDamp
-    // TODO: Vector2::SmoothDampAngle
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto SmoothStep(const Vector<2, Tx>& min, const Vector<2, Ty>& max, const Vector<2, Tz>& value)
+    {
+        return Vector<2, decltype(Math::SmoothStep(min[0], max[0], value[0]))>{
+            Math::SmoothStep(min[0], max[0], value[0]),
+            Math::SmoothStep(min[1], max[1], value[1])
+        };
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE constexpr auto InverseSmoothStep(const Vector<2, Tx>& min,
+                                                const Vector<2, Ty>& max,
+                                                const Vector<2, Tz>& smoothenedValue)
+    {
+        return Vector<2, decltype(Math::InverseSmoothStep(min, max, smoothenedValue[0]))>{
+            Math::InverseSmoothStep(min[0], max[0], smoothenedValue[0]),
+            Math::InverseSmoothStep(min[1], max[1], smoothenedValue[1])
+        };
+    }
+
     // TODO: Vector2::MoveTowards
     // TODO: Vector2::RotateTowards
 }
