@@ -87,13 +87,13 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto Lerp(const Vector<4, Tx>& lhs, const Vector<4, Ty>& rhs, const Tz& t)
+    OTR_INLINE auto Lerp(const Vector<4, Tx>& lhs, const Vector<4, Ty>& rhs, Tz t)
     {
         return lhs + (rhs - lhs) * t;
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto LerpClamped(const Vector<4, Tx>& lhs, const Vector<4, Ty>& rhs, const Tz& t)
+    OTR_INLINE auto LerpClamped(const Vector<4, Tx>& lhs, const Vector<4, Ty>& rhs, Tz t)
     {
         return Lerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
@@ -126,7 +126,34 @@ namespace Otter::Math
         return (Dot(vector, normal) / magnitudeSquared) * normal;
     }
 
-    // TODO: Vector4::MoveTowards
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto MoveTowards(const Vector<4, Tx>& current, const Vector<4, Ty>& target, Tz maxDistanceDelta)
+    {
+        if (AreApproximatelyEqual(current, target))
+            return target;
+
+        const auto difference       = { target[0] - current[0],
+                                        target[1] - current[1],
+                                        target[2] - current[2],
+                                        target[3] - current[3] };
+        const auto magnitudeSquared = MagnitudeSquared(difference);
+
+        if (IsApproximatelyZero(magnitudeSquared))
+            return target;
+
+        const auto distance = SquareRoot(magnitudeSquared);
+        if (distance <= maxDistanceDelta)
+            return target;
+
+        const auto factor = maxDistanceDelta / distance;
+
+        return Vector<3, decltype(current[0] + difference[0] * factor)>{
+            current[0] + difference[0] * factor,
+            current[1] + difference[1] * factor,
+            current[2] + difference[2] * factor,
+            current[3] + difference[3] * factor
+        };
+    }
 }
 
 #endif //OTTERENGINE_MATH_VECTOR4_H

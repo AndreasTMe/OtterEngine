@@ -198,50 +198,62 @@ namespace Otter::Math
         return min + smoothenedValue * smoothenedValue * (3 - 2 * smoothenedValue) * (max - min);
     }
 
-    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto LerpAngle(Tx angleA, Ty angleB, Tz t, AngleType angleType = AngleType::Radians)
+    template<AnyNumber TNumber>
+    OTR_INLINE auto NormalizeAngle(TNumber angle, AngleType angleType = AngleType::Radians)
     {
-        const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
-        const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+        const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
 
-        auto angleAMod = FMod(angleA, fullAngle);
-        auto angleBMod = FMod(angleB, fullAngle);
+        while (angle > halfCircle)
+            angle -= fullCircle;
+
+        while (angle <= -halfCircle)
+            angle += fullCircle;
+
+        return angle;
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto LerpAngle(Tx angleA, Ty angleB, Tz t, AngleType angleType = AngleType::Radians)
+    {
+        const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+
+        auto angleAMod = FMod(angleA, fullCircle);
+        auto angleBMod = FMod(angleB, fullCircle);
 
         auto angleDifference = angleBMod - angleAMod;
 
-        if (angleDifference > halfAngle)
-            angleDifference -= fullAngle;
-        else if (angleDifference < -halfAngle)
-            angleDifference += fullAngle;
+        if (angleDifference > halfCircle)
+            angleDifference -= fullCircle;
+        else if (angleDifference < -halfCircle)
+            angleDifference += fullCircle;
 
         auto result = angleAMod + angleDifference * t;
 
-        result = FMod(result, fullAngle);
+        result = FMod(result, fullCircle);
         if (result < 0.0)
-            result += fullAngle;
+            result += fullCircle;
 
         return result;
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto InverseLerpAngle(Tx angleA,
-                                               Ty angleB,
-                                               Tz angleC,
-                                               AngleType angleType = AngleType::Radians)
+    OTR_INLINE auto InverseLerpAngle(Tx angleA, Ty angleB, Tz angleC, AngleType angleType = AngleType::Radians)
     {
-        const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
-        const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+        const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
 
-        auto angleAMod = FMod(angleA, fullAngle);
-        auto angleBMod = FMod(angleB, fullAngle);
-        auto angleCMod = FMod(angleC, fullAngle);
+        auto angleAMod = FMod(angleA, fullCircle);
+        auto angleBMod = FMod(angleB, fullCircle);
+        auto angleCMod = FMod(angleC, fullCircle);
 
         auto angleDifference = angleBMod - angleAMod;
 
-        if (angleDifference > halfAngle)
-            angleDifference -= fullAngle;
-        else if (angleDifference < -halfAngle)
-            angleDifference += fullAngle;
+        if (angleDifference > halfCircle)
+            angleDifference -= fullCircle;
+        else if (angleDifference < -halfCircle)
+            angleDifference += fullCircle;
 
         if (IsApproximatelyZero(angleDifference))
             return static_cast<decltype(angleA * angleB * angleC)>(0.0);
@@ -250,7 +262,7 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto MoveTowards(Tx current, Ty target, Tz speed)
+    OTR_INLINE auto MoveTowards(Tx current, Ty target, Tz speed)
     {
         if (AreApproximatelyEqual(current, target))
             return target;
@@ -265,21 +277,18 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto MoveTowardsAngle(Tx current,
-                                               Ty target,
-                                               Tz maxDeltaAngle,
-                                               AngleType angleType = AngleType::Radians)
+    OTR_INLINE auto MoveTowardsAngle(Tx current, Ty target, Tz maxDeltaAngle, AngleType angleType = AngleType::Radians)
     {
-        const auto fullAngle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
-        const auto halfAngle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
+        const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
+        const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;
 
-        current = FMod(current, fullAngle);
-        target  = FMod(target, fullAngle);
+        current = FMod(current, fullCircle);
+        target  = FMod(target, fullCircle);
 
-        const auto angleDifference = FMod(target - current + fullAngle, fullAngle) - halfAngle;
+        const auto angleDifference = FMod(target - current + fullCircle, fullCircle) - halfCircle;
         const auto clampedAngle    = Clamp(angleDifference, -maxDeltaAngle, maxDeltaAngle);
 
-        return FMod(current + clampedAngle + fullAngle, fullAngle);
+        return FMod(current + clampedAngle + fullCircle, fullCircle);
     }
 }
 

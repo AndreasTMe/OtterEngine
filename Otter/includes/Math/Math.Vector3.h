@@ -85,19 +85,19 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto Lerp(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
+    OTR_INLINE auto Lerp(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, Tz t)
     {
         return lhs + (rhs - lhs) * t;
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto LerpClamped(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
+    OTR_INLINE auto LerpClamped(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, Tz t)
     {
         return Lerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto Slerp(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
+    OTR_INLINE auto Slerp(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, Tz t)
     {
         auto dotClamped = Clamp(Dot(lhs, rhs), -1.0, 1.0);
         auto theta      = Acos(dotClamped) * t;
@@ -107,7 +107,7 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto SlerpClamped(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, const Tz& t)
+    OTR_INLINE auto SlerpClamped(const Vector<3, Tx>& lhs, const Vector<3, Ty>& rhs, Tz t)
     {
         return Slerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
@@ -190,8 +190,59 @@ namespace Otter::Math
         };
     }
 
-    // TODO: Vector3::MoveTowards
-    // TODO: Vector3::RotateTowards
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto MoveTowards(const Vector<3, Tx>& current, const Vector<3, Ty>& target, Tz maxDistanceDelta)
+    {
+        if (AreApproximatelyEqual(current, target))
+            return target;
+
+        const auto difference       = { target[0] - current[0],
+                                        target[1] - current[1],
+                                        target[2] - current[2] };
+        const auto magnitudeSquared = MagnitudeSquared(difference);
+
+        if (IsApproximatelyZero(magnitudeSquared))
+            return target;
+
+        const auto distance = SquareRoot(magnitudeSquared);
+        if (distance <= maxDistanceDelta)
+            return target;
+
+        const auto factor = maxDistanceDelta / distance;
+
+        return Vector<3, decltype(current[0] + difference[0] * factor)>{
+            current[0] + difference[0] * factor,
+            current[1] + difference[1] * factor,
+            current[2] + difference[2] * factor
+        };
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto RotateTowards(const Vector<3, Tx>& current,
+                                  const Vector<3, Ty>& target,
+                                  Tz maxDeltaAngle,
+                                  AngleType angleType = AngleType::Radians)
+    {
+        if (AreApproximatelyEqual(current, target))
+            return target;
+
+        if (angleType == AngleType::Degrees)
+            maxDeltaAngle = DegToRad(maxDeltaAngle);
+
+        const auto axis  = Cross(current, target);
+        const auto angle = Acos(Clamp(Dot(current, target), -1.0, 1.0));
+        maxDeltaAngle = Clamp(maxDeltaAngle, -angle, maxDeltaAngle);
+
+        const auto sinHalfAngle = std::sin(maxDeltaAngle / 2.0);
+        const auto cosHalfAngle = std::cos(maxDeltaAngle / 2.0);
+
+        return Vector<3, decltype(current[0] * cosHalfAngle + axis[0] * sinHalfAngle)>{
+            cosHalfAngle * current[0] + sinHalfAngle * axis[0],
+            cosHalfAngle * current[1] + sinHalfAngle * axis[1],
+            cosHalfAngle * current[2] + sinHalfAngle * axis[2]
+        };
+    }
+
     // TODO: Vector3::ProjectOnPlane
     // TODO: Vector3::OrthoNormalize
 }

@@ -71,13 +71,13 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto Lerp(const Vector<2, Tx>& lhs, const Vector<2, Ty>& rhs, const Tz& t)
+    OTR_INLINE auto Lerp(const Vector<2, Tx>& lhs, const Vector<2, Ty>& rhs, Tz t)
     {
         return lhs + (rhs - lhs) * t;
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto LerpClamped(const Vector<2, Tx>& lhs, const Vector<2, Ty>& rhs, const Tz& t)
+    OTR_INLINE auto LerpClamped(const Vector<2, Tx>& lhs, const Vector<2, Ty>& rhs, Tz t)
     {
         return Lerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
@@ -135,9 +135,9 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE constexpr auto InverseSmoothStep(const Vector<2, Tx>& min,
-                                                const Vector<2, Ty>& max,
-                                                const Vector<2, Tz>& smoothenedValue)
+    OTR_INLINE auto InverseSmoothStep(const Vector<2, Tx>& min,
+                                      const Vector<2, Ty>& max,
+                                      const Vector<2, Tz>& smoothenedValue)
     {
         return Vector<2, decltype(Math::InverseSmoothStep(min, max, smoothenedValue[0]))>{
             Math::InverseSmoothStep(min[0], max[0], smoothenedValue[0]),
@@ -145,8 +145,57 @@ namespace Otter::Math
         };
     }
 
-    // TODO: Vector2::MoveTowards
-    // TODO: Vector2::RotateTowards
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto MoveTowards(const Vector<2, Tx>& current, const Vector<2, Ty>& target, Tz maxDistanceDelta)
+    {
+        if (AreApproximatelyEqual(current, target))
+            return target;
+
+        const auto difference       = { target[0] - current[0],
+                                        target[1] - current[1] };
+        const auto magnitudeSquared = MagnitudeSquared(difference);
+
+        if (IsApproximatelyZero(magnitudeSquared))
+            return target;
+
+        const auto distance = SquareRoot(magnitudeSquared);
+        if (distance <= maxDistanceDelta)
+            return target;
+
+        const auto factor = maxDistanceDelta / distance;
+
+        return Vector<2, decltype(current[0] + difference[0] * factor)>{
+            current[0] + difference[0] * factor,
+            current[1] + difference[1] * factor
+        };
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto RotateTowards(const Vector<2, Tx>& current,
+                                  const Vector<2, Ty>& target,
+                                  Tz maxDeltaAngle,
+                                  AngleType angleType = AngleType::Radians)
+    {
+        if (AreApproximatelyEqual(current, target))
+            return target;
+
+        if (angleType == AngleType::Degrees)
+            maxDeltaAngle = DegToRad(maxDeltaAngle);
+
+        const auto currentAngle = Atan2(current.y, current.x);
+        const auto targetAngle  = Atan2(target.y, target.x);
+        const auto deltaAngle   = Clamp(NormalizeAngle(targetAngle - currentAngle),
+                                        -maxDeltaAngle,
+                                        maxDeltaAngle);
+
+        const auto rotatedAngle = currentAngle + deltaAngle;
+        const auto length       = Magnitude(current);
+
+        return Vector<2, decltype(length * Cos(rotatedAngle))>{
+            length * Cos(rotatedAngle),
+            length * Sin(rotatedAngle)
+        };
+    }
 }
 
 #endif //OTTERENGINE_MATH_VECTOR2_H

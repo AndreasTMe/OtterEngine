@@ -36,8 +36,10 @@ namespace Otter::Math
     }
 
     template<AnyNumber TNumber>
-    OTR_INLINE auto
-    Magnitude(const Quaternion<TNumber>& quaternion) { return SquareRoot(MagnitudeSquared(quaternion)); }
+    OTR_INLINE auto Magnitude(const Quaternion<TNumber>& quaternion)
+    {
+        return SquareRoot(MagnitudeSquared(quaternion));
+    }
 
     template<AnyNumber TNumber>
     OTR_INLINE auto Normalise(const Quaternion<TNumber>& quaternion)
@@ -82,7 +84,7 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto Lerp(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, const Tz& t)
+    OTR_INLINE auto Lerp(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, Tz t)
     {
         const auto dot = Dot(lhs, rhs);
         if (dot < 0.0)
@@ -104,25 +106,47 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto LerpClamped(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, const Tz& t)
+    OTR_INLINE auto LerpClamped(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, Tz t)
     {
         return Lerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto Slerp(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, const Tz& t)
+    OTR_INLINE auto Slerp(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, Tz t)
     {
         // TODO: Quaternion::Slerp
         return Quaternion<Tx>();
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE auto SlerpClamped(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, const Tz& t)
+    OTR_INLINE auto SlerpClamped(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, Tz t)
     {
         return Slerp(lhs, rhs, Clamp(t, (Tz) 0.0, (Tz) 1.0));
     }
 
-    // TODO: Quaternion::MoveTowards
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE auto MoveTowards(const Quaternion<Tx>& current,
+                                const Quaternion<Ty>& target,
+                                Tz maxAngleDelta,
+                                AngleType angleType = AngleType::Radians)
+    {
+        if (AreApproximatelyEqual(current, target))
+            return target;
+
+        if (angleType == AngleType::Degrees)
+            maxAngleDelta = DegToRad(maxAngleDelta);
+
+        const auto memberWiseMul = current[0] * target[0]
+                                   + current[1] * target[1]
+                                   + current[2] * target[2]
+                                   + current[3] * target[3];
+        const auto acos          = Acos(memberWiseMul);
+
+        if (IsApproximatelyZero(acos))
+            return target;
+
+        return Slerp(current, target, Min(1.0f, maxAngleDelta / acos));
+    }
 }
 
 #endif //OTTERENGINE_MATH_QUATERNION_H
