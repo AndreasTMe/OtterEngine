@@ -243,8 +243,60 @@ namespace Otter::Math
         };
     }
 
-    // TODO: Vector3::ProjectOnPlane
-    // TODO: Vector3::OrthoNormalize
+    template<AnyNumber Tx, AnyNumber Ty>
+    OTR_INLINE auto ProjectOnPlane(const Vector<3, Tx>& vector, const Vector<3, Ty>& planeNormal)
+    {
+        if (IsApproximatelyZero(vector) || IsApproximatelyZero(planeNormal))
+            return vector;
+
+        if (AreApproximatelyEqual(vector, planeNormal))
+            return Vector<3, decltype(vector[0] - planeNormal[0])>::Zero();
+
+        planeNormal = Normalize(planeNormal);
+        const auto dot = Dot(vector, planeNormal);
+
+        return Vector<3, decltype(vector[0] - dot * planeNormal[0])>{
+            vector[0] - dot * planeNormal[0],
+            vector[1] - dot * planeNormal[1],
+            vector[2] - dot * planeNormal[2]
+        };
+    }
+
+    template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+    OTR_INLINE void OrthoNormalize(Vector<3, Tx>* normal, Vector<3, Ty>* tangent, Vector<3, Tz>* biNormal)
+    {
+        // Gram-Schmidt orthogonalization process
+        auto normalDeref   = *normal;
+        auto tangentDeref  = *tangent;
+        auto biNormalDeref = *biNormal;
+
+        // Step 1: Normal
+        normalDeref = Normalise(normalDeref);
+
+        // Step 1: Tangent
+        tangentDeref = tangentDeref - (normalDeref * (normalDeref[0] * tangentDeref[0]
+                                                      + normalDeref[1] * tangentDeref[1]
+                                                      + normalDeref[2] * tangentDeref[2]));
+        tangentDeref = Normalise(tangentDeref);
+
+        // Step 1: BiNormal
+        const auto cross = Cross(normalDeref, tangentDeref);
+
+        biNormalDeref = biNormalDeref - (normalDeref * (normalDeref[0] * biNormalDeref[0]
+                                                        + normalDeref[1] * biNormalDeref[1]
+                                                        + normalDeref[2] * biNormalDeref[2]));
+        biNormalDeref = biNormalDeref - (tangentDeref * (tangentDeref[0] * biNormalDeref[0]
+                                                         + tangentDeref[1] * biNormalDeref[1]
+                                                         + tangentDeref[2] * biNormalDeref[2]));
+        biNormalDeref = biNormalDeref - (cross * (cross[0] * biNormalDeref[0]
+                                                  + cross[1] * biNormalDeref[1]
+                                                  + cross[2] * biNormalDeref[2]));
+        biNormalDeref = Normalize(biNormalDeref);
+
+        *normal   = normalDeref;
+        *tangent  = tangentDeref;
+        *biNormal = biNormalDeref;
+    }
 }
 
 #endif //OTTERENGINE_MATH_VECTOR3_H
