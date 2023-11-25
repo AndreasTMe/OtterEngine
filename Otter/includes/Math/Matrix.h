@@ -330,6 +330,8 @@ namespace Otter
     }
 }
 
+// TODO: Add matrix related functions
+
 #include "Math/Math.Matrix2x2.h"
 #include "Math/Math.Matrix3x3.h"
 #include "Math/Math.Matrix4x4.h"

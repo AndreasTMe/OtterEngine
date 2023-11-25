@@ -79,8 +79,12 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty>
     OTR_INLINE auto Angle(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs)
     {
-        // TODO: Quaternion::Angle
-        return 0.0;
+        const auto lhsNormalised = Normalise(lhs);
+        const auto rhsNormalised = Normalise(rhs);
+
+        const auto dotProduct = Clamp(Dot(lhsNormalised, rhsNormalised), -1.0, 1.0);
+
+        return Acos(dotProduct);
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
@@ -89,7 +93,7 @@ namespace Otter::Math
         const auto dot = Dot(lhs, rhs);
         if (dot < 0.0)
         {
-            return Quaternion<Tx>{
+            return Quaternion<decltype(lhs[0] - t * (lhs[0] + rhs[0]))>{
                 lhs[0] - t * (lhs[0] + rhs[0]),
                 lhs[1] - t * (lhs[1] + rhs[1]),
                 lhs[2] - t * (lhs[2] + rhs[2]),
@@ -97,7 +101,7 @@ namespace Otter::Math
             };
         }
 
-        return Quaternion<Tx>{
+        return Quaternion<decltype(lhs[0] - t * (lhs[0] - rhs[0]))>{
             lhs[0] - t * (lhs[0] - rhs[0]),
             lhs[1] - t * (lhs[1] - rhs[1]),
             lhs[2] - t * (lhs[2] - rhs[2]),
@@ -114,8 +118,32 @@ namespace Otter::Math
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE auto Slerp(const Quaternion<Tx>& lhs, const Quaternion<Ty>& rhs, Tz t)
     {
-        // TODO: Quaternion::Slerp
-        return Quaternion<Tx>();
+        const auto lhsNormalised = Normalise(lhs);
+        const auto rhsNormalised = Normalise(rhs);
+
+        const auto dotProduct = Clamp(Dot(lhsNormalised, rhsNormalised), -1.0, 1.0);
+        const auto sign       = Sign(dotProduct);
+
+        if (IsApproximatelyZero(dotProduct - static_cast<decltype(dotProduct)>(1.0)))
+        {
+            return Quaternion<decltype(lhsNormalised[0] + t * sign * (rhsNormalised[0] - lhsNormalised[0]))>{
+                lhsNormalised[0] + t * sign * (rhsNormalised[0] - lhsNormalised[0]),
+                lhsNormalised[1] + t * sign * (rhsNormalised[1] - lhsNormalised[1]),
+                lhsNormalised[2] + t * sign * (rhsNormalised[2] - lhsNormalised[2]),
+                lhsNormalised[3] + t * sign * (rhsNormalised[3] - lhsNormalised[3])
+            };
+        }
+
+        const auto angle  = Acos(dotProduct);
+        const auto scale1 = Sin((1.0f - t) * angle) / Sin(angle);
+        const auto scale2 = Sin(t * angle) / Sin(angle * sign);
+
+        return Quaternion<decltype(scale1 * lhsNormalised[0] + scale2 * rhsNormalised[0])>{
+            scale1 * lhsNormalised[0] + scale2 * rhsNormalised[0],
+            scale1 * lhsNormalised[1] + scale2 * rhsNormalised[1],
+            scale1 * lhsNormalised[2] + scale2 * rhsNormalised[2],
+            scale1 * lhsNormalised[3] + scale2 * rhsNormalised[3]
+        };
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>

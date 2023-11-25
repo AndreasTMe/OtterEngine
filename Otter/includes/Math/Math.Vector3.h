@@ -263,35 +263,40 @@ namespace Otter::Math
     }
 
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
-    OTR_INLINE void OrthoNormalize(Vector<3, Tx>* normal, Vector<3, Ty>* tangent, Vector<3, Tz>* biNormal)
+    OTR_INLINE void OrthoNormalize(Vector<3, Tx>* normal, Vector<3, Ty>* tangent, Vector<3, Tz>* biNormal = nullptr)
     {
         // Gram-Schmidt orthogonalization process
         auto normalDeref   = *normal;
         auto tangentDeref  = *tangent;
-        auto biNormalDeref = *biNormal;
+        auto biNormalDeref = biNormal ? *biNormal : Vector<3, Tz>::Zero();
 
         // Step 1: Normal
-        normalDeref = Normalise(normalDeref);
+        normalDeref  = Normalise(normalDeref);
 
-        // Step 1: Tangent
-        tangentDeref = tangentDeref - (normalDeref * (normalDeref[0] * tangentDeref[0]
-                                                      + normalDeref[1] * tangentDeref[1]
-                                                      + normalDeref[2] * tangentDeref[2]));
+        if (!biNormal)
+        {
+            // Step 2: BiNormal
+            biNormalDeref = Cross(normalDeref, tangentDeref);
+            // Step 3: Tangent
+            tangentDeref  = Cross(biNormalDeref, normalDeref);
+
+            *normal   = normalDeref;
+            *tangent  = tangentDeref;
+            *biNormal = biNormalDeref;
+
+            return;
+        }
+
+        // Step 2: Tangent
+        tangentDeref -= normalDeref * Dot(normalDeref, tangentDeref);
         tangentDeref = Normalise(tangentDeref);
 
-        // Step 1: BiNormal
+        // Step 3: BiNormal
         const auto cross = Cross(normalDeref, tangentDeref);
-
-        biNormalDeref = biNormalDeref - (normalDeref * (normalDeref[0] * biNormalDeref[0]
-                                                        + normalDeref[1] * biNormalDeref[1]
-                                                        + normalDeref[2] * biNormalDeref[2]));
-        biNormalDeref = biNormalDeref - (tangentDeref * (tangentDeref[0] * biNormalDeref[0]
-                                                         + tangentDeref[1] * biNormalDeref[1]
-                                                         + tangentDeref[2] * biNormalDeref[2]));
-        biNormalDeref = biNormalDeref - (cross * (cross[0] * biNormalDeref[0]
-                                                  + cross[1] * biNormalDeref[1]
-                                                  + cross[2] * biNormalDeref[2]));
-        biNormalDeref = Normalize(biNormalDeref);
+        biNormalDeref -= normalDeref * Dot(normalDeref, biNormalDeref);
+        biNormalDeref -= tangentDeref * Dot(tangentDeref, biNormalDeref);
+        biNormalDeref -= cross * Dot(cross, biNormalDeref);
+        biNormalDeref    = Normalize(biNormalDeref);
 
         *normal   = normalDeref;
         *tangent  = tangentDeref;
