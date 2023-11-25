@@ -29,19 +29,19 @@ namespace Otter
     template<UInt8 Tx, UInt8 Ty, AnyNumber TNumber>
         requires Dimension<Tx> && Dimension<Ty> && (!UnsignedNumber<TNumber>)
     using Matrix = Math::Matrix<Tx, Ty, TNumber>;
-    using MatrixUtils = Math::MatrixUtils;
+    using MatNxM = Math::MatrixUtils;
 
     template<AnyNumber TNumber> requires (!UnsignedNumber<TNumber>)
     using Matrix2x2 = Math::Matrix<2, 2, TNumber>;
-    using Matrix2x2Utils = Math::Matrix2x2Utils;
+    using Mat2x2 = Math::Matrix2x2Utils;
 
     template<AnyNumber TNumber> requires (!UnsignedNumber<TNumber>)
     using Matrix3x3 = Math::Matrix<3, 3, TNumber>;
-    using Matrix3x3Utils = Math::Matrix3x3Utils;
+    using Mat3x3 = Math::Matrix3x3Utils;
 
     template<AnyNumber TNumber> requires (!UnsignedNumber<TNumber>)
     using Matrix4x4 = Math::Matrix<4, 4, TNumber>;
-    using Matrix4x4Utils = Math::Matrix4x4Utils;
+    using Mat4x4 = Math::Matrix4x4Utils;
 }
 
 namespace Otter::Math

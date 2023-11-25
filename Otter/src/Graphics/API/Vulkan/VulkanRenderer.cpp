@@ -47,11 +47,11 @@ namespace Otter::Graphics::Vulkan
     };
 
     GlobalUniformBufferObject g_GlobalUbo = {
-        Matrix4x4Utils::Perspective(static_cast<Float32>(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f,
-                                    Math::AngleType::Degrees),
-        Matrix4x4Utils::TRS(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
-                            Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
-                            Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
+        Mat4x4::Perspective(static_cast<Float32>(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f,
+                            Math::AngleType::Degrees),
+        Mat4x4::TRS(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
+                    Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
+                    Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
     };
 
     Matrix4x4<Float32> g_Model = Matrix4x4<Float32>::Identity();
