@@ -5,7 +5,7 @@
 #include "Math/Math.Concepts.h"
 #include "Math/Vector.h"
 
-namespace Otter
+namespace Otter::Math
 {
     template<AnyNumber TNumber>
     struct Rectangle final

@@ -7,7 +7,7 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Logger.h"
-#include "Math.Concepts.h"
+#include "Math/Math.Concepts.h"
 
 // TODO: Add SIMD support.
 namespace Otter::Math
@@ -16,6 +16,13 @@ namespace Otter::Math
     {
         Radians,
         Degrees
+    };
+
+    enum class Axis
+    {
+        X,
+        Y,
+        Z
     };
 
     template<FloatingPointNumber TNumber>
@@ -199,7 +206,7 @@ namespace Otter::Math
     }
 
     template<AnyNumber TNumber>
-    OTR_INLINE auto NormalizeAngle(TNumber angle, AngleType angleType = AngleType::Radians)
+    OTR_INLINE auto NormaliseAngle(TNumber angle, AngleType angleType = AngleType::Radians)
     {
         const auto fullCircle = angleType == AngleType::Radians ? Tau<Double128> : 360.0;
         const auto halfCircle = angleType == AngleType::Radians ? Pi<Double128> : 180.0;

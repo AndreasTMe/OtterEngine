@@ -9,9 +9,9 @@ namespace Otter::Graphics
     struct Vertex final
     {
     public:
-        Vector<3, Float32> Position;
-        Vector<4, Float32> Color;
-        Vector<2, Float32> TexCoord;
+        Vector3D<Float32> Position;
+        Vector4D<Float32> Color;
+        Vector2D<Float32> TexCoord;
     };
 }
 
