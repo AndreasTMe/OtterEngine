@@ -1,3 +1,4 @@
+@echo off
 REM Used in Debug only
 REM Compile shaders to SPIR-V
 
@@ -8,10 +9,22 @@ xcopy /s "%cd%\Assets\Textures" "%cd%\bin\Debug-Windows\OtterEngine\Assets\Textu
 
 echo "Compiling shaders..."
 
-"%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=vert Assets\Shaders\default.glsl.vert -o bin\Debug-Windows\OtterEngine\Assets\Shaders\default.glsl.vert.spv
-if %ERRORLEVEL% NEQ 0 (echo Error: %ERRORLEVEL% && exit)
+set IN_SHADER_DIR="%cd%\Assets\Shaders"
+set OUT_SHADER_DIR="%cd%\bin\Debug-Windows\OtterEngine\Assets\Shaders"
 
-"%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=frag Assets\Shaders\default.glsl.frag -o bin\Debug-Windows\OtterEngine\Assets\Shaders\default.glsl.frag.spv
-if %ERRORLEVEL% NEQ 0 (echo Error: %ERRORLEVEL% && exit)
+for %%f in (%IN_SHADER_DIR%\*.vert %IN_SHADER_DIR%\*.frag) do (
+    if "%%~xf"==".vert" (
+        echo "Compiling vertex shader: %%f"
+        "%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=vert "%%f" -o %OUT_SHADER_DIR%\%%~nxf.spv
+    ) else if "%%~xf"==".frag" (
+        echo "Compiling fragment shader: %%f"
+        "%VULKAN_SDK%\Bin\glslc.exe" -fshader-stage=frag "%%f" -o %OUT_SHADER_DIR%\%%~nxf.spv
+    )
+
+    if %ERRORLEVEL% NEQ 0 (
+        echo Error compiling "%%f": %ERRORLEVEL%
+        exit /b %ERRORLEVEL%
+    )
+)
 
 echo "Done."
