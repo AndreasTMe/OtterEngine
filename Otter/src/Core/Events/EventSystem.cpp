@@ -21,24 +21,24 @@ namespace Otter
         g_Listeners = Dictionary<EventType, Func<bool, const Event&> * >(14);
 
         // Window Events
-        AddListener(EventType::WindowClose, &GlobalActions::OnWindowClose);
-        AddListener(EventType::WindowResize, &GlobalActions::OnWindowResize);
-        AddListener(EventType::WindowMinimized, &GlobalActions::OnWindowMinimized);
-        AddListener(EventType::WindowMaximized, &GlobalActions::OnWindowMaximized);
-        AddListener(EventType::WindowRestored, &GlobalActions::OnWindowRestored);
-        AddListener(EventType::WindowRefresh, &GlobalActions::OnWindowRefresh);
+        AddListener(EventType::WindowClose, &OTR_GLOBAL_ACTIONS.OnWindowClose);
+        AddListener(EventType::WindowResize, &OTR_GLOBAL_ACTIONS.OnWindowResize);
+        AddListener(EventType::WindowMinimized, &OTR_GLOBAL_ACTIONS.OnWindowMinimized);
+        AddListener(EventType::WindowMaximized, &OTR_GLOBAL_ACTIONS.OnWindowMaximized);
+        AddListener(EventType::WindowRestored, &OTR_GLOBAL_ACTIONS.OnWindowRestored);
+        AddListener(EventType::WindowRefresh, &OTR_GLOBAL_ACTIONS.OnWindowRefresh);
 
         // Keyboard Events
-        AddListener(EventType::KeyPressed, &GlobalActions::OnKeyPressed);
-        AddListener(EventType::KeyReleased, &GlobalActions::OnKeyReleased);
-        AddListener(EventType::KeyHold, &GlobalActions::OnKeyHold);
+        AddListener(EventType::KeyPressed, &OTR_GLOBAL_ACTIONS.OnKeyPressed);
+        AddListener(EventType::KeyReleased, &OTR_GLOBAL_ACTIONS.OnKeyReleased);
+        AddListener(EventType::KeyHold, &OTR_GLOBAL_ACTIONS.OnKeyHold);
 
         // Mouse Events
-        AddListener(EventType::MouseButtonPressed, &GlobalActions::OnMouseButtonPressed);
-        AddListener(EventType::MouseButtonReleased, &GlobalActions::OnMouseButtonReleased);
-        AddListener(EventType::MouseScroll, &GlobalActions::OnMouseScroll);
-        AddListener(EventType::MouseMoved, &GlobalActions::OnMouseMoved);
-        AddListener(EventType::MouseDragged, &GlobalActions::OnMouseDragged);
+        AddListener(EventType::MouseButtonPressed, &OTR_GLOBAL_ACTIONS.OnMouseButtonPressed);
+        AddListener(EventType::MouseButtonReleased, &OTR_GLOBAL_ACTIONS.OnMouseButtonReleased);
+        AddListener(EventType::MouseScroll, &OTR_GLOBAL_ACTIONS.OnMouseScroll);
+        AddListener(EventType::MouseMoved, &OTR_GLOBAL_ACTIONS.OnMouseMoved);
+        AddListener(EventType::MouseDragged, &OTR_GLOBAL_ACTIONS.OnMouseDragged);
 
         isInitialised = true;
 
@@ -52,22 +52,22 @@ namespace Otter
         g_Listeners.ClearDestructive();
         s_Events.ClearDestructive();
 
-        GlobalActions::OnMouseDragged.ClearDestructive();
-        GlobalActions::OnMouseMoved.ClearDestructive();
-        GlobalActions::OnMouseScroll.ClearDestructive();
-        GlobalActions::OnMouseButtonReleased.ClearDestructive();
-        GlobalActions::OnMouseButtonPressed.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnMouseDragged.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnMouseMoved.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnMouseScroll.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnMouseButtonReleased.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnMouseButtonPressed.ClearDestructive();
 
-        GlobalActions::OnKeyHold.ClearDestructive();
-        GlobalActions::OnKeyReleased.ClearDestructive();
-        GlobalActions::OnKeyPressed.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnKeyHold.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnKeyReleased.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnKeyPressed.ClearDestructive();
 
-        GlobalActions::OnWindowRefresh.ClearDestructive();
-        GlobalActions::OnWindowRestored.ClearDestructive();
-        GlobalActions::OnWindowMaximized.ClearDestructive();
-        GlobalActions::OnWindowMinimized.ClearDestructive();
-        GlobalActions::OnWindowResize.ClearDestructive();
-        GlobalActions::OnWindowClose.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnWindowRefresh.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnWindowRestored.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnWindowMaximized.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnWindowMinimized.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnWindowResize.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnWindowClose.ClearDestructive();
     }
 
     void EventSystem::Process()

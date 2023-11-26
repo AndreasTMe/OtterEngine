@@ -12,27 +12,38 @@ namespace Otter
     class GlobalActions final
     {
     public:
-        static Func<bool, const WindowCloseEvent&>     OnWindowClose;
-        static Func<bool, const WindowResizeEvent&>    OnWindowResize;
-        static Func<bool, const WindowMinimizedEvent&> OnWindowMinimized;
-        static Func<bool, const WindowMaximizedEvent&> OnWindowMaximized;
-        static Func<bool, const WindowRestoredEvent&>  OnWindowRestored;
-        static Func<bool, const WindowRefreshEvent&>   OnWindowRefresh;
+        OTR_DISABLE_OBJECT_COPIES(GlobalActions)
+        OTR_DISABLE_OBJECT_MOVES(GlobalActions)
 
-        static Func<bool, const KeyPressedEvent&>  OnKeyPressed;
-        static Func<bool, const KeyReleasedEvent&> OnKeyReleased;
-        static Func<bool, const KeyHoldEvent&>     OnKeyHold;
+        OTR_INLINE static GlobalActions& GetInstance()
+        {
+            static GlobalActions instance;
+            return instance;
+        }
 
-        static Func<bool, const MouseButtonPressedEvent&>  OnMouseButtonPressed;
-        static Func<bool, const MouseButtonReleasedEvent&> OnMouseButtonReleased;
-        static Func<bool, const MouseScrollEvent&>         OnMouseScroll;
-        static Func<bool, const MouseMovedEvent&>          OnMouseMoved;
-        static Func<bool, const MouseDraggedEvent&>        OnMouseDragged;
+        Func<bool, const WindowCloseEvent&>     OnWindowClose;
+        Func<bool, const WindowResizeEvent&>    OnWindowResize;
+        Func<bool, const WindowMinimizedEvent&> OnWindowMinimized;
+        Func<bool, const WindowMaximizedEvent&> OnWindowMaximized;
+        Func<bool, const WindowRestoredEvent&>  OnWindowRestored;
+        Func<bool, const WindowRefreshEvent&>   OnWindowRefresh;
+
+        Func<bool, const KeyPressedEvent&>  OnKeyPressed;
+        Func<bool, const KeyReleasedEvent&> OnKeyReleased;
+        Func<bool, const KeyHoldEvent&>     OnKeyHold;
+
+        Func<bool, const MouseButtonPressedEvent&>  OnMouseButtonPressed;
+        Func<bool, const MouseButtonReleasedEvent&> OnMouseButtonReleased;
+        Func<bool, const MouseScrollEvent&>         OnMouseScroll;
+        Func<bool, const MouseMovedEvent&>          OnMouseMoved;
+        Func<bool, const MouseDraggedEvent&>        OnMouseDragged;
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(GlobalActions)
     };
 }
+
+#define OTR_GLOBAL_ACTIONS Otter::GlobalActions::GetInstance()
 
 #endif //OTTERENGINE_GLOBALACTIONS_H
 

@@ -75,13 +75,13 @@ namespace Otter::Internal
 
     void WindowsPlatform::RegisterEvents()
     {
-        GlobalActions::OnWindowClose += [&](const WindowCloseEvent& event)
+        OTR_GLOBAL_ACTIONS.OnWindowClose += [&](const WindowCloseEvent& event)
         {
             m_IsRunning = false;
 
             return true;
         };
-        GlobalActions::OnWindowResize += [&](const WindowResizeEvent& event)
+        OTR_GLOBAL_ACTIONS.OnWindowResize += [&](const WindowResizeEvent& event)
         {
             m_Width  = event.GetWidth();
             m_Height = event.GetHeight();
