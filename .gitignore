@@ -9,7 +9,7 @@ build/
 .idea/
 
 # CMake directories and files
-cmake-build-*/
+cmake-*/
 CMakeSettings.json
 
 TODO.md
