@@ -35,6 +35,10 @@ namespace Otter
         // TODO: Will probably be removed
         [[nodiscard]] static std::string GetTotalAllocation();
 
+        [[nodiscard]] static constexpr UInt64 GetUsedMemory() { return s_Allocator.GetMemoryUsed(); }
+        [[nodiscard]] static constexpr UInt64 GetFreeMemory() { return s_Allocator.GetMemoryFree(); }
+        [[nodiscard]] static constexpr UInt64 GetMemorySize() { return s_Allocator.GetMemorySize(); }
+
     private:
         OTR_DISABLE_CONSTRUCTION(MemorySystem)
 

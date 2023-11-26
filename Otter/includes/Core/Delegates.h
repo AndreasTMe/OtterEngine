@@ -5,6 +5,7 @@
 
 #include "Core/Defines.h"
 #include "Core/Collections/List.h"
+#include "Core/Collections/Deque.h"
 
 namespace Otter
 {
@@ -18,13 +19,6 @@ namespace Otter
 
         Action(const Action& other) noexcept { m_Functions = other.m_Functions; }
         Action(Action&& other) noexcept { m_Functions = std::move(other.m_Functions); }
-        explicit Action(Action* other)
-            : Action(*other)
-        {
-        }
-
-        explicit Action(const Function& function) { m_Functions.Add(function); }
-        explicit Action(Function&& function) { m_Functions.Add(std::move(function)); }
 
         Action& operator=(const Action& other)
         {
@@ -38,12 +32,20 @@ namespace Otter
             return *this;
         }
 
-        void operator+=(const Function& function)
+        void operator<=(const Function& function)
         {
             if (!function)
                 return;
 
-            m_Functions.Add(function);
+            m_Functions.PushBack(function);
+        }
+
+        void operator>=(const Function& function)
+        {
+            if (!function)
+                return;
+
+            m_Functions.PushFront(function);
         }
 
         void operator-=(const Function& function)
@@ -51,12 +53,7 @@ namespace Otter
             if (!function)
                 return;
 
-            /*
-             * BUG: no match for 'operator=='
-             * (operand types are 'std::function<bool(const Otter::Internal::Event&)* >' and
-             * 'const std::function<bool(const Otter::Internal::Event&)>')
-             */
-            // m_Functions.erase(std::remove(m_Functions.begin(), m_Functions.end(), function), m_Functions.end());
+            m_Functions.TryRemove(function);
         }
 
         bool operator==(const Action<TArgs...>& other) const
@@ -64,8 +61,10 @@ namespace Otter
             if (m_Functions.GetCount() != other.m_Functions.GetCount())
                 return false;
 
-            for (auto i = 0; i < m_Functions.GetCount(); i++)
-                if (m_Functions[i].target_type() != other.m_Functions[i].target_type())
+            for (auto func1 = m_Functions.begin(), func2 = other.m_Functions.begin();
+                 func1 != m_Functions.end() && func2 != other.m_Functions.end();
+                 ++func1, ++func2)
+                if (func1->target_type() != func2->target_type())
                     return false;
 
             return true;
@@ -75,7 +74,7 @@ namespace Otter
 
         OTR_INLINE void operator()(TArgs... args) { Invoke(args...); }
 
-        virtual void Invoke(TArgs... args)
+        void Invoke(TArgs... args)
         {
             if (m_Functions.IsEmpty())
                 return;
@@ -84,12 +83,21 @@ namespace Otter
                 function(args...);
         }
 
+        void ReverseInvoke(TArgs... args)
+        {
+            if (m_Functions.IsEmpty())
+                return;
+
+            for (const auto& function = m_Functions.rbegin(); function != m_Functions.rend(); ++function)
+                function(args...);
+        }
+
         OTR_INLINE void Clear() { m_Functions.Clear(); }
 
         OTR_INLINE void ClearDestructive() { m_Functions.ClearDestructive(); }
 
     private:
-        List<Function> m_Functions{ };
+        Deque<Function> m_Functions{ };
     };
 
     template<typename TResult, typename... TArgs>
@@ -102,13 +110,6 @@ namespace Otter
 
         Func(const Func& other) noexcept { m_Functions = other.m_Functions; }
         Func(Func&& other) noexcept { m_Functions = std::move(other.m_Functions); }
-        explicit Func(Func* other)
-            : Func(*other)
-        {
-        }
-
-        explicit Func(const Function& function) { m_Functions.Add(function); }
-        explicit Func(Function&& function) { m_Functions.Add(std::move(function)); }
 
         Func& operator=(const Func& other)
         {
@@ -122,12 +123,20 @@ namespace Otter
             return *this;
         }
 
-        void operator+=(const Function& function)
+        void operator<=(const Function& function)
         {
             if (!function)
                 return;
 
-            m_Functions.Add(function);
+            m_Functions.PushBack(function);
+        }
+
+        void operator>=(const Function& function)
+        {
+            if (!function)
+                return;
+
+            m_Functions.PushFront(function);
         }
 
         void operator-=(const Function& function)
@@ -135,12 +144,7 @@ namespace Otter
             if (!function)
                 return;
 
-            /*
-             * BUG: no match for 'operator=='
-             * (operand types are 'std::function<bool(const Otter::Internal::Event&)* >' and
-             * 'const std::function<bool(const Otter::Internal::Event&)>')
-             */
-            // m_Functions.erase(std::remove(m_Functions.begin(), m_Functions.end(), function), m_Functions.end());
+            m_Functions.TryRemove(function);
         }
 
         bool operator==(const Func<TResult, TArgs...>& other) const
@@ -148,8 +152,10 @@ namespace Otter
             if (m_Functions.GetCount() != other.m_Functions.GetCount())
                 return false;
 
-            for (auto i = 0; i < m_Functions.GetCount(); i++)
-                if (m_Functions[i].target_type() != other.m_Functions[i].target_type())
+            for (auto func1 = m_Functions.begin(), func2 = other.m_Functions.begin();
+                 func1 != m_Functions.end() && func2 != other.m_Functions.end();
+                 ++func1, ++func2)
+                if (func1->target_type() != func2->target_type())
                     return false;
 
             return true;
@@ -166,10 +172,25 @@ namespace Otter
             if (m_Functions.IsEmpty())
                 return result;
 
-            result = m_Functions[0](args...);
+            auto count = m_Functions.GetCount();
 
-            for (int i = 1; i < m_Functions.GetCount(); i++)
-                m_Functions[i](args...);
+            while (count > 0)
+            {
+                Function function;
+                if (count == m_Functions.GetCount())
+                {
+                    m_Functions.TryPeekBack(function);
+
+                    result = function(args...);
+                    count--;
+                    continue;
+                }
+
+                m_Functions.TryPeekBack(function);
+
+                function(args...);
+                count--;
+            }
 
             return result;
         }
@@ -181,10 +202,25 @@ namespace Otter
             if (m_Functions.IsEmpty())
                 return result;
 
-            result = m_Functions[m_Functions.GetCount() - 1](args...);
+            auto count = m_Functions.GetCount();
 
-            for (int i = m_Functions.GetCount() - 2; i >= 0; i--)
-                m_Functions[i](args...);
+            while (count > 0)
+            {
+                Function function;
+                if (count == m_Functions.GetCount())
+                {
+                    m_Functions.TryPeekFront(function);
+
+                    result = function(args...);
+                    count--;
+                    continue;
+                }
+
+                m_Functions.TryPeekFront(function);
+
+                function(args...);
+                count--;
+            }
 
             return result;
         }
@@ -194,7 +230,7 @@ namespace Otter
         OTR_INLINE void ClearDestructive() { m_Functions.ClearDestructive(); }
 
     private:
-        List<Function> m_Functions{ };
+        Deque<Function> m_Functions{ };
     };
 }
 

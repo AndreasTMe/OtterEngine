@@ -137,25 +137,25 @@ namespace Otter::Graphics::Vulkan
             // TODO: Temporary code end
         }
 
-        OTR_GLOBAL_ACTIONS.OnWindowMinimized += [&](const WindowMinimizedEvent& event)
+        OTR_GLOBAL_ACTIONS.OnWindowMinimized <= [&](const WindowMinimizedEvent& event)
         {
             gs_WindowState = WindowState::Minimized;
 
             return true;
         };
-        OTR_GLOBAL_ACTIONS.OnWindowMaximized += [&](const WindowMaximizedEvent& event)
+        OTR_GLOBAL_ACTIONS.OnWindowMaximized <= [&](const WindowMaximizedEvent& event)
         {
             gs_WindowState = WindowState::Maximized;
 
             return true;
         };
-        OTR_GLOBAL_ACTIONS.OnWindowRestored += [&](const WindowRestoredEvent& event)
+        OTR_GLOBAL_ACTIONS.OnWindowRestored <= [&](const WindowRestoredEvent& event)
         {
             gs_WindowState = WindowState::Normal;
 
             return true;
         };
-        OTR_GLOBAL_ACTIONS.OnWindowResize += [&](const WindowResizeEvent& event)
+        OTR_GLOBAL_ACTIONS.OnWindowResize <= [&](const WindowResizeEvent& event)
         {
             if (event.GetWidth() == 0 || event.GetHeight() == 0)
                 gs_WindowState = WindowState::Minimized;
@@ -536,7 +536,7 @@ namespace Otter::Graphics::Vulkan
         float queuePriority = 1.0f;
 
         Action<const UInt32&> addQueueCreateInfo;
-        addQueueCreateInfo += [&](UInt32 queueFamily)
+        addQueueCreateInfo <= [&](UInt32 queueFamily)
         {
             VkDeviceQueueCreateInfo queueCreateInfo{ };
             queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
