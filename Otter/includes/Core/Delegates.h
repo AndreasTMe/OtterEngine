@@ -4,7 +4,6 @@
 #include <functional>
 
 #include "Core/Defines.h"
-#include "Core/Collections/List.h"
 #include "Core/Collections/Deque.h"
 
 namespace Otter

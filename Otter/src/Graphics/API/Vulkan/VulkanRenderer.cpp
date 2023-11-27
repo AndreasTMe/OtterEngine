@@ -524,8 +524,8 @@ namespace Otter::Graphics::Vulkan
         OTR_INTERNAL_ASSERT_MSG(outDevicePair->PhysicalDevice != VK_NULL_HANDLE, "Failed to find a suitable GPU")
     }
 
-    void
-    VulkanRenderer::CreateLogicalDevice(const VkAllocationCallbacks* const allocator, VulkanDevicePair* outDevicePair)
+    void VulkanRenderer::CreateLogicalDevice(const VkAllocationCallbacks* const allocator,
+                                             VulkanDevicePair* outDevicePair)
     {
         List <VkDeviceQueueCreateInfo> queueCreateInfos;
 
@@ -612,8 +612,8 @@ namespace Otter::Graphics::Vulkan
         CreateLogicalDevice(allocator, outDevicePair);
     }
 
-    void
-    VulkanRenderer::DestroyDevicePairs(const VkAllocationCallbacks* const allocator, VulkanDevicePair* outDevicePair)
+    void VulkanRenderer::DestroyDevicePairs(const VkAllocationCallbacks* const allocator,
+                                            VulkanDevicePair* outDevicePair)
     {
         OTR_INTERNAL_ASSERT_MSG(outDevicePair->LogicalDevice != VK_NULL_HANDLE,
                                 "Logical device must be initialized before destroying device pairs")
