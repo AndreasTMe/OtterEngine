@@ -31,7 +31,7 @@ namespace Otter
         // Keyboard Events
         AddListener(EventType::KeyPressed, &OTR_GLOBAL_ACTIONS.OnKeyPressed);
         AddListener(EventType::KeyReleased, &OTR_GLOBAL_ACTIONS.OnKeyReleased);
-        AddListener(EventType::KeyHold, &OTR_GLOBAL_ACTIONS.OnKeyHold);
+        AddListener(EventType::KeyHold, &OTR_GLOBAL_ACTIONS.OnKeyRepeat);
 
         // Mouse Events
         AddListener(EventType::MouseButtonPressed, &OTR_GLOBAL_ACTIONS.OnMouseButtonPressed);
@@ -58,7 +58,7 @@ namespace Otter
         OTR_GLOBAL_ACTIONS.OnMouseButtonReleased.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnMouseButtonPressed.ClearDestructive();
 
-        OTR_GLOBAL_ACTIONS.OnKeyHold.ClearDestructive();
+        OTR_GLOBAL_ACTIONS.OnKeyRepeat.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnKeyReleased.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnKeyPressed.ClearDestructive();
 

@@ -268,6 +268,7 @@ namespace Otter
                 m_Buckets[i].Count    = 0;
             }
 
+            // BUG: This is causing a crash on many items in the dictionary
             Buffer::Delete(m_Buckets, m_Capacity);
             m_Buckets = nullptr;
         }

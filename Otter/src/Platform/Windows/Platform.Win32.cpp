@@ -250,12 +250,28 @@ namespace Otter::Internal
                 else
                     keyCode = static_cast<KeyCode>(wParam);
 
-                if (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)
-                    EventSystem::Schedule<KeyPressedEvent>(keyCode);
-                else
-                    EventSystem::Schedule<KeyReleasedEvent>(keyCode);
+                static UInt16 staticRepeatCount = 0;
 
-                // TODO: Implement key hold event
+                if (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)
+                {
+
+                    const auto repeatCount = static_cast<UInt16>((lParam & 0xFFFF));
+                    if (repeatCount > 0)
+                    {
+                        staticRepeatCount += repeatCount;
+                        EventSystem::Schedule<KeyRepeatEvent>(keyCode, staticRepeatCount);
+                    }
+                    else
+                    {
+                        staticRepeatCount = 1;
+                        EventSystem::Schedule<KeyPressedEvent>(keyCode);
+                    }
+                }
+                else
+                {
+                    staticRepeatCount = 0;
+                    EventSystem::Schedule<KeyReleasedEvent>(keyCode);
+                }
 
                 return 0;
             }
@@ -267,6 +283,18 @@ namespace Otter::Internal
                 Int16 delta = GET_WHEEL_DELTA_WPARAM(wParam);
                 if (delta != 0)
                     EventSystem::Schedule<MouseScrollEvent>(delta > 0);
+            }
+                break;
+            case WM_LBUTTONDBLCLK:
+            case WM_MBUTTONDBLCLK:
+            case WM_RBUTTONDBLCLK:
+            {
+                if (message == WM_LBUTTONDBLCLK)
+                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Left, 2);
+                else if (message == WM_RBUTTONDBLCLK)
+                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Right, 2);
+                else
+                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Middle, 2);
             }
                 break;
             case WM_LBUTTONDOWN:

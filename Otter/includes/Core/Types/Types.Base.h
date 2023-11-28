@@ -44,6 +44,12 @@ concept IsDerivedFrom = std::derived_from<TDerived, TBase>;
 template<typename TLeft, typename TRight>
 concept IsSame = std::is_same_v<TLeft, TRight>;
 
+template<typename T>
+using UnderlyingType = std::underlying_type_t<T>;
+
+template<typename T, typename TComparison>
+concept WithUnderlyingType = IsSame<UnderlyingType<T>, TComparison>;
+
 template<bool Condition, typename T = void>
 using EnableIf = std::enable_if_t<Condition, T>;
 

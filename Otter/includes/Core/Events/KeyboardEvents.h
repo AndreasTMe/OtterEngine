@@ -32,19 +32,19 @@ namespace Otter
         [[nodiscard]] OTR_INLINE KeyCode GetKeyCode() const { return Get<KeyCode>(5); }
     };
 
-    class KeyHoldEvent final : public Event
+    class KeyRepeatEvent final : public Event
     {
     public:
-        explicit KeyHoldEvent(const KeyCode keyCode, const Float32 holdTime)
+        explicit KeyRepeatEvent(const KeyCode keyCode, const UInt16 repeatCount)
             : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Keyboard),
                     EventType::KeyHold)
         {
             Capture(keyCode, 5);
-            Capture(holdTime, 3);
+            Capture(repeatCount, 12);
         }
 
-        [[nodiscard]] OTR_INLINE KeyCode GetKeyCode() const { return Get<KeyCode>(5); }
-        [[nodiscard]] OTR_INLINE Float32 GetHoldTime() const { return Get<Float32>(3); }
+        [[nodiscard]] OTR_INLINE KeyCode GetKeyCode() const { return Get < KeyCode > (5); }
+        [[nodiscard]] OTR_INLINE UInt16 GetRepeatCount() const { return Get < UInt16 > (12); }
     };
 }
 
