@@ -5,7 +5,8 @@ namespace Sandbox
     class SandboxApplication final : public Otter::Application
     {
     public:
-        SandboxApplication() : Otter::Application()
+        explicit SandboxApplication(const Otter::ApplicationConfiguration& config)
+            : Otter::Application(config)
         {
         }
     };
@@ -13,5 +14,5 @@ namespace Sandbox
 
 Otter::Application* Otter::CreateApplication()
 {
-    return new Sandbox::SandboxApplication();
+    return new Sandbox::SandboxApplication({ "Sandbox", 1280, 720, 10_KiB });
 }

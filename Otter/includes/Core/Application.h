@@ -7,6 +7,14 @@
 
 namespace Otter
 {
+    struct ApplicationConfiguration final
+    {
+        const char* Title;
+        UInt16 Width;
+        UInt16 Height;
+        UInt64 MemoryRequirements;
+    };
+
     class Application
     {
     public:
@@ -19,11 +27,16 @@ namespace Otter
         void Run();
 
     protected:
-        Application() = default;
+        explicit Application(const ApplicationConfiguration& config)
+            : k_Configuration(config)
+        {
+        }
 
         // TODO: Add functionality for adding/removing layers.
 
     private:
+        const ApplicationConfiguration k_Configuration;
+
         List<Layer*> m_Layers{ };
     };
 

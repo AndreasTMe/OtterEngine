@@ -5,30 +5,14 @@
 
 namespace Otter
 {
-    // TODO: Move this to a configuration file.
-    struct ApplicationConfiguration final
-    {
-        const char* Title;
-        UInt16 Width;
-        UInt16 Height;
-        UInt64 MemoryRequirements;
-    };
-
-    const static ApplicationConfiguration gk_Args = {
-        "Otter Engine",
-        1280,
-        720,
-        10_KiB
-    };
-
     void Application::Run()
     {
-        MemorySystem::Initialise(gk_Args.MemoryRequirements);
+        MemorySystem::Initialise(k_Configuration.MemoryRequirements);
         EventSystem::Initialise();
 
-        auto* platform = Platform::CreatePlatform({ gk_Args.Title,
-                                                    gk_Args.Width,
-                                                    gk_Args.Height,
+        auto* platform = Platform::CreatePlatform({ k_Configuration.Title,
+                                                    k_Configuration.Width,
+                                                    k_Configuration.Height,
                                                     WindowState::Default });
         if (!platform->TryInitialise())
         {
