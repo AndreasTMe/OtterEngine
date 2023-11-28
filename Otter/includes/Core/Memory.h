@@ -52,7 +52,7 @@ namespace Otter
         UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(T), OTR_PLATFORM_MEMORY_ALIGNMENT);
 
         UnsafeHandle handle = MemorySystem::Allocate(alignedSize);
-        T* ptr = new(handle.Pointer) T(args...);
+        T* ptr = ::new(handle.Pointer) T(args...);
 
         return ptr;
     }
@@ -85,7 +85,7 @@ namespace Otter
                 T* ptrCopy = (T*) handle.Pointer;
                 for (UInt64 i = 0; i < length; i++)
                 {
-                    new(ptrCopy) T();
+                    ::new(ptrCopy) T();
                     ++ptrCopy;
                 }
             }
