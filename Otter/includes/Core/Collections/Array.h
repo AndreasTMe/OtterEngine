@@ -37,14 +37,15 @@ namespace Otter
 
         Array(const Array<T, Size>& other)
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = other.m_Data[i];
+            m_Data = other.m_Data;
         }
 
         Array(Array<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
+
+            other.m_Data = nullptr;
         }
 
         Array<T, Size>& operator=(const Array<T, Size>& other)
@@ -60,8 +61,13 @@ namespace Otter
 
         Array<T, Size>& operator=(Array<T, Size>&& other) noexcept
         {
+            if (this == &other)
+                return *this;
+
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
+
+            other.m_Data = nullptr;
 
             return *this;
         }

@@ -45,6 +45,8 @@ namespace Otter
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
+
+            other.m_Data = nullptr;
         }
 
         ReadOnlyArray<T, Size>& operator=(const Array<T, Size>& other)
@@ -60,8 +62,13 @@ namespace Otter
 
         ReadOnlyArray<T, Size>& operator=(Array<T, Size>&& other) noexcept
         {
+            if (this == &other)
+                return *this;
+
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
+
+            other.m_Data = nullptr;
 
             return *this;
         }

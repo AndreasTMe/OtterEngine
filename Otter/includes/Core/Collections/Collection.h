@@ -250,9 +250,13 @@ namespace Otter
         if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
             Buffer::Delete(base::m_Data, base::m_Capacity);                     \
                                                                                 \
-        base::m_Capacity = other.m_Capacity;                                    \
-        base::m_Count    = other.m_Count;                                       \
-        base::m_Data     = other.m_Data;                                        \
+        base::m_Capacity = std::move(other.m_Capacity);                         \
+        base::m_Count    = std::move(other.m_Count);                            \
+        base::m_Data     = std::move(other.m_Data);                             \
+                                                                                \
+        other.m_Capacity = 0;                                                   \
+        other.m_Count    = 0;                                                   \
+        other.m_Data     = nullptr;                                             \
     }                                                                           \
                                                                                 \
     OTR_COLLECTION_CHILD(Type)<T>& operator=(Collection<T>&& other) noexcept    \
@@ -263,9 +267,13 @@ namespace Otter
         if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
             Buffer::Delete(base::m_Data, base::m_Capacity);                     \
                                                                                 \
-        base::m_Capacity = other.m_Capacity;                                    \
-        base::m_Count    = other.m_Count;                                       \
-        base::m_Data     = other.m_Data;                                        \
+        base::m_Capacity = std::move(other.m_Capacity);                         \
+        base::m_Count    = std::move(other.m_Count);                            \
+        base::m_Data     = std::move(other.m_Data);                             \
+                                                                                \
+        other.m_Capacity = 0;                                                   \
+        other.m_Count    = 0;                                                   \
+        other.m_Data     = nullptr;                                             \
                                                                                 \
         return *this;                                                           \
     }

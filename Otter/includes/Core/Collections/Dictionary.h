@@ -60,9 +60,9 @@ namespace Otter
 
         Dictionary(Dictionary<TKey, TValue>&& other) noexcept
         {
-            m_Capacity = other.m_Capacity;
-            m_Count    = other.m_Count;
-            m_Buckets  = other.m_Buckets;
+            m_Capacity = std::move(other.m_Capacity);
+            m_Count    = std::move(other.m_Count);
+            m_Buckets  = std::move(other.m_Buckets);
 
             other.m_Capacity = 0;
             other.m_Count    = 0;
@@ -103,9 +103,9 @@ namespace Otter
 
             ClearDestructive();
 
-            m_Capacity = other.m_Capacity;
-            m_Count    = other.m_Count;
-            m_Buckets  = other.m_Buckets;
+            m_Capacity = std::move(other.m_Capacity);
+            m_Count    = std::move(other.m_Count);
+            m_Buckets  = std::move(other.m_Buckets);
 
             other.m_Capacity = 0;
             other.m_Count    = 0;

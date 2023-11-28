@@ -69,6 +69,9 @@ namespace Otter
 
         ReadOnlySpan<T, Size>& operator=(Span<T, Size>&& other) noexcept
         {
+            if (this == &other)
+                return *this;
+
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
 
