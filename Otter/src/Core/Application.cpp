@@ -44,7 +44,9 @@ namespace Otter
 
         if (GraphicsSystem::TryInitialise(platform->GetUnsafeContext()))
         {
-            OTR_LOG_DEBUG("Total allocation after system initialisation: {0}", MemorySystem::GetTotalAllocation())
+            OTR_LOG_DEBUG("Total allocation after system initialisation: {0} / {1} bytes",
+                          MemorySystem::GetUsedMemory(),
+                          MemorySystem::GetMemorySize())
 
             while (platform->IsRunning())
             {
@@ -67,6 +69,8 @@ namespace Otter
         EventSystem::Shutdown();
         MemorySystem::Shutdown();
 
-        OTR_LOG_DEBUG("Total allocation after system shutdown: {0}", MemorySystem::GetTotalAllocation())
+        OTR_LOG_DEBUG("Total allocation after system shutdown: {0} / {1} bytes",
+                      MemorySystem::GetUsedMemory(),
+                      MemorySystem::GetMemorySize())
     }
 }

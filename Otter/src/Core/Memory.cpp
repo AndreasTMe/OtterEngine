@@ -47,10 +47,11 @@ namespace Otter
         handle.Pointer = s_Allocator.Allocate(size, alignment);
         handle.Size    = size;
 
+        Platform::MemoryClear(handle.Pointer, handle.Size);
+
         return handle;
     }
-
-    // TODO: Use FreeListAllocator to reallocate memory
+    
     UnsafeHandle MemorySystem::Reallocate(UnsafeHandle& handle,
                                           const UInt64 size,
                                           const UInt64 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
@@ -58,16 +59,28 @@ namespace Otter
         if (!s_HasInitialised)
             return { };
 
-        OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Reallocation handle must not be null")
+        OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Existing handle must not be null")
+        OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Existing handle size must be greater than 0 bytes")
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Reallocation size must be greater than 0 bytes")
         OTR_INTERNAL_ASSERT_MSG(alignment >= OTR_PLATFORM_MEMORY_ALIGNMENT,
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
+        if (size < handle.Size)
+        {
+            OTR_LOG_WARNING("Reallocation size is smaller than the existing handle size. "
+                            "Make sure you are not losing data.")
+        }
+
         UnsafeHandle newHandle{ };
-        newHandle.Pointer = Platform::Reallocate(handle.Pointer, size);
+        newHandle.Pointer = s_Allocator.Allocate(size, alignment);
         newHandle.Size    = size;
 
-        return handle;
+        Platform::MemoryClear(newHandle.Pointer, newHandle.Size);
+        Platform::MemoryCopy(newHandle.Pointer, handle.Pointer, size);
+
+        s_Allocator.Free(handle.Pointer);
+
+        return newHandle;
     }
 
     void MemorySystem::Free(void* block)
@@ -110,12 +123,5 @@ namespace Otter
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Clear size must be greater than 0 bytes")
 
         Platform::MemoryClear(block, size);
-    }
-
-    // TODO: Will probably be removed
-    std::string MemorySystem::GetTotalAllocation()
-    {
-        return std::to_string(s_Allocator.GetMemoryUsed()) + " / "
-               + std::to_string(s_Allocator.GetMemorySize()) + " bytes";
     }
 }
