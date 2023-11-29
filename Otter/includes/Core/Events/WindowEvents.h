@@ -41,8 +41,6 @@ namespace Otter
 
     OTR_WINDOW_EVENT_CLASS(Restored)
 
-    OTR_WINDOW_EVENT_CLASS(Refresh)
-
 #undef OTR_WINDOW_EVENT_CLASS
 }
 

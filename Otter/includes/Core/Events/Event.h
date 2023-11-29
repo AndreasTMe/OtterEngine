@@ -35,15 +35,9 @@ namespace Otter
     concept IsMouseMovedEvent = TEventType == EventType::MouseMoved;
 
     template<EventType TEventType>
-    concept IsMouseDraggedEvent = TEventType == EventType::MouseDragged
-                                  || TEventType == EventType::MouseDragStarted
-                                  || TEventType == EventType::MouseDragEnded;
-
-    template<EventType TEventType>
     concept IsMouseEvent = IsMouseButtonEvent<TEventType>
                            || IsMouseScrollEvent<TEventType>
-                           || IsMouseMovedEvent<TEventType>
-                           || IsMouseDraggedEvent<TEventType>;
+                           || IsMouseMovedEvent<TEventType>;
 
     template<EventType TEventType>
     concept IsWindowCloseEvent = TEventType == EventType::WindowClose;
@@ -67,12 +61,8 @@ namespace Otter
                                 || IsWindowRestoredEvent<TEventType>;
 
     template<EventType TEventType>
-    concept IsWindowRefreshEvent = TEventType == EventType::WindowRefresh;
-
-    template<EventType TEventType>
     concept IsWindowEvent = IsWindowCloseEvent<TEventType>
-                            || IsWindowSizeEvent<TEventType>
-                            || IsWindowRefreshEvent<TEventType>;
+                            || IsWindowSizeEvent<TEventType>;
 
     template<EventCategory TLeft, EventCategory TRight>
     concept IncludesCategory = (TLeft & TRight) == TRight;
@@ -102,10 +92,10 @@ namespace Otter
      * [A]:                 | Y (U16)               | Height (U16)
      * [B]:                 | -                     | -
      * ------------------------------------------------------------------------
-     * [C]: Counter (F32)   | Counter (F32)         |
+     * [C]: Counter (U16)   | Counter (U16)         |
      * [D]: -               | -                     |
-     * [E]: -               | -                     |
-     * [F]: -               | -                     |
+     * [E]:                 |                       |
+     * [F]:                 |                       |
      */
     class Event
     {
@@ -177,13 +167,18 @@ namespace Otter
         template<typename T>
         constexpr void Capture(const T& value, const UInt64 offset)
         {
-            if constexpr (IsSame<T, bool> || IsSame<T, UInt8> || IsSame<T, Int8>)
+            if constexpr (IsSame<T, bool>
+                          || IsSame<T, UInt8> || IsSame<T, Int8>
+                          || WithUnderlyingType<T, UInt8> || WithUnderlyingType<T, Int8>)
             {
                 m_Data[offset] = static_cast<Byte>(value);
             }
             else if constexpr (IsSame<T, UInt16> || IsSame<T, Int16>
+                               || WithUnderlyingType<T, UInt16> || WithUnderlyingType<T, Int16>
                                || IsSame<T, UInt32> || IsSame<T, Int32>
-                               || IsSame<T, UInt64> || IsSame<T, Int64>)
+                               || WithUnderlyingType<T, UInt32> || WithUnderlyingType<T, Int32>
+                               || IsSame<T, UInt64> || IsSame<T, Int64>
+                               || WithUnderlyingType<T, UInt64> || WithUnderlyingType<T, Int64>)
             {
                 for (Size i = 0; i < sizeof(T); i++)
                     m_Data[i + offset] = ((value >> (i * 8)) & 0xFF);
@@ -197,26 +192,41 @@ namespace Otter
         template<typename T>
         [[nodiscard]] constexpr T Get(const UInt64 offset) const
         {
-            T value;
-
-            if constexpr (IsSame<T, bool> || IsSame<T, UInt8> || IsSame<T, Int8>)
+            if constexpr (IsSame<T, bool>
+                          || IsSame<T, UInt8> || IsSame<T, Int8>
+                          || WithUnderlyingType<T, UInt8> || WithUnderlyingType<T, Int8>)
             {
-                value = static_cast<T>(m_Data[offset]);
+                return static_cast<T>(m_Data[offset]);
+            }
+            else if constexpr (WithUnderlyingType<T, UInt16> || WithUnderlyingType<T, Int16>
+                               || WithUnderlyingType<T, UInt32> || WithUnderlyingType<T, Int32>
+                               || WithUnderlyingType<T, UInt64> || WithUnderlyingType<T, Int64>)
+            {
+                UnderlyingType<T> value = 0;
+
+                for (Size i = 0; i < sizeof(T); i++)
+                    value |= (static_cast<T>(m_Data[i + offset]) << (i * 8));
+
+                return (T) value;
             }
             else if constexpr (IsSame<T, UInt16> || IsSame<T, Int16>
                                || IsSame<T, UInt32> || IsSame<T, Int32>
                                || IsSame<T, UInt64> || IsSame<T, Int64>)
             {
-                value = 0;
+                T value = 0;
+
                 for (Size i = 0; i < sizeof(T); i++)
                     value |= (static_cast<T>(m_Data[i + offset]) << (i * 8));
+
+                return value;
             }
             else
             {
+                T value = (T) 0.0;
                 MemorySystem::MemoryCopy(&value, &m_Data[offset], sizeof(T));
-            }
 
-            return value;
+                return value;
+            }
         }
 
     private:

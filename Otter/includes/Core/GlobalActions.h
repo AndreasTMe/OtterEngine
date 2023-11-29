@@ -26,17 +26,15 @@ namespace Otter
         Func<bool, const WindowMinimizedEvent&> OnWindowMinimized;
         Func<bool, const WindowMaximizedEvent&> OnWindowMaximized;
         Func<bool, const WindowRestoredEvent&>  OnWindowRestored;
-        Func<bool, const WindowRefreshEvent&>   OnWindowRefresh;
 
         Func<bool, const KeyPressedEvent&>  OnKeyPressed;
         Func<bool, const KeyReleasedEvent&> OnKeyReleased;
-        Func<bool, const KeyHoldEvent&>     OnKeyHold;
+        Func<bool, const KeyRepeatEvent&>   OnKeyRepeat;
 
         Func<bool, const MouseButtonPressedEvent&>  OnMouseButtonPressed;
         Func<bool, const MouseButtonReleasedEvent&> OnMouseButtonReleased;
         Func<bool, const MouseScrollEvent&>         OnMouseScroll;
         Func<bool, const MouseMovedEvent&>          OnMouseMoved;
-        Func<bool, const MouseDraggedEvent&>        OnMouseDragged;
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(GlobalActions)
