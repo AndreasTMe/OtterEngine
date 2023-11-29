@@ -868,9 +868,9 @@ namespace Otter::Graphics::Vulkan
         const auto spriteTexCoords = gs_Sprite.GetTexCoords();
 
         List <Vertex> vertices;
-        vertices.Reserve(spriteVertices.Length());
+        vertices.Reserve(spriteVertices.GetSize());
 
-        for (UInt64 i = 0; i < spriteVertices.Length(); i++)
+        for (UInt64 i = 0; i < spriteVertices.GetSize(); i++)
         {
             vertices.Add({
                              { spriteVertices[i][0], spriteVertices[i][1], 0.0f },
@@ -931,7 +931,7 @@ namespace Otter::Graphics::Vulkan
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{ };
         descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        descriptorSetLayoutCreateInfo.bindingCount = bindings.Length();
+        descriptorSetLayoutCreateInfo.bindingCount = bindings.GetSize();
         descriptorSetLayoutCreateInfo.pBindings    = bindings.GetData();
         descriptorSetLayoutCreateInfo.pNext        = VK_NULL_HANDLE;
 
@@ -951,7 +951,7 @@ namespace Otter::Graphics::Vulkan
 
         VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{ };
         descriptorPoolCreateInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        descriptorPoolCreateInfo.poolSizeCount = globalDescriptorPoolSizes.Length();
+        descriptorPoolCreateInfo.poolSizeCount = globalDescriptorPoolSizes.GetSize();
         descriptorPoolCreateInfo.pPoolSizes    = globalDescriptorPoolSizes.GetData();
         descriptorPoolCreateInfo.maxSets       = m_Swapchain.MaxFramesInFlight;
         descriptorPoolCreateInfo.pNext         = VK_NULL_HANDLE;

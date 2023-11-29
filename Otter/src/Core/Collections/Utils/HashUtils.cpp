@@ -16,13 +16,13 @@ namespace Otter::Internal
         if (value <= g_Primes[0])
             return g_Primes[0];
 
-        for (auto i = 1; i < g_Primes.Length(); i++)
+        for (auto i = 1; i < g_Primes.GetSize(); i++)
             if (g_Primes[i] >= value)
                 return g_Primes[i];
 
         OTR_LOG_WARNING("Prime number must be greater than {0}", value)
 
-        return g_Primes[g_Primes.Length() - 1];
+        return g_Primes[g_Primes.GetSize() - 1];
     }
 
     UInt64 HashUtils::GetPreviousPrime(const UInt64 value)
@@ -30,7 +30,7 @@ namespace Otter::Internal
         if (g_Primes[0] == 0)
             PopulatePrimes();
 
-        for (auto i = g_Primes.Length() - 1; i > 0; i--)
+        for (auto i = g_Primes.GetSize() - 1; i > 0; i--)
             if (g_Primes[i] <= value)
                 return g_Primes[i];
 

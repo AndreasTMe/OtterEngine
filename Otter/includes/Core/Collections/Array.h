@@ -20,8 +20,16 @@ namespace Otter
         using Iterator = LinearIterator<T>;
         using ConstIterator = LinearIterator<const T>;
 
-        Array() { m_Data = Buffer::New<T>(Size); }
-        ~Array() { Buffer::Delete(m_Data, Size); }
+        Array()
+        {
+            if constexpr (Size > 0)
+                m_Data = Buffer::New<T>(Size);
+        }
+        ~Array()
+        {
+            if (m_Data != nullptr && Size > 0)
+                Buffer::Delete(m_Data, Size);
+        }
 
         OTR_WITH_ITERATOR(Iterator, m_Data, Size)
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
@@ -29,6 +37,8 @@ namespace Otter
         Array(InitialiserList<T> list)
         {
             OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+
+            m_Data = Buffer::New<T>(Size);
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -42,8 +52,7 @@ namespace Otter
 
         Array(Array<T, Size>&& other) noexcept
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = std::move(other.m_Data[i]);
+            m_Data = std::move(other.m_Data);
 
             other.m_Data = nullptr;
         }
@@ -90,37 +99,13 @@ namespace Otter
         }
 
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
-        [[nodiscard]] OTR_INLINE constexpr UInt64 Length() const { return Size; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
 
     private:
         T* m_Data;
 
         friend class ReadOnlyArray<T, Size>;
     };
-}
-
-template<typename OStream, typename T, UInt64 Size>
-OStream& operator<<(OStream& os, const Otter::Array<T, Size>& array)
-{
-    os << "Array: [";
-
-    for (UInt64 i = 0; i < Size; i++)
-    {
-        os << array[i];
-
-        if (i >= 2)
-        {
-            os << ", ...";
-            break;
-        }
-
-        if (i != Size - 1)
-            os << ", ";
-    }
-
-    os << "]";
-
-    return os;
 }
 
 #endif //OTTERENGINE_ARRAY_H
