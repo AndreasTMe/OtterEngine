@@ -26,7 +26,6 @@ namespace Otter
         AddListener(EventType::WindowMinimized, &OTR_GLOBAL_ACTIONS.OnWindowMinimized);
         AddListener(EventType::WindowMaximized, &OTR_GLOBAL_ACTIONS.OnWindowMaximized);
         AddListener(EventType::WindowRestored, &OTR_GLOBAL_ACTIONS.OnWindowRestored);
-        AddListener(EventType::WindowRefresh, &OTR_GLOBAL_ACTIONS.OnWindowRefresh);
 
         // Keyboard Events
         AddListener(EventType::KeyPressed, &OTR_GLOBAL_ACTIONS.OnKeyPressed);
@@ -38,7 +37,6 @@ namespace Otter
         AddListener(EventType::MouseButtonReleased, &OTR_GLOBAL_ACTIONS.OnMouseButtonReleased);
         AddListener(EventType::MouseScroll, &OTR_GLOBAL_ACTIONS.OnMouseScroll);
         AddListener(EventType::MouseMoved, &OTR_GLOBAL_ACTIONS.OnMouseMoved);
-        AddListener(EventType::MouseDragged, &OTR_GLOBAL_ACTIONS.OnMouseDragged);
 
         isInitialised = true;
 
@@ -52,7 +50,6 @@ namespace Otter
         g_Listeners.ClearDestructive();
         s_Events.ClearDestructive();
 
-        OTR_GLOBAL_ACTIONS.OnMouseDragged.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnMouseMoved.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnMouseScroll.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnMouseButtonReleased.ClearDestructive();
@@ -62,7 +59,6 @@ namespace Otter
         OTR_GLOBAL_ACTIONS.OnKeyReleased.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnKeyPressed.ClearDestructive();
 
-        OTR_GLOBAL_ACTIONS.OnWindowRefresh.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnWindowRestored.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnWindowMaximized.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnWindowMinimized.ClearDestructive();

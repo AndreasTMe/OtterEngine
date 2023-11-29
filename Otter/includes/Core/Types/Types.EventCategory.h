@@ -13,7 +13,7 @@ namespace Otter
         Input    = OTR_BITMASK(1),
         Keyboard = OTR_BITMASK(2),
         Mouse    = OTR_BITMASK(3),
-        // TODO: Some categories to think about for later?
+        // TODO: Some event categories to think about for later?
         // File     = OTR_BIT(4),
         // System   = OTR_BIT(5),
         Blocking = OTR_BITMASK(30),

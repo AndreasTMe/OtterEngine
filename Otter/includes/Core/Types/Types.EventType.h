@@ -10,7 +10,6 @@
     REPLACE_WITH(WindowMinimized,0x03)      \
     REPLACE_WITH(WindowMaximized,0x04)      \
     REPLACE_WITH(WindowRestored,0x05)       \
-    REPLACE_WITH(WindowRefresh,0x06)        \
                                             \
     /* Keyboard Events (Use 0x11 - 0x20) */ \
     REPLACE_WITH(KeyPressed,0x11)           \
@@ -21,16 +20,9 @@
     REPLACE_WITH(MouseButtonPressed,0x21)   \
     REPLACE_WITH(MouseButtonReleased,0x22)  \
     REPLACE_WITH(MouseScroll,0x23)          \
-    REPLACE_WITH(MouseMoved,0x24)           \
-    REPLACE_WITH(MouseDragged,0x25)         \
-    REPLACE_WITH(MouseDragStarted,0x26)     \
-    REPLACE_WITH(MouseDragEnded,0x27)
-// TODO: Maybe implement these events later? Update Event methods if necessary.
-// MouseEnter         = 0x28,
-// MouseExit          = 0x29,
-// MouseDragEntered   = 0x2A,
-// MouseDragExited    = 0x2B,
+    REPLACE_WITH(MouseMoved,0x24)
 
+// TODO: Some event types to think about for later?
 // Joystick Events (Use 0x30 - 0x40)
 // Controller Events (Use 0x40 - 0x50)
 // Touch Events (Use 0x50 - 0x60)

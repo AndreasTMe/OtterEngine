@@ -35,15 +35,9 @@ namespace Otter
     concept IsMouseMovedEvent = TEventType == EventType::MouseMoved;
 
     template<EventType TEventType>
-    concept IsMouseDraggedEvent = TEventType == EventType::MouseDragged
-                                  || TEventType == EventType::MouseDragStarted
-                                  || TEventType == EventType::MouseDragEnded;
-
-    template<EventType TEventType>
     concept IsMouseEvent = IsMouseButtonEvent<TEventType>
                            || IsMouseScrollEvent<TEventType>
-                           || IsMouseMovedEvent<TEventType>
-                           || IsMouseDraggedEvent<TEventType>;
+                           || IsMouseMovedEvent<TEventType>;
 
     template<EventType TEventType>
     concept IsWindowCloseEvent = TEventType == EventType::WindowClose;
@@ -67,12 +61,8 @@ namespace Otter
                                 || IsWindowRestoredEvent<TEventType>;
 
     template<EventType TEventType>
-    concept IsWindowRefreshEvent = TEventType == EventType::WindowRefresh;
-
-    template<EventType TEventType>
     concept IsWindowEvent = IsWindowCloseEvent<TEventType>
-                            || IsWindowSizeEvent<TEventType>
-                            || IsWindowRefreshEvent<TEventType>;
+                            || IsWindowSizeEvent<TEventType>;
 
     template<EventCategory TLeft, EventCategory TRight>
     concept IncludesCategory = (TLeft & TRight) == TRight;

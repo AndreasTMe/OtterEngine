@@ -10,6 +10,8 @@
 namespace Otter::Internal
 {
     static LRESULT CALLBACK WindowProcedureCallbackOverride(HWND window, UINT message, WPARAM wParam, LPARAM lParam);
+    static void OnKeyboardMessage(UINT message, WPARAM wParam, LPARAM lParam);
+    static void OnMouseMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
     Double64      s_ClockFrequency = 0.0;
     LARGE_INTEGER s_ClockStart     = { 0 };
@@ -233,48 +235,71 @@ namespace Otter::Internal
             case WM_SYSKEYDOWN:
             case WM_KEYUP:
             case WM_SYSKEYUP:
-            {
-                KeyCode keyCode    = KeyCode::None;
-                bool    isExtended = (HIWORD(lParam) & KF_EXTENDED) == KF_EXTENDED;
-
-                if (wParam == VK_MENU)
-                    keyCode = isExtended ? KeyCode::RightAlt : KeyCode::LeftAlt;
-                else if (wParam == VK_SHIFT)
-                {
-                    UInt32 leftShift = MapVirtualKey(VK_LSHIFT, MAPVK_VK_TO_VSC);
-                    UInt32 scanCode  = ((lParam & (0xFF << 16)) >> 16);
-                    keyCode = scanCode == leftShift ? KeyCode::LeftShift : KeyCode::RightShift;
-                }
-                else if (wParam == VK_CONTROL)
-                    keyCode = isExtended ? KeyCode::RightCtrl : KeyCode::LeftCtrl;
-                else
-                    keyCode = static_cast<KeyCode>(wParam);
-
-                static UInt16 staticRepeatCount = 0;
-
-                if (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)
-                {
-
-                    const auto repeatCount = static_cast<UInt16>((lParam & 0xFFFF));
-                    if (repeatCount > 0)
-                    {
-                        staticRepeatCount += repeatCount;
-                        EventSystem::Schedule<KeyRepeatEvent>(keyCode, staticRepeatCount);
-                    }
-                    else
-                    {
-                        staticRepeatCount = 1;
-                        EventSystem::Schedule<KeyPressedEvent>(keyCode);
-                    }
-                }
-                else
-                {
-                    staticRepeatCount = 0;
-                    EventSystem::Schedule<KeyReleasedEvent>(keyCode);
-                }
-
+                OnKeyboardMessage(message, wParam, lParam);
                 return 0;
+            case WM_MOUSEMOVE:
+            case WM_MOUSEWHEEL:
+            case WM_LBUTTONDOWN:
+            case WM_LBUTTONUP:
+            case WM_MBUTTONDOWN:
+            case WM_MBUTTONUP:
+            case WM_RBUTTONDOWN:
+            case WM_RBUTTONUP:
+                OnMouseMessage(message, wParam, lParam);
+                break;
+            default:
+                break;
+        }
+
+        return DefWindowProcA(window, message, wParam, lParam);
+    }
+
+    void OnKeyboardMessage(UINT message, WPARAM wParam, LPARAM lParam)
+    {
+        KeyCode keyCode    = KeyCode::None;
+        bool    isExtended = (HIWORD(lParam) & KF_EXTENDED) == KF_EXTENDED;
+
+        if (wParam == VK_MENU)
+            keyCode = isExtended ? KeyCode::RightAlt : KeyCode::LeftAlt;
+        else if (wParam == VK_SHIFT)
+        {
+            UInt32 leftShift = MapVirtualKey(VK_LSHIFT, MAPVK_VK_TO_VSC);
+            UInt32 scanCode  = ((lParam & (0xFF << 16)) >> 16);
+            keyCode = scanCode == leftShift ? KeyCode::LeftShift : KeyCode::RightShift;
+        }
+        else if (wParam == VK_CONTROL)
+            keyCode = isExtended ? KeyCode::RightCtrl : KeyCode::LeftCtrl;
+        else
+            keyCode = static_cast<KeyCode>(wParam);
+
+        static UInt16 staticRepeatCount = 0;
+
+        if (message == WM_KEYDOWN || message == WM_SYSKEYDOWN)
+        {
+
+            const auto repeatCount = static_cast<UInt16>((lParam & 0xFFFF));
+            if (repeatCount > 0)
+            {
+                staticRepeatCount += repeatCount;
+                EventSystem::Schedule<KeyRepeatEvent>(keyCode, staticRepeatCount);
             }
+            else
+            {
+                staticRepeatCount = 1;
+                EventSystem::Schedule<KeyPressedEvent>(keyCode);
+            }
+        }
+        else
+        {
+            staticRepeatCount = 0;
+            EventSystem::Schedule<KeyReleasedEvent>(keyCode);
+        }
+    }
+
+    void OnMouseMessage(UINT message, WPARAM wParam, LPARAM lParam)
+    {
+        switch (message)
+        {
             case WM_MOUSEMOVE:
                 EventSystem::Schedule<MouseMovedEvent>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
                 break;
@@ -285,50 +310,27 @@ namespace Otter::Internal
                     EventSystem::Schedule<MouseScrollEvent>(delta > 0);
             }
                 break;
-            case WM_LBUTTONDBLCLK:
-            case WM_MBUTTONDBLCLK:
-            case WM_RBUTTONDBLCLK:
-            {
-                if (message == WM_LBUTTONDBLCLK)
-                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Left, 2);
-                else if (message == WM_RBUTTONDBLCLK)
-                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Right, 2);
-                else
-                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Middle, 2);
-            }
-                break;
             case WM_LBUTTONDOWN:
+                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Left);
+                break;
             case WM_LBUTTONUP:
-            {
-                if (message == WM_LBUTTONDOWN)
-                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Left);
-                else
-                    EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Left);
-            }
+                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Left);
                 break;
             case WM_MBUTTONDOWN:
+                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Middle);
+                break;
             case WM_MBUTTONUP:
-            {
-                if (message == WM_MBUTTONDOWN)
-                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Middle);
-                else
-                    EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Middle);
-            }
+                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Middle);
                 break;
             case WM_RBUTTONDOWN:
+                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Right);
+                break;
             case WM_RBUTTONUP:
-            {
-                if (message == WM_RBUTTONDOWN)
-                    EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Right);
-                else
-                    EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Right);
-            }
+                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Right);
                 break;
             default:
                 break;
         }
-
-        return DefWindowProcA(window, message, wParam, lParam);
     }
 }
 
