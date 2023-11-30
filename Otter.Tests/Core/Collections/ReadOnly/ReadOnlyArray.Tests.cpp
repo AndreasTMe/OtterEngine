@@ -6,7 +6,7 @@
 template<typename T, UInt64 Size>
 using ReadOnlyArray = Otter::ReadOnlyArray<T, Size>;
 
-class ReadOnlyArrayFixture : public ::testing::Test
+class ReadOnlyArray_Fixture : public ::testing::Test
 {
 protected:
     void SetUp() override
@@ -20,7 +20,7 @@ protected:
     }
 };
 
-TEST_F(ReadOnlyArrayFixture, Initialisation_Default)
+TEST_F(ReadOnlyArray_Fixture, Initialisation_Default)
 {
     ReadOnlyArray<int, 5> array;
 
@@ -31,7 +31,7 @@ TEST_F(ReadOnlyArrayFixture, Initialisation_Default)
         EXPECT_EQ(array[i], 0);
 }
 
-TEST_F(ReadOnlyArrayFixture, Initialisation_FromList)
+TEST_F(ReadOnlyArray_Fixture, Initialisation_FromList)
 {
     ReadOnlyArray<int, 5> array = { 1, 2, 3, 4, 5 };
 
@@ -42,7 +42,7 @@ TEST_F(ReadOnlyArrayFixture, Initialisation_FromList)
         EXPECT_EQ(array[i], i + 1);
 }
 
-TEST_F(ReadOnlyArrayFixture, Initialisation_CopyArray)
+TEST_F(ReadOnlyArray_Fixture, Initialisation_CopyArray)
 {
     Otter::Array<int, 5>  array = { 1, 2, 3, 4, 5 };
     ReadOnlyArray<int, 5> readOnlyArray(array);
@@ -54,7 +54,7 @@ TEST_F(ReadOnlyArrayFixture, Initialisation_CopyArray)
         EXPECT_EQ(readOnlyArray[i], i + 1);
 }
 
-TEST_F(ReadOnlyArrayFixture, Initialisation_MoveArray)
+TEST_F(ReadOnlyArray_Fixture, Initialisation_MoveArray)
 {
     Otter::Array<int, 5>  array = { 1, 2, 3, 4, 5 };
     ReadOnlyArray<int, 5> readOnlyArray(std::move(array));

@@ -40,6 +40,15 @@ namespace Otter
             return enumerable;
         }
 
+        void ClearDestructive()
+        {
+            if (m_Data != nullptr && m_Count > 0)
+                Buffer::Delete(m_Data, m_Count);
+
+            m_Data  = nullptr;
+            m_Count = 0;
+        }
+
         OTR_INLINE static Enumerable Empty() { return { }; }
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }

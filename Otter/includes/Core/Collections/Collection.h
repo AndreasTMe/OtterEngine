@@ -74,26 +74,25 @@ namespace Otter
         using Iterator = LinearIterator<T>;
         using ConstIterator = LinearIterator<const T>;
 
-        ~Collection() = default;
+        ~Collection()
+        {
+            if (m_Data != nullptr && m_Capacity > 0)
+                Buffer::Delete(m_Data, m_Capacity);
+        }
 
         OTR_WITH_ITERATOR(Iterator, m_Data, m_Count)
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
 
         void Reserve(const UInt64 capacity)
         {
-            if (capacity <= m_Capacity)
-                return;
-
-            T* newData = Buffer::New<T>(capacity);
-
-            for (UInt64 i = 0; i < m_Count; i++)
-                newData[i] = m_Data[i];
+            T* data = Buffer::New<T>(capacity);
 
             if (m_Count > 0)
                 Buffer::Delete(m_Data, m_Count);
 
-            m_Data     = newData;
+            m_Data     = data;
             m_Capacity = capacity;
+            m_Count    = 0;
         }
 
         void Expand(const UInt64 amount = 0)
@@ -112,6 +111,29 @@ namespace Otter
                 Buffer::Delete(m_Data, m_Count);
 
             m_Data = newData;
+        }
+
+        void Shrink(const UInt64 amount = 0)
+        {
+            if (amount == 0)
+                m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 0.75;
+            else if (amount > m_Capacity)
+                m_Capacity = 0;
+            else
+                m_Capacity -= amount;
+
+            T* newData = Buffer::New<T>(m_Capacity);
+
+            for (UInt64 i = 0; i < m_Count && i < amount; i++)
+                newData[i] = m_Data[i];
+
+            if (m_Count > 0)
+                Buffer::Delete(m_Data, m_Count);
+
+            m_Data = newData;
+
+            if (m_Count >= m_Capacity)
+                m_Count = m_Capacity;
         }
 
         bool Contains(const T& item) const
@@ -212,70 +234,70 @@ namespace Otter
             base::m_Data[base::m_Count++] = item;                               \
     }
 
-#define OTR_COLLECTION_COPY(Type)                                               \
-    explicit OTR_COLLECTION_CHILD(Type)(const Collection<T>& other)             \
-    {                                                                           \
-        if (this == &other)                                                     \
-            return;                                                             \
-                                                                                \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
-                                                                                \
-        base::m_Capacity = other.m_Capacity;                                    \
-        base::m_Count    = other.m_Count;                                       \
-        base::m_Data     = other.m_Data;                                        \
-    }                                                                           \
-                                                                                \
-    OTR_COLLECTION_CHILD(Type)<T>& operator=(const Collection<T>& other)        \
-    {                                                                           \
-        if (this == &other)                                                     \
-            return *this;                                                       \
-                                                                                \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
-                                                                                \
-        base::m_Capacity = other.m_Capacity;                                    \
-        base::m_Count    = other.m_Count;                                       \
-        base::m_Data     = other.m_Data;                                        \
-                                                                                \
-        return *this;                                                           \
+#define OTR_COLLECTION_COPY(Type)                                                           \
+    OTR_COLLECTION_CHILD(Type)(const OTR_COLLECTION_CHILD(Type)<T>& other)                  \
+    {                                                                                       \
+        if (this == &other)                                                                 \
+            return;                                                                         \
+                                                                                            \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                                \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                                 \
+                                                                                            \
+        base::m_Capacity = other.m_Capacity;                                                \
+        base::m_Count    = other.m_Count;                                                   \
+        base::m_Data     = other.m_Data;                                                    \
+    }                                                                                       \
+                                                                                            \
+    OTR_COLLECTION_CHILD(Type)<T>& operator=(const OTR_COLLECTION_CHILD(Type)<T>& other)    \
+    {                                                                                       \
+        if (this == &other)                                                                 \
+            return *this;                                                                   \
+                                                                                            \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                                \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                                 \
+                                                                                            \
+        base::m_Capacity = other.m_Capacity;                                                \
+        base::m_Count    = other.m_Count;                                                   \
+        base::m_Data     = other.m_Data;                                                    \
+                                                                                            \
+        return *this;                                                                       \
     }
 
-#define OTR_COLLECTION_MOVE(Type)                                               \
-    explicit OTR_COLLECTION_CHILD(Type)(Collection<T>&& other) noexcept         \
-    {                                                                           \
-        if (this == &other)                                                     \
-            return;                                                             \
-                                                                                \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
-                                                                                \
-        base::m_Capacity = std::move(other.m_Capacity);                         \
-        base::m_Count    = std::move(other.m_Count);                            \
-        base::m_Data     = std::move(other.m_Data);                             \
-                                                                                \
-        other.m_Capacity = 0;                                                   \
-        other.m_Count    = 0;                                                   \
-        other.m_Data     = nullptr;                                             \
-    }                                                                           \
-                                                                                \
-    OTR_COLLECTION_CHILD(Type)<T>& operator=(Collection<T>&& other) noexcept    \
-    {                                                                           \
-        if (this == &other)                                                     \
-            return *this;                                                       \
-                                                                                \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                     \
-                                                                                \
-        base::m_Capacity = std::move(other.m_Capacity);                         \
-        base::m_Count    = std::move(other.m_Count);                            \
-        base::m_Data     = std::move(other.m_Data);                             \
-                                                                                \
-        other.m_Capacity = 0;                                                   \
-        other.m_Count    = 0;                                                   \
-        other.m_Data     = nullptr;                                             \
-                                                                                \
-        return *this;                                                           \
+#define OTR_COLLECTION_MOVE(Type)                                                               \
+    OTR_COLLECTION_CHILD(Type)(OTR_COLLECTION_CHILD(Type)<T>&& other) noexcept                  \
+    {                                                                                           \
+        if (this == &other)                                                                     \
+            return;                                                                             \
+                                                                                                \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                                    \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                                     \
+                                                                                                \
+        base::m_Capacity = std::move(other.m_Capacity);                                         \
+        base::m_Count    = std::move(other.m_Count);                                            \
+        base::m_Data     = std::move(other.m_Data);                                             \
+                                                                                                \
+        other.m_Capacity = 0;                                                                   \
+        other.m_Count    = 0;                                                                   \
+        other.m_Data     = nullptr;                                                             \
+    }                                                                                           \
+                                                                                                \
+    OTR_COLLECTION_CHILD(Type)<T>& operator=(OTR_COLLECTION_CHILD(Type)<T>&& other) noexcept    \
+    {                                                                                           \
+        if (this == &other)                                                                     \
+            return *this;                                                                       \
+                                                                                                \
+        if (base::m_Data != nullptr && base::m_Capacity > 0)                                    \
+            Buffer::Delete(base::m_Data, base::m_Capacity);                                     \
+                                                                                                \
+        base::m_Capacity = std::move(other.m_Capacity);                                         \
+        base::m_Count    = std::move(other.m_Count);                                            \
+        base::m_Data     = std::move(other.m_Data);                                             \
+                                                                                                \
+        other.m_Capacity = 0;                                                                   \
+        other.m_Count    = 0;                                                                   \
+        other.m_Data     = nullptr;                                                             \
+                                                                                                \
+        return *this;                                                                           \
     }
 
 #endif //OTTERENGINE_COLLECTION_H

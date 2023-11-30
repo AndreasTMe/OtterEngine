@@ -35,17 +35,18 @@ namespace Otter
             base::m_Data[base::m_Count++] = std::move(item);
         }
 
-        bool TryPop()
+        bool TryPop(T& item)
         {
             if (base::m_Count == 0)
                 return false;
 
+            item = base::m_Data[base::m_Count - 1];
             base::m_Count--;
 
             return true;
         }
 
-        bool TryPeek(const T& item)
+        bool TryPeek(T& item)
         {
             if (base::m_Count == 0)
                 return false;

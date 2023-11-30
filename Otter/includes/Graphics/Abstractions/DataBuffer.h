@@ -34,7 +34,7 @@ namespace Otter::Graphics
         {
             m_AttributeLayout.ClearDestructive();
             m_AttributeLayout.Reserve(attributes.size());
-            m_AttributeLayout.AddRange(attributes);
+            m_AttributeLayout.TryAddRange(attributes);
         }
 
     protected:

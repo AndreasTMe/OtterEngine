@@ -6,7 +6,7 @@
 template<typename T, UInt64 Size>
 using Array = Otter::Array<T, Size>;
 
-class ArrayFixture : public ::testing::Test
+class Array_Fixture : public ::testing::Test
 {
 protected:
     void SetUp() override
@@ -20,7 +20,7 @@ protected:
     }
 };
 
-TEST_F(ArrayFixture, Initialisation_Default)
+TEST_F(Array_Fixture, Initialisation_Default)
 {
     Array<int, 5> array;
 
@@ -31,7 +31,7 @@ TEST_F(ArrayFixture, Initialisation_Default)
         EXPECT_EQ(array[i], 0);
 }
 
-TEST_F(ArrayFixture, Initialisation_FromList)
+TEST_F(Array_Fixture, Initialisation_FromList)
 {
     Array<int, 5> array = { 1, 2, 3, 4, 5 };
 
@@ -42,7 +42,7 @@ TEST_F(ArrayFixture, Initialisation_FromList)
         EXPECT_EQ(array[i], i + 1);
 }
 
-TEST_F(ArrayFixture, Initialisation_CopyArray)
+TEST_F(Array_Fixture, Initialisation_CopyArray)
 {
     Array<int, 5> array = { 1, 2, 3, 4, 5 };
     Array<int, 5> copy(array);
@@ -54,7 +54,7 @@ TEST_F(ArrayFixture, Initialisation_CopyArray)
         EXPECT_EQ(copy[i], i + 1);
 }
 
-TEST_F(ArrayFixture, Initialisation_MoveArray)
+TEST_F(Array_Fixture, Initialisation_MoveArray)
 {
     Array<int, 5> array = { 1, 2, 3, 4, 5 };
     Array<int, 5> move(std::move(array));
@@ -68,7 +68,7 @@ TEST_F(ArrayFixture, Initialisation_MoveArray)
     EXPECT_EQ(array.GetData(), nullptr);
 }
 
-TEST_F(ArrayFixture, Assignment_CopyArray)
+TEST_F(Array_Fixture, Assignment_CopyArray)
 {
     Array<int, 5> array = { 1, 2, 3, 4, 5 };
     Array<int, 5> copy;
@@ -81,7 +81,7 @@ TEST_F(ArrayFixture, Assignment_CopyArray)
         EXPECT_EQ(copy[i], i + 1);
 }
 
-TEST_F(ArrayFixture, Assignment_MoveArray)
+TEST_F(Array_Fixture, Assignment_MoveArray)
 {
     Array<int, 5> array = { 1, 2, 3, 4, 5 };
     Array<int, 5> move;
@@ -96,7 +96,7 @@ TEST_F(ArrayFixture, Assignment_MoveArray)
     EXPECT_EQ(array.GetData(), nullptr);
 }
 
-TEST_F(ArrayFixture, AsReadOnly)
+TEST_F(Array_Fixture, AsReadOnly)
 {
     Array<int, 5> array    = { 1, 2, 3, 4, 5 };
     auto          readOnly = array.AsReadOnly();
