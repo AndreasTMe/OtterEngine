@@ -39,7 +39,7 @@ TEST_F(Enumerable_Fixture, Initialisation_Empty)
     EXPECT_TRUE(enumerable.IsEmpty());
 }
 
-TEST_F(Enumerable_Fixture, Collections_ClearDestructive)
+TEST_F(Enumerable_Fixture, ClearDestructive)
 {
     Enumerable<int> enumerable = Enumerable<int>::Of({ 1, 2, 3, 4, 5 });
     enumerable.ClearDestructive();

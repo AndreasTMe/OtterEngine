@@ -64,7 +64,7 @@ TEST_F(Collection_Fixture, Collections_NewRawPointer)
     Otter::Buffer::Delete(data, 5);
 }
 
-TEST_F(Collection_Fixture, Collections_Reserve)
+TEST_F(Collection_Fixture, Reserve)
 {
     Collection<int> collection = Collections::New<int>({ 1, 2, 3, 4, 5 });
     collection.Reserve(10);
@@ -74,7 +74,7 @@ TEST_F(Collection_Fixture, Collections_Reserve)
     EXPECT_EQ(collection.GetCount(), 0);
 }
 
-TEST_F(Collection_Fixture, Collections_Expand)
+TEST_F(Collection_Fixture, Expand)
 {
     Collection<int> collection = Collections::New<int>({ 1, 2, 3, 4, 5 });
 
@@ -88,8 +88,17 @@ TEST_F(Collection_Fixture, Collections_Expand)
     EXPECT_EQ(collection.GetCount(), oldCount);
 }
 
-TEST_F(Collection_Fixture, Collections_Shrink)
+TEST_F(Collection_Fixture, Shrink)
 {
+    Collection<int> emptyCollection = Collections::Empty<int>();
+    EXPECT_EQ(emptyCollection.GetCapacity(), 0);
+    EXPECT_EQ(emptyCollection.GetCount(), 0);
+
+    emptyCollection.Shrink(10);
+
+    EXPECT_EQ(emptyCollection.GetCapacity(), 0);
+    EXPECT_EQ(emptyCollection.GetCount(), 0);
+
     Collection<int> collection = Collections::New<int>({ 1, 2, 3, 4, 5 });
 
     const auto oldCapacity  = collection.GetCapacity();
@@ -103,7 +112,7 @@ TEST_F(Collection_Fixture, Collections_Shrink)
     EXPECT_EQ(collection.GetCount(), oldCount - shrinkAmount);
 }
 
-TEST_F(Collection_Fixture, Collections_Contains)
+TEST_F(Collection_Fixture, Contains)
 {
     Collection<int> collection = Collections::New<int>({ 1, 2, 3 });
 
@@ -114,7 +123,7 @@ TEST_F(Collection_Fixture, Collections_Contains)
     EXPECT_FALSE(collection.Contains(123));
 }
 
-TEST_F(Collection_Fixture, Collections_TryGetIndexOf)
+TEST_F(Collection_Fixture, TryGetIndexOf)
 {
     Collection<int> collection = Collections::New<int>({ 1, 2, 3 });
 
@@ -136,7 +145,7 @@ TEST_F(Collection_Fixture, Collections_TryGetIndexOf)
     EXPECT_EQ(index, 0);
 }
 
-TEST_F(Collection_Fixture, Collections_Clear)
+TEST_F(Collection_Fixture, Clear)
 {
     Collection<int> collection = Collections::New<int>({ 1, 2, 3 });
     collection.Clear();
@@ -147,7 +156,7 @@ TEST_F(Collection_Fixture, Collections_Clear)
     EXPECT_FALSE(collection.TryGetIndexOf(0, index));
 }
 
-TEST_F(Collection_Fixture, Collections_ClearDestructive)
+TEST_F(Collection_Fixture, ClearDestructive)
 {
     Collection<int> collection = Collections::New<int>({ 1, 2, 3 });
     collection.ClearDestructive();

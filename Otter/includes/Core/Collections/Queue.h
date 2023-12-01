@@ -13,11 +13,7 @@ namespace Otter
     class Queue final
     {
     public:
-        Queue()
-            : m_Data(nullptr), m_Capacity(0), m_StartIndex(0), m_EndIndex(0)
-        {
-        }
-
+        Queue() = default;
         ~Queue()
         {
             if (IsCreated())
@@ -131,7 +127,7 @@ namespace Otter
 
         bool TryDequeue()
         {
-            if (GetCount() == 0)
+            if (IsEmpty())
                 return false;
 
             MoveIndex(m_StartIndex);
@@ -141,7 +137,7 @@ namespace Otter
 
         bool TryDequeue(T& item)
         {
-            if (GetCount() == 0)
+            if (IsEmpty())
                 return false;
 
             item = m_Data[m_StartIndex];
@@ -152,7 +148,7 @@ namespace Otter
 
         bool TryPeek(T& item)
         {
-            if (GetCount() == 0)
+            if (IsEmpty())
                 return false;
 
             item = m_Data[m_StartIndex];
@@ -162,36 +158,16 @@ namespace Otter
 
         void Reserve(const UInt64 capacity)
         {
-            T* data = Buffer::New<T>(capacity);
-
-            if (GetCount() > 0)
-                Buffer::Delete(m_Data, m_Capacity);
-
-            m_Data       = data;
-            m_Capacity   = capacity;
-            m_StartIndex = 0;
-            m_EndIndex   = 0;
+            RecreateEmpty(capacity);
         }
 
         void Expand(const UInt64 amount = 0)
         {
-            UInt64 newCapacity;
+            UInt64 newCapacity = CalculateExpandCapacity(amount);
 
-            if (amount == 0)
-                newCapacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
-            else
-                newCapacity = m_Capacity + amount;
-
-            if (m_StartIndex == m_EndIndex)
+            if (IsEmpty())
             {
-                if (IsCreated())
-                    Buffer::Delete(m_Data, m_Capacity);
-
-                m_Data       = Buffer::New<T>(newCapacity);
-                m_Capacity   = newCapacity;
-                m_StartIndex = 0;
-                m_EndIndex   = 0;
-
+                RecreateEmpty(newCapacity);
                 return;
             }
 
@@ -223,37 +199,16 @@ namespace Otter
 
         void Shrink(const UInt64 amount = 0, const bool isDestructive = false)
         {
-            if (m_Capacity == 0)
-                return;
+            UInt64 newCapacity = CalculateShrinkCapacity(amount, isDestructive);
 
-            UInt64 newCapacity;
-
-            if (amount == 0)
-                newCapacity = m_Capacity * 0.75;
-            else if (amount > m_Capacity)
-                newCapacity = 0; // TODO: This should be invalid
-            else
-                newCapacity = m_Capacity - amount;
-
-            if (m_StartIndex == m_EndIndex)
+            if (IsEmpty() || newCapacity == 0)
             {
-                if (IsCreated())
-                    Buffer::Delete(m_Data, m_Capacity);
-
-                m_Data       = Buffer::New<T>(newCapacity);
-                m_Capacity   = newCapacity;
-                m_StartIndex = 0;
-                m_EndIndex   = 0;
-
+                RecreateEmpty(newCapacity);
                 return;
             }
 
-            const auto currentCount = GetCount();
-
-            if (!isDestructive && newCapacity < currentCount)
-                newCapacity = currentCount;
-
             T* newData = Buffer::New<T>(newCapacity);
+            const auto currentCount = GetCount();
 
             if (m_EndIndex > m_StartIndex)
             {
@@ -292,7 +247,7 @@ namespace Otter
                     if (m_Data[i + m_StartIndex] == item)
                         return true;
 
-                for (UInt64 i = 0; i < m_EndIndex; i++)
+                for (UInt64 i = 0; i <= m_EndIndex; i++)
                     if (m_Data[i] == item)
                         return true;
             }
@@ -314,7 +269,7 @@ namespace Otter
                     if (m_Data[i + m_StartIndex] == item)
                         return true;
 
-                for (UInt64 i = 0; i < m_EndIndex; i++)
+                for (UInt64 i = 0; i <= m_EndIndex; i++)
                     if (m_Data[i] == item)
                         return true;
             }
@@ -342,30 +297,71 @@ namespace Otter
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const
         {
-            if (m_EndIndex == m_StartIndex)
-                return 0;
-
-            return m_EndIndex > m_StartIndex
+            return m_EndIndex >= m_StartIndex
                    ? m_EndIndex - m_StartIndex
-                   : m_Capacity - m_StartIndex + m_EndIndex;
+                   : m_Capacity - m_StartIndex + m_EndIndex + 1;
         }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return GetCount() == 0; }
+        [[nodiscard]] OTR_INLINE bool IsCreated() { return m_Data && m_Capacity > 0; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_StartIndex == m_EndIndex; }
 
     private:
-        T* m_Data;
-        UInt64 m_Capacity;
-        UInt64 m_StartIndex;
-        UInt64 m_EndIndex;
+        T* m_Data = nullptr;
+        UInt64 m_Capacity   = 0;
+        UInt64 m_StartIndex = 0;
+        UInt64 m_EndIndex   = 0;
 
         void MoveIndex(UInt64& index)
         {
             index++;
 
-            if (index >= m_Capacity)
+            if (index > m_Capacity)
                 index = 0;
         }
 
-        [[nodiscard]] OTR_INLINE bool IsCreated() { return m_Data && m_Capacity > 0; }
+        void RecreateEmpty(const UInt64 capacity)
+        {
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
+
+            m_Data       = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
+            m_Capacity   = capacity;
+            m_StartIndex = 0;
+            m_EndIndex   = 0;
+        }
+
+        UInt64 CalculateExpandCapacity(const UInt64 expandAmount)
+        {
+            UInt64 newCapacity;
+
+            if (expandAmount == 0)
+                newCapacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
+            else
+                newCapacity = m_Capacity + expandAmount;
+
+            return newCapacity;
+        }
+
+        UInt64 CalculateShrinkCapacity(const UInt64 shrinkAmount, const bool isDestructive)
+        {
+            if (m_Capacity == 0)
+                return 0;
+
+            UInt64 newCapacity;
+
+            if (shrinkAmount == 0)
+                newCapacity = m_Capacity * 0.75;
+            else if (shrinkAmount > m_Capacity)
+                newCapacity = 0;
+            else
+                newCapacity = m_Capacity - shrinkAmount;
+
+            const auto currentCount = GetCount();
+
+            if (!isDestructive && newCapacity < currentCount)
+                newCapacity = currentCount;
+
+            return newCapacity;
+        }
     };
 }
 

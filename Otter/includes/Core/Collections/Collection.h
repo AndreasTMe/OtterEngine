@@ -77,24 +77,12 @@ namespace Otter
 
         void Reserve(const UInt64 capacity)
         {
-            T* data = Buffer::New<T>(capacity);
-
-            if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
-
-            m_Data     = data;
-            m_Capacity = capacity;
-            m_Count    = 0;
+            RecreateEmpty(capacity);
         }
 
         void Expand(const UInt64 amount = 0)
         {
-            UInt64 newCapacity;
-
-            if (amount == 0)
-                newCapacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
-            else
-                newCapacity = m_Capacity + amount;
+            UInt64 newCapacity = CalculateExpandCapacity(amount);
 
             T* newData = Buffer::New<T>(newCapacity);
 
@@ -110,20 +98,13 @@ namespace Otter
 
         void Shrink(const UInt64 amount = 0, const bool isDestructive = false)
         {
-            if (m_Capacity == 0)
+            UInt64 newCapacity = CalculateShrinkCapacity(amount, isDestructive);
+
+            if (IsEmpty() || newCapacity == 0)
+            {
+                RecreateEmpty(newCapacity);
                 return;
-
-            UInt64 newCapacity;
-
-            if (amount == 0)
-                newCapacity = m_Capacity * 0.75;
-            else if (amount > m_Capacity)
-                newCapacity = 0; // TODO: This should be invalid
-            else
-                newCapacity = m_Capacity - amount;
-
-            if (!isDestructive && newCapacity < m_Count)
-                newCapacity = m_Count;
+            }
 
             T* newData = Buffer::New<T>(newCapacity);
 
@@ -196,6 +177,7 @@ namespace Otter
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }
+        [[nodiscard]] OTR_INLINE bool IsCreated() { return m_Data && m_Capacity > 0; }
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_Count == 0; }
 
         [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
@@ -210,9 +192,52 @@ namespace Otter
         UInt64 m_Capacity;
         UInt64 m_Count;
 
-        [[nodiscard]] OTR_INLINE bool IsCreated() { return m_Data && m_Capacity > 0; }
-
         friend class Collections;
+
+    private:
+        void RecreateEmpty(const UInt64 capacity)
+        {
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
+
+            m_Data     = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
+            m_Capacity = capacity;
+            m_Count    = 0;
+        }
+
+        UInt64 CalculateExpandCapacity(const UInt64 expandAmount)
+        {
+            UInt64 newCapacity;
+
+            if (expandAmount == 0)
+                newCapacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
+            else
+                newCapacity = m_Capacity + expandAmount;
+
+            return newCapacity;
+        }
+
+        UInt64 CalculateShrinkCapacity(const UInt64 shrinkAmount, const bool isDestructive)
+        {
+            if (m_Capacity == 0)
+                return 0;
+
+            UInt64 newCapacity;
+
+            if (shrinkAmount == 0)
+                newCapacity = m_Capacity * 0.75;
+            else if (shrinkAmount > m_Capacity)
+                newCapacity = 0;
+            else
+                newCapacity = m_Capacity - shrinkAmount;
+
+            const auto currentCount = GetCount();
+
+            if (!isDestructive && newCapacity < currentCount)
+                newCapacity = currentCount;
+
+            return newCapacity;
+        }
     };
 }
 
