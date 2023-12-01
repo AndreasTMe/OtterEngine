@@ -175,17 +175,19 @@ namespace Otter
             m_Count    = 0;
         }
 
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }
-        [[nodiscard]] OTR_INLINE bool IsCreated() { return m_Data && m_Capacity > 0; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_Count == 0; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const noexcept { return m_Capacity; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Data && m_Capacity > 0; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
 
-        [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
+        [[nodiscard]] OTR_INLINE constexpr T* GetData() const noexcept { return m_Data; }
 
     protected:
         Collection()
             : m_Data(nullptr), m_Capacity(0), m_Count(0)
         {
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
         }
 
         T* m_Data;
@@ -256,6 +258,7 @@ namespace Otter
     }                                                                           \
                                                                                 \
     OTR_COLLECTION_CHILD(Type)(InitialiserList<T> list)                         \
+        : Collection<T>()                                                       \
     {                                                                           \
         base::m_Capacity = list.size();                                         \
         base::m_Data     = Buffer::New<T>(base::m_Capacity);                    \
@@ -267,13 +270,8 @@ namespace Otter
 
 #define OTR_COLLECTION_COPY(Type)                                                           \
     OTR_COLLECTION_CHILD(Type)(const OTR_COLLECTION_CHILD(Type)<T>& other)                  \
+        : Collection<T>()                                                                   \
     {                                                                                       \
-        if (this == &other)                                                                 \
-            return;                                                                         \
-                                                                                            \
-        if (base::IsCreated())                                                              \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                                 \
-                                                                                            \
         base::m_Capacity = other.m_Capacity;                                                \
         base::m_Count    = other.m_Count;                                                   \
         base::m_Data     = other.m_Data;                                                    \
@@ -296,13 +294,8 @@ namespace Otter
 
 #define OTR_COLLECTION_MOVE(Type)                                                               \
     OTR_COLLECTION_CHILD(Type)(OTR_COLLECTION_CHILD(Type)<T>&& other) noexcept                  \
+        : Collection<T>()                                                                       \
     {                                                                                           \
-        if (this == &other)                                                                     \
-            return;                                                                             \
-                                                                                                \
-        if (base::IsCreated())                                                                  \
-            Buffer::Delete(base::m_Data, base::m_Capacity);                                     \
-                                                                                                \
         base::m_Capacity = std::move(other.m_Capacity);                                         \
         base::m_Count    = std::move(other.m_Count);                                            \
         base::m_Data     = std::move(other.m_Data);                                             \

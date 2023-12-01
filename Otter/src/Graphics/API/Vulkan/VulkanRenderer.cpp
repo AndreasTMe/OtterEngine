@@ -529,24 +529,22 @@ namespace Otter::Graphics::Vulkan
     {
         List <VkDeviceQueueCreateInfo> queueCreateInfos;
 
-        HashSet <UInt32> uniqueQueueFamilies(2);
-        uniqueQueueFamilies.TryAdd(outDevicePair->GraphicsQueueFamily.Index);
-        uniqueQueueFamilies.TryAdd(outDevicePair->PresentationQueueFamily.Index);
+        HashSet <UInt32> uniqueQueueFamilies = {
+            outDevicePair->GraphicsQueueFamily.Index,
+            outDevicePair->PresentationQueueFamily.Index
+        };
 
         float queuePriority = 1.0f;
 
-        Action<const UInt32&> addQueueCreateInfo;
-        addQueueCreateInfo <= [&](UInt32 queueFamily)
-        {
-            VkDeviceQueueCreateInfo queueCreateInfo{ };
-            queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount       = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.Add(queueCreateInfo);
-        };
-        uniqueQueueFamilies.ForEach(addQueueCreateInfo);
-        addQueueCreateInfo.ClearDestructive();
+        uniqueQueueFamilies.ForEach([&](UInt32 queueFamily)
+                                    {
+                                        VkDeviceQueueCreateInfo queueCreateInfo{ };
+                                        queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                                        queueCreateInfo.queueFamilyIndex = queueFamily;
+                                        queueCreateInfo.queueCount       = 1;
+                                        queueCreateInfo.pQueuePriorities = &queuePriority;
+                                        queueCreateInfos.Add(queueCreateInfo);
+                                    });
 
         // TODO: Should be configuration driven, all features are disabled by default for now
         VkPhysicalDeviceFeatures deviceFeatures{ };
@@ -1033,8 +1031,9 @@ namespace Otter::Graphics::Vulkan
         vkDestroyDescriptorPool(m_DevicePair.LogicalDevice, m_Descriptor.Pool, m_Allocator);
         vkDestroyDescriptorSetLayout(m_DevicePair.LogicalDevice, m_Descriptor.SetLayout, m_Allocator);
 
-        m_Descriptor.Pool      = VK_NULL_HANDLE;
+        m_Descriptor.Sets.ClearDestructive();
         m_Descriptor.SetLayout = VK_NULL_HANDLE;
+        m_Descriptor.Pool      = VK_NULL_HANDLE;
     }
 
     void VulkanRenderer::CreatePipelines()

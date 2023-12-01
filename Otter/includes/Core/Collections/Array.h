@@ -22,12 +22,15 @@ namespace Otter
 
         Array()
         {
+            if (IsCreated())
+                Buffer::Delete(m_Data, Size);
+
             if constexpr (Size > 0)
                 m_Data = Buffer::New<T>(Size);
         }
         ~Array()
         {
-            if (m_Data != nullptr && Size > 0)
+            if (IsCreated())
                 Buffer::Delete(m_Data, Size);
         }
 
@@ -35,6 +38,7 @@ namespace Otter
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
 
         Array(InitialiserList<T> list)
+            : Array()
         {
             OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
 
@@ -46,11 +50,13 @@ namespace Otter
         }
 
         Array(const Array<T, Size>& other)
+            : Array()
         {
             m_Data = other.m_Data;
         }
 
         Array(Array<T, Size>&& other) noexcept
+            : Array()
         {
             m_Data = std::move(other.m_Data);
 
@@ -98,11 +104,13 @@ namespace Otter
             return ReadOnlyArray<T, Size>(*this);
         }
 
-        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && Size > 0; }
+
+        [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
 
     private:
-        T* m_Data;
+        T* m_Data = nullptr;
 
         friend class ReadOnlyArray<T, Size>;
     };

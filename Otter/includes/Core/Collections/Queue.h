@@ -13,7 +13,12 @@ namespace Otter
     class Queue final
     {
     public:
-        Queue() = default;
+        Queue()
+        {
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
+        }
+
         ~Queue()
         {
             if (IsCreated())
@@ -21,6 +26,7 @@ namespace Otter
         }
 
         Queue(InitialiserList<T> list)
+            : Queue()
         {
             m_Capacity   = list.size();
             m_Data       = Buffer::New<T>(m_Capacity);
@@ -32,13 +38,8 @@ namespace Otter
         }
 
         Queue(const Queue<T>& other)
+            : Queue()
         {
-            if (this == &other)
-                return;
-
-            if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
-
             m_Data       = other.m_Data;
             m_Capacity   = other.m_Capacity;
             m_StartIndex = other.m_StartIndex;
@@ -46,13 +47,8 @@ namespace Otter
         }
 
         Queue(Queue<T>&& other) noexcept
+            : Queue()
         {
-            if (this == &other)
-                return;
-
-            if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
-
             m_Data       = std::move(other.m_Data);
             m_Capacity   = std::move(other.m_Capacity);
             m_StartIndex = std::move(other.m_StartIndex);
@@ -294,15 +290,15 @@ namespace Otter
             m_EndIndex   = 0;
         }
 
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const noexcept { return m_Capacity; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept
         {
             return m_EndIndex >= m_StartIndex
                    ? m_EndIndex - m_StartIndex
                    : m_Capacity - m_StartIndex + m_EndIndex + 1;
         }
-        [[nodiscard]] OTR_INLINE bool IsCreated() { return m_Data && m_Capacity > 0; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_StartIndex == m_EndIndex; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Data && m_Capacity > 0; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_StartIndex == m_EndIndex; }
 
     private:
         T* m_Data = nullptr;

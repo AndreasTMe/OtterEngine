@@ -26,7 +26,7 @@ namespace Otter
         }
         ~ReadOnlyArray()
         {
-            if (m_Data != nullptr && Size > 0)
+            if (m_Data && Size > 0)
                 Buffer::Delete(m_Data, Size);
         }
 
@@ -35,10 +35,9 @@ namespace Otter
         OTR_DISABLE_OBJECT_MOVES(ReadOnlyArray)
 
         ReadOnlyArray(InitialiserList<T> list)
+            : ReadOnlyArray()
         {
             OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
-
-            m_Data = Buffer::New<T>(Size);
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -46,17 +45,15 @@ namespace Otter
         }
 
         explicit ReadOnlyArray(const Array<T, Size>& other)
+            : ReadOnlyArray()
         {
-            m_Data = Buffer::New<T>(Size);
-
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = other.m_Data[i];
         }
 
         explicit ReadOnlyArray(Array<T, Size>&& other) noexcept
+            : ReadOnlyArray()
         {
-            m_Data = Buffer::New<T>(Size);
-
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
 
