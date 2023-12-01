@@ -6,6 +6,7 @@
 #include "Core/Memory.h"
 
 #include "Core/Collections/Collection.h"
+#include "Core/Collections/Iterators/LinearIterator.h"
 
 namespace Otter
 {
@@ -14,10 +15,16 @@ namespace Otter
     {
         OTR_USING_BASE(Collection<T>)
 
+        using Iterator = LinearIterator<T>;
+        using ConstIterator = LinearIterator<const T>;
+
     public:
         OTR_COLLECTION_CONSTRUCT(Stack)
         OTR_COLLECTION_COPY(Stack)
         OTR_COLLECTION_MOVE(Stack)
+
+        OTR_WITH_ITERATOR(Iterator, base::m_Data, base::m_Count)
+        OTR_WITH_CONST_ITERATOR(ConstIterator, base::m_Data, base::m_Count)
 
         void Push(const T& item)
         {

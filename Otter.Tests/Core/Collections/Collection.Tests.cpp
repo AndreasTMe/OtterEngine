@@ -96,7 +96,7 @@ TEST_F(Collection_Fixture, Collections_Shrink)
     const auto oldCount     = collection.GetCount();
     const auto shrinkAmount = 3;
 
-    collection.Shrink(shrinkAmount);
+    collection.Shrink(shrinkAmount, true);
 
     EXPECT_NE(collection.GetData(), nullptr);
     EXPECT_EQ(collection.GetCapacity(), oldCapacity - shrinkAmount);

@@ -33,7 +33,7 @@ namespace Otter
             if (e.IsBlocking())
                 s_BlockEvents = true;
 
-            s_Events.Enqueue(e);
+            s_Events.TryEnqueue(e);
         }
 
         static void Process();

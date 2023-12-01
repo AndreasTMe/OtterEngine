@@ -5,8 +5,6 @@
 #include "Core/Types.h"
 #include "Core/Memory.h"
 
-#include "Core/Collections/Iterators/LinearIterator.h"
-
 namespace Otter
 {
     template<typename T>
@@ -21,7 +19,7 @@ namespace Otter
             OTR_INTERNAL_ASSERT_MSG(data != nullptr, "Data cannot be null!")
             OTR_INTERNAL_ASSERT_MSG(count > 0, "Count must be greater than 0!")
 
-            if (outCollection.m_Data != nullptr && outCollection.m_Capacity > 0)
+            if (outCollection.m_Data && outCollection.m_Capacity > 0)
                 Buffer::Delete(outCollection.m_Data, outCollection.m_Capacity);
 
             outCollection.m_Data     = Buffer::New<T>(count);
@@ -52,7 +50,7 @@ namespace Otter
         template<typename T>
         static void New(InitialiserList<T> list, Collection<T>& outCollection)
         {
-            if (outCollection.m_Data != nullptr && outCollection.m_Capacity > 0)
+            if (outCollection.m_Data && outCollection.m_Capacity > 0)
                 Buffer::Delete(outCollection.m_Data, outCollection.m_Capacity);
 
             outCollection.m_Capacity = list.size();
@@ -71,24 +69,18 @@ namespace Otter
     class Collection
     {
     public:
-        using Iterator = LinearIterator<T>;
-        using ConstIterator = LinearIterator<const T>;
-
         ~Collection()
         {
-            if (m_Data != nullptr && m_Capacity > 0)
+            if (IsCreated())
                 Buffer::Delete(m_Data, m_Capacity);
         }
-
-        OTR_WITH_ITERATOR(Iterator, m_Data, m_Count)
-        OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
 
         void Reserve(const UInt64 capacity)
         {
             T* data = Buffer::New<T>(capacity);
 
-            if (m_Count > 0)
-                Buffer::Delete(m_Data, m_Count);
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
 
             m_Data     = data;
             m_Capacity = capacity;
@@ -97,43 +89,55 @@ namespace Otter
 
         void Expand(const UInt64 amount = 0)
         {
-            if (amount == 0)
-                m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
-            else
-                m_Capacity += amount;
+            UInt64 newCapacity;
 
-            T* newData = Buffer::New<T>(m_Capacity);
+            if (amount == 0)
+                newCapacity = m_Capacity == 0 ? 2 : m_Capacity * 1.5;
+            else
+                newCapacity = m_Capacity + amount;
+
+            T* newData = Buffer::New<T>(newCapacity);
 
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
 
-            if (m_Count > 0)
-                Buffer::Delete(m_Data, m_Count);
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
 
-            m_Data = newData;
+            m_Data     = newData;
+            m_Capacity = newCapacity;
         }
 
-        void Shrink(const UInt64 amount = 0)
+        void Shrink(const UInt64 amount = 0, const bool isDestructive = false)
         {
-            if (amount == 0)
-                m_Capacity = m_Capacity == 0 ? 2 : m_Capacity * 0.75;
-            else if (amount > m_Capacity)
-                m_Capacity = 0;
-            else
-                m_Capacity -= amount;
+            if (m_Capacity == 0)
+                return;
 
-            T* newData = Buffer::New<T>(m_Capacity);
+            UInt64 newCapacity;
+
+            if (amount == 0)
+                newCapacity = m_Capacity * 0.75;
+            else if (amount > m_Capacity)
+                newCapacity = 0; // TODO: This should be invalid
+            else
+                newCapacity = m_Capacity - amount;
+
+            if (!isDestructive && newCapacity < m_Count)
+                newCapacity = m_Count;
+
+            T* newData = Buffer::New<T>(newCapacity);
 
             for (UInt64 i = 0; i < m_Count && i < amount; i++)
                 newData[i] = m_Data[i];
 
-            if (m_Count > 0)
-                Buffer::Delete(m_Data, m_Count);
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
 
-            m_Data = newData;
+            m_Data     = newData;
+            m_Capacity = newCapacity;
 
-            if (m_Count >= m_Capacity)
-                m_Count = m_Capacity;
+            if (m_Count >= newCapacity)
+                m_Count = newCapacity;
         }
 
         bool Contains(const T& item) const
@@ -182,7 +186,7 @@ namespace Otter
 
         void ClearDestructive()
         {
-            if (m_Data != nullptr && m_Capacity > 0)
+            if (IsCreated())
                 Buffer::Delete(m_Data, m_Capacity);
 
             m_Data     = nullptr;
@@ -206,6 +210,8 @@ namespace Otter
         UInt64 m_Capacity;
         UInt64 m_Count;
 
+        [[nodiscard]] OTR_INLINE bool IsCreated() { return m_Data && m_Capacity > 0; }
+
         friend class Collections;
     };
 }
@@ -216,7 +222,7 @@ namespace Otter
     OTR_COLLECTION_CHILD(Type)() : Collection<T>() { }                          \
     ~OTR_COLLECTION_CHILD(Type)()                                               \
     {                                                                           \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                    \
+        if (base::IsCreated())                                                  \
             Buffer::Delete(base::m_Data, base::m_Capacity);                     \
                                                                                 \
         base::m_Data     = nullptr;                                             \
@@ -240,7 +246,7 @@ namespace Otter
         if (this == &other)                                                                 \
             return;                                                                         \
                                                                                             \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                                \
+        if (base::IsCreated())                                                              \
             Buffer::Delete(base::m_Data, base::m_Capacity);                                 \
                                                                                             \
         base::m_Capacity = other.m_Capacity;                                                \
@@ -253,7 +259,7 @@ namespace Otter
         if (this == &other)                                                                 \
             return *this;                                                                   \
                                                                                             \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                                \
+        if (base::IsCreated())                                                              \
             Buffer::Delete(base::m_Data, base::m_Capacity);                                 \
                                                                                             \
         base::m_Capacity = other.m_Capacity;                                                \
@@ -269,7 +275,7 @@ namespace Otter
         if (this == &other)                                                                     \
             return;                                                                             \
                                                                                                 \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                                    \
+        if (base::IsCreated())                                                                  \
             Buffer::Delete(base::m_Data, base::m_Capacity);                                     \
                                                                                                 \
         base::m_Capacity = std::move(other.m_Capacity);                                         \
@@ -286,7 +292,7 @@ namespace Otter
         if (this == &other)                                                                     \
             return *this;                                                                       \
                                                                                                 \
-        if (base::m_Data != nullptr && base::m_Capacity > 0)                                    \
+        if (base::IsCreated())                                                                  \
             Buffer::Delete(base::m_Data, base::m_Capacity);                                     \
                                                                                                 \
         base::m_Capacity = std::move(other.m_Capacity);                                         \
