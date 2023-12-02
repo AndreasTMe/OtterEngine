@@ -71,9 +71,9 @@ namespace Otter
             return m_Callback(m_Data, std::forward<TArgs>(args)...);
         }
 
-        [[nodiscard]] OTR_INLINE bool IsEmpty() const { return m_Callback == nullptr; }
+        [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Callback == nullptr; }
 
-        [[nodiscard]] OTR_INLINE explicit operator bool() const { return !IsEmpty(); }
+        [[nodiscard]] OTR_INLINE explicit operator bool() const noexcept { return !IsEmpty(); }
 
     private:
         class ClassPlaceholder;

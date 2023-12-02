@@ -18,8 +18,6 @@ namespace Otter
         static bool isInitialised = false;
         OTR_INTERNAL_ASSERT_MSG(!isInitialised, "Event system has already been initialised")
 
-        g_Listeners = Dictionary<EventType, Func<bool, const Event&> * >(14);
-
         // Window Events
         AddListener(EventType::WindowClose, &OTR_GLOBAL_ACTIONS.OnWindowClose);
         AddListener(EventType::WindowResize, &OTR_GLOBAL_ACTIONS.OnWindowResize);
@@ -93,6 +91,6 @@ namespace Otter
         if (g_Listeners.Contains(type))
             return;
 
-        g_Listeners.TryAdd(type, (Func<bool, const Event&>*) action);
+        g_Listeners.TryAdd(type, reinterpret_cast<Func<bool, const Event&>*>(action));
     }
 }

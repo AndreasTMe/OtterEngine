@@ -25,9 +25,9 @@ namespace Otter::Graphics::Vulkan
 
         VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{ };
         vertexInputStateCreateInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputStateCreateInfo.vertexBindingDescriptionCount   = bindingDescriptions.Length();
+        vertexInputStateCreateInfo.vertexBindingDescriptionCount   = bindingDescriptions.GetSize();
         vertexInputStateCreateInfo.pVertexBindingDescriptions      = bindingDescriptions.GetData();
-        vertexInputStateCreateInfo.vertexAttributeDescriptionCount = attributeDescriptions.Length();
+        vertexInputStateCreateInfo.vertexAttributeDescriptionCount = attributeDescriptions.GetSize();
         vertexInputStateCreateInfo.pVertexAttributeDescriptions    = attributeDescriptions.GetData();
         vertexInputStateCreateInfo.pNext                           = VK_NULL_HANDLE;
 

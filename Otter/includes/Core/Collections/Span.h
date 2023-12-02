@@ -53,7 +53,10 @@ namespace Otter
         Span(Span<T, Size>&& other) noexcept
         {
             for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = std::move(other.m_Data[i]);
+            {
+                m_Data[i]       = std::move(other.m_Data[i]);
+                other.m_Data[i] = T();
+            }
         }
 
         Span<T, Size>& operator=(const Span<T, Size>& other)
@@ -73,7 +76,10 @@ namespace Otter
                 return *this;
 
             for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = std::move(other.m_Data[i]);
+            {
+                m_Data[i]       = std::move(other.m_Data[i]);
+                other.m_Data[i] = T();
+            }
 
             return *this;
         }
@@ -96,37 +102,13 @@ namespace Otter
         }
 
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
-        [[nodiscard]] OTR_INLINE constexpr UInt64 Length() const { return Size; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
 
     private:
         T m_Data[Size];
 
         friend class ReadOnlySpan<T, Size>;
     };
-}
-
-template<typename OStream, typename T, UInt64 Size>
-OStream& operator<<(OStream& os, const Otter::Span<T, Size>& span)
-{
-    os << "Span: [";
-
-    for (UInt64 i = 0; i < Size; i++)
-    {
-        os << span[i];
-
-        if (i >= 2)
-        {
-            os << ", ...";
-            break;
-        }
-
-        if (i != Size - 1)
-            os << ", ";
-    }
-
-    os << "]";
-
-    return os;
 }
 
 #endif //OTTERENGINE_SPAN_H

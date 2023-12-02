@@ -19,10 +19,20 @@ namespace Otter
         OTR_WITH_ITERATOR(Iterator, m_Data, m_Count)
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
 
-        Deque() : m_Data(nullptr), m_Capacity(0), m_Count(0) { }
-        ~Deque() { ClearDestructive(); }
+        Deque()
+        {
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
+        }
+
+        ~Deque()
+        {
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
+        }
 
         Deque(InitialiserList<T> list)
+            : Deque()
         {
             m_Capacity = list.size();
             m_Data     = Buffer::New<T>(m_Capacity);
@@ -33,41 +43,16 @@ namespace Otter
         }
 
         Deque(const Deque<T>& other)
+            : Deque()
         {
-            if (this == &other)
-                return;
-
-            if (m_Data != nullptr && m_Capacity > 0)
-                Buffer::Delete(m_Data, m_Capacity);
-
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
             m_Data     = other.m_Data;
-        }
-
-        Deque<T>& operator=(const Deque<T>& other)
-        {
-            if (this == &other)
-                return *this;
-
-            if (m_Data != nullptr && m_Capacity > 0)
-                Buffer::Delete(m_Data, m_Capacity);
-
-            m_Capacity = other.m_Capacity;
-            m_Count    = other.m_Count;
-            m_Data     = other.m_Data;
-
-            return *this;
         }
 
         Deque(Deque<T>&& other) noexcept
+            : Deque()
         {
-            if (this == &other)
-                return;
-
-            if (m_Data != nullptr && m_Capacity > 0)
-                Buffer::Delete(m_Data, m_Capacity);
-
             m_Capacity = std::move(other.m_Capacity);
             m_Count    = std::move(other.m_Count);
             m_Data     = std::move(other.m_Data);
@@ -77,12 +62,27 @@ namespace Otter
             other.m_Data     = nullptr;
         }
 
+        Deque<T>& operator=(const Deque<T>& other)
+        {
+            if (this == &other)
+                return *this;
+
+            if (IsCreated())
+                Buffer::Delete(m_Data, m_Capacity);
+
+            m_Capacity = other.m_Capacity;
+            m_Count    = other.m_Count;
+            m_Data     = other.m_Data;
+
+            return *this;
+        }
+
         Deque<T>& operator=(Deque<T>&& other) noexcept
         {
             if (this == &other)
                 return *this;
 
-            if (m_Data != nullptr && m_Capacity > 0)
+            if (IsCreated())
                 Buffer::Delete(m_Data, m_Capacity);
 
             m_Capacity = std::move(other.m_Capacity);
@@ -248,7 +248,7 @@ namespace Otter
 
         void ClearDestructive()
         {
-            if (m_Data != nullptr && m_Capacity > 0)
+            if (IsCreated())
                 Buffer::Delete(m_Data, m_Capacity);
 
             m_Data     = nullptr;
@@ -258,14 +258,15 @@ namespace Otter
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && m_Capacity > 0; }
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_Count == 0; }
 
         [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
 
     private:
-        T* m_Data;
-        UInt64 m_Capacity;
-        UInt64 m_Count;
+        T* m_Data = nullptr;
+        UInt64 m_Capacity = 0;
+        UInt64 m_Count    = 0;
     };
 }
 

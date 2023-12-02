@@ -20,15 +20,29 @@ namespace Otter
         using Iterator = LinearIterator<T>;
         using ConstIterator = LinearIterator<const T>;
 
-        Array() { m_Data = Buffer::New<T>(Size); }
-        ~Array() { Buffer::Delete(m_Data, Size); }
+        Array()
+        {
+            if (IsCreated())
+                Buffer::Delete(m_Data, Size);
+
+            if constexpr (Size > 0)
+                m_Data = Buffer::New<T>(Size);
+        }
+        ~Array()
+        {
+            if (IsCreated())
+                Buffer::Delete(m_Data, Size);
+        }
 
         OTR_WITH_ITERATOR(Iterator, m_Data, Size)
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
 
         Array(InitialiserList<T> list)
+            : Array()
         {
             OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+
+            m_Data = Buffer::New<T>(Size);
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -36,14 +50,15 @@ namespace Otter
         }
 
         Array(const Array<T, Size>& other)
+            : Array()
         {
             m_Data = other.m_Data;
         }
 
         Array(Array<T, Size>&& other) noexcept
+            : Array()
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = std::move(other.m_Data[i]);
+            m_Data = std::move(other.m_Data);
 
             other.m_Data = nullptr;
         }
@@ -89,38 +104,16 @@ namespace Otter
             return ReadOnlyArray<T, Size>(*this);
         }
 
-        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
-        [[nodiscard]] OTR_INLINE constexpr UInt64 Length() const { return Size; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && Size > 0; }
+
+        [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
 
     private:
-        T* m_Data;
+        T* m_Data = nullptr;
 
         friend class ReadOnlyArray<T, Size>;
     };
-}
-
-template<typename OStream, typename T, UInt64 Size>
-OStream& operator<<(OStream& os, const Otter::Array<T, Size>& array)
-{
-    os << "Array: [";
-
-    for (UInt64 i = 0; i < Size; i++)
-    {
-        os << array[i];
-
-        if (i >= 2)
-        {
-            os << ", ...";
-            break;
-        }
-
-        if (i != Size - 1)
-            os << ", ";
-    }
-
-    os << "]";
-
-    return os;
 }
 
 #endif //OTTERENGINE_ARRAY_H

@@ -5,7 +5,7 @@
 template<typename T>
 using Deque = Otter::Deque<T>;
 
-class DequeFixture : public ::testing::Test
+class Deque_Fixture : public ::testing::Test
 {
 protected:
     void SetUp() override
@@ -19,7 +19,7 @@ protected:
     }
 };
 
-TEST_F(DequeFixture, Initialisation_Default)
+TEST_F(Deque_Fixture, Initialisation_Default)
 {
     Deque<int> deque;
 
@@ -30,7 +30,7 @@ TEST_F(DequeFixture, Initialisation_Default)
     EXPECT_TRUE(deque.IsEmpty());
 }
 
-TEST_F(DequeFixture, Initialisation_FromInitialisationList)
+TEST_F(Deque_Fixture, Initialisation_FromInitialisationList)
 {
     Deque<int> deque = { 1, 2, 3, 4, 5 };
 
@@ -39,7 +39,7 @@ TEST_F(DequeFixture, Initialisation_FromInitialisationList)
     EXPECT_EQ(deque.GetCount(), 5);
 }
 
-TEST_F(DequeFixture, Initialisation_Copy)
+TEST_F(Deque_Fixture, Initialisation_Copy)
 {
     Deque<int> deque = { 1, 2, 3, 4, 5 };
     Deque<int> copy  = deque;
@@ -49,7 +49,7 @@ TEST_F(DequeFixture, Initialisation_Copy)
     EXPECT_EQ(copy.GetCount(), deque.GetCount());
 }
 
-TEST_F(DequeFixture, Initialisation_Move)
+TEST_F(Deque_Fixture, Initialisation_Move)
 {
     Deque<int> deque = { 1, 2, 3, 4, 5 };
     Deque<int> move  = std::move(deque);
@@ -59,7 +59,7 @@ TEST_F(DequeFixture, Initialisation_Move)
     EXPECT_EQ(move.GetCount(), 5);
 }
 
-TEST_F(DequeFixture, PushFront)
+TEST_F(Deque_Fixture, PushFront)
 {
     Deque<int> deque;
     deque.PushFront(1);
@@ -83,7 +83,7 @@ TEST_F(DequeFixture, PushFront)
     EXPECT_EQ(out, 1);
 }
 
-TEST_F(DequeFixture, PushBack)
+TEST_F(Deque_Fixture, PushBack)
 {
     Deque<int> deque;
     deque.PushBack(1);
@@ -107,7 +107,7 @@ TEST_F(DequeFixture, PushBack)
     EXPECT_EQ(out, 3);
 }
 
-TEST_F(DequeFixture, TryPopFront)
+TEST_F(Deque_Fixture, TryPopFront)
 {
     Deque<int> deque = { 1, 2, 3, 4, 5 };
 
@@ -125,7 +125,7 @@ TEST_F(DequeFixture, TryPopFront)
     EXPECT_FALSE(deque.TryPopFront());
 }
 
-TEST_F(DequeFixture, TryPopBack)
+TEST_F(Deque_Fixture, TryPopBack)
 {
     Deque<int> deque = { 1, 2, 3, 4, 5 };
 
@@ -143,7 +143,7 @@ TEST_F(DequeFixture, TryPopBack)
     EXPECT_FALSE(deque.TryPopBack());
 }
 
-TEST_F(DequeFixture, TryRemove)
+TEST_F(Deque_Fixture, TryRemove)
 {
     int        value = 2;
     Deque<int> deque = { 1, value, 3, 4, 5 };
@@ -167,7 +167,7 @@ TEST_F(DequeFixture, TryRemove)
     EXPECT_EQ(deque.GetCount(), 0);
 }
 
-TEST_F(DequeFixture, Reserve)
+TEST_F(Deque_Fixture, Reserve)
 {
     Deque<int> deque;
     deque.Reserve(5);
@@ -189,7 +189,7 @@ TEST_F(DequeFixture, Reserve)
     EXPECT_EQ(deque.GetCount(), 2);
 }
 
-TEST_F(DequeFixture, Expand)
+TEST_F(Deque_Fixture, Expand)
 {
     Deque<int> deque;
     deque.Expand(5);
@@ -211,7 +211,7 @@ TEST_F(DequeFixture, Expand)
     EXPECT_EQ(deque.GetCount(), 2);
 }
 
-TEST_F(DequeFixture, Clear)
+TEST_F(Deque_Fixture, Clear)
 {
     Deque<int> deque = { 1, 2, 3, 4, 5 };
     deque.Clear();
@@ -221,7 +221,7 @@ TEST_F(DequeFixture, Clear)
     EXPECT_EQ(deque.GetCount(), 0);
 }
 
-TEST_F(DequeFixture, ClearDestructive)
+TEST_F(Deque_Fixture, ClearDestructive)
 {
     Deque<int> deque = { 1, 2, 3, 4, 5 };
     deque.ClearDestructive();

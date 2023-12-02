@@ -19,14 +19,23 @@ namespace Otter
     public:
         using ConstIterator = LinearIterator<const T>;
 
-        ReadOnlyArray() { m_Data = Buffer::New<T>(Size); }
-        ~ReadOnlyArray() { Buffer::Delete(m_Data, Size); }
+        ReadOnlyArray()
+        {
+            if constexpr (Size > 0)
+                m_Data = Buffer::New<T>(Size);
+        }
+        ~ReadOnlyArray()
+        {
+            if (m_Data && Size > 0)
+                Buffer::Delete(m_Data, Size);
+        }
 
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
         OTR_DISABLE_OBJECT_COPIES(ReadOnlyArray)
         OTR_DISABLE_OBJECT_MOVES(ReadOnlyArray)
 
         ReadOnlyArray(InitialiserList<T> list)
+            : ReadOnlyArray()
         {
             OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
 
@@ -36,41 +45,19 @@ namespace Otter
         }
 
         explicit ReadOnlyArray(const Array<T, Size>& other)
+            : ReadOnlyArray()
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = other.m_Data[i];
         }
 
         explicit ReadOnlyArray(Array<T, Size>&& other) noexcept
+            : ReadOnlyArray()
         {
             for (UInt64 i = 0; i < Size; i++)
                 m_Data[i] = std::move(other.m_Data[i]);
 
             other.m_Data = nullptr;
-        }
-
-        ReadOnlyArray<T, Size>& operator=(const Array<T, Size>& other)
-        {
-            if (this == &other)
-                return *this;
-
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = other.m_Data[i];
-
-            return *this;
-        }
-
-        ReadOnlyArray<T, Size>& operator=(Array<T, Size>&& other) noexcept
-        {
-            if (this == &other)
-                return *this;
-
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = std::move(other.m_Data[i]);
-
-            other.m_Data = nullptr;
-
-            return *this;
         }
 
         const T& operator[](UInt64 index) const
@@ -83,32 +70,8 @@ namespace Otter
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
 
     private:
-        T m_Data[Size];
+        T* m_Data;
     };
-}
-
-template<typename OStream, typename T, UInt64 Size>
-OStream& operator<<(OStream& os, const Otter::ReadOnlyArray<T, Size>& array)
-{
-    os << "ReadOnlyArray: [";
-
-    for (UInt64 i = 0; i < Size; i++)
-    {
-        os << array[i];
-
-        if (i >= 2)
-        {
-            os << ", ...";
-            break;
-        }
-
-        if (i != Size - 1)
-            os << ", ";
-    }
-
-    os << "]";
-
-    return os;
 }
 
 #endif //OTTERENGINE_READONLYARRAY_H

@@ -529,24 +529,22 @@ namespace Otter::Graphics::Vulkan
     {
         List <VkDeviceQueueCreateInfo> queueCreateInfos;
 
-        HashSet <UInt32> uniqueQueueFamilies(2);
-        uniqueQueueFamilies.TryAdd(outDevicePair->GraphicsQueueFamily.Index);
-        uniqueQueueFamilies.TryAdd(outDevicePair->PresentationQueueFamily.Index);
+        HashSet <UInt32> uniqueQueueFamilies = {
+            outDevicePair->GraphicsQueueFamily.Index,
+            outDevicePair->PresentationQueueFamily.Index
+        };
 
         float queuePriority = 1.0f;
 
-        Action<const UInt32&> addQueueCreateInfo;
-        addQueueCreateInfo <= [&](UInt32 queueFamily)
-        {
-            VkDeviceQueueCreateInfo queueCreateInfo{ };
-            queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
-            queueCreateInfo.queueCount       = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.Add(queueCreateInfo);
-        };
-        uniqueQueueFamilies.ForEach(addQueueCreateInfo);
-        addQueueCreateInfo.ClearDestructive();
+        uniqueQueueFamilies.ForEach([&](UInt32 queueFamily)
+                                    {
+                                        VkDeviceQueueCreateInfo queueCreateInfo{ };
+                                        queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+                                        queueCreateInfo.queueFamilyIndex = queueFamily;
+                                        queueCreateInfo.queueCount       = 1;
+                                        queueCreateInfo.pQueuePriorities = &queuePriority;
+                                        queueCreateInfos.Add(queueCreateInfo);
+                                    });
 
         // TODO: Should be configuration driven, all features are disabled by default for now
         VkPhysicalDeviceFeatures deviceFeatures{ };
@@ -868,9 +866,9 @@ namespace Otter::Graphics::Vulkan
         const auto spriteTexCoords = gs_Sprite.GetTexCoords();
 
         List <Vertex> vertices;
-        vertices.Reserve(spriteVertices.Length());
+        vertices.Reserve(spriteVertices.GetSize());
 
-        for (UInt64 i = 0; i < spriteVertices.Length(); i++)
+        for (UInt64 i = 0; i < spriteVertices.GetSize(); i++)
         {
             vertices.Add({
                              { spriteVertices[i][0], spriteVertices[i][1], 0.0f },
@@ -931,7 +929,7 @@ namespace Otter::Graphics::Vulkan
 
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo{ };
         descriptorSetLayoutCreateInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        descriptorSetLayoutCreateInfo.bindingCount = bindings.Length();
+        descriptorSetLayoutCreateInfo.bindingCount = bindings.GetSize();
         descriptorSetLayoutCreateInfo.pBindings    = bindings.GetData();
         descriptorSetLayoutCreateInfo.pNext        = VK_NULL_HANDLE;
 
@@ -951,7 +949,7 @@ namespace Otter::Graphics::Vulkan
 
         VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{ };
         descriptorPoolCreateInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        descriptorPoolCreateInfo.poolSizeCount = globalDescriptorPoolSizes.Length();
+        descriptorPoolCreateInfo.poolSizeCount = globalDescriptorPoolSizes.GetSize();
         descriptorPoolCreateInfo.pPoolSizes    = globalDescriptorPoolSizes.GetData();
         descriptorPoolCreateInfo.maxSets       = m_Swapchain.MaxFramesInFlight;
         descriptorPoolCreateInfo.pNext         = VK_NULL_HANDLE;
@@ -1033,8 +1031,9 @@ namespace Otter::Graphics::Vulkan
         vkDestroyDescriptorPool(m_DevicePair.LogicalDevice, m_Descriptor.Pool, m_Allocator);
         vkDestroyDescriptorSetLayout(m_DevicePair.LogicalDevice, m_Descriptor.SetLayout, m_Allocator);
 
-        m_Descriptor.Pool      = VK_NULL_HANDLE;
+        m_Descriptor.Sets.ClearDestructive();
         m_Descriptor.SetLayout = VK_NULL_HANDLE;
+        m_Descriptor.Pool      = VK_NULL_HANDLE;
     }
 
     void VulkanRenderer::CreatePipelines()

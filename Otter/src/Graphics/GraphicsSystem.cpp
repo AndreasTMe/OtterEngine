@@ -17,15 +17,15 @@ namespace Otter
 
         List < Graphics::Shader * > shaders;
         shaders.Reserve(2);
-        shaders.AddRange({
-                             Asset::Create<AssetType::Shader>("Assets/Shaders/default.glsl")
-                         });
+        shaders.TryAddRange({
+                                Asset::Create<AssetType::Shader>("Assets/Shaders/default.glsl")
+                            });
 
         List < Graphics::Texture * > textures;
         textures.Reserve(2);
-        textures.AddRange({
-                              Asset::Create<AssetType::Texture>("Assets/Textures/texture.jpg")
-                          });
+        textures.TryAddRange({
+                                 Asset::Create<AssetType::Texture>("Assets/Textures/texture.jpg")
+                             });
 
         s_Renderer->Initialise(platformContext, shaders, textures);
         // TODO: Initialise Global Uniform Buffer/Camera

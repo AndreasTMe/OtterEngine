@@ -6,6 +6,7 @@
 #include "Core/Memory.h"
 
 #include "Core/Collections/Collection.h"
+#include "Core/Collections/Iterators/LinearIterator.h"
 
 namespace Otter
 {
@@ -14,10 +15,16 @@ namespace Otter
     {
         OTR_USING_BASE(Collection<T>)
 
+        using Iterator = LinearIterator<T>;
+        using ConstIterator = LinearIterator<const T>;
+
     public:
         OTR_COLLECTION_CONSTRUCT(List)
         OTR_COLLECTION_COPY(List)
         OTR_COLLECTION_MOVE(List)
+
+        OTR_WITH_ITERATOR(Iterator, base::m_Data, base::m_Count)
+        OTR_WITH_CONST_ITERATOR(ConstIterator, base::m_Data, base::m_Count)
 
         [[nodiscard]] T& operator[](UInt64 index)
         {
@@ -47,51 +54,51 @@ namespace Otter
             base::m_Data[base::m_Count++] = std::move(item);
         }
 
-        void AddAt(const UInt64 index, const T& item)
+        bool TryAddAt(const UInt64 index, const T& item)
         {
-            if (index >= base::m_Count)
-                return;
-
-            if (base::m_Count >= base::m_Capacity)
-                base::Expand();
+            if (index >= base::m_Capacity || base::m_Count >= base::m_Capacity)
+                return false;
 
             for (UInt64 i = base::m_Count; i > index; i--)
                 base::m_Data[i] = base::m_Data[i - 1];
 
             base::m_Data[index] = item;
             base::m_Count++;
+
+            return true;
         }
 
-        void AddAt(const UInt64 index, T&& item)
+        bool TryAddAt(const UInt64 index, T&& item)
         {
-            if (index >= base::m_Count)
-                return;
-
-            if (base::m_Count >= base::m_Capacity)
-                base::Expand();
+            if (index >= base::m_Capacity || base::m_Count >= base::m_Capacity)
+                return false;
 
             for (UInt64 i = base::m_Count; i > index; i--)
                 base::m_Data[i] = base::m_Data[i - 1];
 
             base::m_Data[index] = std::move(item);
             base::m_Count++;
+
+            return true;
         }
 
-        void AddRange(InitialiserList<T> items, bool allOrNothing = false)
+        bool TryAddRange(InitialiserList<T> items, bool allOrNothing = false)
         {
             if (items.size() == 0)
-                return;
+                return false;
 
             if (items.size() > base::m_Capacity - base::m_Count)
             {
                 if (allOrNothing)
-                    return;
+                    return false;
 
                 base::Expand(items.size() - (base::m_Capacity - base::m_Count));
             }
 
             for (const T& item: items)
                 Add(item);
+
+            return true;
         }
 
         bool TryRemove(const T& item)

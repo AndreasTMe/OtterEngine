@@ -40,12 +40,21 @@ namespace Otter
             return enumerable;
         }
 
+        void ClearDestructive()
+        {
+            if (m_Data != nullptr && m_Count > 0)
+                Buffer::Delete(m_Data, m_Count);
+
+            m_Data  = nullptr;
+            m_Count = 0;
+        }
+
         OTR_INLINE static Enumerable Empty() { return { }; }
 
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_Count == 0; }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
 
-        [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
+        [[nodiscard]] OTR_INLINE constexpr T* GetData() const noexcept { return m_Data; }
 
     private:
         Enumerable()
