@@ -6,13 +6,11 @@
 #include "Core/Memory.h"
 #include "Core/Function.h"
 
-#include "Core/Collections/List.h"
+#include "Core/Collections/Utils/HashBucket.h"
 #include "Core/Collections/Utils/HashUtils.h"
 
 namespace Otter
 {
-    // TODO: Not the best HashSet implementation, but it works for now
-    // TODO: Resize the HashSet to minimise collisions
     template<typename T>
     class HashSet final
     {
@@ -36,7 +34,7 @@ namespace Otter
         {
             m_Capacity = HashUtils::GetNextPrime(list.size());
             m_Count    = 0;
-            m_Buckets  = Buffer::New<Bucket>(m_Capacity);
+            m_Buckets  = Buffer::New<Bucket<T>>(m_Capacity);
 
             for (const T& item: list)
                 TryAdd(item);
@@ -106,7 +104,7 @@ namespace Otter
 
             if (!m_Buckets[index].IsCreated())
             {
-                m_Buckets[index].Items         = Buffer::New<BucketItem>(k_InitialCapacity);
+                m_Buckets[index].Items         = Buffer::New<BucketItem<T>>(k_InitialCapacity);
                 m_Buckets[index].Items[0].Data = value;
                 m_Buckets[index].Items[0].Hash = hash;
                 m_Buckets[index].Capacity      = k_InitialCapacity;
@@ -142,7 +140,7 @@ namespace Otter
 
             if (!m_Buckets[index].IsCreated())
             {
-                m_Buckets[index].Items         = Buffer::New<BucketItem>(k_InitialCapacity);
+                m_Buckets[index].Items         = Buffer::New<BucketItem<T>>(k_InitialCapacity);
                 m_Buckets[index].Items[0].Data = std::move(value);
                 m_Buckets[index].Items[0].Hash = hash;
                 m_Buckets[index].Capacity      = k_InitialCapacity;
@@ -221,6 +219,9 @@ namespace Otter
 
         void Clear()
         {
+            if (!IsCreated())
+                return;
+
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
                 if (!m_Buckets[i].IsCreated())
@@ -250,136 +251,11 @@ namespace Otter
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
 
     private:
-        struct BucketItem
-        {
-        public:
-            T      Data;
-            UInt64 Hash;
-
-            BucketItem() : Data(), Hash(0) { }
-            ~BucketItem() = default;
-
-            BucketItem(const BucketItem& other)
-            {
-                Data = other.Data;
-                Hash = other.Hash;
-            }
-
-            BucketItem(BucketItem&& other) noexcept
-            {
-                Data = std::move(other.Data);
-                Hash = std::move(other.Hash);
-            }
-
-            BucketItem& operator=(const BucketItem& other)
-            {
-                if (this == &other)
-                    return *this;
-
-                Data = other.Data;
-                Hash = other.Hash;
-
-                return *this;
-            }
-
-            BucketItem& operator=(BucketItem&& other) noexcept
-            {
-                if (this == &other)
-                    return *this;
-
-                Data = std::move(other.Data);
-                Hash = std::move(other.Hash);
-
-                return *this;
-            }
-        };
-
-        struct Bucket
-        {
-        public:
-            BucketItem* Items = nullptr;
-            UInt64 Capacity = 0;
-            UInt64 Count    = 0;
-
-            Bucket()
-            {
-                if (IsCreated())
-                    Buffer::Delete(Items, Capacity);
-            }
-
-            ~Bucket()
-            {
-                if (IsCreated())
-                    Buffer::Delete(Items, Capacity);
-            }
-
-            Bucket(const Bucket& other)
-            {
-                if (IsCreated())
-                    Buffer::Delete(Items, Capacity);
-
-                Items    = other.Items;
-                Capacity = other.Capacity;
-                Count    = other.Count;
-            }
-
-            Bucket(Bucket&& other) noexcept
-            {
-                if (IsCreated())
-                    Buffer::Delete(Items, Capacity);
-
-                Items    = std::move(other.Items);
-                Capacity = std::move(other.Capacity);
-                Count    = std::move(other.Count);
-
-                other.Items    = nullptr;
-                other.Capacity = 0;
-                other.Count    = 0;
-            }
-
-            Bucket& operator=(const Bucket& other)
-            {
-                if (this == &other)
-                    return *this;
-
-                if (IsCreated())
-                    Buffer::Delete(Items, Capacity);
-
-                Items    = other.Items;
-                Capacity = other.Capacity;
-                Count    = other.Count;
-
-                return *this;
-            }
-
-            Bucket& operator=(Bucket&& other) noexcept
-            {
-                if (this == &other)
-                    return *this;
-
-                if (IsCreated())
-                    Buffer::Delete(Items, Capacity);
-
-                Items    = std::move(other.Items);
-                Capacity = std::move(other.Capacity);
-                Count    = std::move(other.Count);
-
-                other.Items    = nullptr;
-                other.Capacity = 0;
-                other.Count    = 0;
-
-                return *this;
-            }
-
-            [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return Items && Capacity > 0; }
-            [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return Count == 0; }
-        };
-
         static constexpr Int64   k_63BitMask       = 0x7FFFFFFFFFFFFFFF;
         static constexpr UInt16  k_InitialCapacity = 3;
         static constexpr Float16 k_ResizingFactor  = static_cast<Float16>(1.5);
 
-        Bucket* m_Buckets = nullptr;
+        Bucket<T>* m_Buckets = nullptr;
         UInt64 m_Capacity = 0;
         UInt64 m_Count    = 0;
 
@@ -388,7 +264,7 @@ namespace Otter
             UInt64 newCapacity = m_Capacity == 0
                                  ? k_InitialCapacity
                                  : HashUtils::GetNextPrime(m_Capacity * k_ResizingFactor);
-            Bucket* newBuckets = Buffer::New<Bucket>(newCapacity);
+            Bucket<T>* newBuckets = Buffer::New<Bucket<T>>(newCapacity);
 
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
@@ -402,7 +278,7 @@ namespace Otter
 
                     if (!newBuckets[index].IsCreated())
                     {
-                        newBuckets[index].Items         = Buffer::New<BucketItem>(k_InitialCapacity);
+                        newBuckets[index].Items         = Buffer::New<BucketItem<T>>(k_InitialCapacity);
                         newBuckets[index].Items[0].Data = m_Buckets[i].Items[j].Data;
                         newBuckets[index].Items[0].Hash = hash;
                         newBuckets[index].Capacity      = k_InitialCapacity;
@@ -430,10 +306,10 @@ namespace Otter
             m_Capacity = newCapacity;
         }
 
-        void ResizeBucket(Bucket* bucket)
+        void ResizeBucket(Bucket<T>* bucket)
         {
             UInt64 newCapacity = bucket->Capacity * k_ResizingFactor;
-            BucketItem* newItems = Buffer::New<BucketItem>(newCapacity);
+            BucketItem<T>* newItems = Buffer::New<BucketItem<T>>(newCapacity);
 
             for (UInt64 i = 0; i < bucket->Count; i++)
                 newItems[i] = bucket->Items[i];
@@ -444,7 +320,7 @@ namespace Otter
             bucket->Capacity = newCapacity;
         }
 
-        [[nodiscard]] bool ExistsInBucket(const T& value, const UInt64 hash, const Bucket& bucket) const
+        [[nodiscard]] bool ExistsInBucket(const T& value, const UInt64 hash, const Bucket<T>& bucket) const
         {
             for (UInt64 i = 0; i < bucket.Count; i++)
                 if (bucket.Items[i].Data == value && bucket.Items[i].Hash == hash)

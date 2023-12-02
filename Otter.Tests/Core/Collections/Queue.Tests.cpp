@@ -5,7 +5,7 @@
 template<typename T>
 using Queue = Otter::Queue<T>;
 
-class QueueFixture : public ::testing::Test
+class Queue_Fixture : public ::testing::Test
 {
 protected:
     void SetUp() override
@@ -19,7 +19,7 @@ protected:
     }
 };
 
-TEST_F(QueueFixture, Initialisation_Default)
+TEST_F(Queue_Fixture, Initialisation_Default)
 {
     Queue<int> queue;
 
@@ -29,7 +29,7 @@ TEST_F(QueueFixture, Initialisation_Default)
     EXPECT_TRUE(queue.IsEmpty());
 }
 
-TEST_F(QueueFixture, Initialisation_FromInitialisationList)
+TEST_F(Queue_Fixture, Initialisation_FromInitialisationList)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
 
@@ -39,7 +39,7 @@ TEST_F(QueueFixture, Initialisation_FromInitialisationList)
     EXPECT_FALSE(queue.IsEmpty());
 }
 
-TEST_F(QueueFixture, Initialisation_Copy)
+TEST_F(Queue_Fixture, Initialisation_Copy)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
     Queue<int> copy  = queue;
@@ -50,7 +50,7 @@ TEST_F(QueueFixture, Initialisation_Copy)
     EXPECT_FALSE(copy.IsEmpty());
 }
 
-TEST_F(QueueFixture, Initialisation_Move)
+TEST_F(Queue_Fixture, Initialisation_Move)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
     Queue<int> move  = std::move(queue);
@@ -61,7 +61,7 @@ TEST_F(QueueFixture, Initialisation_Move)
     EXPECT_FALSE(move.IsEmpty());
 }
 
-TEST_F(QueueFixture, Assignment_Copy)
+TEST_F(Queue_Fixture, Assignment_Copy)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
     Queue<int> copy;
@@ -74,7 +74,7 @@ TEST_F(QueueFixture, Assignment_Copy)
     EXPECT_FALSE(copy.IsEmpty());
 }
 
-TEST_F(QueueFixture, Assignment_Move)
+TEST_F(Queue_Fixture, Assignment_Move)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
     Queue<int> move;
@@ -87,7 +87,7 @@ TEST_F(QueueFixture, Assignment_Move)
     EXPECT_FALSE(move.IsEmpty());
 }
 
-TEST_F(QueueFixture, TryEnqueue)
+TEST_F(Queue_Fixture, TryEnqueue)
 {
     Queue<int> queue       = { 1, 2, 3, 4, 5 };
     const auto oldCapacity = queue.GetCapacity();
@@ -102,7 +102,7 @@ TEST_F(QueueFixture, TryEnqueue)
     EXPECT_EQ(queue.GetCapacity(), static_cast<UInt64>(oldCapacity * 1.5));
 }
 
-TEST_F(QueueFixture, TryDequeue)
+TEST_F(Queue_Fixture, TryDequeue)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
 
@@ -134,7 +134,7 @@ TEST_F(QueueFixture, TryDequeue)
     EXPECT_EQ(queue.GetCount(), 0);
 }
 
-TEST_F(QueueFixture, TryPeek)
+TEST_F(Queue_Fixture, TryPeek)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
 
@@ -157,7 +157,7 @@ TEST_F(QueueFixture, TryPeek)
     EXPECT_FALSE(queue.TryPeek(value));
 }
 
-TEST_F(QueueFixture, Reserve)
+TEST_F(Queue_Fixture, Reserve)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
     EXPECT_EQ(queue.GetCapacity(), 5);
@@ -169,7 +169,7 @@ TEST_F(QueueFixture, Reserve)
     EXPECT_EQ(queue.GetCount(), 0);
 }
 
-TEST_F(QueueFixture, Expand)
+TEST_F(Queue_Fixture, Expand)
 {
     Queue<int> emptyQueue;
     EXPECT_EQ(emptyQueue.GetCapacity(), 0);
@@ -208,7 +208,7 @@ TEST_F(QueueFixture, Expand)
     EXPECT_EQ(value, 3);
 }
 
-TEST_F(QueueFixture, Shrink)
+TEST_F(Queue_Fixture, Shrink)
 {
     Queue<int> emptyQueue;
     EXPECT_EQ(emptyQueue.GetCapacity(), 0);
@@ -252,7 +252,7 @@ TEST_F(QueueFixture, Shrink)
     EXPECT_EQ(value, 3);
 }
 
-TEST_F(QueueFixture, Contains)
+TEST_F(Queue_Fixture, Contains)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
 
@@ -279,7 +279,7 @@ TEST_F(QueueFixture, Contains)
     EXPECT_TRUE(queue.Contains(7));
 }
 
-TEST_F(QueueFixture, Clear)
+TEST_F(Queue_Fixture, Clear)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
     queue.Clear();
@@ -293,7 +293,7 @@ TEST_F(QueueFixture, Clear)
     EXPECT_FALSE(queue.TryDequeue(value));
 }
 
-TEST_F(QueueFixture, ClearDestructive)
+TEST_F(Queue_Fixture, ClearDestructive)
 {
     Queue<int> queue = { 1, 2, 3, 4, 5 };
     queue.ClearDestructive();

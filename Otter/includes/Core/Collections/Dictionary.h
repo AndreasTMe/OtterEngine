@@ -4,69 +4,61 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Memory.h"
-#include "Core/Delegates.h"
+#include "Core/Function.h"
 
+#include "Core/Collections/Utils/HashBucket.h"
 #include "Core/Collections/Utils/HashUtils.h"
 
 namespace Otter
 {
-    // TODO: Not the best Dictionary implementation, but it works for now
-    // TODO: Resize the Dictionary to minimise collisions
     template<typename TKey, typename TValue>
     class Dictionary final
     {
         using HashUtils = Internal::HashUtils;
+        struct KeyValuePair;
 
     public:
         Dictionary()
-            : m_Buckets(nullptr), m_Capacity(0), m_Count(0)
         {
+            if (IsCreated())
+                Buffer::Delete(m_Buckets, m_Capacity);
         }
 
         ~Dictionary()
         {
-            ClearDestructive();
+            if (IsCreated())
+                Buffer::Delete(m_Buckets, m_Capacity);
         }
 
-        explicit Dictionary(UInt64 capacity)
+        Dictionary(InitialiserList<KeyValuePair> list)
+            : Dictionary()
         {
-            m_Capacity = HashUtils::GetNextPrime(capacity);
+            m_Capacity = HashUtils::GetNextPrime(list.size());
             m_Count    = 0;
-            m_Buckets  = Buffer::New<Bucket>(m_Capacity);
+            m_Buckets  = Buffer::New<Bucket<KeyValuePair>>(m_Capacity);
 
-            for (UInt64 i = 0; i < m_Capacity; i++)
-                m_Buckets[i].Items = nullptr;
+            for (const KeyValuePair& pair: list)
+                TryAdd(pair.Key, pair.Value);
         }
 
         Dictionary(const Dictionary<TKey, TValue>& other)
+            : Dictionary()
         {
+            m_Buckets  = other.m_Buckets;
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
-            m_Buckets  = Buffer::New<Bucket>(m_Capacity);
-
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (other.m_Buckets[i].Capacity == 0)
-                    continue;
-
-                m_Buckets[i].Items    = Buffer::New<BucketItem>(other.m_Buckets[i].Capacity);
-                m_Buckets[i].Capacity = other.m_Buckets[i].Capacity;
-                m_Buckets[i].Count    = other.m_Buckets[i].Count;
-
-                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
-                    m_Buckets[i].Items[j] = other.m_Buckets[i].Items[j];
-            }
         }
 
         Dictionary(Dictionary<TKey, TValue>&& other) noexcept
+            : Dictionary()
         {
+            m_Buckets  = std::move(other.m_Buckets);
             m_Capacity = std::move(other.m_Capacity);
             m_Count    = std::move(other.m_Count);
-            m_Buckets  = std::move(other.m_Buckets);
 
+            other.m_Buckets  = nullptr;
             other.m_Capacity = 0;
             other.m_Count    = 0;
-            other.m_Buckets  = nullptr;
         }
 
         Dictionary<TKey, TValue>& operator=(const Dictionary<TKey, TValue>& other)
@@ -74,24 +66,12 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            ClearDestructive();
+            if (IsCreated())
+                Buffer::Delete(m_Buckets, m_Capacity);
 
+            m_Buckets  = other.m_Buckets;
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
-            m_Buckets  = Buffer::New<Bucket>(m_Capacity);
-
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (other.m_Buckets[i].Capacity == 0)
-                    continue;
-
-                m_Buckets[i].Items    = Buffer::New<BucketItem>(other.m_Buckets[i].Capacity);
-                m_Buckets[i].Capacity = other.m_Buckets[i].Capacity;
-                m_Buckets[i].Count    = other.m_Buckets[i].Count;
-
-                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
-                    m_Buckets[i].Items[j] = other.m_Buckets[i].Items[j];
-            }
 
             return *this;
         }
@@ -101,52 +81,49 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            ClearDestructive();
+            if (IsCreated())
+                Buffer::Delete(m_Buckets, m_Capacity);
 
+            m_Buckets  = std::move(other.m_Buckets);
             m_Capacity = std::move(other.m_Capacity);
             m_Count    = std::move(other.m_Count);
-            m_Buckets  = std::move(other.m_Buckets);
 
+            other.m_Buckets  = nullptr;
             other.m_Capacity = 0;
             other.m_Count    = 0;
-            other.m_Buckets  = nullptr;
 
             return *this;
         }
 
-        bool TryAdd(const TKey& key, const TValue& value, bool overwrite = false)
+        bool TryAdd(const TKey& key, const TValue& value)
         {
+            if (m_Count >= m_Capacity)
+                Expand();
+
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].Capacity == 0)
+            if (!m_Buckets[index].IsCreated())
             {
-                InitialiseBucketWithItem(&m_Buckets[index], key, value, hash);
+                m_Buckets[index].Items         = Buffer::New<BucketItem<KeyValuePair>>(k_InitialCapacity);
+                m_Buckets[index].Items[0].Data = KeyValuePair{ key, value };
+                m_Buckets[index].Items[0].Hash = hash;
+                m_Buckets[index].Capacity      = k_InitialCapacity;
+                m_Buckets[index].Count         = 1;
+
                 m_Count++;
 
                 return true;
             }
 
-            for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
-            {
-                if (m_Buckets[index].Items[i].Pair.Key == key && m_Buckets[index].Items[i].Hash == hash)
-                {
-                    if (overwrite)
-                    {
-                        m_Buckets[index].Items[i].Pair.Value = value;
-                        return true;
-                    }
-
-                    return false;
-                }
-            }
+            if (ExistsInBucket(KeyValuePair{ key, value }, hash, m_Buckets[index]))
+                return false;
 
             if (m_Buckets[index].Count >= m_Buckets[index].Capacity)
                 ResizeBucket(&m_Buckets[index]);
 
-            m_Buckets[index].Items[m_Buckets[index].Count].Pair.Key   = key;
-            m_Buckets[index].Items[m_Buckets[index].Count].Pair.Value = value;
-            m_Buckets[index].Items[m_Buckets[index].Count].Hash       = hash;
+            m_Buckets[index].Items[m_Buckets[index].Count].Data = KeyValuePair{ key, value };
+            m_Buckets[index].Items[m_Buckets[index].Count].Hash = hash;
             m_Buckets[index].Count++;
 
             m_Count++;
@@ -154,39 +131,35 @@ namespace Otter
             return true;
         }
 
-        bool TryAdd(TKey&& key, TValue&& value, bool overwrite = false) noexcept
+        bool TryAdd(TKey&& key, TValue&& value) noexcept
         {
+            if (m_Count >= m_Capacity)
+                Expand();
+
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].Capacity == 0)
+            if (!m_Buckets[index].IsCreated())
             {
-                InitialiseBucketWithItem(&m_Buckets[index], std::move(key), std::move(value), hash);
+                m_Buckets[index].Items         = Buffer::New<BucketItem<KeyValuePair>>(k_InitialCapacity);
+                m_Buckets[index].Items[0].Data = std::move(KeyValuePair{ key, value });
+                m_Buckets[index].Items[0].Hash = hash;
+                m_Buckets[index].Capacity      = k_InitialCapacity;
+                m_Buckets[index].Count         = 1;
+
                 m_Count++;
 
                 return true;
             }
 
-            for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
-            {
-                if (m_Buckets[index].Items[i].Pair.Key == key && m_Buckets[index].Items[i].Hash == hash)
-                {
-                    if (overwrite)
-                    {
-                        m_Buckets[index].Items[i].Pair.Value = value;
-                        return true;
-                    }
-
-                    return false;
-                }
-            }
+            if (ExistsInBucket(KeyValuePair{ key, value }, hash, m_Buckets[index]))
+                return false;
 
             if (m_Buckets[index].Count >= m_Buckets[index].Capacity)
                 ResizeBucket(&m_Buckets[index]);
 
-            m_Buckets[index].Items[m_Buckets[index].Count].Pair.Key   = std::move(key);
-            m_Buckets[index].Items[m_Buckets[index].Count].Pair.Value = std::move(value);
-            m_Buckets[index].Items[m_Buckets[index].Count].Hash       = hash;
+            m_Buckets[index].Items[m_Buckets[index].Count].Data = std::move(KeyValuePair{ key, value });
+            m_Buckets[index].Items[m_Buckets[index].Count].Hash = hash;
             m_Buckets[index].Count++;
 
             m_Count++;
@@ -194,152 +167,22 @@ namespace Otter
             return true;
         }
 
-        bool TryGet(const TKey& key, TValue& value) const { return TryGetInternal(key, value); }
-        bool TryGet(TKey&& key, TValue& value) const noexcept { return TryGetInternal(std::move(key), value); }
-
-        bool TryRemove(const TKey& key) { return TryRemoveInternal(key); }
-        bool TryRemove(TKey&& key) noexcept { return TryRemoveInternal(std::move(key)); }
-
-        [[nodiscard]] bool Contains(const TKey& key) const { return ContainsInternal(key); }
-        [[nodiscard]] bool Contains(TKey&& key) const noexcept { return ContainsInternal(std::move(key)); }
-
-        void ForEach(Action<const TKey&, const TValue&>& action) const
+        bool TryGet(const TKey& key, TValue& value) const
         {
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
-                    continue;
+            if (!IsCreated())
+                return false;
 
-                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
-                    action(m_Buckets[i].Items[j].Pair.Key, m_Buckets[i].Items[j].Pair.Value);
-            }
-        }
-
-        void ForEachKey(Action<const TKey&>& action) const
-        {
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
-                    continue;
-
-                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
-                    action(m_Buckets[i].Items[j].Pair.Key);
-            }
-        }
-
-        void ForEachValue(Action<const TValue&>& action) const
-        {
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
-                    continue;
-
-                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
-                    action(m_Buckets[i].Items[j].Pair.Value);
-            }
-        }
-
-        void Clear()
-        {
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
-                    continue;
-
-                m_Buckets[i].Count = 0;
-            }
-
-            m_Count = 0;
-        }
-
-        void ClearDestructive()
-        {
-            if (!m_Buckets)
-                return;
-
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (!m_Buckets[i].Items || m_Buckets[i].Capacity == 0)
-                    continue;
-
-                Buffer::Delete(m_Buckets[i].Items, m_Buckets[i].Capacity);
-                m_Buckets[i].Items    = nullptr;
-                m_Buckets[i].Capacity = 0;
-                m_Buckets[i].Count    = 0;
-            }
-
-            // BUG: This is causing a crash on many items in the dictionary
-            Buffer::Delete(m_Buckets, m_Capacity);
-            m_Buckets = nullptr;
-        }
-
-        [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
-
-    private:
-        struct KeyValuePair
-        {
-            TKey   Key;
-            TValue Value;
-        };
-
-        struct BucketItem
-        {
-            KeyValuePair Pair;
-            UInt64       Hash;
-        };
-
-        struct Bucket
-        {
-            BucketItem* Items;
-            UInt64 Capacity;
-            UInt64 Count;
-        };
-
-        const Int64   k_63BitMask             = 0x7FFFFFFFFFFFFFFF;
-        const UInt16  k_InitialBucketCapacity = 3;
-        const Float16 k_BucketResizingFactor  = 1.5;
-
-        Bucket* m_Buckets;
-        UInt64 m_Capacity;
-        UInt64 m_Count;
-
-        void InitialiseBucketWithItem(Bucket* bucket, const TKey& key, const TValue& value, const UInt64 hash) const
-        {
-            bucket->Items               = Buffer::New<BucketItem>(k_InitialBucketCapacity);
-            bucket->Items[0].Pair.Key   = key;
-            bucket->Items[0].Pair.Value = value;
-            bucket->Items[0].Hash       = hash;
-            bucket->Capacity            = k_InitialBucketCapacity;
-            bucket->Count               = 1;
-        }
-
-        void ResizeBucket(Bucket* bucket) const
-        {
-            UInt64 newCapacity = bucket->Capacity * k_BucketResizingFactor;
-            BucketItem* newItems = Buffer::New<BucketItem>(newCapacity);
-
-            for (UInt64 i = 0; i < bucket->Count; i++)
-                newItems[i] = bucket->Items[i];
-
-            Buffer::Delete(bucket->Items, bucket->Capacity);
-
-            bucket->Items    = newItems;
-            bucket->Capacity = newCapacity;
-        }
-
-        [[nodiscard]] bool TryGetInternal(const TKey& key, TValue& value) const
-        {
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].Capacity == 0)
+            if (!m_Buckets[index].IsCreated())
                 return false;
 
             for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
             {
-                if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Pair.Key == key)
+                if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Data.Key == key)
                 {
-                    value = m_Buckets[index].Items[i].Pair.Value;
+                    value = m_Buckets[index].Items[i].Data.Value;
                     return true;
                 }
             }
@@ -347,17 +190,20 @@ namespace Otter
             return false;
         }
 
-        [[nodiscard]] bool TryRemoveInternal(const TKey& key)
+        bool TryRemove(const TKey& key)
         {
+            if (!IsCreated())
+                return false;
+
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].Capacity == 0)
+            if (!m_Buckets[index].IsCreated())
                 return false;
 
             for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
             {
-                if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Pair.Key == key)
+                if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Data.Key == key)
                 {
                     for (UInt64 j = i; j < m_Buckets[index].Count - 1; j++)
                         m_Buckets[index].Items[j] = m_Buckets[index].Items[j + 1];
@@ -372,16 +218,228 @@ namespace Otter
             return false;
         }
 
-        [[nodiscard]] bool ContainsInternal(const TKey& key) const
+        [[nodiscard]] bool Contains(const TKey& key) const
         {
+            if (!IsCreated())
+                return false;
+
             UInt64 hash  = GetHashCode(key) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
-            if (m_Buckets[index].Capacity == 0)
+            if (!m_Buckets[index].IsCreated())
                 return false;
 
             for (UInt64 i = 0; i < m_Buckets[index].Count; i++)
-                if (m_Buckets[index].Items[i].Pair.Key == key && m_Buckets[index].Items[i].Hash == hash)
+                if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Data.Key == key)
+                    return true;
+
+            return false;
+        }
+
+        void ForEach(Function<void(const TKey&, const TValue&)> callback) const
+        {
+            if (!IsCreated())
+                return;
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!m_Buckets[i].IsCreated())
+                    continue;
+
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                    callback(m_Buckets[i].Items[j].Data.Key, m_Buckets[i].Items[j].Data.Value);
+            }
+        }
+
+        void ForEachKey(Function<void(const TKey&)> callback) const
+        {
+            if (!IsCreated())
+                return;
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!m_Buckets[i].IsCreated())
+                    continue;
+
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                    callback(m_Buckets[i].Items[j].Data.Key);
+            }
+        }
+
+        void ForEachValue(Function<void(const TValue&)> callback) const
+        {
+            if (!IsCreated())
+                return;
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!m_Buckets[i].IsCreated())
+                    continue;
+
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                    callback(m_Buckets[i].Items[j].Data.Value);
+            }
+        }
+
+        void Clear()
+        {
+            if (!IsCreated())
+                return;
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!m_Buckets[i].IsCreated())
+                    continue;
+
+                Buffer::Delete(m_Buckets[i].Items, m_Buckets[i].Capacity);
+                m_Buckets[i].Items    = nullptr;
+                m_Buckets[i].Capacity = 0;
+                m_Buckets[i].Count    = 0;
+            }
+
+            m_Count = 0;
+        }
+
+        void ClearDestructive()
+        {
+            if (IsCreated())
+                Buffer::Delete(m_Buckets, m_Capacity);
+
+            m_Buckets  = nullptr;
+            m_Capacity = 0;
+            m_Count    = 0;
+        }
+
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Buckets && m_Capacity > 0; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
+
+    private:
+        struct KeyValuePair final
+        {
+        public:
+            TKey   Key;
+            TValue Value;
+
+            KeyValuePair() = default;
+            ~KeyValuePair() = default;
+
+            KeyValuePair(const TKey& key, const TValue& value)
+            {
+                Key   = key;
+                Value = value;
+            }
+
+            KeyValuePair(const KeyValuePair& other)
+            {
+                Key   = other.Key;
+                Value = other.Value;
+            }
+
+            KeyValuePair(KeyValuePair&& other) noexcept
+            {
+                Key   = std::move(other.Key);
+                Value = std::move(other.Value);
+            }
+
+            KeyValuePair& operator=(const KeyValuePair& other)
+            {
+                if (this == &other)
+                    return *this;
+
+                Key   = other.Key;
+                Value = other.Value;
+
+                return *this;
+            }
+
+            KeyValuePair& operator=(KeyValuePair&& other) noexcept
+            {
+                if (this == &other)
+                    return *this;
+
+                Key   = std::move(other.Key);
+                Value = std::move(other.Value);
+
+                return *this;
+            }
+        };
+
+        static constexpr Int64   k_63BitMask       = 0x7FFFFFFFFFFFFFFF;
+        static constexpr UInt16  k_InitialCapacity = 3;
+        static constexpr Float16 k_ResizingFactor  = static_cast<Float16>(1.5);
+
+        Bucket<KeyValuePair>* m_Buckets = nullptr;
+        UInt64 m_Capacity = 0;
+        UInt64 m_Count    = 0;
+
+        void Expand()
+        {
+            UInt64 newCapacity = m_Capacity == 0
+                                 ? k_InitialCapacity
+                                 : HashUtils::GetNextPrime(m_Capacity * k_ResizingFactor);
+            Bucket<KeyValuePair>* newBuckets = Buffer::New<Bucket<KeyValuePair>>(newCapacity);
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!m_Buckets[i].IsCreated())
+                    continue;
+
+                for (UInt64 j = 0; j < m_Buckets[i].Count; j++)
+                {
+                    UInt64 hash  = m_Buckets[i].Items[j].Hash & k_63BitMask;
+                    UInt64 index = hash % newCapacity;
+
+                    if (!newBuckets[index].IsCreated())
+                    {
+                        newBuckets[index].Items         = Buffer::New<BucketItem<KeyValuePair>>(k_InitialCapacity);
+                        newBuckets[index].Items[0].Data = m_Buckets[i].Items[j].Data;
+                        newBuckets[index].Items[0].Hash = hash;
+                        newBuckets[index].Capacity      = k_InitialCapacity;
+                        newBuckets[index].Count         = 1;
+
+                        continue;
+                    }
+
+                    if (ExistsInBucket(m_Buckets[i].Items[j].Data, hash, newBuckets[index]))
+                        continue;
+
+                    if (newBuckets[index].Count >= newBuckets[index].Capacity)
+                        ResizeBucket(&newBuckets[index]);
+
+                    newBuckets[index].Items[newBuckets[index].Count].Data = m_Buckets[i].Items[j].Data;
+                    newBuckets[index].Items[newBuckets[index].Count].Hash = hash;
+                    newBuckets[index].Count++;
+                }
+            }
+
+            if (IsCreated())
+                Buffer::Delete(m_Buckets, m_Capacity);
+
+            m_Buckets  = newBuckets;
+            m_Capacity = newCapacity;
+        }
+
+        void ResizeBucket(Bucket<KeyValuePair>* bucket) const
+        {
+            UInt64 newCapacity = bucket->Capacity * k_ResizingFactor;
+            BucketItem<KeyValuePair>* newItems = Buffer::New<BucketItem<KeyValuePair>>(newCapacity);
+
+            for (UInt64 i = 0; i < bucket->Count; i++)
+                newItems[i] = bucket->Items[i];
+
+            Buffer::Delete(bucket->Items, bucket->Capacity);
+
+            bucket->Items    = newItems;
+            bucket->Capacity = newCapacity;
+        }
+
+        [[nodiscard]] bool ExistsInBucket(const KeyValuePair& value,
+                                          const UInt64 hash,
+                                          const Bucket<KeyValuePair>& bucket) const
+        {
+            for (UInt64 i = 0; i < bucket.Count; i++)
+                if (bucket.Items[i].Data.Key == value.Key && bucket.Items[i].Hash == hash)
                     return true;
 
             return false;

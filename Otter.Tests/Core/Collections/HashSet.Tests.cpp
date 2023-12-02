@@ -5,7 +5,7 @@
 template<typename T>
 using HashSet = Otter::HashSet<T>;
 
-class HashSetFixture : public ::testing::Test
+class HashSet_Fixture : public ::testing::Test
 {
 protected:
     void SetUp() override
@@ -19,15 +19,16 @@ protected:
     }
 };
 
-TEST_F(HashSetFixture, Initialisation_Default)
+TEST_F(HashSet_Fixture, Initialisation_Default)
 {
     HashSet<int> hashSet;
 
     EXPECT_EQ(hashSet.GetCount(), 0);
     EXPECT_TRUE(hashSet.IsEmpty());
+    EXPECT_FALSE(hashSet.IsCreated());
 }
 
-TEST_F(HashSetFixture, Initialisation_FromInitialisationList)
+TEST_F(HashSet_Fixture, Initialisation_FromInitialisationList)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 4, 4, 5 };
 
@@ -40,7 +41,7 @@ TEST_F(HashSetFixture, Initialisation_FromInitialisationList)
     EXPECT_FALSE(hashSet.IsEmpty());
 }
 
-TEST_F(HashSetFixture, Initialisation_Copy)
+TEST_F(HashSet_Fixture, Initialisation_Copy)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
     HashSet<int> copy    = hashSet;
@@ -49,7 +50,7 @@ TEST_F(HashSetFixture, Initialisation_Copy)
     EXPECT_FALSE(copy.IsEmpty());
 }
 
-TEST_F(HashSetFixture, Initialisation_Move)
+TEST_F(HashSet_Fixture, Initialisation_Move)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
     HashSet<int> move    = std::move(hashSet);
@@ -58,7 +59,7 @@ TEST_F(HashSetFixture, Initialisation_Move)
     EXPECT_FALSE(move.IsEmpty());
 }
 
-TEST_F(HashSetFixture, Assignment_Copy)
+TEST_F(HashSet_Fixture, Assignment_Copy)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
     HashSet<int> copy    = { 6, 7, 8, 9, 10 };
@@ -69,7 +70,7 @@ TEST_F(HashSetFixture, Assignment_Copy)
     EXPECT_FALSE(copy.IsEmpty());
 }
 
-TEST_F(HashSetFixture, Assignment_Move)
+TEST_F(HashSet_Fixture, Assignment_Move)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
     HashSet<int> move    = { 6, 7, 8, 9, 10 };
@@ -80,7 +81,7 @@ TEST_F(HashSetFixture, Assignment_Move)
     EXPECT_FALSE(move.IsEmpty());
 }
 
-TEST_F(HashSetFixture, TryAdd)
+TEST_F(HashSet_Fixture, TryAdd)
 {
     HashSet<int> hashSet;
 
@@ -104,7 +105,7 @@ TEST_F(HashSetFixture, TryAdd)
     EXPECT_FALSE(hashSet.IsEmpty());
 }
 
-TEST_F(HashSetFixture, TryRemove)
+TEST_F(HashSet_Fixture, TryRemove)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
 
@@ -125,7 +126,7 @@ TEST_F(HashSetFixture, TryRemove)
     EXPECT_TRUE(hashSet.IsEmpty());
 }
 
-TEST_F(HashSetFixture, Contains)
+TEST_F(HashSet_Fixture, Contains)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5, 11 };
 
@@ -142,7 +143,7 @@ TEST_F(HashSetFixture, Contains)
     EXPECT_FALSE(hashSet.Contains(6));
 }
 
-TEST_F(HashSetFixture, ForEach)
+TEST_F(HashSet_Fixture, ForEach)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
 
@@ -153,7 +154,7 @@ TEST_F(HashSetFixture, ForEach)
                     });
 }
 
-TEST_F(HashSetFixture, Clear)
+TEST_F(HashSet_Fixture, Clear)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
 
@@ -167,7 +168,7 @@ TEST_F(HashSetFixture, Clear)
     EXPECT_TRUE(hashSet.IsCreated());
 }
 
-TEST_F(HashSetFixture, ClearDestructive)
+TEST_F(HashSet_Fixture, ClearDestructive)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
 
