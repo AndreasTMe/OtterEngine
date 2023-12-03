@@ -4,7 +4,7 @@
 
 namespace Otter
 {
-    void* FreeListAllocator::Allocate(const UInt64 size, const UInt64 alignment)
+    void* FreeListAllocator::Allocate(const UInt64 size, const UInt16 alignment)
     {
         if (size < sizeof(Node))
         {
@@ -94,6 +94,24 @@ namespace Otter
         m_Head = (Node*) m_Memory;
         m_Head->Size = m_MemorySize;
         m_Head->Next = nullptr;
+    }
+
+    void FreeListAllocator::GetMemoryFootprint(const void* const block,
+                                               UInt64* outSize,
+                                               UInt64* outOffset,
+                                               UInt16* outPadding,
+                                               UInt16* outAlignment) const
+    {
+        OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Block must not be null")
+
+        const UIntPtr headerAddress =
+                          (UIntPtr) block - OTR_ALIGNED_OFFSET(sizeof(Header), OTR_PLATFORM_MEMORY_ALIGNMENT);
+        const Header* const header = (Header*) headerAddress;
+
+        *outSize      = header->Size;
+        *outOffset    = headerAddress - (UIntPtr) m_Memory;
+        *outPadding   = header->Padding;
+        *outAlignment = OTR_PLATFORM_MEMORY_ALIGNMENT;
     }
 
     FreeListAllocator::Node* FreeListAllocator::FindFirstFit(Node** previous,

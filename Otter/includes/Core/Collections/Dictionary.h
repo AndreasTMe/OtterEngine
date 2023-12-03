@@ -8,6 +8,7 @@
 
 #include "Core/Collections/Utils/HashBucket.h"
 #include "Core/Collections/Utils/HashUtils.h"
+#include "Core/Collections/Utils/KeyValuePair.h"
 
 namespace Otter
 {
@@ -15,7 +16,7 @@ namespace Otter
     class Dictionary final
     {
         using HashUtils = Internal::HashUtils;
-        struct KeyValuePair;
+        using KeyValuePair = KeyValuePair<TKey, TValue>;
 
     public:
         Dictionary()
@@ -315,56 +316,6 @@ namespace Otter
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
 
     private:
-        struct KeyValuePair final
-        {
-        public:
-            TKey   Key;
-            TValue Value;
-
-            KeyValuePair() = default;
-            ~KeyValuePair() = default;
-
-            KeyValuePair(const TKey& key, const TValue& value)
-            {
-                Key   = key;
-                Value = value;
-            }
-
-            KeyValuePair(const KeyValuePair& other)
-            {
-                Key   = other.Key;
-                Value = other.Value;
-            }
-
-            KeyValuePair(KeyValuePair&& other) noexcept
-            {
-                Key   = std::move(other.Key);
-                Value = std::move(other.Value);
-            }
-
-            KeyValuePair& operator=(const KeyValuePair& other)
-            {
-                if (this == &other)
-                    return *this;
-
-                Key   = other.Key;
-                Value = other.Value;
-
-                return *this;
-            }
-
-            KeyValuePair& operator=(KeyValuePair&& other) noexcept
-            {
-                if (this == &other)
-                    return *this;
-
-                Key   = std::move(other.Key);
-                Value = std::move(other.Value);
-
-                return *this;
-            }
-        };
-
         static constexpr Int64   k_63BitMask       = 0x7FFFFFFFFFFFFFFF;
         static constexpr UInt16  k_InitialCapacity = 3;
         static constexpr Float16 k_ResizingFactor  = static_cast<Float16>(1.5);

@@ -34,7 +34,7 @@ namespace Otter
         s_HasInitialised = false;
     }
 
-    UnsafeHandle MemorySystem::Allocate(const UInt64 size, const UInt64 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
+    UnsafeHandle MemorySystem::Allocate(const UInt64 size, const UInt16 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!s_HasInitialised)
             return { };
@@ -51,10 +51,10 @@ namespace Otter
 
         return handle;
     }
-    
+
     UnsafeHandle MemorySystem::Reallocate(UnsafeHandle& handle,
                                           const UInt64 size,
-                                          const UInt64 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
+                                          const UInt16 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!s_HasInitialised)
             return { };
@@ -123,5 +123,40 @@ namespace Otter
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Clear size must be greater than 0 bytes")
 
         Platform::MemoryClear(block, size);
+    }
+
+    void MemorySystem::CheckMemoryFootprint(const Function<DebugHandle()>& callback,
+                                            MemoryFootprint* outFootprints,
+                                            UInt64* outFootprintCount)
+    {
+        if (!s_HasInitialised)
+        {
+            OTR_LOG_WARNING(
+                "Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
+                " memory functions. Note that there might be some global/static variables that use memory.")
+            return;
+        }
+
+        DebugHandle handle = callback();
+        OTR_INTERNAL_ASSERT_MSG(handle.Data != nullptr, "Handle pointer must not be null")
+        OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")
+
+        outFootprints[handle.Size] = { };
+
+        for (UInt64 i = 0; i < handle.Size; i++)
+        {
+            const auto data = handle.Data[i];
+            OTR_INTERNAL_ASSERT_MSG(data.Key != nullptr, "Debug data key must not be null")
+            OTR_INTERNAL_ASSERT_MSG(data.Value != nullptr, "Debug data value must not be null")
+
+            outFootprints[i] = MemoryFootprint::For(data);
+            s_Allocator.GetMemoryFootprint(data.Value,
+                                           &outFootprints[i].Size,
+                                           &outFootprints[i].Offset,
+                                           &outFootprints[i].Padding,
+                                           &outFootprints[i].Alignment);
+        }
+
+        *outFootprintCount = handle.Size;
     }
 }

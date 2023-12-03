@@ -4,12 +4,14 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Logger.h"
+#include "Core/Function.h"
 
 #include "Core/Allocators/FreeListAllocator.h"
+#include "Core/Allocators/MemoryFootprint.h"
 
 namespace Otter
 {
-    struct UnsafeHandle
+    struct UnsafeHandle final
     {
         void* Pointer;
         UInt64 Size;
@@ -24,13 +26,17 @@ namespace Otter
         static void Initialise(UInt64 memoryRequirements);
         static void Shutdown();
 
-        static UnsafeHandle Allocate(UInt64 size, UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        static UnsafeHandle Allocate(UInt64 size, UInt16 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
         static UnsafeHandle Reallocate(UnsafeHandle& handle,
                                        UInt64 size,
-                                       UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+                                       UInt16 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
         static void Free(void* block);
         static void MemoryCopy(void* destination, const void* source, UInt64 size);
         static void MemoryClear(void* block, UInt64 size);
+
+        static void CheckMemoryFootprint(const Function<DebugHandle()>& callback,
+                                         MemoryFootprint* outFootprints,
+                                         UInt64* outFootprintCount);
 
         [[nodiscard]] static constexpr UInt64 GetUsedMemory() { return s_Allocator.GetMemoryUsed(); }
         [[nodiscard]] static constexpr UInt64 GetFreeMemory() { return s_Allocator.GetMemoryFree(); }

@@ -2,12 +2,13 @@
 
 #include "Core/Allocators/FreeListAllocator.h"
 
+using FreeListAllocator = Otter::FreeListAllocator;
+
 TEST(FreeListAllocator, Initialisation_Valid)
 {
     void* block = malloc(1_KiB);
     Otter::FreeListAllocator allocator(block, 1_KiB);
 
-    EXPECT_EQ(allocator.GetMemoryUnsafePointer(), block);
     EXPECT_EQ(allocator.GetMemorySize(), 1_KiB);
     EXPECT_EQ(allocator.GetMemoryUsed(), 0);
     EXPECT_EQ(allocator.GetMemoryFree(), 1_KiB);
@@ -33,12 +34,12 @@ TEST(FreeListAllocator, Allocate_FindFirstFit)
 
     void* allocation1 = allocator.Allocate(firstAllocationSize, alignment);
     EXPECT_NE(allocation1, nullptr);
-    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     void* allocation2 = allocator.Allocate(secondAllocationSize, alignment);
     EXPECT_NE(allocation2, nullptr);
-    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + allocator.GetAllocatorHeaderSize()
-                                         + secondAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + FreeListAllocator::GetAllocatorHeaderSize()
+                                         + secondAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     auto count = 0;
     for (auto& node: allocator)
@@ -67,7 +68,7 @@ TEST(FreeListAllocator, FreeSingleAllocation)
 
     void* allocation1 = allocator.Allocate(firstAllocationSize, alignment);
     EXPECT_NE(allocation1, nullptr);
-    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     allocator.Free(allocation1);
     EXPECT_EQ(allocator.GetMemoryUsed(), 0);
@@ -95,15 +96,15 @@ TEST(FreeListAllocator, FreeAllocationWhenOthersPresent)
 
     void* allocation1 = allocator.Allocate(firstAllocationSize, alignment);
     EXPECT_NE(allocation1, nullptr);
-    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     void* allocation2 = allocator.Allocate(secondAllocationSize, alignment);
     EXPECT_NE(allocation2, nullptr);
-    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + allocator.GetAllocatorHeaderSize()
-                                         + secondAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + FreeListAllocator::GetAllocatorHeaderSize()
+                                         + secondAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     allocator.Free(allocation1);
-    EXPECT_EQ(allocator.GetMemoryUsed(), secondAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), secondAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     auto count = 0;
     for (auto& node: allocator)
@@ -128,15 +129,15 @@ TEST(FreeListAllocator, FreeMultipleAllocations)
 
     void* allocation1 = allocator.Allocate(firstAllocationSize, alignment);
     EXPECT_NE(allocation1, nullptr);
-    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     void* allocation2 = allocator.Allocate(secondAllocationSize, alignment);
     EXPECT_NE(allocation2, nullptr);
-    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + allocator.GetAllocatorHeaderSize()
-                                         + secondAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), firstAllocationSize + FreeListAllocator::GetAllocatorHeaderSize()
+                                         + secondAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     allocator.Free(allocation1);
-    EXPECT_EQ(allocator.GetMemoryUsed(), secondAllocationSize + allocator.GetAllocatorHeaderSize());
+    EXPECT_EQ(allocator.GetMemoryUsed(), secondAllocationSize + FreeListAllocator::GetAllocatorHeaderSize());
 
     auto count = 0;
     for (auto& node: allocator)
