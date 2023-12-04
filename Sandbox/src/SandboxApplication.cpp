@@ -14,5 +14,5 @@ namespace Sandbox
 
 Otter::Application* Otter::CreateApplication()
 {
-    return new Sandbox::SandboxApplication({ "Sandbox", 1280, 720, 10_KiB });
+    return new Sandbox::SandboxApplication({ "Sandbox", 1280, 720, 20_KiB });
 }

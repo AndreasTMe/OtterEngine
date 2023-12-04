@@ -81,7 +81,7 @@ namespace Otter::Graphics::Vulkan
         auto* buffer = Buffer::New<UInt32>(fileSize / sizeof(UInt32));
         if (!FileSystem::TryReadAllBytes(&file, buffer, &fileSize))
         {
-            Buffer::Delete(buffer, fileSize);
+            Buffer::Delete<UInt32>(buffer, fileSize);
             FileSystem::CloseFile(&file);
             return false;
         }
@@ -94,7 +94,7 @@ namespace Otter::Graphics::Vulkan
 
         OTR_VULKAN_VALIDATE(vkCreateShaderModule(m_LogicalDevice, &createInfo, m_Allocator, outShaderModule))
 
-        Buffer::Delete(buffer, fileSize);
+        Buffer::Delete<UInt32>(buffer, fileSize);
         FileSystem::CloseFile(&file);
 
         return true;

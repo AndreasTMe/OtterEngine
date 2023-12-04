@@ -67,3 +67,18 @@ TEST_F(ReadOnlyArray_Fixture, Initialisation_MoveArray)
 
     EXPECT_EQ(array.GetData(), nullptr);
 }
+
+TEST_F(ReadOnlyArray_Fixture, GetMemoryFootprint)
+{
+    ReadOnlyArray<int, 5> array = { 1, 2, 3, 4, 5 };
+
+    auto footprint = array.GetMemoryFootprint(OTR_NAME_OF(ReadOnlyArray<int, 5>));
+    EXPECT_EQ(footprint.GetSize(), 1);
+
+    EXPECT_EQ(footprint[0].GetData().GetName(), OTR_NAME_OF(ReadOnlyArray<int, 5>));
+    EXPECT_EQ(footprint[0].GetData().GetPointer(), array.GetData());
+    EXPECT_EQ(footprint[0].Size, OTR_ALLOCATED_MEMORY(int, array.GetSize()));
+    EXPECT_EQ(footprint[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
+    EXPECT_EQ(footprint[0].Padding, 0);
+    EXPECT_EQ(footprint[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
+}

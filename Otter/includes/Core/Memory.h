@@ -4,12 +4,18 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Logger.h"
+#include "Core/Function.h"
 
 #include "Core/Allocators/FreeListAllocator.h"
+#include "Core/Allocators/MemoryFootprint.h"
+
+#define OTR_ALLOCATED_MEMORY(type, count)                                       \
+    count * OTR_ALIGNED_OFFSET(sizeof(type), OTR_PLATFORM_MEMORY_ALIGNMENT) +   \
+    Otter::FreeListAllocator::GetAllocatorHeaderSize()
 
 namespace Otter
 {
-    struct UnsafeHandle
+    struct UnsafeHandle final
     {
         void* Pointer;
         UInt64 Size;
@@ -24,13 +30,17 @@ namespace Otter
         static void Initialise(UInt64 memoryRequirements);
         static void Shutdown();
 
-        static UnsafeHandle Allocate(UInt64 size, UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        static UnsafeHandle Allocate(UInt64 size, UInt16 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
         static UnsafeHandle Reallocate(UnsafeHandle& handle,
                                        UInt64 size,
-                                       UInt64 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+                                       UInt16 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
         static void Free(void* block);
         static void MemoryCopy(void* destination, const void* source, UInt64 size);
         static void MemoryClear(void* block, UInt64 size);
+
+        static void CheckMemoryFootprint(const Function<MemoryDebugHandle()>& callback,
+                                         MemoryFootprint* outFootprints,
+                                         UInt64* outFootprintCount);
 
         [[nodiscard]] static constexpr UInt64 GetUsedMemory() { return s_Allocator.GetMemoryUsed(); }
         [[nodiscard]] static constexpr UInt64 GetFreeMemory() { return s_Allocator.GetMemoryFree(); }
@@ -126,15 +136,6 @@ namespace Otter
         }
 
         OTR_INLINE static void Delete(const UnsafeHandle& handle)
-        {
-            OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Handle pointer must not be null")
-            OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")
-
-            MemorySystem::MemoryClear(handle.Pointer, handle.Size);
-            MemorySystem::Free(handle.Pointer);
-        }
-
-        OTR_INLINE static void Delete(UnsafeHandle&& handle)
         {
             OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Handle pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")

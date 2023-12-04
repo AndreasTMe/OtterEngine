@@ -8,6 +8,10 @@
 
 #include "Core/Collections/Iterators/LinearIterator.h"
 
+#if !OTR_RUNTIME
+#include "Core/Collections/ReadOnly/ReadOnlySpan.h"
+#endif
+
 namespace Otter
 {
     template<typename T, UInt64 Size>
@@ -23,7 +27,7 @@ namespace Otter
         Array()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, Size);
+                Buffer::Delete<T>(m_Data, Size);
 
             if constexpr (Size > 0)
                 m_Data = Buffer::New<T>(Size);
@@ -31,7 +35,7 @@ namespace Otter
         ~Array()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, Size);
+                Buffer::Delete<T>(m_Data, Size);
         }
 
         OTR_WITH_ITERATOR(Iterator, m_Data, Size)
@@ -41,8 +45,6 @@ namespace Otter
             : Array()
         {
             OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
-
-            m_Data = Buffer::New<T>(Size);
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -103,6 +105,24 @@ namespace Otter
         {
             return ReadOnlyArray<T, Size>(*this);
         }
+
+#if !OTR_RUNTIME
+        ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
+        {
+            MemoryFootprint footprint = { };
+            Otter::MemorySystem::CheckMemoryFootprint([&]()
+                                                      {
+                                                          MemoryDebugPair pair[1];
+                                                          pair[0] = { debugName, m_Data };
+
+                                                          return MemoryDebugHandle{ pair, 1 };
+                                                      },
+                                                      &footprint,
+                                                      nullptr);
+
+            return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
+        }
+#endif
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
         [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && Size > 0; }

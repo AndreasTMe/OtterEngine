@@ -1182,7 +1182,7 @@ namespace Otter::Graphics::Vulkan
             OTR_INTERNAL_ASSERT_MSG(found, "Required layer is missing: {0}", layers[i])
         }
 
-        Buffer::Delete(availableLayers, availableLayerCount);
+        Buffer::Delete<VkLayerProperties>(availableLayers, availableLayerCount);
     }
 #endif
 

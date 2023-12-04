@@ -30,15 +30,18 @@ namespace Otter
         }
         ~FreeListAllocator() final { m_Memory = nullptr; }
 
-        void* Allocate(UInt64 size, UInt64 alignment) final;
+        void* Allocate(UInt64 size, UInt16 alignment) final;
         void Free(void* block) final;
+        void GetMemoryFootprint(const void* block,
+                                UInt64* outSize,
+                                UInt64* outOffset,
+                                UInt16* outPadding,
+                                UInt16* outAlignment) const final;
 
         void Clear();
 
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetAllocatorHeaderSize() const final
-        {
-            return sizeof(Header);
-        }
+        [[nodiscard]] OTR_INLINE static constexpr UInt64 GetAllocatorHeaderSize() noexcept { return sizeof(Header); }
+
         [[nodiscard]] OTR_INLINE constexpr Policy GetAllocationPolicy() const { return m_Policy; }
 
         [[nodiscard]] OTR_INLINE Iterator begin() const noexcept { return Iterator(m_Head); }

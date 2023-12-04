@@ -34,7 +34,7 @@ namespace Otter
         s_HasInitialised = false;
     }
 
-    UnsafeHandle MemorySystem::Allocate(const UInt64 size, const UInt64 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
+    UnsafeHandle MemorySystem::Allocate(const UInt64 size, const UInt16 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!s_HasInitialised)
             return { };
@@ -51,10 +51,10 @@ namespace Otter
 
         return handle;
     }
-    
+
     UnsafeHandle MemorySystem::Reallocate(UnsafeHandle& handle,
                                           const UInt64 size,
-                                          const UInt64 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
+                                          const UInt16 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
         if (!s_HasInitialised)
             return { };
@@ -79,6 +79,8 @@ namespace Otter
         Platform::MemoryCopy(newHandle.Pointer, handle.Pointer, size);
 
         s_Allocator.Free(handle.Pointer);
+        handle.Pointer = nullptr;
+        handle.Size    = 0;
 
         return newHandle;
     }
@@ -123,5 +125,42 @@ namespace Otter
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Clear size must be greater than 0 bytes")
 
         Platform::MemoryClear(block, size);
+    }
+
+    void MemorySystem::CheckMemoryFootprint(const Function<MemoryDebugHandle()>& callback,
+                                            MemoryFootprint* outFootprints,
+                                            UInt64* outFootprintCount)
+    {
+        OTR_INTERNAL_ASSERT_MSG(outFootprints != nullptr, "Out-Footprints pointer must not be null")
+
+        if (!s_HasInitialised)
+        {
+            OTR_LOG_WARNING(
+                "Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
+                " memory functions. Note that there might be some global/static variables that use memory.")
+            return;
+        }
+
+        MemoryDebugHandle handle = callback();
+        OTR_INTERNAL_ASSERT_MSG(handle.Pairs != nullptr, "Handle pointer must not be null")
+        OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")
+
+        for (UInt64 i = 0; i < handle.Size; i++)
+        {
+            const auto data = handle.Pairs[i];
+            outFootprints[i] = MemoryFootprint::For(data);
+
+            if (!data.GetPointer())
+                continue;
+
+            s_Allocator.GetMemoryFootprint(data.GetPointer(),
+                                           &outFootprints[i].Size,
+                                           &outFootprints[i].Offset,
+                                           &outFootprints[i].Padding,
+                                           &outFootprints[i].Alignment);
+        }
+
+        if (outFootprintCount)
+            *outFootprintCount = handle.Size;
     }
 }

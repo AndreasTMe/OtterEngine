@@ -21,19 +21,27 @@ namespace Otter
         }
         virtual ~AbstractAllocator() = default;
 
-        virtual void* Allocate(UInt64 size, UInt64 alignment) = 0;
+        virtual void* Allocate(UInt64 size, UInt16 alignment) = 0;
         virtual void Free(void* block) = 0;
+        virtual void GetMemoryFootprint(const void* block,
+                                        UInt64* outSize,
+                                        UInt64* outOffset,
+                                        UInt16* outPadding,
+                                        UInt16* outAlignment) const = 0;
 
-        [[nodiscard]] OTR_INLINE constexpr void* GetMemoryUnsafePointer() const { return m_Memory; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetMemorySize() const { return m_MemorySize; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetMemoryUsed() const { return m_MemoryUsed; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetMemoryFree() const { return m_MemorySize - m_MemoryUsed; }
 
-        [[nodiscard]] OTR_INLINE constexpr virtual UInt64 GetAllocatorHeaderSize() const = 0;
     protected:
         void* m_Memory;
         UInt64 m_MemorySize;
         UInt64 m_MemoryUsed;
+
+    private:
+        [[nodiscard]] OTR_INLINE constexpr void* GetMemoryUnsafePointer() const { return m_Memory; }
+
+        friend class MemorySystem;
     };
 }
 

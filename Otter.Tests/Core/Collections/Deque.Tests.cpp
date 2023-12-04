@@ -230,3 +230,46 @@ TEST_F(Deque_Fixture, ClearDestructive)
     EXPECT_EQ(deque.GetCapacity(), 0);
     EXPECT_EQ(deque.GetCount(), 0);
 }
+
+TEST_F(Deque_Fixture, GetMemoryFootprint)
+{
+    Deque<int> deque = { 1, 2, 3, 4, 5 };
+
+    auto footprint1 = deque.GetMemoryFootprint(OTR_NAME_OF(Deque<int>));
+    EXPECT_EQ(footprint1.GetSize(), 1);
+
+    EXPECT_EQ(footprint1[0].GetData().GetName(), OTR_NAME_OF(Deque<int>));
+    EXPECT_NE(footprint1[0].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint1[0].Size, OTR_ALLOCATED_MEMORY(int, deque.GetCapacity()));
+    EXPECT_EQ(footprint1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
+    EXPECT_EQ(footprint1[0].Padding, 0);
+    EXPECT_EQ(footprint1[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
+
+    deque.PushFront(6);
+    deque.PushBack(7);
+
+    auto footprint2 = deque.GetMemoryFootprint(OTR_NAME_OF(Deque<int>));
+    EXPECT_EQ(footprint2.GetSize(), 1);
+
+    EXPECT_EQ(footprint2[0].GetData().GetName(), OTR_NAME_OF(Deque<int>));
+    EXPECT_NE(footprint1[0].GetData().GetPointer(), nullptr);
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), footprint1[0].GetData().GetPointer())
+                    << "Pointer should have changed because of capacity increase (reallocation)";
+    EXPECT_EQ(footprint2[0].Size, OTR_ALLOCATED_MEMORY(int, deque.GetCapacity()));
+    EXPECT_NE(footprint2[0].Offset, footprint1[0].Offset)
+                    << "Offset should have changed because of capacity increase (reallocation)";
+    EXPECT_EQ(footprint2[0].Padding, 0);
+    EXPECT_EQ(footprint2[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
+
+    deque.ClearDestructive();
+
+    auto footprint3 = deque.GetMemoryFootprint(OTR_NAME_OF(Deque<int>));
+    EXPECT_EQ(footprint3.GetSize(), 1);
+
+    EXPECT_EQ(footprint3[0].GetData().GetName(), OTR_NAME_OF(Deque<int>));
+    EXPECT_EQ(footprint3[0].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint3[0].Size, 0);
+    EXPECT_EQ(footprint3[0].Offset, 0);
+    EXPECT_EQ(footprint3[0].Padding, 0);
+    EXPECT_EQ(footprint3[0].Alignment, 0);
+}

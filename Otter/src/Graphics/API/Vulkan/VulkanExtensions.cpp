@@ -48,7 +48,7 @@ namespace Otter::Graphics::Vulkan
             OTR_INTERNAL_ASSERT_MSG(found, "Required extension is missing: {0}", extensions[i])
         }
 
-        Buffer::Delete(availableExtensions, availableExtensionCount);
+        Buffer::Delete<VkExtensionProperties>(availableExtensions, availableExtensionCount);
     }
 
     void GetDeviceRequiredExtensions(List<const char*>& requiredExtensions)

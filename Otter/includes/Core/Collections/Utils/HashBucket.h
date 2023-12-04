@@ -15,7 +15,13 @@ namespace Otter
         UInt64 Hash;
 
         BucketItem() : Data(), Hash(0) { }
-        ~BucketItem() = default;
+        ~BucketItem()
+        {
+            if constexpr (!std::is_trivially_destructible_v<T>)
+                Data.~T();
+
+            Hash = 0;
+        }
 
         BucketItem(const BucketItem<T>& other)
         {
@@ -63,19 +69,19 @@ namespace Otter
         Bucket()
         {
             if (IsCreated())
-                Buffer::Delete(Items, Capacity);
+                Buffer::Delete<BucketItem<T>>(Items, Capacity);
         }
 
         ~Bucket()
         {
             if (IsCreated())
-                Buffer::Delete(Items, Capacity);
+                Buffer::Delete<BucketItem<T>>(Items, Capacity);
         }
 
         Bucket(const Bucket& other)
         {
             if (IsCreated())
-                Buffer::Delete(Items, Capacity);
+                Buffer::Delete<BucketItem<T>>(Items, Capacity);
 
             Items    = other.Items;
             Capacity = other.Capacity;
@@ -85,7 +91,7 @@ namespace Otter
         Bucket(Bucket&& other) noexcept
         {
             if (IsCreated())
-                Buffer::Delete(Items, Capacity);
+                Buffer::Delete<BucketItem<T>>(Items, Capacity);
 
             Items    = std::move(other.Items);
             Capacity = std::move(other.Capacity);
@@ -102,7 +108,7 @@ namespace Otter
                 return *this;
 
             if (IsCreated())
-                Buffer::Delete(Items, Capacity);
+                Buffer::Delete<BucketItem<T>>(Items, Capacity);
 
             Items    = other.Items;
             Capacity = other.Capacity;
@@ -117,7 +123,7 @@ namespace Otter
                 return *this;
 
             if (IsCreated())
-                Buffer::Delete(Items, Capacity);
+                Buffer::Delete<BucketItem<T>>(Items, Capacity);
 
             Items    = std::move(other.Items);
             Capacity = std::move(other.Capacity);
