@@ -3,15 +3,42 @@
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
-#include "Core/Collections/Utils/KeyValuePair.h"
 
 namespace Otter
 {
-    struct DebugHandle final
+    struct MemoryDebugPair final
     {
     public:
-        KeyValuePair<const char*, void*>* Data = nullptr;
-        UInt64                          Size   = 0;
+        MemoryDebugPair()
+            : m_Name{ }, m_Ptr(nullptr)
+        {
+        }
+
+        MemoryDebugPair(const char* const name, void* ptr)
+            : m_Ptr(ptr)
+        {
+            for (UInt8 i = 0; i < 32; ++i)
+            {
+                if (name[i] == '\0')
+                    break;
+
+                m_Name[i] = name[i];
+            }
+        }
+
+        [[nodiscard]] OTR_INLINE const std::string GetName() const noexcept { return std::string(m_Name); }
+        [[nodiscard]] OTR_INLINE const void* GetPointer() const noexcept { return m_Ptr; }
+
+    private:
+        char m_Name[32] = { };
+        void* m_Ptr = nullptr;
+    };
+
+    struct MemoryDebugHandle final
+    {
+    public:
+        MemoryDebugPair* Pairs = nullptr;
+        UInt64 Size = 0;
     };
 
     struct MemoryFootprint final
@@ -22,16 +49,19 @@ namespace Otter
         UInt16 Padding;
         UInt16 Alignment;
 
-        MemoryFootprint() = default;
-
-        [[nodiscard]] OTR_INLINE static MemoryFootprint For(const KeyValuePair<const char*, void*>& data)
+        MemoryFootprint()
+            : m_DebugPair{ }, Size(0), Offset(0), Padding(0), Alignment(0)
         {
-            return MemoryFootprint(data);
         }
 
-        [[nodiscard]] OTR_INLINE const KeyValuePair<const char*, void*> GetData() const noexcept { return m_Data; }
+        [[nodiscard]] OTR_INLINE static MemoryFootprint For(const MemoryDebugPair& debugPair)
+        {
+            return MemoryFootprint(debugPair);
+        }
 
-        [[nodiscard]] OTR_INLINE bool IsValid() const noexcept { return m_Data.Key && m_Data.Value && Size > 0; }
+        [[nodiscard]] OTR_INLINE const MemoryDebugPair GetData() const noexcept { return m_DebugPair; }
+
+        [[nodiscard]] OTR_INLINE bool IsValid() const noexcept { return m_DebugPair.GetPointer() && Size > 0; }
         [[nodiscard]] OTR_INLINE bool IsAligned(const UInt16 alignment = 0) const noexcept
         {
             if (alignment == 0)
@@ -45,10 +75,10 @@ namespace Otter
         [[nodiscard]] OTR_INLINE bool HasAlignment() const noexcept { return Alignment > 0; }
 
     private:
-        KeyValuePair<const char*, void*> m_Data;
+        MemoryDebugPair m_DebugPair;
 
-        explicit MemoryFootprint(const KeyValuePair<const char*, void*>& data)
-            : m_Data(data), Size(0), Offset(0), Padding(0), Alignment(0)
+        explicit MemoryFootprint(const MemoryDebugPair& debugPair)
+            : m_DebugPair(debugPair), Size(0), Offset(0), Padding(0), Alignment(0)
         {
         }
     };

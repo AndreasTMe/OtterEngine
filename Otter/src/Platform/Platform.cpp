@@ -21,7 +21,7 @@ namespace Otter
 
     void Platform::DestroyPlatform(Platform* platform)
     {
-        Delete((Internal::WindowsPlatform*) platform);
+        Delete<Internal::WindowsPlatform>((Internal::WindowsPlatform*) platform);
     }
 
     void* Platform::Allocate(UInt64 size)
@@ -104,7 +104,7 @@ namespace Otter
 
     void Platform::DestroyPlatform(Platform* platform)
     {
-        Delete((Internal::LinuxPlatform*) platform);
+        Delete<Internal::LinuxPlatform>((Internal::LinuxPlatform*) platform);
     }
 
     void* Platform::Allocate(UInt64 size)

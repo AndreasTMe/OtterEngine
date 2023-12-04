@@ -7,6 +7,10 @@
 
 #include "Core/Collections/Iterators/LinearIterator.h"
 
+#if !OTR_RUNTIME
+#include "Core/Collections/ReadOnly/ReadOnlySpan.h"
+#endif
+
 namespace Otter
 {
     template<typename T>
@@ -22,13 +26,13 @@ namespace Otter
         Deque()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
         }
 
         ~Deque()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
         }
 
         Deque(InitialiserList<T> list)
@@ -68,7 +72,7 @@ namespace Otter
                 return *this;
 
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
@@ -83,7 +87,7 @@ namespace Otter
                 return *this;
 
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Capacity = std::move(other.m_Capacity);
             m_Count    = std::move(other.m_Count);
@@ -219,8 +223,8 @@ namespace Otter
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
 
-            if (m_Count > 0)
-                Buffer::Delete(m_Data, m_Count);
+            if (IsCreated())
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data     = newData;
             m_Capacity = capacity;
@@ -238,8 +242,8 @@ namespace Otter
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
 
-            if (m_Count > 0)
-                Buffer::Delete(m_Data, m_Count);
+            if (IsCreated())
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data = newData;
         }
@@ -249,12 +253,30 @@ namespace Otter
         void ClearDestructive()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data     = nullptr;
             m_Capacity = 0;
             m_Count    = 0;
         }
+
+#if !OTR_RUNTIME
+        ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
+        {
+            MemoryFootprint footprint = { };
+            Otter::MemorySystem::CheckMemoryFootprint([&]()
+                                                      {
+                                                          MemoryDebugPair pair[1];
+                                                          pair[0] = { debugName, m_Data };
+
+                                                          return MemoryDebugHandle{ pair, 1 };
+                                                      },
+                                                      &footprint,
+                                                      nullptr);
+
+            return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
+        }
+#endif
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }

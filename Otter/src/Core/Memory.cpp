@@ -125,7 +125,7 @@ namespace Otter
         Platform::MemoryClear(block, size);
     }
 
-    void MemorySystem::CheckMemoryFootprint(const Function<DebugHandle()>& callback,
+    void MemorySystem::CheckMemoryFootprint(const Function<MemoryDebugHandle()>& callback,
                                             MemoryFootprint* outFootprints,
                                             UInt64* outFootprintCount)
     {
@@ -139,21 +139,19 @@ namespace Otter
             return;
         }
 
-        DebugHandle handle = callback();
-        OTR_INTERNAL_ASSERT_MSG(handle.Data != nullptr, "Handle pointer must not be null")
+        MemoryDebugHandle handle = callback();
+        OTR_INTERNAL_ASSERT_MSG(handle.Pairs != nullptr, "Handle pointer must not be null")
         OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")
-
-        outFootprints[handle.Size] = { };
 
         for (UInt64 i = 0; i < handle.Size; i++)
         {
-            const auto data = handle.Data[i];
+            const auto data = handle.Pairs[i];
             outFootprints[i] = MemoryFootprint::For(data);
 
-            if (!data.Value)
+            if (!data.GetPointer())
                 continue;
 
-            s_Allocator.GetMemoryFootprint(data.Value,
+            s_Allocator.GetMemoryFootprint(data.GetPointer(),
                                            &outFootprints[i].Size,
                                            &outFootprints[i].Offset,
                                            &outFootprints[i].Padding,

@@ -22,13 +22,13 @@ namespace Otter
         Dictionary()
         {
             if (IsCreated())
-                Buffer::Delete(m_Buckets, m_Capacity);
+                Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
         }
 
         ~Dictionary()
         {
             if (IsCreated())
-                Buffer::Delete(m_Buckets, m_Capacity);
+                Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
         }
 
         Dictionary(InitialiserList<KeyValuePair> list)
@@ -68,7 +68,7 @@ namespace Otter
                 return *this;
 
             if (IsCreated())
-                Buffer::Delete(m_Buckets, m_Capacity);
+                Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
 
             m_Buckets  = other.m_Buckets;
             m_Capacity = other.m_Capacity;
@@ -83,7 +83,7 @@ namespace Otter
                 return *this;
 
             if (IsCreated())
-                Buffer::Delete(m_Buckets, m_Capacity);
+                Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
 
             m_Buckets  = std::move(other.m_Buckets);
             m_Capacity = std::move(other.m_Capacity);
@@ -292,7 +292,7 @@ namespace Otter
                 if (!m_Buckets[i].IsCreated())
                     continue;
 
-                Buffer::Delete(m_Buckets[i].Items, m_Buckets[i].Capacity);
+                Buffer::Delete<BucketItem<KeyValuePair>>(m_Buckets[i].Items, m_Buckets[i].Capacity);
                 m_Buckets[i].Items    = nullptr;
                 m_Buckets[i].Capacity = 0;
                 m_Buckets[i].Count    = 0;
@@ -304,12 +304,44 @@ namespace Otter
         void ClearDestructive()
         {
             if (IsCreated())
-                Buffer::Delete(m_Buckets, m_Capacity);
+                Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
 
             m_Buckets  = nullptr;
             m_Capacity = 0;
             m_Count    = 0;
         }
+
+#if !OTR_RUNTIME
+        void GetMemoryFootprint(const char* const debugName,
+                                MemoryFootprint* outFootprints,
+                                UInt64* outFootprintsSize) const
+        {
+            if (!outFootprints)
+            {
+                *outFootprintsSize = 1 + m_Capacity;
+                return;
+            }
+
+            Otter::MemorySystem::CheckMemoryFootprint([&]()
+                                                      {
+                                                          MemoryDebugPair pairs[1 + m_Capacity];
+                                                          pairs[0] = { debugName, m_Buckets };
+
+                                                          for (UInt64 i = 0; i < m_Capacity; i++)
+                                                          {
+                                                              pairs[i + 1] = MemoryDebugPair(
+                                                                  ("bucket_" + std::to_string(i)).c_str(),
+                                                                  m_Buckets[i].IsCreated() ? m_Buckets[i].Items
+                                                                                           : nullptr
+                                                              );
+                                                          }
+
+                                                          return MemoryDebugHandle{ pairs, 1 + m_Capacity };
+                                                      },
+                                                      outFootprints,
+                                                      nullptr);
+        }
+#endif
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
         [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Buckets && m_Capacity > 0; }
@@ -365,7 +397,7 @@ namespace Otter
             }
 
             if (IsCreated())
-                Buffer::Delete(m_Buckets, m_Capacity);
+                Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
 
             m_Buckets  = newBuckets;
             m_Capacity = newCapacity;
@@ -379,7 +411,7 @@ namespace Otter
             for (UInt64 i = 0; i < bucket->Count; i++)
                 newItems[i] = bucket->Items[i];
 
-            Buffer::Delete(bucket->Items, bucket->Capacity);
+            Buffer::Delete<BucketItem<KeyValuePair>>(bucket->Items, bucket->Capacity);
 
             bucket->Items    = newItems;
             bucket->Capacity = newCapacity;

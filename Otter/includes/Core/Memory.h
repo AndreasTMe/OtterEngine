@@ -38,7 +38,7 @@ namespace Otter
         static void MemoryCopy(void* destination, const void* source, UInt64 size);
         static void MemoryClear(void* block, UInt64 size);
 
-        static void CheckMemoryFootprint(const Function<DebugHandle()>& callback,
+        static void CheckMemoryFootprint(const Function<MemoryDebugHandle()>& callback,
                                          MemoryFootprint* outFootprints,
                                          UInt64* outFootprintCount);
 

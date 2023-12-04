@@ -208,8 +208,8 @@ TEST_F(List_Fixture, GetMemoryFootprint)
     auto footprint1 = list.GetMemoryFootprint(OTR_NAME_OF(List<int>));
     EXPECT_EQ(footprint1.GetSize(), 1);
 
-    EXPECT_EQ(footprint1[0].GetData().Key, OTR_NAME_OF(List<int>));
-    EXPECT_EQ(footprint1[0].GetData().Value, list.GetData());
+    EXPECT_EQ(footprint1[0].GetData().GetName(), OTR_NAME_OF(List<int>));
+    EXPECT_EQ(footprint1[0].GetData().GetPointer(), list.GetData());
     EXPECT_EQ(footprint1[0].Size, OTR_ALLOCATED_MEMORY(int, list.GetCapacity()));
     EXPECT_EQ(footprint1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
     EXPECT_EQ(footprint1[0].Padding, 0);
@@ -220,9 +220,9 @@ TEST_F(List_Fixture, GetMemoryFootprint)
     auto footprint2 = list.GetMemoryFootprint(OTR_NAME_OF(List<int>));
     EXPECT_EQ(footprint2.GetSize(), 1);
 
-    EXPECT_EQ(footprint2[0].GetData().Key, OTR_NAME_OF(List<int>));
-    EXPECT_EQ(footprint2[0].GetData().Value, list.GetData());
-    EXPECT_NE(footprint2[0].GetData().Value, footprint1[0].GetData().Value)
+    EXPECT_EQ(footprint2[0].GetData().GetName(), OTR_NAME_OF(List<int>));
+    EXPECT_EQ(footprint2[0].GetData().GetPointer(), list.GetData());
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), footprint1[0].GetData().GetPointer())
                     << "Pointer should have changed because of capacity increase (reallocation)";
     EXPECT_EQ(footprint2[0].Size, OTR_ALLOCATED_MEMORY(int, list.GetCapacity()));
     EXPECT_NE(footprint2[0].Offset, footprint1[0].Offset)
@@ -235,8 +235,8 @@ TEST_F(List_Fixture, GetMemoryFootprint)
     auto footprint3 = list.GetMemoryFootprint(OTR_NAME_OF(List<int>));
     EXPECT_EQ(footprint3.GetSize(), 1);
 
-    EXPECT_EQ(footprint3[0].GetData().Key, OTR_NAME_OF(List<int>));
-    EXPECT_EQ(footprint3[0].GetData().Value, nullptr);
+    EXPECT_EQ(footprint3[0].GetData().GetName(), OTR_NAME_OF(List<int>));
+    EXPECT_EQ(footprint3[0].GetData().GetPointer(), nullptr);
     EXPECT_EQ(footprint3[0].Size, 0);
     EXPECT_EQ(footprint3[0].Offset, 0);
     EXPECT_EQ(footprint3[0].Padding, 0);

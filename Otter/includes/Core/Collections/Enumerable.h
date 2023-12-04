@@ -18,8 +18,8 @@ namespace Otter
 
         ~Enumerable()
         {
-            if (m_Data != nullptr && m_Count > 0)
-                Buffer::Delete(m_Data, m_Count);
+            if (IsCreated())
+                Buffer::Delete<T>(m_Data, m_Count);
 
             m_Data  = nullptr;
             m_Count = 0;
@@ -42,8 +42,8 @@ namespace Otter
 
         void ClearDestructive()
         {
-            if (m_Data != nullptr && m_Count > 0)
-                Buffer::Delete(m_Data, m_Count);
+            if (IsCreated())
+                Buffer::Delete<T>(m_Data, m_Count);
 
             m_Data  = nullptr;
             m_Count = 0;
@@ -52,6 +52,7 @@ namespace Otter
         OTR_INLINE static Enumerable Empty() { return { }; }
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Data && m_Count > 0; }
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
 
         [[nodiscard]] OTR_INLINE constexpr T* GetData() const noexcept { return m_Data; }

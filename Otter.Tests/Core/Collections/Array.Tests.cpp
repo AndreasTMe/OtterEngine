@@ -115,8 +115,8 @@ TEST_F(Array_Fixture, GetMemoryFootprint)
     auto footprint = array.GetMemoryFootprint(OTR_NAME_OF(Array<int, 5>));
     EXPECT_EQ(footprint.GetSize(), 1);
 
-    EXPECT_EQ(footprint[0].GetData().Key, OTR_NAME_OF(Array<int, 5>));
-    EXPECT_EQ(footprint[0].GetData().Value, array.GetData());
+    EXPECT_EQ(footprint[0].GetData().GetName(), OTR_NAME_OF(Array<int, 5>));
+    EXPECT_EQ(footprint[0].GetData().GetPointer(), array.GetData());
     EXPECT_EQ(footprint[0].Size, OTR_ALLOCATED_MEMORY(int, array.GetSize()));
     EXPECT_EQ(footprint[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
     EXPECT_EQ(footprint[0].Padding, 0);

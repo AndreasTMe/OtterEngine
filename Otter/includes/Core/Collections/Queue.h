@@ -18,13 +18,13 @@ namespace Otter
         Queue()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
         }
 
         ~Queue()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
         }
 
         Queue(InitialiserList<T> list)
@@ -68,7 +68,7 @@ namespace Otter
                 return *this;
 
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data       = other.m_Data;
             m_Capacity   = other.m_Capacity;
@@ -84,7 +84,7 @@ namespace Otter
                 return *this;
 
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data       = std::move(other.m_Data);
             m_Capacity   = std::move(other.m_Capacity);
@@ -187,7 +187,7 @@ namespace Otter
             }
 
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data       = newData;
             m_Capacity   = newCapacity;
@@ -223,7 +223,7 @@ namespace Otter
             }
 
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data       = newData;
             m_Capacity   = newCapacity;
@@ -284,7 +284,7 @@ namespace Otter
         void ClearDestructive()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data       = nullptr;
             m_Capacity   = 0;
@@ -298,10 +298,10 @@ namespace Otter
             MemoryFootprint footprint = { };
             Otter::MemorySystem::CheckMemoryFootprint([&]()
                                                       {
-                                                          Otter::KeyValuePair<const char*, void*> kvp[1];
-                                                          kvp[0] = { debugName, m_Data };
+                                                          MemoryDebugPair pair[1];
+                                                          pair[0] = { debugName, m_Data };
 
-                                                          return DebugHandle{ kvp, 1 };
+                                                          return MemoryDebugHandle{ pair, 1 };
                                                       },
                                                       &footprint,
                                                       nullptr);
@@ -337,7 +337,7 @@ namespace Otter
         void RecreateEmpty(const UInt64 capacity)
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, m_Capacity);
+                Buffer::Delete<T>(m_Data, m_Capacity);
 
             m_Data       = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
             m_Capacity   = capacity;

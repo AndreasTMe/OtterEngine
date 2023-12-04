@@ -27,7 +27,7 @@ namespace Otter
         Array()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, Size);
+                Buffer::Delete<T>(m_Data, Size);
 
             if constexpr (Size > 0)
                 m_Data = Buffer::New<T>(Size);
@@ -35,7 +35,7 @@ namespace Otter
         ~Array()
         {
             if (IsCreated())
-                Buffer::Delete(m_Data, Size);
+                Buffer::Delete<T>(m_Data, Size);
         }
 
         OTR_WITH_ITERATOR(Iterator, m_Data, Size)
@@ -112,10 +112,10 @@ namespace Otter
             MemoryFootprint footprint = { };
             Otter::MemorySystem::CheckMemoryFootprint([&]()
                                                       {
-                                                          Otter::KeyValuePair<const char*, void*> kvp[1];
-                                                          kvp[0] = { debugName, m_Data };
+                                                          MemoryDebugPair pair[1];
+                                                          pair[0] = { debugName, m_Data };
 
-                                                          return DebugHandle{ kvp, 1 };
+                                                          return MemoryDebugHandle{ pair, 1 };
                                                       },
                                                       &footprint,
                                                       nullptr);
