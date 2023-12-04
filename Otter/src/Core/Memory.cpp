@@ -79,6 +79,8 @@ namespace Otter
         Platform::MemoryCopy(newHandle.Pointer, handle.Pointer, size);
 
         s_Allocator.Free(handle.Pointer);
+        handle.Pointer = nullptr;
+        handle.Size    = 0;
 
         return newHandle;
     }
