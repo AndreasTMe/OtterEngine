@@ -134,3 +134,45 @@ TEST_F(Stack_Fixture, TryPeek)
     EXPECT_TRUE(stack.TryPeek(value));
     EXPECT_EQ(value, 5);
 }
+
+TEST_F(Stack_Fixture, GetMemoryFootprint)
+{
+    Stack<int> stack = { 1, 2, 3, 4, 5 };
+
+    auto footprint1 = stack.GetMemoryFootprint(OTR_NAME_OF(Stack<int>));
+    EXPECT_EQ(footprint1.GetSize(), 1);
+
+    EXPECT_EQ(footprint1[0].GetData().Key, OTR_NAME_OF(Stack<int>));
+    EXPECT_EQ(footprint1[0].GetData().Value, stack.GetData());
+    EXPECT_EQ(footprint1[0].Size, OTR_ALLOCATED_MEMORY(int, stack.GetCapacity()));
+    EXPECT_EQ(footprint1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
+    EXPECT_EQ(footprint1[0].Padding, 0);
+    EXPECT_EQ(footprint1[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
+
+    stack.Push(6);
+
+    auto footprint2 = stack.GetMemoryFootprint(OTR_NAME_OF(Stack<int>));
+    EXPECT_EQ(footprint2.GetSize(), 1);
+
+    EXPECT_EQ(footprint2[0].GetData().Key, OTR_NAME_OF(Stack<int>));
+    EXPECT_EQ(footprint2[0].GetData().Value, stack.GetData());
+    EXPECT_NE(footprint2[0].GetData().Value, footprint1[0].GetData().Value)
+                    << "Pointer should have changed because of capacity increase (reallocation)";
+    EXPECT_EQ(footprint2[0].Size, OTR_ALLOCATED_MEMORY(int, stack.GetCapacity()));
+    EXPECT_NE(footprint2[0].Offset, footprint1[0].Offset)
+                    << "Offset should have changed because of capacity increase (reallocation)";
+    EXPECT_EQ(footprint2[0].Padding, 0);
+    EXPECT_EQ(footprint2[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
+
+    stack.ClearDestructive();
+
+    auto footprint3 = stack.GetMemoryFootprint(OTR_NAME_OF(Stack<int>));
+    EXPECT_EQ(footprint3.GetSize(), 1);
+
+    EXPECT_EQ(footprint3[0].GetData().Key, OTR_NAME_OF(Stack<int>));
+    EXPECT_EQ(footprint3[0].GetData().Value, nullptr);
+    EXPECT_EQ(footprint3[0].Size, 0);
+    EXPECT_EQ(footprint3[0].Offset, 0);
+    EXPECT_EQ(footprint3[0].Padding, 0);
+    EXPECT_EQ(footprint3[0].Alignment, 0);
+}

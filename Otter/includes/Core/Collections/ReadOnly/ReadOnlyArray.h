@@ -8,6 +8,10 @@
 
 #include "Core/Collections/Iterators/LinearIterator.h"
 
+#if !OTR_RUNTIME
+#include "Core/Collections/ReadOnly/ReadOnlySpan.h"
+#endif
+
 namespace Otter
 {
     template<typename T, UInt64 Size>
@@ -65,6 +69,24 @@ namespace Otter
             OTR_ASSERT_MSG(index < Size, "ReadOnlyArray index out of bounds")
             return m_Data[index];
         }
+
+#if !OTR_RUNTIME
+        ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
+        {
+            MemoryFootprint footprint = { };
+            Otter::MemorySystem::CheckMemoryFootprint([&]()
+                                                      {
+                                                          Otter::KeyValuePair<const char*, void*> kvp[1];
+                                                          kvp[0] = { debugName, m_Data };
+
+                                                          return DebugHandle{ kvp, 1 };
+                                                      },
+                                                      &footprint,
+                                                      nullptr);
+
+            return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
+        }
+#endif
 
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }

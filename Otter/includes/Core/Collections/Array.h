@@ -8,6 +8,10 @@
 
 #include "Core/Collections/Iterators/LinearIterator.h"
 
+#if !OTR_RUNTIME
+#include "Core/Collections/ReadOnly/ReadOnlySpan.h"
+#endif
+
 namespace Otter
 {
     template<typename T, UInt64 Size>
@@ -41,8 +45,6 @@ namespace Otter
             : Array()
         {
             OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
-
-            m_Data = Buffer::New<T>(Size);
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -103,6 +105,24 @@ namespace Otter
         {
             return ReadOnlyArray<T, Size>(*this);
         }
+
+#if !OTR_RUNTIME
+        ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
+        {
+            MemoryFootprint footprint = { };
+            Otter::MemorySystem::CheckMemoryFootprint([&]()
+                                                      {
+                                                          Otter::KeyValuePair<const char*, void*> kvp[1];
+                                                          kvp[0] = { debugName, m_Data };
+
+                                                          return DebugHandle{ kvp, 1 };
+                                                      },
+                                                      &footprint,
+                                                      nullptr);
+
+            return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
+        }
+#endif
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
         [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && Size > 0; }

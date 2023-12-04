@@ -9,6 +9,10 @@
 #include "Core/Allocators/FreeListAllocator.h"
 #include "Core/Allocators/MemoryFootprint.h"
 
+#define OTR_ALLOCATED_MEMORY(type, count)                                       \
+    count * OTR_ALIGNED_OFFSET(sizeof(type), OTR_PLATFORM_MEMORY_ALIGNMENT) +   \
+    Otter::FreeListAllocator::GetAllocatorHeaderSize()
+
 namespace Otter
 {
     struct UnsafeHandle final

@@ -129,6 +129,8 @@ namespace Otter
                                             MemoryFootprint* outFootprints,
                                             UInt64* outFootprintCount)
     {
+        OTR_INTERNAL_ASSERT_MSG(outFootprints != nullptr, "Out-Footprints pointer must not be null")
+
         if (!s_HasInitialised)
         {
             OTR_LOG_WARNING(
@@ -146,10 +148,11 @@ namespace Otter
         for (UInt64 i = 0; i < handle.Size; i++)
         {
             const auto data = handle.Data[i];
-            OTR_INTERNAL_ASSERT_MSG(data.Key != nullptr, "Debug data key must not be null")
-            OTR_INTERNAL_ASSERT_MSG(data.Value != nullptr, "Debug data value must not be null")
-
             outFootprints[i] = MemoryFootprint::For(data);
+
+            if (!data.Value)
+                continue;
+
             s_Allocator.GetMemoryFootprint(data.Value,
                                            &outFootprints[i].Size,
                                            &outFootprints[i].Offset,
@@ -157,6 +160,7 @@ namespace Otter
                                            &outFootprints[i].Alignment);
         }
 
-        *outFootprintCount = handle.Size;
+        if (outFootprintCount)
+            *outFootprintCount = handle.Size;
     }
 }

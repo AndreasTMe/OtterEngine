@@ -5,6 +5,10 @@
 #include "Core/Types.h"
 #include "Core/Memory.h"
 
+#if !OTR_RUNTIME
+#include "Core/Collections/ReadOnly/ReadOnlySpan.h"
+#endif
+
 namespace Otter
 {
     template<typename T>
@@ -174,6 +178,24 @@ namespace Otter
             m_Capacity = 0;
             m_Count    = 0;
         }
+
+#if !OTR_RUNTIME
+        ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
+        {
+            MemoryFootprint footprint = { };
+            Otter::MemorySystem::CheckMemoryFootprint([&]()
+                                                      {
+                                                          Otter::KeyValuePair<const char*, void*> kvp[1];
+                                                          kvp[0] = { debugName, m_Data };
+
+                                                          return DebugHandle{ kvp, 1 };
+                                                      },
+                                                      &footprint,
+                                                      nullptr);
+
+            return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
+        }
+#endif
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const noexcept { return m_Capacity; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }

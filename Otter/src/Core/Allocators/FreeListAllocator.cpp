@@ -109,7 +109,8 @@ namespace Otter
         const Header* const header = (Header*) headerAddress;
 
         *outSize      = header->Size;
-        *outOffset    = headerAddress - (UIntPtr) m_Memory;
+        *outOffset =
+            headerAddress - (UIntPtr) m_Memory + OTR_ALIGNED_OFFSET(sizeof(Header), OTR_PLATFORM_MEMORY_ALIGNMENT);
         *outPadding   = header->Padding;
         *outAlignment = OTR_PLATFORM_MEMORY_ALIGNMENT;
     }
