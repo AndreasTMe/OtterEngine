@@ -11,16 +11,24 @@ namespace Otter
         OTR_DISABLE_OBJECT_COPIES(GraphicsSystem)
         OTR_DISABLE_OBJECT_MOVES(GraphicsSystem)
 
-        static bool TryInitialise(const void* platformContext);
-        static void Shutdown();
+        OTR_INLINE static GraphicsSystem& GetInstance()
+        {
+            static GraphicsSystem instance;
+            return instance;
+        }
 
-        static void RenderFrame();
+        bool TryInitialise(const void* platformContext);
+        void Shutdown();
+
+        void RenderFrame();
 
     private:
-        OTR_DISABLE_CONSTRUCTION(GraphicsSystem)
+        OTR_WITH_DEFAULT_CONSTRUCTOR(GraphicsSystem)
 
-        static Graphics::RendererAPI* s_Renderer;
+        Graphics::RendererAPI* m_Renderer;
     };
 }
+
+#define OTR_GRAPHICS_SYSTEM Otter::GraphicsSystem::GetInstance()
 
 #endif //OTTERENGINE_GRAPHICSSYSTEM_H

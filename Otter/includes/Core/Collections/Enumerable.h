@@ -55,7 +55,7 @@ namespace Otter
         [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Data && m_Count > 0; }
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
 
-        [[nodiscard]] OTR_INLINE constexpr T* GetData() const noexcept { return m_Data; }
+        [[nodiscard]] OTR_INLINE const T* GetData() const noexcept { return m_Data; }
 
     private:
         Enumerable()

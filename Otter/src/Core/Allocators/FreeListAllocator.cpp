@@ -54,6 +54,12 @@ namespace Otter
         header->Size    = requiredSpace;
         header->Padding = bodyPadding;
 
+        if (header->Size >= m_MemorySize)
+        {
+            OTR_LOG_FATAL("Allocation size is greater than or equal to the allocator size!")
+            return nullptr;
+        }
+
         m_MemoryUsed += requiredSpace;
 
         return (void*) ((UIntPtr) header + sizeof(Header));
@@ -64,6 +70,11 @@ namespace Otter
         const UIntPtr headerAddress =
                           (UIntPtr) block - OTR_ALIGNED_OFFSET(sizeof(Header), OTR_PLATFORM_MEMORY_ALIGNMENT);
         const Header* const header = (Header*) headerAddress;
+
+        if (header->Size >= m_MemorySize)
+        {
+            OTR_LOG_ERROR("Freed size is greater than or equal to the allocator size!")
+        }
 
         Node* nodeToInsert = (Node * )(headerAddress);
         nodeToInsert->Size = header->Size + header->Padding;
@@ -221,6 +232,8 @@ namespace Otter
             m_Head = toRemove->Next;
         else
             previous->Next = toRemove->Next;
+
+        toRemove->Next = nullptr;
     }
 
     void FreeListAllocator::Merge(Node* toMerge, Node* previousNode)

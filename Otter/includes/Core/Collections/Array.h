@@ -34,8 +34,7 @@ namespace Otter
         }
         ~Array()
         {
-            if (IsCreated())
-                Buffer::Delete<T>(m_Data, Size);
+            ClearDestructive();
         }
 
         OTR_WITH_ITERATOR(Iterator, m_Data, Size)
@@ -91,14 +90,24 @@ namespace Otter
 
         T& operator[](UInt64 index)
         {
+            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
             OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
             return m_Data[index];
         }
 
         const T& operator[](UInt64 index) const
         {
+            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
             OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
             return m_Data[index];
+        }
+
+        void ClearDestructive()
+        {
+            if (IsCreated())
+                Buffer::Delete<T>(m_Data, Size);
+
+            m_Data = nullptr;
         }
 
         [[nodiscard]] OTR_INLINE const ReadOnlyArray<T, Size> AsReadOnly() const
@@ -110,24 +119,23 @@ namespace Otter
         ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
-            Otter::MemorySystem::CheckMemoryFootprint([&]()
-                                                      {
-                                                          MemoryDebugPair pair[1];
-                                                          pair[0] = { debugName, m_Data };
+            OTR_MEMORY_SYSTEM.CheckMemoryFootprint([&]()
+                                                   {
+                                                       MemoryDebugPair pair[1];
+                                                       pair[0] = { debugName, m_Data };
 
-                                                          return MemoryDebugHandle{ pair, 1 };
-                                                      },
-                                                      &footprint,
-                                                      nullptr);
+                                                       return MemoryDebugHandle{ pair, 1 };
+                                                   },
+                                                   &footprint,
+                                                   nullptr);
 
             return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
         }
 #endif
 
+        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
         [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && Size > 0; }
-
-        [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
 
     private:
         T* m_Data = nullptr;

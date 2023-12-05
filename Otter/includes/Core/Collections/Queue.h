@@ -32,11 +32,11 @@ namespace Otter
         {
             m_Capacity   = list.size();
             m_Data       = Buffer::New<T>(m_Capacity);
+            m_Count      = 0;
             m_StartIndex = 0;
-            m_EndIndex   = 0;
 
             for (const T& item: list)
-                m_Data[m_EndIndex++] = item;
+                m_Data[m_Count++] = item;
         }
 
         Queue(const Queue<T>& other)
@@ -44,8 +44,8 @@ namespace Otter
         {
             m_Data       = other.m_Data;
             m_Capacity   = other.m_Capacity;
+            m_Count      = other.m_Count;
             m_StartIndex = other.m_StartIndex;
-            m_EndIndex   = other.m_EndIndex;
         }
 
         Queue(Queue<T>&& other) noexcept
@@ -53,13 +53,13 @@ namespace Otter
         {
             m_Data       = std::move(other.m_Data);
             m_Capacity   = std::move(other.m_Capacity);
+            m_Count      = std::move(other.m_Count);
             m_StartIndex = std::move(other.m_StartIndex);
-            m_EndIndex   = std::move(other.m_EndIndex);
 
             other.m_Data       = nullptr;
             other.m_Capacity   = 0;
+            other.m_Count      = 0;
             other.m_StartIndex = 0;
-            other.m_EndIndex   = 0;
         }
 
         Queue<T>& operator=(const Queue<T>& other)
@@ -72,8 +72,8 @@ namespace Otter
 
             m_Data       = other.m_Data;
             m_Capacity   = other.m_Capacity;
+            m_Count      = other.m_Count;
             m_StartIndex = other.m_StartIndex;
-            m_EndIndex   = other.m_EndIndex;
 
             return *this;
         }
@@ -88,37 +88,47 @@ namespace Otter
 
             m_Data       = std::move(other.m_Data);
             m_Capacity   = std::move(other.m_Capacity);
+            m_Count      = std::move(other.m_Count);
             m_StartIndex = std::move(other.m_StartIndex);
-            m_EndIndex   = std::move(other.m_EndIndex);
 
             other.m_Data       = nullptr;
             other.m_Capacity   = 0;
+            other.m_Count      = 0;
             other.m_StartIndex = 0;
-            other.m_EndIndex   = 0;
 
             return *this;
         }
 
         bool TryEnqueue(const T& item)
         {
-            if (GetCount() >= m_Capacity)
+            if (m_Count >= m_Capacity)
                 Expand();
 
-            MoveIndex(m_EndIndex);
+            auto endIndex = m_StartIndex + m_Count;
 
-            m_Data[m_EndIndex] = item;
+            if (endIndex >= m_Capacity)
+                endIndex -= m_Capacity;
+
+            m_Data[endIndex] = item;
+
+            m_Count++;
 
             return true;
         }
 
         bool TryEnqueue(T&& item) noexcept
         {
-            if (GetCount() >= m_Capacity)
+            if (m_Count >= m_Capacity)
                 Expand();
 
-            MoveIndex(m_EndIndex);
+            auto endIndex = m_StartIndex + m_Count;
 
-            m_Data[m_EndIndex] = std::move(item);
+            if (endIndex >= m_Capacity)
+                endIndex -= m_Capacity;
+
+            m_Data[endIndex] = std::move(item);
+
+            m_Count++;
 
             return true;
         }
@@ -128,7 +138,12 @@ namespace Otter
             if (IsEmpty())
                 return false;
 
-            MoveIndex(m_StartIndex);
+            m_StartIndex++;
+
+            if (m_StartIndex >= m_Capacity)
+                m_StartIndex = 0;
+
+            m_Count--;
 
             return true;
         }
@@ -139,7 +154,12 @@ namespace Otter
                 return false;
 
             item = m_Data[m_StartIndex];
-            MoveIndex(m_StartIndex);
+            m_StartIndex++;
+
+            if (m_StartIndex >= m_Capacity)
+                m_StartIndex = 0;
+
+            m_Count--;
 
             return true;
         }
@@ -170,19 +190,20 @@ namespace Otter
             }
 
             T* newData = Buffer::New<T>(newCapacity);
-            const auto currentCount = GetCount();
 
-            if (m_EndIndex > m_StartIndex)
+            if (m_StartIndex + m_Count < m_Capacity)
             {
-                for (UInt64 i = 0; i < currentCount; i++)
+                for (UInt64 i = 0; i < m_Count; i++)
                     newData[i] = m_Data[i + m_StartIndex];
             }
             else
             {
+                const auto endIndex = m_StartIndex + m_Count - m_Capacity;
+
                 for (UInt64 i = 0; i < m_Capacity - m_StartIndex; i++)
                     newData[i] = m_Data[i + m_StartIndex];
 
-                for (UInt64 i = 0; i < m_EndIndex; i++)
+                for (UInt64 i = 0; i < endIndex; i++)
                     newData[i + m_Capacity - m_StartIndex] = m_Data[i];
             }
 
@@ -192,7 +213,6 @@ namespace Otter
             m_Data       = newData;
             m_Capacity   = newCapacity;
             m_StartIndex = 0;
-            m_EndIndex   = currentCount;
         }
 
         void Shrink(const UInt64 amount = 0, const bool isDestructive = false)
@@ -206,19 +226,20 @@ namespace Otter
             }
 
             T* newData = Buffer::New<T>(newCapacity);
-            const auto currentCount = GetCount();
 
-            if (m_EndIndex > m_StartIndex)
+            if (m_StartIndex + m_Count < m_Capacity)
             {
-                for (UInt64 i = 0; i < currentCount; i++)
+                for (UInt64 i = 0; i < m_Count && i < newCapacity; i++)
                     newData[i] = m_Data[i + m_StartIndex];
             }
             else
             {
+                const auto endIndex = m_StartIndex + m_Count - m_Capacity;
+
                 for (UInt64 i = 0; i < m_Capacity - m_StartIndex && i < newCapacity; i++)
                     newData[i] = m_Data[i + m_StartIndex];
 
-                for (UInt64 i = 0; i < m_EndIndex && i < newCapacity; i++)
+                for (UInt64 i = 0; i < endIndex && i < newCapacity; i++)
                     newData[i + m_Capacity - m_StartIndex] = m_Data[i];
             }
 
@@ -227,25 +248,27 @@ namespace Otter
 
             m_Data       = newData;
             m_Capacity   = newCapacity;
+            m_Count      = m_Count < newCapacity ? m_Count : newCapacity;
             m_StartIndex = 0;
-            m_EndIndex   = currentCount < newCapacity ? currentCount : newCapacity;
         }
 
         bool Contains(const T& item) const
         {
-            if (m_EndIndex > m_StartIndex)
+            if (m_StartIndex + m_Count <= m_Capacity)
             {
-                for (UInt64 i = 0; i < GetCount(); i++)
-                    if (m_Data[i + m_StartIndex] == item)
+                for (UInt64 i = m_StartIndex; i < m_Count; i++)
+                    if (m_Data[i] == item)
                         return true;
             }
             else
             {
-                for (UInt64 i = 0; i < m_Capacity - m_StartIndex; i++)
-                    if (m_Data[i + m_StartIndex] == item)
+                const auto endIndex = m_StartIndex + m_Count - m_Capacity;
+
+                for (UInt64 i = m_StartIndex; i < m_Capacity; i++)
+                    if (m_Data[i] == item)
                         return true;
 
-                for (UInt64 i = 0; i <= m_EndIndex; i++)
+                for (UInt64 i = 0; i <= endIndex; i++)
                     if (m_Data[i] == item)
                         return true;
             }
@@ -255,19 +278,21 @@ namespace Otter
 
         bool Contains(T&& item) const noexcept
         {
-            if (m_EndIndex > m_StartIndex)
+            if (m_StartIndex + m_Count <= m_Capacity)
             {
-                for (UInt64 i = 0; i < GetCount(); i++)
-                    if (m_Data[i + m_StartIndex] == item)
+                for (UInt64 i = m_StartIndex; i < m_Count; i++)
+                    if (m_Data[i] == item)
                         return true;
             }
             else
             {
-                for (UInt64 i = 0; i < m_Capacity - m_StartIndex; i++)
-                    if (m_Data[i + m_StartIndex] == item)
+                const auto endIndex = m_StartIndex + m_Count - m_Capacity;
+
+                for (UInt64 i = m_StartIndex; i < m_Capacity; i++)
+                    if (m_Data[i] == item)
                         return true;
 
-                for (UInt64 i = 0; i <= m_EndIndex; i++)
+                for (UInt64 i = 0; i <= endIndex; i++)
                     if (m_Data[i] == item)
                         return true;
             }
@@ -278,7 +303,7 @@ namespace Otter
         OTR_INLINE void Clear()
         {
             m_StartIndex = 0;
-            m_EndIndex   = 0;
+            m_Count      = 0;
         }
 
         void ClearDestructive()
@@ -288,43 +313,38 @@ namespace Otter
 
             m_Data       = nullptr;
             m_Capacity   = 0;
+            m_Count      = 0;
             m_StartIndex = 0;
-            m_EndIndex   = 0;
         }
 
 #if !OTR_RUNTIME
         ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
-            Otter::MemorySystem::CheckMemoryFootprint([&]()
-                                                      {
-                                                          MemoryDebugPair pair[1];
-                                                          pair[0] = { debugName, m_Data };
+            OTR_MEMORY_SYSTEM.CheckMemoryFootprint([&]()
+                                                   {
+                                                       MemoryDebugPair pair[1];
+                                                       pair[0] = { debugName, m_Data };
 
-                                                          return MemoryDebugHandle{ pair, 1 };
-                                                      },
-                                                      &footprint,
-                                                      nullptr);
+                                                       return MemoryDebugHandle{ pair, 1 };
+                                                   },
+                                                   &footprint,
+                                                   nullptr);
 
             return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
         }
 #endif
 
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const noexcept { return m_Capacity; }
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept
-        {
-            return m_EndIndex >= m_StartIndex
-                   ? m_EndIndex - m_StartIndex
-                   : m_Capacity - m_StartIndex + m_EndIndex + 1;
-        }
+        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
         [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Data && m_Capacity > 0; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_StartIndex == m_EndIndex; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
 
     private:
         T* m_Data = nullptr;
         UInt64 m_Capacity   = 0;
+        UInt64 m_Count      = 0;
         UInt64 m_StartIndex = 0;
-        UInt64 m_EndIndex   = 0;
 
         void MoveIndex(UInt64& index)
         {
@@ -341,8 +361,8 @@ namespace Otter
 
             m_Data       = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
             m_Capacity   = capacity;
+            m_Count      = 0;
             m_StartIndex = 0;
-            m_EndIndex   = 0;
         }
 
         UInt64 CalculateExpandCapacity(const UInt64 expandAmount)
@@ -371,34 +391,10 @@ namespace Otter
             else
                 newCapacity = m_Capacity - shrinkAmount;
 
-            const auto currentCount = GetCount();
-
-            if (!isDestructive && newCapacity < currentCount)
-                newCapacity = currentCount;
+            if (!isDestructive && newCapacity < m_Count)
+                newCapacity = m_Count;
 
             return newCapacity;
-        }
-
-        T* GetNormalisedData(const UInt64 capacity) const
-        {
-            T* newData = Buffer::New<T>(capacity);
-            const auto currentCount = GetCount();
-
-            if (m_EndIndex > m_StartIndex)
-            {
-                for (UInt64 i = 0; i < currentCount; i++)
-                    newData[i] = m_Data[i + m_StartIndex];
-            }
-            else
-            {
-                for (UInt64 i = 0; i < m_Capacity - m_StartIndex; i++)
-                    newData[i] = m_Data[i + m_StartIndex];
-
-                for (UInt64 i = 0; i < m_EndIndex; i++)
-                    newData[i + m_Capacity - m_StartIndex] = m_Data[i];
-            }
-
-            return newData;
         }
     };
 }

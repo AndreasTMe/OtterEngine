@@ -4,15 +4,6 @@
 
 namespace Otter
 {
-    Queue<Event>    EventSystem::s_Events{ };
-    bool            EventSystem::s_BlockEvents = false;
-
-    Dictionary<EventType, Func<bool, const Event&>*> g_Listeners;
-
-    template<typename TEvent = Event, typename TActionArg = const TEvent&>
-    requires IsBaseOf<Event, TEvent>
-    void AddListener(EventType type, Func<bool, TActionArg>* action);
-
     void EventSystem::Initialise()
     {
         static bool isInitialised = false;
@@ -45,8 +36,8 @@ namespace Otter
     {
         OTR_LOG_DEBUG("Shutting down event system...")
 
-        g_Listeners.ClearDestructive();
-        s_Events.ClearDestructive();
+        m_EventListeners.ClearDestructive();
+        m_Events.ClearDestructive();
 
         OTR_GLOBAL_ACTIONS.OnMouseMoved.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnMouseScroll.ClearDestructive();
@@ -67,30 +58,35 @@ namespace Otter
     void EventSystem::Process()
     {
         Event event;
-        while (s_Events.TryPeek(event))
+        while (m_Events.TryPeek(event))
         {
             auto type = event.GetEventType();
+            if (type == EventType::None || type == EventType::Max)
+            {
+                m_Events.TryDequeue();
+                continue;
+            }
 
-            Func<bool, const Event&>* callback;
-            if (g_Listeners.TryGet(type, callback))
+            auto* callback = m_EventListeners[static_cast<UInt64>(type) - 1];
+            if (callback)
                 callback->ReverseInvoke(event);
 
-            s_Events.TryDequeue();
+            m_Events.TryDequeue();
         }
 
-        s_BlockEvents = false;
+        m_BlockEvents = false;
     }
 
     template<typename TEvent, typename TActionArg>
     requires IsBaseOf<Event, TEvent>
-    void AddListener(EventType type, Func<bool, TActionArg>* action)
+    void EventSystem::AddListener(EventType type, Func<bool, TActionArg>* action)
     {
         OTR_INTERNAL_ASSERT_MSG(type != EventType::None, "Event type cannot be None")
         OTR_INTERNAL_ASSERT_MSG(type != EventType::Max, "Event type cannot be Max")
 
-        if (g_Listeners.Contains(type))
-            return;
+        OTR_INTERNAL_ASSERT_MSG(static_cast<UInt64>(type) - 1 < m_EventListeners.GetSize(),
+                                "Event listener array cannot fit event type")
 
-        g_Listeners.TryAdd(type, reinterpret_cast<Func<bool, const Event&>*>(action));
+        m_EventListeners[static_cast<UInt64>(type) - 1] = reinterpret_cast<Func<bool, const Event&>*>(action);
     }
 }

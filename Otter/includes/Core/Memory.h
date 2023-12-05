@@ -27,38 +27,48 @@ namespace Otter
         OTR_DISABLE_OBJECT_COPIES(MemorySystem)
         OTR_DISABLE_OBJECT_MOVES(MemorySystem)
 
-        static void Initialise(UInt64 memoryRequirements);
-        static void Shutdown();
+        OTR_INLINE static MemorySystem& GetInstance()
+        {
+            static MemorySystem instance;
+            return instance;
+        }
 
-        static UnsafeHandle Allocate(UInt64 size, UInt16 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
-        static UnsafeHandle Reallocate(UnsafeHandle& handle,
-                                       UInt64 size,
-                                       UInt16 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
-        static void Free(void* block);
-        static void MemoryCopy(void* destination, const void* source, UInt64 size);
-        static void MemoryClear(void* block, UInt64 size);
+        void Initialise(UInt64 memoryRequirements);
+        void Shutdown();
 
-        static void CheckMemoryFootprint(const Function<MemoryDebugHandle()>& callback,
-                                         MemoryFootprint* outFootprints,
-                                         UInt64* outFootprintCount);
+        UnsafeHandle Allocate(UInt64 size, UInt16 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        UnsafeHandle Reallocate(UnsafeHandle& handle,
+                                UInt64 size,
+                                UInt16 alignment = OTR_PLATFORM_MEMORY_ALIGNMENT);
+        void Free(void* block);
+        void MemoryCopy(void* destination, const void* source, UInt64 size);
+        void MemoryClear(void* block, UInt64 size);
 
-        [[nodiscard]] static constexpr UInt64 GetUsedMemory() { return s_Allocator.GetMemoryUsed(); }
-        [[nodiscard]] static constexpr UInt64 GetFreeMemory() { return s_Allocator.GetMemoryFree(); }
-        [[nodiscard]] static constexpr UInt64 GetMemorySize() { return s_Allocator.GetMemorySize(); }
+        void CheckMemoryFootprint(const Function<MemoryDebugHandle()>& callback,
+                                  MemoryFootprint* outFootprints,
+                                  UInt64* outFootprintCount);
+
+        [[nodiscard]] constexpr UInt64 GetUsedMemory() { return m_Allocator.GetMemoryUsed(); }
+        [[nodiscard]] constexpr UInt64 GetFreeMemory() { return m_Allocator.GetMemoryFree(); }
+        [[nodiscard]] constexpr UInt64 GetMemorySize() { return m_Allocator.GetMemorySize(); }
+
+        [[nodiscard]] const FreeListAllocator* GetAllocator() const { return &m_Allocator; }
 
     private:
-        OTR_DISABLE_CONSTRUCTION(MemorySystem)
+        OTR_WITH_DEFAULT_CONSTRUCTOR(MemorySystem)
 
-        static bool              s_HasInitialised;
-        static FreeListAllocator s_Allocator;
+        bool              m_HasInitialised = false;
+        FreeListAllocator m_Allocator;
     };
+
+#define OTR_MEMORY_SYSTEM Otter::MemorySystem::GetInstance()
 
     template<typename T, typename... TArgs>
     OTR_INLINE T* New(TArgs&& ... args)
     {
         UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(T), OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-        UnsafeHandle handle = MemorySystem::Allocate(alignedSize);
+        UnsafeHandle handle = OTR_MEMORY_SYSTEM.Allocate(alignedSize);
         T* ptr = ::new(handle.Pointer) T(args...);
 
         return ptr;
@@ -70,8 +80,8 @@ namespace Otter
         if (!std::is_trivially_destructible_v<T> && ptr != nullptr)
             ptr->~T();
 
-        MemorySystem::MemoryClear(ptr, sizeof(T));
-        MemorySystem::Free(ptr);
+        OTR_MEMORY_SYSTEM.MemoryClear(ptr, sizeof(T));
+        OTR_MEMORY_SYSTEM.Free(ptr);
     }
 
     class Buffer final
@@ -85,7 +95,7 @@ namespace Otter
             UInt64 alignedSize = OTR_ALIGNED_OFFSET(sizeof(T), OTR_PLATFORM_MEMORY_ALIGNMENT);
             UInt64 bufferSize  = length * alignedSize;
 
-            UnsafeHandle handle = MemorySystem::Allocate(bufferSize);
+            UnsafeHandle handle = OTR_MEMORY_SYSTEM.Allocate(bufferSize);
 
             if (!std::is_trivially_constructible<T>::value)
             {
@@ -118,8 +128,8 @@ namespace Otter
                 }
             }
 
-            MemorySystem::MemoryClear(ptr, length * sizeof(T));
-            MemorySystem::Free(ptr);
+            OTR_MEMORY_SYSTEM.MemoryClear(ptr, length * sizeof(T));
+            OTR_MEMORY_SYSTEM.Free(ptr);
         }
     };
 
@@ -132,7 +142,7 @@ namespace Otter
 
             UInt64 alignedSize = OTR_ALIGNED_OFFSET(size, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-            return MemorySystem::Allocate(alignedSize);
+            return OTR_MEMORY_SYSTEM.Allocate(alignedSize);
         }
 
         OTR_INLINE static void Delete(const UnsafeHandle& handle)
@@ -140,8 +150,8 @@ namespace Otter
             OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Handle pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")
 
-            MemorySystem::MemoryClear(handle.Pointer, handle.Size);
-            MemorySystem::Free(handle.Pointer);
+            OTR_MEMORY_SYSTEM.MemoryClear(handle.Pointer, handle.Size);
+            OTR_MEMORY_SYSTEM.Free(handle.Pointer);
         }
     };
 }
