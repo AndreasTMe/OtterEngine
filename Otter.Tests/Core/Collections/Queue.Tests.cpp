@@ -107,26 +107,26 @@ TEST_F(Queue_Fixture, TryDequeue)
     Queue<int> queue = { 1, 2, 3, 4, 5 };
 
     int value;
-    EXPECT_TRUE(queue.TryDequeue(value));
+    EXPECT_TRUE(queue.TryDequeue(&value));
     EXPECT_EQ(value, 1);
     EXPECT_EQ(queue.GetCount(), 4);
 
     EXPECT_TRUE(queue.TryDequeue());
     EXPECT_EQ(queue.GetCount(), 3);
 
-    EXPECT_TRUE(queue.TryDequeue(value));
+    EXPECT_TRUE(queue.TryDequeue(&value));
     EXPECT_EQ(value, 3);
     EXPECT_EQ(queue.GetCount(), 2);
 
-    EXPECT_TRUE(queue.TryDequeue(value));
+    EXPECT_TRUE(queue.TryDequeue(&value));
     EXPECT_EQ(value, 4);
     EXPECT_EQ(queue.GetCount(), 1);
 
-    EXPECT_TRUE(queue.TryDequeue(value));
+    EXPECT_TRUE(queue.TryDequeue(&value));
     EXPECT_EQ(value, 5);
     EXPECT_EQ(queue.GetCount(), 0);
 
-    EXPECT_FALSE(queue.TryDequeue(value));
+    EXPECT_FALSE(queue.TryDequeue(&value));
     EXPECT_EQ(value, 5);
     EXPECT_EQ(queue.GetCount(), 0);
 
@@ -139,13 +139,13 @@ TEST_F(Queue_Fixture, TryPeek)
     Queue<int> queue = { 1, 2, 3, 4, 5 };
 
     int value;
-    EXPECT_TRUE(queue.TryPeek(value));
+    EXPECT_TRUE(queue.TryPeek(&value));
     EXPECT_EQ(value, 1);
     EXPECT_EQ(queue.GetCount(), 5);
 
     EXPECT_TRUE(queue.TryDequeue());
     EXPECT_EQ(queue.GetCount(), 4);
-    EXPECT_TRUE(queue.TryPeek(value));
+    EXPECT_TRUE(queue.TryPeek(&value));
     EXPECT_EQ(value, 2);
 
     EXPECT_TRUE(queue.TryDequeue());
@@ -154,7 +154,7 @@ TEST_F(Queue_Fixture, TryPeek)
     EXPECT_TRUE(queue.TryDequeue());
     EXPECT_FALSE(queue.TryDequeue());
 
-    EXPECT_FALSE(queue.TryPeek(value));
+    EXPECT_FALSE(queue.TryPeek(&value));
 }
 
 TEST_F(Queue_Fixture, Reserve)
@@ -204,7 +204,7 @@ TEST_F(Queue_Fixture, Expand)
     EXPECT_EQ(queueWithItems2.GetCount(), 5);
 
     int value;
-    EXPECT_TRUE(queueWithItems2.TryPeek(value));
+    EXPECT_TRUE(queueWithItems2.TryPeek(&value));
     EXPECT_EQ(value, 3);
 }
 
@@ -248,7 +248,7 @@ TEST_F(Queue_Fixture, Shrink)
     EXPECT_EQ(queueWithItems2.GetCount(), 2);
 
     int value;
-    EXPECT_TRUE(queueWithItems2.TryPeek(value));
+    EXPECT_TRUE(queueWithItems2.TryPeek(&value));
     EXPECT_EQ(value, 3);
 }
 
@@ -289,8 +289,8 @@ TEST_F(Queue_Fixture, Clear)
     EXPECT_EQ(queue.GetCount(), 0);
 
     int value = 0;
-    EXPECT_FALSE(queue.TryPeek(value));
-    EXPECT_FALSE(queue.TryDequeue(value));
+    EXPECT_FALSE(queue.TryPeek(&value));
+    EXPECT_FALSE(queue.TryDequeue(&value));
 }
 
 TEST_F(Queue_Fixture, ClearDestructive)
@@ -303,8 +303,8 @@ TEST_F(Queue_Fixture, ClearDestructive)
     EXPECT_EQ(queue.GetCount(), 0);
 
     int value = 0;
-    EXPECT_FALSE(queue.TryPeek(value));
-    EXPECT_FALSE(queue.TryDequeue(value));
+    EXPECT_FALSE(queue.TryPeek(&value));
+    EXPECT_FALSE(queue.TryDequeue(&value));
 }
 
 TEST_F(Queue_Fixture, GetMemoryFootprint)

@@ -4,6 +4,7 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Delegates.h"
+#include "Core/Collections/Span.h"
 #include "Core/Collections/Queue.h"
 
 #include "Core/Events/Event.h"
@@ -47,14 +48,11 @@ namespace Otter
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(EventSystem)
 
-#define OTR_EVENT_TYPES_COUNT 12
+        Queue<Event>                        m_Events;
+        Span<Func<bool, const Event&>*, 12> m_EventListeners;
 
-        Queue<Event>                                            m_Events;
-        Array<Func<bool, const Event&>*, OTR_EVENT_TYPES_COUNT> m_EventListeners;
-
-        bool m_BlockEvents = false;
-
-#undef OTR_EVENT_TYPES_COUNT
+        bool m_IsInitialised = false;
+        bool m_BlockEvents   = false;
 
         template<typename TEvent = Event, typename TActionArg = const TEvent&>
         requires IsBaseOf<Event, TEvent>

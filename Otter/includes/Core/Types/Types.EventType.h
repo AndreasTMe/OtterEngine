@@ -14,7 +14,7 @@
     /* Keyboard Events */                   \
     REPLACE_WITH(KeyPressed,0x06)           \
     REPLACE_WITH(KeyReleased,0x07)          \
-    REPLACE_WITH(KeyHold,0x08)              \
+    REPLACE_WITH(KeyRepeat,0x08)            \
                                             \
     /* Mouse Events */                      \
     REPLACE_WITH(MouseButtonPressed,0x09)   \

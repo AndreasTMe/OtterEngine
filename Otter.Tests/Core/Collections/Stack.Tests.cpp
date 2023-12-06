@@ -108,22 +108,22 @@ TEST_F(Stack_Fixture, TryPop)
     Stack<int> stack = { 1, 2, 3, 4, 5 };
 
     int value;
-    EXPECT_TRUE(stack.TryPop(value));
+    EXPECT_TRUE(stack.TryPop(&value));
     EXPECT_EQ(value, 5);
 
-    EXPECT_TRUE(stack.TryPop(value));
+    EXPECT_TRUE(stack.TryPop(&value));
     EXPECT_EQ(value, 4);
 
-    EXPECT_TRUE(stack.TryPop(value));
+    EXPECT_TRUE(stack.TryPop(&value));
     EXPECT_EQ(value, 3);
 
-    EXPECT_TRUE(stack.TryPop(value));
+    EXPECT_TRUE(stack.TryPop(&value));
     EXPECT_EQ(value, 2);
 
-    EXPECT_TRUE(stack.TryPop(value));
+    EXPECT_TRUE(stack.TryPop(&value));
     EXPECT_EQ(value, 1);
 
-    EXPECT_FALSE(stack.TryPop(value));
+    EXPECT_FALSE(stack.TryPop(&value));
 }
 
 TEST_F(Stack_Fixture, TryPeek)
@@ -131,7 +131,7 @@ TEST_F(Stack_Fixture, TryPeek)
     Stack<int> stack = { 1, 2, 3, 4, 5 };
 
     int value;
-    EXPECT_TRUE(stack.TryPeek(value));
+    EXPECT_TRUE(stack.TryPeek(&value));
     EXPECT_EQ(value, 5);
 }
 

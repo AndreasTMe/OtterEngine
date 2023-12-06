@@ -163,22 +163,22 @@ namespace Otter
             return true;
         }
 
-        [[nodiscard]] bool TryPeekFront(T& value)
+        [[nodiscard]] bool TryPeekFront(T* outItem)
         {
             if (m_Count == 0)
                 return false;
 
-            value = m_Data[0];
+            *outItem = m_Data[0];
 
             return true;
         }
 
-        [[nodiscard]] bool TryPeekBack(T& value)
+        [[nodiscard]] bool TryPeekBack(T* outItem)
         {
             if (m_Count == 0)
                 return false;
 
-            value = m_Data[m_Count - 1];
+            *outItem = m_Data[m_Count - 1];
 
             return true;
         }

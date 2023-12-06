@@ -37,14 +37,14 @@ namespace Otter
     public:
         explicit KeyRepeatEvent(const KeyCode keyCode, const UInt16 repeatCount)
             : Event(static_cast<EventCategory>(EventCategory::Input | EventCategory::Keyboard),
-                    EventType::KeyHold)
+                    EventType::KeyRepeat)
         {
             Capture(keyCode, 5);
             Capture(repeatCount, 12);
         }
 
-        [[nodiscard]] OTR_INLINE KeyCode GetKeyCode() const { return Get < KeyCode > (5); }
-        [[nodiscard]] OTR_INLINE UInt16 GetRepeatCount() const { return Get < UInt16 > (12); }
+        [[nodiscard]] OTR_INLINE KeyCode GetKeyCode() const { return Get<KeyCode>(5); }
+        [[nodiscard]] OTR_INLINE UInt16 GetRepeatCount() const { return Get<UInt16>(12); }
     };
 }
 

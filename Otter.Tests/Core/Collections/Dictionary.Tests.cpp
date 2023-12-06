@@ -139,26 +139,26 @@ TEST_F(Dictionary_Fixture, TryGet)
                                        { 5, 5 }};
 
     int value;
-    EXPECT_TRUE(dictionary.TryGet(1, value));
+    EXPECT_TRUE(dictionary.TryGet(1, &value));
     EXPECT_EQ(value, 1);
 
-    EXPECT_TRUE(dictionary.TryGet(2, value));
+    EXPECT_TRUE(dictionary.TryGet(2, &value));
     EXPECT_EQ(value, 2);
 
-    EXPECT_TRUE(dictionary.TryGet(3, value));
+    EXPECT_TRUE(dictionary.TryGet(3, &value));
     EXPECT_EQ(value, 3);
 
-    EXPECT_TRUE(dictionary.TryGet(4, value));
+    EXPECT_TRUE(dictionary.TryGet(4, &value));
     EXPECT_EQ(value, 4);
 
-    EXPECT_TRUE(dictionary.TryGet(5, value));
+    EXPECT_TRUE(dictionary.TryGet(5, &value));
     EXPECT_EQ(value, 5);
 
-    EXPECT_FALSE(dictionary.TryGet(6, value));
-    EXPECT_FALSE(dictionary.TryGet(7, value));
-    EXPECT_FALSE(dictionary.TryGet(8, value));
-    EXPECT_FALSE(dictionary.TryGet(9, value));
-    EXPECT_FALSE(dictionary.TryGet(10, value));
+    EXPECT_FALSE(dictionary.TryGet(6, &value));
+    EXPECT_FALSE(dictionary.TryGet(7, &value));
+    EXPECT_FALSE(dictionary.TryGet(8, &value));
+    EXPECT_FALSE(dictionary.TryGet(9, &value));
+    EXPECT_FALSE(dictionary.TryGet(10, &value));
 
     EXPECT_EQ(dictionary.GetCount(), 5);
     EXPECT_FALSE(dictionary.IsEmpty());

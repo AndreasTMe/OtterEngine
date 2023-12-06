@@ -42,23 +42,23 @@ namespace Otter
             base::m_Data[base::m_Count++] = std::move(item);
         }
 
-        bool TryPop(T& item)
+        bool TryPop(T* outItem)
         {
             if (base::m_Count == 0)
                 return false;
 
-            item = base::m_Data[base::m_Count - 1];
+            *outItem = base::m_Data[base::m_Count - 1];
             base::m_Count--;
 
             return true;
         }
 
-        bool TryPeek(T& item)
+        bool TryPeek(T* outItem)
         {
             if (base::m_Count == 0)
                 return false;
 
-            item = base::m_Data[base::m_Count - 1];
+            *outItem = base::m_Data[base::m_Count - 1];
 
             return true;
         }

@@ -14,10 +14,10 @@ namespace Otter
     concept IsKeyReleaseEvent = TEventType == EventType::KeyReleased;
 
     template<EventType TEventType>
-    concept IsKeyHoldEvent = TEventType == EventType::KeyHold;
+    concept IsKeyRepeatEvent = TEventType == EventType::KeyRepeat;
 
     template<EventType TEventType>
-    concept IsKeyEvent = IsKeyPressEvent<TEventType> || IsKeyReleaseEvent<TEventType> || IsKeyHoldEvent<TEventType>;
+    concept IsKeyEvent = IsKeyPressEvent<TEventType> || IsKeyReleaseEvent<TEventType> || IsKeyRepeatEvent<TEventType>;
 
     template<EventType TEventType>
     concept IsMouseButtonPressEvent = TEventType == EventType::MouseButtonPressed;

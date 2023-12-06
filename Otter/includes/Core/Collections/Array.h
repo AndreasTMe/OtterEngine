@@ -26,15 +26,15 @@ namespace Otter
 
         Array()
         {
-            if (IsCreated())
-                Buffer::Delete<T>(m_Data, Size);
-
             if constexpr (Size > 0)
                 m_Data = Buffer::New<T>(Size);
         }
         ~Array()
         {
-            ClearDestructive();
+            if (IsCreated())
+                Buffer::Delete<T>(m_Data, Size);
+
+            m_Data = nullptr;
         }
 
         OTR_WITH_ITERATOR(Iterator, m_Data, Size)
@@ -100,14 +100,6 @@ namespace Otter
             OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
             OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
             return m_Data[index];
-        }
-
-        void ClearDestructive()
-        {
-            if (IsCreated())
-                Buffer::Delete<T>(m_Data, Size);
-
-            m_Data = nullptr;
         }
 
         [[nodiscard]] OTR_INLINE const ReadOnlyArray<T, Size> AsReadOnly() const

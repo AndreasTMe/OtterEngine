@@ -148,12 +148,12 @@ namespace Otter
             return true;
         }
 
-        bool TryDequeue(T& item)
+        bool TryDequeue(T* outItem)
         {
             if (IsEmpty())
                 return false;
 
-            item = m_Data[m_StartIndex];
+            *outItem = m_Data[m_StartIndex];
             m_StartIndex++;
 
             if (m_StartIndex >= m_Capacity)
@@ -164,12 +164,12 @@ namespace Otter
             return true;
         }
 
-        bool TryPeek(T& item)
+        bool TryPeek(T* outItem)
         {
             if (IsEmpty())
                 return false;
 
-            item = m_Data[m_StartIndex];
+            *outItem = m_Data[m_StartIndex];
 
             return true;
         }

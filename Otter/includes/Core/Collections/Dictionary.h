@@ -168,7 +168,7 @@ namespace Otter
             return true;
         }
 
-        bool TryGet(const TKey& key, TValue& value) const
+        bool TryGet(const TKey& key, TValue* outValue) const
         {
             if (!IsCreated())
                 return false;
@@ -183,7 +183,7 @@ namespace Otter
             {
                 if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Data.Key == key)
                 {
-                    value = m_Buckets[index].Items[i].Data.Value;
+                    *outValue = m_Buckets[index].Items[i].Data.Value;
                     return true;
                 }
             }
