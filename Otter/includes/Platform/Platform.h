@@ -59,6 +59,7 @@ namespace Otter
         static void Free(void* block);
         static void MemoryCopy(void* destination, const void* source, UInt64 size);
         static void MemoryClear(void* block, UInt64 size);
+        static void SleepForMilliseconds(UInt64 value);
 
         static void Log(const char* message, UInt8 level);
 
