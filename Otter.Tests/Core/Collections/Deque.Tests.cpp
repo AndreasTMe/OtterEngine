@@ -10,12 +10,12 @@ class Deque_Fixture : public ::testing::Test
 protected:
     void SetUp() override
     {
-        Otter::MemorySystem::Initialise(1_KiB);
+        OTR_MEMORY_SYSTEM.Initialise(1_KiB);
     }
 
     void TearDown() override
     {
-        Otter::MemorySystem::Shutdown();
+        OTR_MEMORY_SYSTEM.Shutdown();
     }
 };
 
@@ -77,9 +77,9 @@ TEST_F(Deque_Fixture, PushFront)
     EXPECT_EQ(deque.GetCount(), 3);
 
     int out = 0;
-    EXPECT_TRUE(deque.TryPeekFront(out));
+    EXPECT_TRUE(deque.TryPeekFront(&out));
     EXPECT_EQ(out, 3);
-    EXPECT_TRUE(deque.TryPeekBack(out));
+    EXPECT_TRUE(deque.TryPeekBack(&out));
     EXPECT_EQ(out, 1);
 }
 
@@ -101,9 +101,9 @@ TEST_F(Deque_Fixture, PushBack)
     EXPECT_EQ(deque.GetCount(), 3);
 
     int out = 0;
-    EXPECT_TRUE(deque.TryPeekFront(out));
+    EXPECT_TRUE(deque.TryPeekFront(&out));
     EXPECT_EQ(out, 1);
-    EXPECT_TRUE(deque.TryPeekBack(out));
+    EXPECT_TRUE(deque.TryPeekBack(&out));
     EXPECT_EQ(out, 3);
 }
 
@@ -113,9 +113,9 @@ TEST_F(Deque_Fixture, TryPopFront)
 
     int out = 0;
     EXPECT_TRUE(deque.TryPopFront());
-    EXPECT_TRUE(deque.TryPeekFront(out));
+    EXPECT_TRUE(deque.TryPeekFront(&out));
     EXPECT_EQ(out, 2);
-    EXPECT_TRUE(deque.TryPeekBack(out));
+    EXPECT_TRUE(deque.TryPeekBack(&out));
     EXPECT_EQ(out, 5);
 
     EXPECT_TRUE(deque.TryPopFront());
@@ -131,9 +131,9 @@ TEST_F(Deque_Fixture, TryPopBack)
 
     int out = 0;
     EXPECT_TRUE(deque.TryPopBack());
-    EXPECT_TRUE(deque.TryPeekFront(out));
+    EXPECT_TRUE(deque.TryPeekFront(&out));
     EXPECT_EQ(out, 1);
-    EXPECT_TRUE(deque.TryPeekBack(out));
+    EXPECT_TRUE(deque.TryPeekBack(&out));
     EXPECT_EQ(out, 4);
 
     EXPECT_TRUE(deque.TryPopBack());

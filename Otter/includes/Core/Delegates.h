@@ -162,14 +162,14 @@ namespace Otter
                 typename base::Function function;
                 if (count == base::m_Functions.GetCount())
                 {
-                    base::m_Functions.TryPeekFront(function);
+                    base::m_Functions.TryPeekFront(&function);
 
                     result = function(args...);
                     count--;
                     continue;
                 }
 
-                base::m_Functions.TryPeekFront(function);
+                base::m_Functions.TryPeekFront(&function);
 
                 function(args...);
                 count--;

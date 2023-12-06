@@ -168,7 +168,7 @@ namespace Otter
             return true;
         }
 
-        bool TryGet(const TKey& key, TValue& value) const
+        bool TryGet(const TKey& key, TValue* outValue) const
         {
             if (!IsCreated())
                 return false;
@@ -183,7 +183,7 @@ namespace Otter
             {
                 if (m_Buckets[index].Items[i].Hash == hash && m_Buckets[index].Items[i].Data.Key == key)
                 {
-                    value = m_Buckets[index].Items[i].Data.Value;
+                    *outValue = m_Buckets[index].Items[i].Data.Value;
                     return true;
                 }
             }
@@ -322,24 +322,24 @@ namespace Otter
                 return;
             }
 
-            Otter::MemorySystem::CheckMemoryFootprint([&]()
-                                                      {
-                                                          MemoryDebugPair pairs[1 + m_Capacity];
-                                                          pairs[0] = { debugName, m_Buckets };
+            OTR_MEMORY_SYSTEM.CheckMemoryFootprint([&]()
+                                                   {
+                                                       MemoryDebugPair pairs[1 + m_Capacity];
+                                                       pairs[0] = { debugName, m_Buckets };
 
-                                                          for (UInt64 i = 0; i < m_Capacity; i++)
-                                                          {
-                                                              pairs[i + 1] = MemoryDebugPair(
-                                                                  ("bucket_" + std::to_string(i)).c_str(),
-                                                                  m_Buckets[i].IsCreated() ? m_Buckets[i].Items
-                                                                                           : nullptr
-                                                              );
-                                                          }
+                                                       for (UInt64 i = 0; i < m_Capacity; i++)
+                                                       {
+                                                           pairs[i + 1] = MemoryDebugPair(
+                                                               ("bucket_" + std::to_string(i)).c_str(),
+                                                               m_Buckets[i].IsCreated() ? m_Buckets[i].Items
+                                                                                        : nullptr
+                                                           );
+                                                       }
 
-                                                          return MemoryDebugHandle{ pairs, 1 + m_Capacity };
-                                                      },
-                                                      outFootprints,
-                                                      nullptr);
+                                                       return MemoryDebugHandle{ pairs, 1 + m_Capacity };
+                                                   },
+                                                   outFootprints,
+                                                   nullptr);
         }
 #endif
 

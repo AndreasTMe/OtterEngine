@@ -163,22 +163,22 @@ namespace Otter
             return true;
         }
 
-        [[nodiscard]] bool TryPeekFront(T& value)
+        [[nodiscard]] bool TryPeekFront(T* outItem)
         {
             if (m_Count == 0)
                 return false;
 
-            value = m_Data[0];
+            *outItem = m_Data[0];
 
             return true;
         }
 
-        [[nodiscard]] bool TryPeekBack(T& value)
+        [[nodiscard]] bool TryPeekBack(T* outItem)
         {
             if (m_Count == 0)
                 return false;
 
-            value = m_Data[m_Count - 1];
+            *outItem = m_Data[m_Count - 1];
 
             return true;
         }
@@ -264,15 +264,15 @@ namespace Otter
         ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
-            Otter::MemorySystem::CheckMemoryFootprint([&]()
-                                                      {
-                                                          MemoryDebugPair pair[1];
-                                                          pair[0] = { debugName, m_Data };
+            OTR_MEMORY_SYSTEM.CheckMemoryFootprint([&]()
+                                                   {
+                                                       MemoryDebugPair pair[1];
+                                                       pair[0] = { debugName, m_Data };
 
-                                                          return MemoryDebugHandle{ pair, 1 };
-                                                      },
-                                                      &footprint,
-                                                      nullptr);
+                                                       return MemoryDebugHandle{ pair, 1 };
+                                                   },
+                                                   &footprint,
+                                                   nullptr);
 
             return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
         }
@@ -283,7 +283,7 @@ namespace Otter
         [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && m_Capacity > 0; }
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_Count == 0; }
 
-        [[nodiscard]] OTR_INLINE constexpr T* GetData() const { return m_Data; }
+        [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
 
     private:
         T* m_Data = nullptr;

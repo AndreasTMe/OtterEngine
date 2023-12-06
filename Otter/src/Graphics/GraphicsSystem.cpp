@@ -5,14 +5,12 @@
 
 namespace Otter
 {
-    Graphics::RendererAPI* GraphicsSystem::s_Renderer = nullptr;
-
     bool GraphicsSystem::TryInitialise(const void* const platformContext)
     {
-        OTR_INTERNAL_ASSERT_MSG(s_Renderer == nullptr, "Graphics system already initialised")
+        OTR_INTERNAL_ASSERT_MSG(m_Renderer == nullptr, "Graphics system already initialised")
 
-        s_Renderer = Graphics::RendererAPI::Create();
-        if (!s_Renderer)
+        m_Renderer = Graphics::RendererAPI::Create();
+        if (!m_Renderer)
             return false;
 
         List < Graphics::Shader * > shaders;
@@ -27,7 +25,7 @@ namespace Otter
                                  Asset::Create<AssetType::Texture>("Assets/Textures/texture.jpg")
                              });
 
-        s_Renderer->Initialise(platformContext, shaders, textures);
+        m_Renderer->Initialise(platformContext, shaders, textures);
         // TODO: Initialise Global Uniform Buffer/Camera
 
         OTR_LOG_DEBUG("Graphics system initialised...")
@@ -37,17 +35,17 @@ namespace Otter
 
     void GraphicsSystem::Shutdown()
     {
-        OTR_INTERNAL_ASSERT_MSG(s_Renderer != nullptr, "Graphics system not initialised")
+        OTR_INTERNAL_ASSERT_MSG(m_Renderer != nullptr, "Graphics system not initialised")
 
         OTR_LOG_DEBUG("Shutting down graphics system...")
-        s_Renderer->Shutdown();
+        m_Renderer->Shutdown();
 
-        Graphics::RendererAPI::Destroy(s_Renderer);
+        Graphics::RendererAPI::Destroy(m_Renderer);
     }
 
     void GraphicsSystem::RenderFrame()
     {
-        if (!s_Renderer->TryBeginFrame())
+        if (!m_Renderer->TryBeginFrame())
             return;
 
         // TODO: Step 1: Bind Pipelines
@@ -56,8 +54,8 @@ namespace Otter
         // TODO: Step 3a: Bind Vertex Buffer
         // TODO: Step 3b: Bind Index Buffer
         // TODO: Step 4: Draw Indexed
-        s_Renderer->DrawIndexed();
+        m_Renderer->DrawIndexed();
 
-        s_Renderer->EndFrame();
+        m_Renderer->EndFrame();
     }
 }

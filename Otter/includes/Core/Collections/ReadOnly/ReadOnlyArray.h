@@ -30,8 +30,10 @@ namespace Otter
         }
         ~ReadOnlyArray()
         {
-            if (m_Data && Size > 0)
+            if (IsCreated())
                 Buffer::Delete<T>(m_Data, Size);
+
+            m_Data = nullptr;
         }
 
         OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
@@ -66,6 +68,7 @@ namespace Otter
 
         const T& operator[](UInt64 index) const
         {
+            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
             OTR_ASSERT_MSG(index < Size, "ReadOnlyArray index out of bounds")
             return m_Data[index];
         }
@@ -74,15 +77,15 @@ namespace Otter
         ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
-            Otter::MemorySystem::CheckMemoryFootprint([&]()
-                                                      {
-                                                          MemoryDebugPair pair[1];
-                                                          pair[0] = { debugName, m_Data };
+            OTR_MEMORY_SYSTEM.CheckMemoryFootprint([&]()
+                                                   {
+                                                       MemoryDebugPair pair[1];
+                                                       pair[0] = { debugName, m_Data };
 
-                                                          return MemoryDebugHandle{ pair, 1 };
-                                                      },
-                                                      &footprint,
-                                                      nullptr);
+                                                       return MemoryDebugHandle{ pair, 1 };
+                                                   },
+                                                   &footprint,
+                                                   nullptr);
 
             return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
         }
@@ -90,6 +93,7 @@ namespace Otter
 
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
+        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && Size > 0; }
 
     private:
         T* m_Data;

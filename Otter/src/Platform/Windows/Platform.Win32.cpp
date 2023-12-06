@@ -20,9 +20,10 @@ namespace Otter::Internal
 
     bool WindowsPlatform::TryInitialise()
     {
-        UInt64 platformContextSize    = OTR_ALIGNED_OFFSET(sizeof(PlatformContext), OTR_PLATFORM_MEMORY_ALIGNMENT);
-        UInt64 platformWindowDataSize = OTR_ALIGNED_OFFSET(sizeof(WindowsPlatformWindowData),
-                                                           OTR_PLATFORM_MEMORY_ALIGNMENT);
+        constexpr UInt64 platformContextSize    = OTR_ALIGNED_OFFSET(sizeof(PlatformContext),
+                                                                     OTR_PLATFORM_MEMORY_ALIGNMENT);
+        constexpr UInt64 platformWindowDataSize = OTR_ALIGNED_OFFSET(sizeof(WindowsPlatformWindowData),
+                                                                     OTR_PLATFORM_MEMORY_ALIGNMENT);
 
         g_PlatformMemoryHandle = Unsafe::New(platformContextSize + platformWindowDataSize);
 
@@ -193,7 +194,7 @@ namespace Otter::Internal
         {
             case WM_QUIT:
             case WM_CLOSE:
-                EventSystem::Schedule<WindowCloseEvent>();
+                OTR_EVENT_SYSTEM.Schedule<WindowCloseEvent>();
                 return 0;
             case WM_DESTROY:
                 PostQuitMessage(0);
@@ -212,13 +213,13 @@ namespace Otter::Internal
                 switch (wParam)
                 {
                     case SIZE_MINIMIZED:
-                        EventSystem::Schedule<WindowMinimizedEvent>();
+                        OTR_EVENT_SYSTEM.Schedule<WindowMinimizedEvent>();
                         break;
                     case SIZE_MAXIMIZED:
-                        EventSystem::Schedule<WindowMaximizedEvent>();
+                        OTR_EVENT_SYSTEM.Schedule<WindowMaximizedEvent>();
                         break;
                     case SIZE_RESTORED:
-                        EventSystem::Schedule<WindowRestoredEvent>();
+                        OTR_EVENT_SYSTEM.Schedule<WindowRestoredEvent>();
                         break;
                     default:
                         break;
@@ -226,9 +227,9 @@ namespace Otter::Internal
 
                 RECT clientRect;
                 GetClientRect(window, &clientRect);
-                EventSystem::Schedule<WindowResizeEvent>(clientRect.right - clientRect.left,
-                                                         clientRect.bottom - clientRect.top,
-                                                         userIsResizing);
+                OTR_EVENT_SYSTEM.Schedule<WindowResizeEvent>(clientRect.right - clientRect.left,
+                                                             clientRect.bottom - clientRect.top,
+                                                             userIsResizing);
             }
                 break;
             case WM_KEYDOWN:
@@ -281,18 +282,18 @@ namespace Otter::Internal
             if (repeatCount > 0)
             {
                 staticRepeatCount += repeatCount;
-                EventSystem::Schedule<KeyRepeatEvent>(keyCode, staticRepeatCount);
+                OTR_EVENT_SYSTEM.Schedule<KeyRepeatEvent>(keyCode, staticRepeatCount);
             }
             else
             {
                 staticRepeatCount = 1;
-                EventSystem::Schedule<KeyPressedEvent>(keyCode);
+                OTR_EVENT_SYSTEM.Schedule<KeyPressedEvent>(keyCode);
             }
         }
         else
         {
             staticRepeatCount = 0;
-            EventSystem::Schedule<KeyReleasedEvent>(keyCode);
+            OTR_EVENT_SYSTEM.Schedule<KeyReleasedEvent>(keyCode);
         }
     }
 
@@ -301,32 +302,32 @@ namespace Otter::Internal
         switch (message)
         {
             case WM_MOUSEMOVE:
-                EventSystem::Schedule<MouseMovedEvent>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+                OTR_EVENT_SYSTEM.Schedule<MouseMovedEvent>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
                 break;
             case WM_MOUSEWHEEL:
             {
                 Int16 delta = GET_WHEEL_DELTA_WPARAM(wParam);
                 if (delta != 0)
-                    EventSystem::Schedule<MouseScrollEvent>(delta > 0);
+                    OTR_EVENT_SYSTEM.Schedule<MouseScrollEvent>(delta > 0);
             }
                 break;
             case WM_LBUTTONDOWN:
-                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Left);
+                OTR_EVENT_SYSTEM.Schedule<MouseButtonPressedEvent>(MouseButton::Left);
                 break;
             case WM_LBUTTONUP:
-                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Left);
+                OTR_EVENT_SYSTEM.Schedule<MouseButtonReleasedEvent>(MouseButton::Left);
                 break;
             case WM_MBUTTONDOWN:
-                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Middle);
+                OTR_EVENT_SYSTEM.Schedule<MouseButtonPressedEvent>(MouseButton::Middle);
                 break;
             case WM_MBUTTONUP:
-                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Middle);
+                OTR_EVENT_SYSTEM.Schedule<MouseButtonReleasedEvent>(MouseButton::Middle);
                 break;
             case WM_RBUTTONDOWN:
-                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Right);
+                OTR_EVENT_SYSTEM.Schedule<MouseButtonPressedEvent>(MouseButton::Right);
                 break;
             case WM_RBUTTONUP:
-                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Right);
+                OTR_EVENT_SYSTEM.Schedule<MouseButtonReleasedEvent>(MouseButton::Right);
                 break;
             default:
                 break;

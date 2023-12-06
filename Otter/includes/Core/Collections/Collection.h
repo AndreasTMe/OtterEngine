@@ -183,15 +183,15 @@ namespace Otter
         ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
-            Otter::MemorySystem::CheckMemoryFootprint([&]()
-                                                      {
-                                                          MemoryDebugPair pair[1];
-                                                          pair[0] = { debugName, m_Data };
+            OTR_MEMORY_SYSTEM.CheckMemoryFootprint([&]()
+                                                   {
+                                                       MemoryDebugPair pair[1];
+                                                       pair[0] = { debugName, m_Data };
 
-                                                          return MemoryDebugHandle{ pair, 1 };
-                                                      },
-                                                      &footprint,
-                                                      nullptr);
+                                                       return MemoryDebugHandle{ pair, 1 };
+                                                   },
+                                                   &footprint,
+                                                   nullptr);
 
             return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
         }
@@ -202,7 +202,7 @@ namespace Otter
         [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Data && m_Capacity > 0; }
         [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
 
-        [[nodiscard]] OTR_INLINE constexpr T* GetData() const noexcept { return m_Data; }
+        [[nodiscard]] OTR_INLINE const T* GetData() const noexcept { return m_Data; }
 
     protected:
         Collection()

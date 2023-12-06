@@ -7,8 +7,8 @@ namespace Otter
 {
     void Application::Run()
     {
-        MemorySystem::Initialise(k_Configuration.MemoryRequirements);
-        EventSystem::Initialise();
+        OTR_MEMORY_SYSTEM.Initialise(k_Configuration.MemoryRequirements);
+        OTR_EVENT_SYSTEM.Initialise();
 
         auto* platform = Platform::CreatePlatform({ k_Configuration.Title,
                                                     k_Configuration.Width,
@@ -20,27 +20,27 @@ namespace Otter
 
             Platform::DestroyPlatform(platform);
 
-            EventSystem::Shutdown();
-            MemorySystem::Shutdown();
+            OTR_EVENT_SYSTEM.Shutdown();
+            OTR_MEMORY_SYSTEM.Shutdown();
 
             return;
         }
 
-        if (GraphicsSystem::TryInitialise(platform->GetUnsafeContext()))
+        if (OTR_GRAPHICS_SYSTEM.TryInitialise(platform->GetUnsafeContext()))
         {
             OTR_LOG_DEBUG("Total allocation after system initialisation: {0} / {1} bytes",
-                          MemorySystem::GetUsedMemory(),
-                          MemorySystem::GetMemorySize())
+                          OTR_MEMORY_SYSTEM.GetUsedMemory(),
+                          OTR_MEMORY_SYSTEM.GetMemorySize())
 
             while (platform->IsRunning())
             {
                 platform->CaptureWindowEvents();
-                EventSystem::Process();
+                OTR_EVENT_SYSTEM.Process();
 
-                GraphicsSystem::RenderFrame();
+                OTR_GRAPHICS_SYSTEM.RenderFrame();
             }
 
-            GraphicsSystem::Shutdown();
+            OTR_GRAPHICS_SYSTEM.Shutdown();
         }
         else
         {
@@ -50,11 +50,11 @@ namespace Otter
         platform->Shutdown();
         Platform::DestroyPlatform(platform);
 
-        EventSystem::Shutdown();
-        MemorySystem::Shutdown();
+        OTR_EVENT_SYSTEM.Shutdown();
+        OTR_MEMORY_SYSTEM.Shutdown();
 
         OTR_LOG_DEBUG("Total allocation after system shutdown: {0} / {1} bytes",
-                      MemorySystem::GetUsedMemory(),
-                      MemorySystem::GetMemorySize())
+                      OTR_MEMORY_SYSTEM.GetUsedMemory(),
+                      OTR_MEMORY_SYSTEM.GetMemorySize())
     }
 }

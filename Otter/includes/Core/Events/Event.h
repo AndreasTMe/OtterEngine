@@ -14,10 +14,10 @@ namespace Otter
     concept IsKeyReleaseEvent = TEventType == EventType::KeyReleased;
 
     template<EventType TEventType>
-    concept IsKeyHoldEvent = TEventType == EventType::KeyHold;
+    concept IsKeyRepeatEvent = TEventType == EventType::KeyRepeat;
 
     template<EventType TEventType>
-    concept IsKeyEvent = IsKeyPressEvent<TEventType> || IsKeyReleaseEvent<TEventType> || IsKeyHoldEvent<TEventType>;
+    concept IsKeyEvent = IsKeyPressEvent<TEventType> || IsKeyReleaseEvent<TEventType> || IsKeyRepeatEvent<TEventType>;
 
     template<EventType TEventType>
     concept IsMouseButtonPressEvent = TEventType == EventType::MouseButtonPressed;
@@ -104,34 +104,32 @@ namespace Otter
 
         Event(const Event& other)
         {
-            for (UInt64 i = 0; i < 16; i++)
-                m_Data[i] = other.m_Data[i];
+            OTR_MEMORY_SYSTEM.MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
         }
 
         Event(Event&& other) noexcept
         {
-            for (UInt64 i = 0; i < 16; i++)
-                m_Data[i] = other.m_Data[i];
+            OTR_MEMORY_SYSTEM.MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
+            OTR_MEMORY_SYSTEM.MemoryClear(other.m_Data, sizeof(m_Data));
         }
 
         Event& operator=(const Event& other)
         {
-            if (this != &other)
-            {
-                for (UInt64 i = 0; i < 16; i++)
-                    m_Data[i] = other.m_Data[i];
-            }
+            if (this == &other)
+                return *this;
+
+            OTR_MEMORY_SYSTEM.MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
 
             return *this;
         }
 
         Event& operator=(Event&& other) noexcept
         {
-            if (this != &other)
-            {
-                for (UInt64 i = 0; i < 16; i++)
-                    m_Data[i] = other.m_Data[i];
-            }
+            if (this == &other)
+                return *this;
+
+            OTR_MEMORY_SYSTEM.MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
+            OTR_MEMORY_SYSTEM.MemoryClear(other.m_Data, sizeof(m_Data));
 
             return *this;
         }
@@ -185,7 +183,7 @@ namespace Otter
             }
             else
             {
-                MemorySystem::MemoryCopy(&m_Data[offset], &value, sizeof(T));
+                OTR_MEMORY_SYSTEM.MemoryCopy(&m_Data[offset], &value, sizeof(T));
             }
         }
 
@@ -223,7 +221,7 @@ namespace Otter
             else
             {
                 T value = (T) 0.0;
-                MemorySystem::MemoryCopy(&value, &m_Data[offset], sizeof(T));
+                OTR_MEMORY_SYSTEM.MemoryCopy(&value, &m_Data[offset], sizeof(T));
 
                 return value;
             }

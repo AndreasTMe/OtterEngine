@@ -4,19 +4,9 @@
 
 namespace Otter
 {
-    Queue<Event>    EventSystem::s_Events{ };
-    bool            EventSystem::s_BlockEvents = false;
-
-    Dictionary<EventType, Func<bool, const Event&>*> g_Listeners;
-
-    template<typename TEvent = Event, typename TActionArg = const TEvent&>
-    requires IsBaseOf<Event, TEvent>
-    void AddListener(EventType type, Func<bool, TActionArg>* action);
-
     void EventSystem::Initialise()
     {
-        static bool isInitialised = false;
-        OTR_INTERNAL_ASSERT_MSG(!isInitialised, "Event system has already been initialised")
+        OTR_INTERNAL_ASSERT_MSG(!m_IsInitialised, "Event system has already been initialised")
 
         // Window Events
         AddListener(EventType::WindowClose, &OTR_GLOBAL_ACTIONS.OnWindowClose);
@@ -28,7 +18,7 @@ namespace Otter
         // Keyboard Events
         AddListener(EventType::KeyPressed, &OTR_GLOBAL_ACTIONS.OnKeyPressed);
         AddListener(EventType::KeyReleased, &OTR_GLOBAL_ACTIONS.OnKeyReleased);
-        AddListener(EventType::KeyHold, &OTR_GLOBAL_ACTIONS.OnKeyRepeat);
+        AddListener(EventType::KeyRepeat, &OTR_GLOBAL_ACTIONS.OnKeyRepeat);
 
         // Mouse Events
         AddListener(EventType::MouseButtonPressed, &OTR_GLOBAL_ACTIONS.OnMouseButtonPressed);
@@ -36,17 +26,18 @@ namespace Otter
         AddListener(EventType::MouseScroll, &OTR_GLOBAL_ACTIONS.OnMouseScroll);
         AddListener(EventType::MouseMoved, &OTR_GLOBAL_ACTIONS.OnMouseMoved);
 
-        isInitialised = true;
+        m_IsInitialised = true;
 
         OTR_LOG_DEBUG("Event system initialised")
     }
 
     void EventSystem::Shutdown()
     {
+        OTR_INTERNAL_ASSERT_MSG(m_IsInitialised, "Event system has not been initialised")
+
         OTR_LOG_DEBUG("Shutting down event system...")
 
-        g_Listeners.ClearDestructive();
-        s_Events.ClearDestructive();
+        m_Events.ClearDestructive();
 
         OTR_GLOBAL_ACTIONS.OnMouseMoved.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnMouseScroll.ClearDestructive();
@@ -62,35 +53,40 @@ namespace Otter
         OTR_GLOBAL_ACTIONS.OnWindowMinimized.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnWindowResize.ClearDestructive();
         OTR_GLOBAL_ACTIONS.OnWindowClose.ClearDestructive();
+
+        m_IsInitialised = false;
     }
 
     void EventSystem::Process()
     {
         Event event;
-        while (s_Events.TryPeek(event))
+        while (m_Events.TryPeek(&event))
         {
             auto type = event.GetEventType();
+            if (type == EventType::None || type == EventType::Max)
+            {
+                m_Events.TryDequeue();
+                continue;
+            }
 
-            Func<bool, const Event&>* callback;
-            if (g_Listeners.TryGet(type, callback))
+            auto* callback = m_EventListeners[static_cast<UInt64>(type) - 1];
+            if (callback)
                 callback->ReverseInvoke(event);
 
-            s_Events.TryDequeue();
+            m_Events.TryDequeue();
         }
 
-        s_BlockEvents = false;
+        m_BlockEvents = false;
     }
 
     template<typename TEvent, typename TActionArg>
     requires IsBaseOf<Event, TEvent>
-    void AddListener(EventType type, Func<bool, TActionArg>* action)
+    void EventSystem::AddListener(EventType type, Func<bool, TActionArg>* action)
     {
         OTR_INTERNAL_ASSERT_MSG(type != EventType::None, "Event type cannot be None")
         OTR_INTERNAL_ASSERT_MSG(type != EventType::Max, "Event type cannot be Max")
 
-        if (g_Listeners.Contains(type))
-            return;
-
-        g_Listeners.TryAdd(type, reinterpret_cast<Func<bool, const Event&>*>(action));
+        if (action)
+            m_EventListeners[static_cast<UInt64>(type) - 1] = reinterpret_cast<Func<bool, const Event&>*>(action);
     }
 }

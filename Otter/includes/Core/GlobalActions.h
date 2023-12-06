@@ -2,6 +2,7 @@
 #define OTTERENGINE_GLOBALACTIONS_H
 
 #include "Core/Defines.h"
+#include "Core/Delegates.h"
 
 #include "Core/Events/WindowEvents.h"
 #include "Core/Events/KeyboardEvents.h"
