@@ -33,6 +33,7 @@ namespace Otter
         if (m_Accumulator >= k_FixedDeltaTime)
         {
             m_Accumulator -= k_FixedDeltaTime;
+
             return true;
         }
 

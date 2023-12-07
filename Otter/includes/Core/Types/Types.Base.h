@@ -1,15 +1,17 @@
 #ifndef OTTERENGINE_TYPES_BASE_H
 #define OTTERENGINE_TYPES_BASE_H
 
+#include <cstddef>
 #include <cstdint>
 #include <stdfloat>
 #include <memory>
 #include <type_traits>
 
-typedef std::size_t Size;
-
 typedef std::uintptr_t UIntPtr;
 typedef std::intptr_t  IntPtr;
+typedef std::nullptr_t NullPtr;
+
+typedef std::size_t Size;
 
 typedef unsigned char Byte;
 

@@ -24,6 +24,11 @@ namespace Otter
         Function() noexcept = default;
         ~Function() = default;
 
+        Function(NullPtr) noexcept // NOLINT(*-explicit-constructor)
+        {
+            m_Callback = nullptr;
+        }
+
         Function(const Function& other)
         {
             ::new(m_Data.Ptr) std::decay_t<decltype(other.m_Data)>(other.m_Data);
@@ -63,6 +68,14 @@ namespace Otter
         Function& operator=(Function&& other) noexcept
         {
             Function(std::move(other)).Swap(*this);
+            return *this;
+        }
+
+        Function& operator=(NullPtr) noexcept
+        {
+            m_Callback = nullptr;
+            m_Data     = { };
+
             return *this;
         }
 

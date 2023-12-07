@@ -21,18 +21,18 @@ namespace Otter
     struct Time final
     {
     public:
-        explicit Time(const TimeConfiguration& config, Function<Double64()> getTimeCallback)
+        explicit Time(const TimeConfiguration& config, const Function<Double64()>& getTimeCallback)
             : k_InverseFrameRateMin(config.FrameRateMin == 0.0 ? 0.0 : 1.0 / config.FrameRateMin),
               k_InverseFrameRateMax(config.FrameRateMax == 0.0 ? 0.0 : 1.0 / config.FrameRateMax),
               k_FixedDeltaTime(config.FixedDeltaTime)
         {
-            OTR_INTERNAL_ASSERT_MSG(k_InverseFrameRateMax > 0.0
-                                    ? k_InverseFrameRateMin <= k_InverseFrameRateMax
+            OTR_INTERNAL_ASSERT_MSG(config.FrameRateMin > 0.0 && config.FrameRateMax > 0.0
+                                    ? config.FrameRateMin <= config.FrameRateMax
                                     : true,
                                     "Minimum frame rate cannot be greater than maximum frame rate.")
-            OTR_INTERNAL_ASSERT_MSG(k_FixedDeltaTime >= 0.0, "Fixed delta time cannot be negative.")
+            OTR_INTERNAL_ASSERT_MSG(config.FixedDeltaTime >= 0.0, "Fixed delta time cannot be negative.")
 
-            OTR_INTERNAL_ASSERT_MSG(getTimeCallback, "Callback cannot be null.")
+            OTR_INTERNAL_ASSERT_MSG(!getTimeCallback.IsEmpty(), "Callback cannot be null.")
 
             m_GetTimeCallback = getTimeCallback;
         }

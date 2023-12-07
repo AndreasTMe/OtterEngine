@@ -1,5 +1,8 @@
 #include "Otter.PCH.h"
 
+// TODO: Remove this.
+#include <thread>
+
 #include "Core/Application.h"
 #include "Graphics/GraphicsSystem.h"
 
@@ -32,7 +35,7 @@ namespace Otter
                           OTR_MEMORY_SYSTEM.GetUsedMemory(),
                           OTR_MEMORY_SYSTEM.GetMemorySize())
 
-            m_Time = New<Time>(TimeConfiguration{ 1.0 / 60.0, 0.0, 0.01 },
+            m_Time = New<Time>(TimeConfiguration{ 60.0, 75.0, 0.01 },
                                [platform]() { return platform->GetAbsoluteTime(); });
             m_Time->Start();
 
@@ -50,8 +53,10 @@ namespace Otter
                 // Physics Update
                 while (m_Time->HasFixedStepsLeft())
                 {
-                    // Something like this:
-                    // Physics::Update(m_Time->GetFixedDeltaTime());
+                    // TODO: Replace with physics system.
+                    //  Physics::Update(m_Time->GetFixedDeltaTime());
+
+                    std::this_thread::sleep_for(std::chrono::duration<double>(m_Time->GetFixedDeltaTime()));
                 }
 
                 // Render

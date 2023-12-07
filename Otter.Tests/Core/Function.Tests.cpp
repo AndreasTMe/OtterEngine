@@ -15,6 +15,11 @@ TEST(Function, Initialisation_Default)
 
     Function<float(int, int)> func3;
     EXPECT_FALSE(func3);
+
+    Function<void()> func4 = nullptr;
+    EXPECT_FALSE(func4);
+    func4 = nullptr;
+    EXPECT_FALSE(func4);
 }
 
 TEST(Function, Initialisation_Copy)
