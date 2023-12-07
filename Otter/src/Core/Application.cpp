@@ -32,37 +32,33 @@ namespace Otter
                           OTR_MEMORY_SYSTEM.GetUsedMemory(),
                           OTR_MEMORY_SYSTEM.GetMemorySize())
 
-            const Double64 fixedDeltaTime = 0.01;
-            const Double64 frameRate      = 1.0 / 60.0;
-            Double64       currentTime    = platform->GetAbsoluteTime();
-            Double64       accumulator    = 0.0;
+            m_Time = New<Time>(TimeConfiguration{ 1.0 / 60.0, 0.0, 0.01 },
+                               [platform]() { return platform->GetAbsoluteTime(); });
+            m_Time->Start();
 
             while (platform->IsRunning())
             {
-                Double64 newTime   = platform->GetAbsoluteTime();
-                Double64 deltaTime = newTime - currentTime;
-                currentTime = newTime;
+                m_Time->Refresh();
 
-                // Use accumulator to ensure fixed update is called at a fixed rate
-                accumulator += deltaTime;
-
-                // Clamp accumulator to prevent spiral of death
-                if (accumulator < frameRate)
-                    accumulator = frameRate;
-
-                // Update
+                // Logic Update
                 platform->CaptureWindowEvents();
                 OTR_EVENT_SYSTEM.Process();
 
+                for (const auto& layer: m_Layers)
+                    layer->OnUpdate(m_Time->GetDeltaTime());
+
                 // Physics Update
-                while (accumulator >= fixedDeltaTime)
+                while (m_Time->HasFixedStepsLeft())
                 {
-                    // TODO: Physics Update
-                    accumulator -= fixedDeltaTime;
+                    // Something like this:
+                    // Physics::Update(m_Time->GetFixedDeltaTime());
                 }
 
+                // Render
                 OTR_GRAPHICS_SYSTEM.RenderFrame();
             }
+
+            Delete<Time>(m_Time);
 
             OTR_GRAPHICS_SYSTEM.Shutdown();
         }

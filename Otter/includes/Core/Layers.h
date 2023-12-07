@@ -4,6 +4,7 @@
 #include "Core/Defines.h"
 #include "Core/Types.h"
 #include "Core/Memory.h"
+#include "Core/Time.h"
 
 namespace Otter
 {
@@ -30,7 +31,7 @@ namespace Otter
 
         virtual void OnEnable() { m_IsEnabled = true; }
         virtual void OnDisable() { m_IsEnabled = false; }
-        virtual void OnUpdate() = 0;
+        virtual void OnUpdate(const TimeStep& step) = 0;
 
         [[nodiscard]] OTR_INLINE bool IsEnabled() const { return m_IsEnabled; }
 
