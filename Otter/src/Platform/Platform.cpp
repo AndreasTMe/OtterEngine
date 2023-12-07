@@ -75,6 +75,14 @@ namespace Otter
         ZeroMemory(block, size);
     }
 
+    void Platform::SleepForMilliseconds(UInt64 value)
+    {
+        if (value == 0)
+            return;
+
+        Sleep(value);
+    }
+
     void Platform::Log(const char* message, UInt8 level)
     {
         OTR_INTERNAL_ASSERT(level < 6)
@@ -163,6 +171,16 @@ namespace Otter
         memset(block, 0, size);
     }
 
+    void Platform::SleepForMilliseconds(UInt64 value)
+    {
+        OTR_LOG_FATAL("'Platform::Log' not supported for this platform")
+
+        if (value == 0)
+            return;
+
+        usleep(value * 1000);
+    }
+
     void Platform::Log(const char* message, UInt8 level)
     {
         OTR_LOG_FATAL("'Platform::Log' not supported for this platform")
@@ -211,6 +229,11 @@ namespace Otter
     void Platform::MemoryClear(void* block, UInt64 size)
     {
         OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform")
+    }
+
+    void Platform::SleepForMilliseconds(UInt64 value)
+    {
+        OTR_LOG_FATAL("'Platform::Log' not supported for this platform")
     }
 
     void Platform::Log(const char* message, UInt8 level)

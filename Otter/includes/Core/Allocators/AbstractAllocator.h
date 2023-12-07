@@ -3,6 +3,7 @@
 
 #include "Core/Defines.h"
 #include "Core/Types.h"
+#include "Core/Logger.h"
 
 namespace Otter
 {

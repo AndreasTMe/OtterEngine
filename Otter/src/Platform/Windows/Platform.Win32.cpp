@@ -13,8 +13,7 @@ namespace Otter::Internal
     static void OnKeyboardMessage(UINT message, WPARAM wParam, LPARAM lParam);
     static void OnMouseMessage(UINT message, WPARAM wParam, LPARAM lParam);
 
-    Double64      s_ClockFrequency = 0.0;
-    LARGE_INTEGER s_ClockStart     = { 0 };
+    static Double64 gs_ClockFrequency = 0.0;
 
     UnsafeHandle g_PlatformMemoryHandle;
 
@@ -38,7 +37,7 @@ namespace Otter::Internal
             return false;
         }
 
-        InitialiseInternalClock();
+        CaptureInternalClockFrequency();
         m_IsRunning = true;
 
         return true;
@@ -70,10 +69,10 @@ namespace Otter::Internal
 
     Double64 WindowsPlatform::GetAbsoluteTime() const
     {
-        LARGE_INTEGER currentTime;
-        QueryPerformanceCounter(&currentTime);
+        LARGE_INTEGER performanceCounter;
+        QueryPerformanceCounter(&performanceCounter);
 
-        return static_cast<Double64>(currentTime.QuadPart - s_ClockStart.QuadPart) * s_ClockFrequency;
+        return static_cast<Double64>(performanceCounter.QuadPart) * gs_ClockFrequency;
     }
 
     void WindowsPlatform::RegisterEvents()
@@ -178,12 +177,11 @@ namespace Otter::Internal
         return true;
     }
 
-    void WindowsPlatform::InitialiseInternalClock()
+    void WindowsPlatform::CaptureInternalClockFrequency()
     {
         LARGE_INTEGER clockFrequency;
         QueryPerformanceFrequency(&clockFrequency);
-        s_ClockFrequency = 1.0 / static_cast<Double64>(clockFrequency.QuadPart);
-        QueryPerformanceCounter(&s_ClockStart);
+        gs_ClockFrequency = 1.0 / static_cast<Double64>(clockFrequency.QuadPart);
     }
 
     LRESULT CALLBACK WindowProcedureCallbackOverride(HWND window, UINT message, WPARAM wParam, LPARAM lParam)

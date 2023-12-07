@@ -46,7 +46,7 @@ namespace Otter::Internal
         void RegisterEvents();
         bool TryInitialiseWindow();
 
-        static void InitialiseInternalClock();
+        static void CaptureInternalClockFrequency();
     };
 }
 

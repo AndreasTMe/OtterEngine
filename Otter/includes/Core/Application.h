@@ -4,6 +4,7 @@
 #include "Core/Defines.h"
 #include "Core/Collections/List.h"
 #include "Core/Layers.h"
+#include "Core/Time.h"
 
 namespace Otter
 {
@@ -37,6 +38,7 @@ namespace Otter
     private:
         const ApplicationConfiguration k_Configuration;
 
+        Time* m_Time = nullptr;
         List<Layer*> m_Layers{ };
     };
 
