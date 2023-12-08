@@ -442,7 +442,7 @@ namespace Otter::Math
          *
          * @tparam TDimension The dimension of the vectors.
          * @tparam TNumber The type of the coordinates in the current vector.
-         * @tparam TOtherNumber The type of the coordinates in the other Vector.
+         * @tparam TOtherNumber The type of the coordinates in the other vector.
          *
          * @param other The other vector instance to compare with.
          *
@@ -478,7 +478,7 @@ namespace Otter::Math
          *
          * @tparam TDimension The dimension of the vectors.
          * @tparam TNumber The type of the coordinates in the current vector.
-         * @tparam TOtherNumber The type of the coordinates in the other Vector.
+         * @tparam TOtherNumber The type of the coordinates in the other vector.
          *
          * @param other The other vector instance to compare with.
          *
