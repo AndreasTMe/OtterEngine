@@ -64,13 +64,13 @@ namespace Otter
 namespace Otter::Math
 {
     /**
-     * @brief A class representing a vector in n-dimensional space.
+     * @brief A struct representing a vector in n-dimensional space.
      *
      * @tparam TDimension The dimension of the vector.
      * @tparam TNumber The type of the vector's coordinates.
      *
      * @note The dimension of the vector can be 2, 3 or 4.
-     * @note This class can be used directly but it would be preferred to use the Vector2D, Vector3D and
+     * @note This struct can be used directly but it would be preferred to use the Vector2D, Vector3D and
      * Vector4D aliases instead.
      */
     template<UInt8 TDimension, AnyNumber TNumber> requires Dimension<TDimension>
@@ -92,7 +92,7 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Constructs a Vector object with all coordinates initialized to the given scalar value.
+         * @brief Constructs a vector object with all coordinates initialized to the given scalar value.
          *
          * @tparam TNumber The type of the coordinates in the vector.
          *
@@ -105,7 +105,7 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Constructs a Vector object with coordinates initialised from an initializer list.
+         * @brief Constructs a vector object with coordinates initialised from an initializer list.
          *
          * @tparam TNumber The type of the coordinates in the vector.
          *
@@ -121,12 +121,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Copy constructor for Vector objects.
+         * @brief Copy constructor for vector objects.
          *
          * @tparam TDimension The dimension of the vector.
          * @tparam TNumber The type of the coordinates in the vector.
          *
-         * @param other The Vector object to copy from.
+         * @param other The vector object to copy from.
          */
         Vector(const Vector<TDimension, TNumber>& other)
         {
@@ -135,12 +135,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Move constructor for Vector objects.
+         * @brief Move constructor for vector objects.
          *
          * @tparam TDimension The dimension of the vector.
          * @tparam TNumber The type of the coordinates in the vector.
          *
-         * @param other The Vector object to move from.
+         * @param other The vector object to move from.
          */
         Vector(Vector<TDimension, TNumber>&& other) noexcept
         {
@@ -149,14 +149,14 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Copy assignment operator for Vector objects.
+         * @brief Copy assignment operator for vector objects.
          *
          * @tparam TDimension The dimension of the vector.
          * @tparam TNumber The type of the coordinates in the vector.
          *
-         * @param other The Vector object to copy from.
+         * @param other The vector object to copy from.
          *
-         * @return A reference to the current Vector object after the copy assignment.
+         * @return A reference to the current vector object after the copy assignment.
          */
         Vector<TDimension, TNumber>& operator=(const Vector<TDimension, TNumber>& other)
         {
@@ -170,14 +170,14 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Move assignment operator for Vector objects.
+         * @brief Move assignment operator for vector objects.
          *
          * @tparam TDimension The dimension of the vector.
          * @tparam TNumber The type of the coordinates in the vector.
          *
-         * @param other The Vector object to move from.
+         * @param other The vector object to move from.
          *
-         * @return A reference to the current Vector object after the move assignment.
+         * @return A reference to the current vector object after the move assignment.
          */
         Vector<TDimension, TNumber>& operator=(Vector<TDimension, TNumber>&& other) noexcept
         {
@@ -438,15 +438,15 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Compares the current Vector instance with another Vector instance for equality.
+         * @brief Compares the current vector instance with another vector instance for equality.
          *
          * @tparam TDimension The dimension of the vectors.
          * @tparam TNumber The type of the coordinates in the current vector.
          * @tparam TOtherNumber The type of the coordinates in the other Vector.
          *
-         * @param other The other Vector instance to compare with.
+         * @param other The other vector instance to compare with.
          *
-         * @return true if the current Vector instance is equal to the other Vector instance,
+         * @return true if the current vector instance is equal to the other vector instance,
          *         false otherwise.
          *
          * @note The comparison behavior is different based on the data types of the coordinates. If both TNumber and
@@ -474,15 +474,15 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Compares the current Vector instance with another Vector instance for inequality.
+         * @brief Compares the current vector instance with another vector instance for inequality.
          *
          * @tparam TDimension The dimension of the vectors.
          * @tparam TNumber The type of the coordinates in the current vector.
          * @tparam TOtherNumber The type of the coordinates in the other Vector.
          *
-         * @param other The other Vector instance to compare with.
+         * @param other The other vector instance to compare with.
          *
-         * @return true if the current Vector instance is not equal to the other Vector instance,
+         * @return true if the current vector instance is not equal to the other vector instance,
          *         false otherwise.
          *
          * @note The '!=' operator is implemented in terms of the '==' operator.
@@ -690,19 +690,6 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with all coordinates set to one.
-         *
-         * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The coordinate type.
-         *
-         * @return The vector with all coordinates set to one.
-         */
-        OTR_INLINE static constexpr Vector<TDimension, TNumber> One()
-        {
-            return Vector<TDimension, TNumber>(static_cast<TNumber>(1.0));
-        }
-
-        /**
          * @brief Returns a vector with all coordinates set to zero.
          *
          * @tparam TDimension The dimension of the vector.
@@ -713,6 +700,19 @@ namespace Otter::Math
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Zero()
         {
             return Vector<TDimension, TNumber>(static_cast<TNumber>(0.0));
+        }
+
+        /**
+         * @brief Returns a vector with all coordinates set to one.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The coordinate type.
+         *
+         * @return The vector with all coordinates set to one.
+         */
+        OTR_INLINE static constexpr Vector<TDimension, TNumber> One()
+        {
+            return Vector<TDimension, TNumber>(static_cast<TNumber>(1.0));
         }
 
         /**
@@ -968,7 +968,7 @@ namespace Otter::Math
          *
          * @param lhs The first vector.
          * @param rhs The second vector.
-         * @param t The linear interpolation parameter.
+         * @param t The linear interpolation parameter (clamped between 0 and 1).
          *
          * @return The interpolated vector.
          *
@@ -1508,7 +1508,7 @@ namespace Otter::Math
          *
          * @param lhs The first vector.
          * @param rhs The second vector.
-         * @param t The linear interpolation parameter.
+         * @param t The linear interpolation parameter (clamped between 0 and 1).
          *
          * @return The interpolated vector.
          *
@@ -1526,12 +1526,12 @@ namespace Otter::Math
         /**
          * @brief Performs spherical linear interpolation between two 3D vectors.
          *
-         * @tparam Tx The type of the coordinates of the lhs vector.
-         * @tparam Ty The type of the coordinates of the rhs vector.
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
          * @tparam Tz The type of interpolation parameter.
          *
-         * @param lhs The lhs vector.
-         * @param rhs The rhs vector.
+         * @param lhs The first vector.
+         * @param rhs The second vector.
          * @param t The interpolation parameter.
          *
          * @return The result of the interpolation.
@@ -1549,13 +1549,13 @@ namespace Otter::Math
         /**
          * @brief Performs spherical linear interpolation between two 3D vectors.
          *
-         * @tparam Tx The type of the coordinates of the lhs vector.
-         * @tparam Ty The type of the coordinates of the rhs vector.
-         * @tparam Tz The type of interpolation parameter (clamped between 0 and 1).
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         * @tparam Tz The type of linear interpolation parameter.
          *
-         * @param lhs The lhs vector.
-         * @param rhs The rhs vector.
-         * @param t The interpolation parameter.
+         * @param lhs The first vector.
+         * @param rhs The second vector.
+         * @param t The linear interpolation parameter (clamped between 0 and 1).
          *
          * @return The result of the interpolation.
          */
