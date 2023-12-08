@@ -40,7 +40,7 @@ namespace Otter::Math
      * @brief A class representing a vector in n-dimensional space.
      *
      * @tparam TDimension The dimension of the vector.
-     * @tparam TNumber The type of the elements in the vector.
+     * @tparam TNumber The type of the vector's coordinates.
      *
      * @note The dimension of the vector can be 2, 3 or 4.
      * @note This class is can be used directly but it would be preferred to use the Vector2D, Vector3D and
@@ -56,7 +56,7 @@ namespace Otter::Math
 
     public:
         /**
-         * @brief Default constructor that initializes the vector with zero values.
+         * @brief Default constructor that initializes the vector with zero coordinates.
          */
         constexpr Vector()
         {
@@ -65,11 +65,11 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Constructs a Vector object with all elements initialized to the given scalar value.
+         * @brief Constructs a Vector object with all coordinates initialized to the given scalar value.
          *
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
-         * @param scalar The scalar value to initialize the vector elements with.
+         * @param scalar The scalar value to initialize the vector coordinates with.
          */
         constexpr explicit Vector(TNumber scalar)
         {
@@ -78,11 +78,11 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Constructs a Vector object with elements initialised from an initializer list.
+         * @brief Constructs a Vector object with coordinates initialised from an initializer list.
          *
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
-         * @param list The list containing the elements to initialise the vector with.
+         * @param list The list containing the coordinates to initialise the vector with.
          */
         constexpr Vector(InitialiserList<TNumber> list)
         {
@@ -97,7 +97,7 @@ namespace Otter::Math
          * @brief Copy constructor for Vector objects.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
          * @param other The Vector object to copy from.
          */
@@ -111,7 +111,7 @@ namespace Otter::Math
          * @brief Move constructor for Vector objects.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
          * @param other The Vector object to move from.
          */
@@ -125,7 +125,7 @@ namespace Otter::Math
          * @brief Copy assignment operator for Vector objects.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
          * @param other The Vector object to copy from.
          *
@@ -146,7 +146,7 @@ namespace Otter::Math
          * @brief Move assignment operator for Vector objects.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
          * @param other The Vector object to move from.
          *
@@ -164,13 +164,13 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Accesses the element at the specified index.
+         * @brief Accesses the coordinate at the specified index.
          *
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
-         * @param index The index of the element to access.
+         * @param index The index of the coordinate to access.
          *
-         * @return A reference to the element at the specified index.
+         * @return A reference to the coordinate at the specified index.
          */
         TNumber& operator[](UInt8 index)
         {
@@ -179,13 +179,13 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Accesses the element at the specified index.
+         * @brief Accesses the coordinate at the specified index.
          *
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
-         * @param index The index of the element to access.
+         * @param index The index of the coordinate to access.
          *
-         * @return A reference to the element at the specified index.
+         * @return A reference to the coordinate at the specified index.
          */
         const TNumber& operator[](UInt8 index) const
         {
@@ -197,9 +197,9 @@ namespace Otter::Math
          * @brief Conversion operator that allows the vector to be converted to a different vector type.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TOtherNumber The type of the elements in the resulting vector.
+         * @tparam TOtherNumber The type of the coordinates in the resulting vector.
          *
-         * @return A new vector with elements converted to the specified type.
+         * @return A new vector with coordinates converted to the specified type.
          */
         template<AnyNumber TOtherNumber>
         explicit operator Vector<TDimension, TOtherNumber>() const
@@ -213,11 +213,11 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Adds another vector to the current vector, element-wise.
+         * @brief Adds another vector to the current vector, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the current vector.
-         * @tparam TOtherNumber The type of the elements in the other vector.
+         * @tparam TNumber The type of the coordinates in the current vector.
+         * @tparam TOtherNumber The type of the coordinates in the other vector.
          *
          * @param other The vector to be added to the current vector.
          *
@@ -233,10 +233,10 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Adds another vector to the current vector, element-wise.
+         * @brief Adds another vector to the current vector, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
          * @param other The vector to be added to the current vector.
          *
@@ -251,11 +251,11 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Subtracts another vector from the current vector, element-wise.
+         * @brief Subtracts another vector from the current vector, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the current vector.
-         * @tparam TOtherNumber The type of the elements in the other vector.
+         * @tparam TNumber The type of the coordinates in the current vector.
+         * @tparam TOtherNumber The type of the coordinates in the other vector.
          *
          * @param other The vector to be subtracted from the current vector.
          *
@@ -271,10 +271,10 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Subtracts another vector from the current vector, element-wise.
+         * @brief Subtracts another vector from the current vector, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          *
          * @param other The vector to be subtracted from the current vector.
          *
@@ -289,13 +289,13 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Multiplies the current vector by a scalar value, element-wise.
+         * @brief Multiplies the current vector by a scalar value, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          * @tparam TOtherNumber The type of the scalar value.
          *
-         * @param scalar The scalar value to multiply the vector elements with.
+         * @param scalar The scalar value to multiply the vector coordinates with.
          *
          * @return A reference to the updated current vector after the multiplication.
          */
@@ -309,13 +309,13 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Divides the current vector by a scalar value, element-wise.
+         * @brief Divides the current vector by a scalar value, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          * @tparam TOtherNumber The type of the scalar value.
          *
-         * @param scalar The scalar value to divide the vector elements with.
+         * @param scalar The scalar value to divide the vector coordinates with.
          *
          * @return A reference to the updated current vector after the division.
          */
@@ -331,11 +331,11 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Adds the `rhs` vector to the `lhs` vector, element-wise.
+         * @brief Adds the `rhs` vector to the `lhs` vector, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vectors.
-         * @tparam TNumber The type of the elements in the left vector.
-         * @tparam TOtherNumber The type of the elements in the right vector.
+         * @tparam TNumber The type of the coordinates in the left vector.
+         * @tparam TOtherNumber The type of the coordinates in the right vector.
          *
          * @param lhs The left-hand side vector.
          * @param rhs The right-hand side vector.
@@ -351,11 +351,11 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Subtracts the `rhs` vector from the `lhs` vector, element-wise.
+         * @brief Subtracts the `rhs` vector from the `lhs` vector, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vectors.
-         * @tparam TNumber The type of the elements in the left vector.
-         * @tparam TOtherNumber The type of the elements in the right vector.
+         * @tparam TNumber The type of the coordinates in the left vector.
+         * @tparam TOtherNumber The type of the coordinates in the right vector.
          *
          * @param lhs The left-hand side vector.
          * @param rhs The right-hand side vector.
@@ -371,10 +371,10 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Multiplies the `lhs` vector with a scalar value, element-wise.
+         * @brief Multiplies the `lhs` vector with a scalar value, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vectors.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          * @tparam TOtherNumber The type of the scalar value.
          *
          * @param lhs The vector.
@@ -390,10 +390,10 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Divides the `lhs` vector with a scalar value, element-wise.
+         * @brief Divides the `lhs` vector with a scalar value, coordinate-wise.
          *
          * @tparam TDimension The dimension of the vectors.
-         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TNumber The type of the coordinates in the vector.
          * @tparam TOtherNumber The type of the scalar value.
          *
          * @param lhs The vector.
@@ -414,18 +414,18 @@ namespace Otter::Math
          * @brief Compares the current Vector instance with another Vector instance for equality.
          *
          * @tparam TDimension The dimension of the vectors.
-         * @tparam TNumber The type of the elements in the current vector.
-         * @tparam TOtherNumber The type of the elements in the other Vector.
+         * @tparam TNumber The type of the coordinates in the current vector.
+         * @tparam TOtherNumber The type of the coordinates in the other Vector.
          *
          * @param other The other Vector instance to compare with.
          *
          * @return true if the current Vector instance is equal to the other Vector instance,
          *         false otherwise.
          *
-         * @note The comparison behavior is different based on the data types of the elements. If both TNumber and
-         * TOtherNumber are integral types, the function compares each element of the vectors using the '==' operator.
+         * @note The comparison behavior is different based on the data types of the coordinates. If both TNumber and
+         * TOtherNumber are integral types, the function compares each coordinate of the vectors using the '==' operator.
          * If either TNumber or TOtherNumber are floating-point types, the function uses the Math::AreApproximatelyEqual
-         * function to compare each element of the vectors with a specified tolerance.
+         * function to compare each coordinate of the vectors with a specified tolerance.
          */
         template<AnyNumber TOtherNumber>
         bool operator==(const Vector<TDimension, TOtherNumber>& other) const noexcept
@@ -450,8 +450,8 @@ namespace Otter::Math
          * @brief Compares the current Vector instance with another Vector instance for inequality.
          *
          * @tparam TDimension The dimension of the vectors.
-         * @tparam TNumber The type of the elements in the current vector.
-         * @tparam TOtherNumber The type of the elements in the other Vector.
+         * @tparam TNumber The type of the coordinates in the current vector.
+         * @tparam TOtherNumber The type of the coordinates in the other Vector.
          *
          * @param other The other Vector instance to compare with.
          *
@@ -474,7 +474,7 @@ namespace Otter::Math
         /**
          * @brief Getter for the X coordinate value.
          *
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
          * @return The X coordinate value.
          */
@@ -483,7 +483,7 @@ namespace Otter::Math
         /**
          * @brief Setter for the X coordinate value.
          *
-         * @tparam TNumber The value type.
+         * @tparam TNumber The coordinate value type.
          *
          * @param x The value to set.
          */
@@ -492,7 +492,7 @@ namespace Otter::Math
         /**
          * @brief Getter for the Y coordinate value.
          *
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate value type.
          *
          * @return The Y coordinate value.
          */
@@ -501,7 +501,7 @@ namespace Otter::Math
         /**
          * @brief Setter for the Y coordinate value.
          *
-         * @tparam TNumber The value type.
+         * @tparam TNumber The coordinate value type.
          *
          * @param x The value to set.
          */
@@ -510,7 +510,7 @@ namespace Otter::Math
         /**
          * @brief Getter for the Z coordinate value.
          *
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate value type.
          *
          * @return The Z coordinate value.
          *
@@ -521,7 +521,7 @@ namespace Otter::Math
         /**
          * @brief Setter for the Z coordinate value.
          *
-         * @tparam TNumber The value type.
+         * @tparam TNumber The coordinate value type.
          *
          * @param x The value to set.
          *
@@ -532,7 +532,7 @@ namespace Otter::Math
         /**
          * @brief Getter for the W coordinate value.
          *
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate value type.
          *
          * @return The W coordinate value.
          *
@@ -543,7 +543,7 @@ namespace Otter::Math
         /**
          * @brief Setter for the W coordinate value.
          *
-         * @tparam TNumber The value type.
+         * @tparam TNumber The coordinate value type.
          *
          * @param x The value to set.
          *
@@ -552,12 +552,12 @@ namespace Otter::Math
         OTR_INLINE void SetW(TNumber w) noexcept requires (TDimension == 4) { m_Values[3] = w; }
 
         /**
-         * @brief Returns a vector with the X element set to -1.
+         * @brief Returns a vector with the X coordinate set to -1.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with the X element set to -1.
+         * @return The vector with the X coordinate set to -1.
          *
          * @note This function is only available for 2D and 3D vectors.
          */
@@ -573,12 +573,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with the X element set to 1.
+         * @brief Returns a vector with the X coordinate set to 1.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with the X element set to 1.
+         * @return The vector with the X coordinate set to 1.
          *
          * @note This function is only available for 2D and 3D vectors.
          */
@@ -593,12 +593,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with the Y element set to -1.
+         * @brief Returns a vector with the Y coordinate set to -1.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with the Y element set to -1.
+         * @return The vector with the Y coordinate set to -1.
          *
          * @note This function is only available for 2D and 3D vectors.
          */
@@ -613,12 +613,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with the Y element set to 1.
+         * @brief Returns a vector with the Y coordinate set to 1.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with the Y element set to 1.
+         * @return The vector with the Y coordinate set to 1.
          *
          * @note This function is only available for 2D and 3D vectors.
          */
@@ -633,12 +633,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with the Z element set to -1.
+         * @brief Returns a vector with the Z coordinate set to -1.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with the Z element set to -1.
+         * @return The vector with the Z coordinate set to -1.
          *
          * @note This function is only available for 3D vectors.
          */
@@ -648,12 +648,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with the Z element set to 1.
+         * @brief Returns a vector with the Z coordinate set to 1.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with the Z element set to 1.
+         * @return The vector with the Z coordinate set to 1.
          *
          * @note This function is only available for 3D vectors.
          */
@@ -663,12 +663,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with all elements set to one.
+         * @brief Returns a vector with all coordinates set to one.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with all elements set to one.
+         * @return The vector with all coordinates set to one.
          */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> One()
         {
@@ -676,12 +676,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with all elements set to zero.
+         * @brief Returns a vector with all coordinates set to zero.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with all elements set to zero.
+         * @return The vector with all coordinates set to zero.
          */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Zero()
         {
@@ -689,12 +689,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with all elements set to positive infinity.
+         * @brief Returns a vector with all coordinates set to positive infinity.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with all elements set to positive infinity.
+         * @return The vector with all coordinates set to positive infinity.
          */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> PositiveInfinity()
         {
@@ -702,12 +702,12 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Returns a vector with all elements set to negative infinity.
+         * @brief Returns a vector with all coordinates set to negative infinity.
          *
          * @tparam TDimension The dimension of the vector.
-         * @tparam TNumber The number type.
+         * @tparam TNumber The coordinate type.
          *
-         * @return The vector with all elements set to negative infinity.
+         * @return The vector with all coordinates set to negative infinity.
          */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> NegativeInfinity()
         {
