@@ -525,7 +525,10 @@ namespace Otter::Math
      *
      * @return The interpolated value between `a` and `b`
      *
-     * @note The linear interpolation formula is: <br> a + (b - a) * t
+     * @note The linear interpolation formula is:
+     * @code{.cpp}
+     * lerp = a + (b - a) * t
+     * @endcode
      */
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto Lerp(Tx a, Ty b, Tz t) { return a + (b - a) * t; }
@@ -546,7 +549,10 @@ namespace Otter::Math
      *
      * @return The clamped interpolated value between `a` and `b`
      *
-     * @note The linear interpolation formula is: <br> a + (b - a) * t
+     * @note The linear interpolation formula is:
+     * @code{.cpp}
+     * lerp = a + (b - a) * t
+     * @endcode
      */
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto LerpClamped(Tx a, Ty b, Tz t) { return Clamp(Lerp(a, b, t), a, b); }
@@ -564,8 +570,11 @@ namespace Otter::Math
      *
      * @return The inverse lerp value between a and b.
      *
-     * @note The inverse linear interpolation formula is: <br> (value - a) / (b - a)
-     * @note If a and b are approximately equal, returns 0.0.
+     * @note The inverse linear interpolation formula is:
+     * @code{.cpp}
+     * inverse_lerp = (value - a) / (b - a)
+     * @endcode
+     * If a and b are approximately equal, returns 0.0.
      */
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto InverseLerp(Tx a, Ty b, Tz value)
@@ -589,8 +598,11 @@ namespace Otter::Math
      *
      * @return The clamped inverse lerp value between 'a' and 'b'.
      *
-     * @note The inverse linear interpolation formula is: <br> (value - a) / (b - a)
-     * @note If a and b are approximately equal, returns 0.0.
+     * @note The inverse linear interpolation formula is:
+     * @code{.cpp}
+     * inverse_lerp = (value - a) / (b - a)
+     * @endcode
+     * If a and b are approximately equal, returns 0.0.
      */
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto InverseLerpClamped(Tx a, Ty b, Tz value) { return Clamp01(InverseLerp(a, b, value)); }
@@ -611,7 +623,10 @@ namespace Otter::Math
      *
      * @return The smooth interpolated value.
      *
-     * @note The smooth step formula is: <br> t * t * (3 - 2 * t)
+     * @note The smooth step formula is:
+     * @code{.cpp}
+     * smooth_step = t * t * (3 - 2 * t)
+     * @endcode
      */
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto SmoothStep(Tx min, Ty max, Tz value)
@@ -635,8 +650,11 @@ namespace Otter::Math
      *
      * @return The calculated inverse smooth step value.
      *
-     * @note The inverse smooth step formula is: <br> min + t * t * (3 - 2 * t) * (max - min)
-     * @note If the minimum and maximum bounds are approximately equal, it returns the minimum bound.
+     * @note The inverse smooth step formula is:
+     * @code{.cpp}
+     * inverse_smooth_step = min + t * t * (3 - 2 * t) * (max - min)
+     * @endcode
+     * If the minimum and maximum bounds are approximately equal, it returns the minimum bound.
      */
     template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
     OTR_INLINE constexpr auto InverseSmoothStep(Tx min, Ty max, Tz smoothenedValue)
@@ -784,7 +802,7 @@ namespace Otter::Math
         const auto direction = (target - current > 0) ? 1.0 : -1.0;
         current += direction * speed;
 
-        if ((direction > 0 && current > target) || (direction < 0 && current < target))
+        if (current > target)
             return target;
 
         return current;
