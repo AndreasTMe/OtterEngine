@@ -752,9 +752,9 @@ namespace Otter::Math
 
     public:
         /**
-         * @brief Checks whether a vector is approximately zero.
+         * @brief Checks whether a 2D vector is approximately zero.
          *
-         * @tparam TNumber The type of the number.
+         * @tparam TNumber The type of the coordinates of the vector.
          *
          * @param vector The vector to be checked.
          *
@@ -770,7 +770,7 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Checks whether two vectors are approximately equal.
+         * @brief Checks whether two 2D vectors are approximately equal.
          *
          * @tparam Tx The type of the first vector's coordinates.
          * @tparam Ty The type of the second vector's coordinates.
@@ -924,7 +924,7 @@ namespace Otter::Math
          *
          * @return The distance between the two vectors.
          *
-         * @note The distance is calculated by taking the square root of the sum of the squared differences of the coordinates:
+         * @note The formula used to calculate the distance is:
          * @code{.cpp}
          * distance = sqrt((lhs.x - rhs.x)^2 + (lhs.y - rhs.y)^2)
          * @endcode
@@ -1062,7 +1062,7 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Calculates the angle between two 2-dimensional vectors.
+         * @brief Calculates the angle between two 2D vectors.
          *
          * @tparam Tx The type of the coordinates of the first vector.
          * @tparam Ty The type of the coordinates of the second vector.
@@ -1107,7 +1107,7 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Calculates the smooth step interpolation of two vectors.
+         * @brief Calculates the smooth step interpolation of two 2D vectors.
          *
          * @tparam Tx The type of the coordinates of the minimum bounds vector.
          * @tparam Ty The type of the coordinates of the maximum bounds vector.
@@ -1167,19 +1167,19 @@ namespace Otter::Math
         }
 
         /**
-         * @brief Move towards a target position with a maximum distance delta.
+         * @brief Move towards a target 2D vector with a maximum distance delta.
          *
          * @tparam Tx The type of the coordinates of the current vector.
          * @tparam Ty The type of the coordinates of the target vector.
          * @tparam Tz Type of the maximum distance delta.
          *
-         * @param current The current position vector.
-         * @param target The target position vector.
+         * @param current The current vector.
+         * @param target The target vector.
          * @param maxDistanceDelta The maximum distance that can be covered in one step.
          *
-         * @return A new position that moves towards the target position by the maximum distance delta.
+         * @return A new vector that moves towards the target vector by the maximum distance delta.
          *
-         * @note If the current position is approximately equal to the target position, the target position is returned.
+         * @note If the current vector is approximately equal to the target, the target is returned.
          */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto MoveTowards(const Vec2D<Tx>& current, const Vec2D<Ty>& target, Tz maxDistanceDelta)
@@ -1250,12 +1250,24 @@ namespace Otter::Math
         }
     };
 
+    /**
+     * @brief This class provides utility functions for working with 3D vectors.
+     */
     class Vector3DUtils final
     {
         template<AnyNumber TNumber>
         using Vec3D = Vector<3, TNumber>;
 
     public:
+        /**
+         * @brief Checks whether a 3D vector is approximately zero.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         *
+         * @param vector The vector to be checked.
+         *
+         * @return True if the vector is approximately zero, false otherwise.
+         */
         template<AnyNumber TNumber>
         OTR_INLINE static bool IsApproximatelyZero(const Vec3D<TNumber>& vector)
         {
@@ -1267,6 +1279,17 @@ namespace Otter::Math
                    && Math::IsApproximatelyZero(vector[2]);
         }
 
+        /**
+         * @brief Checks whether two 3D vectors are approximately equal.
+         *
+         * @tparam Tx The type of the first vector's coordinates.
+         * @tparam Ty The type of the second vector's coordinates.
+         *
+         * @param lhs The left vector.
+         * @param rhs The right vector.
+         *
+         * @return True if the vectors are approximately equal, false otherwise.
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static bool AreApproximatelyEqual(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
@@ -1278,18 +1301,52 @@ namespace Otter::Math
                    && Math::AreApproximatelyEqual(lhs[2], rhs[2]);
         }
 
+        /**
+         * @brief Calculates the squared magnitude of a 3D vector.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         *
+         * @param vector The 3D vector for which the squared magnitude will be calculated.
+         *
+         * @return The squared magnitude of the given vector.
+         */
         template<AnyNumber TNumber>
         OTR_INLINE static auto MagnitudeSquared(const Vec3D<TNumber>& vector)
         {
             return Math::Square(vector[0]) + Math::Square(vector[1]) + Math::Square(vector[2]);
         }
 
+        /**
+         * @brief Calculates the magnitude of a 3D vector.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         *
+         * @param vector The 3D vector for which the magnitude will be calculated.
+         *
+         * @return The magnitude of the given vector.
+         *
+         * @note The formula used to calculate the magnitude is:
+         * @code{.cpp}
+         * magnitude = sqrt(x^2 + y^2 + z^2)
+         * @endcode
+         */
         template<AnyNumber TNumber>
         OTR_INLINE static auto Magnitude(const Vec3D<TNumber>& vector)
         {
             return Math::SquareRoot(MagnitudeSquared(vector));
         }
 
+        /**
+         * @brief This function clamps the magnitude of a 3D vector.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         * @tparam TMaxMagnitude The type of the maximum magnitude.
+         *
+         * @param vector The 3D vector.
+         * @param maxMagnitude The maximum magnitude.
+         *
+         * @return The clamped vector.
+         */
         template<AnyNumber TNumber, AnyNumber TMaxMagnitude>
         OTR_INLINE static auto ClampMagnitude(const Vec3D<TNumber>& vector, const TMaxMagnitude& maxMagnitude)
         {
@@ -1300,6 +1357,20 @@ namespace Otter::Math
             return vector;
         }
 
+        /**
+         * @brief Normalizes a 3D vector.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         *
+         * @param vector The 3D vector to be normalized.
+         *
+         * @return The normalized vector.
+         *
+         * @note The formula used to normalize the vector is:
+         * @code{.cpp}
+         * normalized_vector = vector / |vector|
+         * @endcode
+         */
         template<AnyNumber TNumber>
         OTR_INLINE static auto Normalise(const Vec3D<TNumber>& vector)
         {
@@ -1310,12 +1381,46 @@ namespace Otter::Math
             return vector / magnitude;
         }
 
+        /**
+         * @brief Calculates the dot product of two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first 3D vector in the dot product calculation.
+         * @param rhs The second 3D vector in the dot product calculation.
+         *
+         * @return The dot product of the two input vectors.
+         *
+         * @note The formula used to calculate the dot product is:
+         * @code{.cpp}
+         * dot_product = lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Dot(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
             return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2];
         }
 
+        /**
+         * @brief Calculates the cross product of two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first input vector.
+         * @param rhs The second input vector.
+         *
+         * @return The cross product of the two input vectors.
+         *
+         * @note The formula used to calculate the cross product is:
+         * @code{.cpp}
+         * cross_product = (lhs.y * rhs.z - lhs.z * rhs.y,
+         *                  lhs.z * rhs.x - lhs.x * rhs.z,
+         *                  lhs.x * rhs.y - lhs.y * rhs.x)
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Cross(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
@@ -1326,30 +1431,111 @@ namespace Otter::Math
             };
         }
 
+        /**
+         * @brief Calculates the squared distance between two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first 3D vector.
+         * @param rhs The second 3D vector.
+         *
+         * @return The squared distance between the two vectors.
+         *
+         * @note The formula used to calculate the squared distance is:
+         * @code{.cpp}
+         * distance_squared = (lhs.x - rhs.x)^2 + (lhs.y - rhs.y)^2 + (lhs.z - rhs.z)^2
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto DistanceSquared(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
             return MagnitudeSquared(lhs - rhs);
         }
 
+        /**
+         * @brief Calculates the distance between two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first 3D vector.
+         * @param rhs The second 3D vector.
+         *
+         * @return The distance between the two vectors.
+         *
+         * @note The formula used to calculate the distance is:
+         * @code{.cpp}
+         * distance = sqrt((lhs.x - rhs.x)^2 + (lhs.y - rhs.y)^2 + (lhs.z - rhs.z)^2)
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Distance(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
             return Magnitude(lhs - rhs);
         }
 
+        /**
+         * @brief Performs linear interpolation between two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         * @tparam Tz The type of the linear interpolation parameter.
+         *
+         * @param lhs The first vector.
+         * @param rhs The second vector.
+         * @param t The linear interpolation parameter.
+         *
+         * @return The interpolated vector.
+         *
+         * @note The formula used for linear interpolation is:
+         * @code{.cpp}
+         * interpolated_vector = lhs + (rhs - lhs) * t
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto Lerp(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs, Tz t)
         {
             return lhs + (rhs - lhs) * t;
         }
 
+        /**
+         * @brief Performs clamped linear interpolation between two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         * @tparam Tz The type of the linear interpolation parameter.
+         *
+         * @param lhs The first vector.
+         * @param rhs The second vector.
+         * @param t The linear interpolation parameter.
+         *
+         * @return The interpolated vector.
+         *
+         * @note The formula used for linear interpolation is:
+         * @code{.cpp}
+         * interpolated_vector = lhs + (rhs - lhs) * t
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto LerpClamped(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs, Tz t)
         {
             return Lerp(lhs, rhs, Math::Clamp(t, (Tz) 0.0, (Tz) 1.0));
         }
 
+        /**
+         * @brief Performs spherical linear interpolation between two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the lhs vector.
+         * @tparam Ty The type of the coordinates of the rhs vector.
+         * @tparam Tz The type of interpolation parameter.
+         *
+         * @param lhs The lhs vector.
+         * @param rhs The rhs vector.
+         * @param t The interpolation parameter.
+         *
+         * @return The result of the interpolation.
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto Slerp(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs, Tz t)
         {
@@ -1360,12 +1546,36 @@ namespace Otter::Math
             return ((lhs * Math::Cos(theta)) + (relative * Math::Sin(theta)));
         }
 
+        /**
+         * @brief Performs spherical linear interpolation between two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the lhs vector.
+         * @tparam Ty The type of the coordinates of the rhs vector.
+         * @tparam Tz The type of interpolation parameter (clamped between 0 and 1).
+         *
+         * @param lhs The lhs vector.
+         * @param rhs The rhs vector.
+         * @param t The interpolation parameter.
+         *
+         * @return The result of the interpolation.
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto SlerpClamped(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs, Tz t)
         {
             return Slerp(lhs, rhs, Math::Clamp(t, (Tz) 0.0, (Tz) 1.0));
         }
 
+        /**
+         * @brief Calculates the coordinate-wise maximum of two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first input vector.
+         * @param rhs The second input vector.
+         *
+         * @return The coordinate-wise maximum of the two input vectors.
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Max(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
@@ -1374,6 +1584,17 @@ namespace Otter::Math
                                                               Math::Max(lhs[2], rhs[2]));
         }
 
+        /**
+         * @brief Calculates the coordinate-wise minimum of two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first input vector.
+         * @param rhs The second input vector.
+         *
+         * @return The coordinate-wise minimum of the two input vectors.
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Min(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
@@ -1382,6 +1603,19 @@ namespace Otter::Math
                                                               Math::Min(lhs[2], rhs[2]));
         }
 
+        /**
+         * @brief Clamps a 3D vector to a specified range.
+         *
+         * @tparam Tx The type of the coordinates of the input vector.
+         * @tparam Ty The type of the coordinates of the minimum vector.
+         * @tparam Tz The type of the coordinates of the maximum vector.
+         *
+         * @param value The input vector to be clamped.
+         * @param min The minimum vector specifying the lower bounds of the range.
+         * @param max The maximum vector specifying the upper bounds of the range.
+         *
+         * @return The clamped vector.
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto Clamp(const Vec3D<Tx>& value, const Vec3D<Ty>& min, const Vec3D<Tz>& max)
         {
@@ -1390,12 +1624,44 @@ namespace Otter::Math
                                                                           Math::Clamp(value[2], min[2], max[2]));
         }
 
+        /**
+         * @brief Calculates the reflection of a 3D vector off a normal vector.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param vector The input vector to be reflected.
+         * @param normal The normal vector.
+         *
+         * @return The reflected vector.
+         *
+         * @note The formula used to calculate the reflected vector is:
+         * @code{.cpp}
+         * reflected_vector = vector - 2 * dot(vector, normal) * normal
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Reflect(const Vec3D<Tx>& vector, const Vec3D<Ty>& normal)
         {
             return vector - 2 * Dot(vector, normal) * normal;
         }
 
+        /**
+         * @brief Projects a 3D vector onto a given normal vector
+         *
+         * @tparam Tx The type of the coordinates of the vector.
+         * @tparam Ty The type of the coordinates of the normal vector.
+         *
+         * @param vector The vector to be projected
+         * @param normal The normal vector onto which the projection is performed
+         *
+         * @return The projected vector
+         *
+         * @note The formula used to calculate the projected vector is:
+         * @code{.cpp}
+         * projected_vector = dot(vector, normal) / |normal| * normal
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Project(const Vec3D<Tx>& vector, const Vec3D<Ty>& normal)
         {
@@ -1406,6 +1672,22 @@ namespace Otter::Math
             return (Dot(vector, normal) / magnitudeSquared) * normal;
         }
 
+        /**
+         * @brief Calculates the angle between two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first vector.
+         * @param rhs The second vector.
+         *
+         * @return The angle between the two vectors in radians.
+         *
+         * @note The formula used to calculate the angle is:
+         * @code{.cpp}
+         * angle = acos(dot(lhs, rhs) / (|lhs| * |rhs|))
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Angle(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
@@ -1416,12 +1698,44 @@ namespace Otter::Math
             return Math::Acos(Dot(lhs, rhs) / magnitudeProduct);
         }
 
+        /**
+         * @brief Calculates the signed angle between two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param from The source vector.
+         * @param to The target vector.
+         *
+         * @return The signed angle between the two vectors.
+         *
+         * @note The signed angle is the angle from -> to, in radians, positive for counter-clockwise angles
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto AngleSigned(const Vec3D<Tx>& from, const Vec3D<Ty>& to, const Vec3D<Ty>& axis)
         {
             return Math::Sign(Dot(axis, Cross(from, to))) * Angle(from, to);
         }
 
+        /**
+         * @brief Calculates the smooth step interpolation of two 3D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the minimum bounds vector.
+         * @tparam Ty The type of the coordinates of the maximum bounds vector.
+         * @tparam Tz The type of the coordinates of the value vector.
+         *
+         * @param min The minimum bounds vector.
+         * @param max The maximum bounds vector.
+         * @param value The value vector.
+         *
+         * @return The smooth step interpolated vector.
+         *
+         * @note The formula used to calculate the smooth step interpolation is:
+         * @code{.cpp}
+         * smooth_step_interpolation = t * t * (3 - 2 * t)
+         * @endcode
+         * where t is the normalized value between the minimum and maximum bounds. The formula is used for each coordinate.
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto SmoothStep(const Vec3D<Tx>& min, const Vec3D<Ty>& max, const Vec3D<Tz>& value)
         {
@@ -1432,6 +1746,27 @@ namespace Otter::Math
             };
         }
 
+        /**
+         * @brief Calculates the inverse smooth step value of a given smoothened 3D vector between a minimum and
+         * maximum bound.
+         *
+         * @tparam Tx The type of the coordinates of the minimum bounds vector.
+         * @tparam Ty The type of the coordinates of the maximum bounds vector.
+         * @tparam Tz The type of the coordinates of the smoothened value vector.
+         *
+         * @param min The minimum bounds vector.
+         * @param max The maximum bounds vector.
+         * @param smoothenedValue The smoothened vector.
+         *
+         * @return The calculated inverse smooth step 3D vector.
+         *
+         * @note The inverse smooth step formula is:
+         * @code{.cpp}
+         * inverse_smooth_step = min + t * t * (3 - 2 * t) * (max - min)
+         * @endcode
+         * If the minimum and maximum bounds are approximately equal, it returns the minimum bound. The formula
+         * is used for each coordinate.
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static constexpr auto InverseSmoothStep(const Vec3D<Tx>& min,
                                                            const Vec3D<Ty>& max,
@@ -1444,6 +1779,21 @@ namespace Otter::Math
             };
         }
 
+        /**
+         * @brief Move towards a target 3D vector with a maximum distance delta.
+         *
+         * @tparam Tx The type of the coordinates of the current vector.
+         * @tparam Ty The type of the coordinates of the target vector.
+         * @tparam Tz Type of the maximum distance delta.
+         *
+         * @param current The current vector.
+         * @param target The target vector.
+         * @param maxDistanceDelta The maximum distance that can be covered in one step.
+         *
+         * @return A new vector that moves towards the target vector by the maximum distance delta.
+         *
+         * @note If the current vector is approximately equal to the target, the target is returned.
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto MoveTowards(const Vec3D<Tx>& current, const Vec3D<Ty>& target, Tz maxDistanceDelta)
         {
@@ -1471,6 +1821,22 @@ namespace Otter::Math
             };
         }
 
+        /**
+         * @brief Function to rotate a 3D vector towards a target vector by a specified angle.
+         *
+         * @tparam Tx The type of the coordinates of the current vector.
+         * @tparam Ty The type of the coordinates of the target vector.
+         * @tparam Tz Type of the maximum delta angle.
+         *
+         * @param current The current vector.
+         * @param target The target vector to rotate towards.
+         * @param maxDeltaAngle The maximum change in angle allowed.
+         * @param angleType The type of angle (radians or degrees). Defaults to radians.
+         *
+         * @return The rotated vector.
+         *
+         * @note If the current vector is approximately equal to the target vector, the target vector is returned.
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto RotateTowards(const Vec3D<Tx>& current,
                                              const Vec3D<Ty>& target,
@@ -1497,6 +1863,22 @@ namespace Otter::Math
             };
         }
 
+        /**
+         * @brief Projects a 3D vector onto a plane defined by its normal.
+         *
+         * @tparam Tx The type of the coordinates of the vector.
+         * @tparam Ty The type of the coordinates of the plane normal.
+         *
+         * @param vector The input vector to be projected onto the plane.
+         * @param planeNormal The normal vector of the plane onto which the input vector is projected.
+         *
+         * @return The projected vector onto the plane.
+         *
+         * @note The formula used to calculate the projected vector is:
+         * @code{.cpp}
+         * projected_vector = vector - dot(vector, plane_normal) * plane_normal
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto ProjectOnPlane(const Vec3D<Tx>& vector, const Vec3D<Ty>& planeNormal)
         {
@@ -1516,15 +1898,31 @@ namespace Otter::Math
             };
         }
 
+        /**
+         * @brief Takes three vectors (normal, tangent, biNormal) by reference and modifies them to be orthogonal
+         * and normalized.
+         *
+         * @tparam Tx The type of the coordinates of the normal vector
+         * @tparam Ty The type of the coordinates of the tangent vector
+         * @tparam Tz The type of the coordinates of the biNormal vector
+         *
+         * @param normal A pointer to the normal vector
+         * @param tangent A pointer to the tangent vector
+         * @param biNormal A pointer to the biNormal vector
+         */
         template<FloatingPointNumber Tx, FloatingPointNumber Ty, FloatingPointNumber Tz>
         OTR_INLINE static void OrthoNormalise(Vec3D<Tx>* normal, Vec3D<Ty>* tangent, Vec3D<Tz>* biNormal)
         {
-            if (!normal || normal == Vec3D<Tx>::Zero()
-                || !tangent || tangent == Vec3D<Ty>::Zero())
+            if (!normal || !tangent)
+                return;
+
+            if (normal == Vec3D<Tx>::Zero() || tangent == Vec3D<Ty>::Zero())
             {
-                *normal   = Vec3D<Tx>::Zero();
-                *tangent  = Vec3D<Ty>::Zero();
-                *biNormal = Vec3D<Tz>::Zero();
+                *normal  = Vec3D<Tx>::Zero();
+                *tangent = Vec3D<Ty>::Zero();
+
+                if (biNormal)
+                    *biNormal = Vec3D<Tz>::Zero();
 
                 return;
             }
@@ -1567,12 +1965,24 @@ namespace Otter::Math
         }
     };
 
+    /**
+     * @brief This class provides utility functions for working with 4D vectors.
+     */
     class Vector4DUtils final
     {
         template<AnyNumber TNumber>
         using Vec4D = Vector<4, TNumber>;
 
     public:
+        /**
+         * @brief Checks whether a 4D vector is approximately zero.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         *
+         * @param vector The vector to be checked.
+         *
+         * @return True if the vector is approximately zero, false otherwise.
+         */
         template<AnyNumber TNumber>
         OTR_INLINE static bool IsApproximatelyZero(const Vec4D<TNumber>& vector)
         {
@@ -1585,6 +1995,17 @@ namespace Otter::Math
                    && Math::IsApproximatelyZero(vector[3]);
         }
 
+        /**
+         * @brief Checks whether two 4D vectors are approximately equal.
+         *
+         * @tparam Tx The type of the first vector's coordinates.
+         * @tparam Ty The type of the second vector's coordinates.
+         *
+         * @param lhs The left vector.
+         * @param rhs The right vector.
+         *
+         * @return True if the vectors are approximately equal, false otherwise.
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static bool AreApproximatelyEqual(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
         {
@@ -1597,18 +2018,52 @@ namespace Otter::Math
                    && Math::AreApproximatelyEqual(lhs[3], rhs[3]);
         }
 
+        /**
+         * @brief Calculates the squared magnitude of a 4D vector.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         *
+         * @param vector The 4D vector for which the squared magnitude will be calculated.
+         *
+         * @return The squared magnitude of the given vector.
+         */
         template<AnyNumber TNumber>
         OTR_INLINE static auto MagnitudeSquared(const Vec4D<TNumber>& vector)
         {
             return Math::Square(vector[0]) + Math::Square(vector[1]) + Math::Square(vector[2]);
         }
 
+        /**
+         * @brief Calculates the magnitude of a 4D vector.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         *
+         * @param vector The 4D vector for which the magnitude will be calculated.
+         *
+         * @return The magnitude of the given vector.
+         *
+         * @note The formula used to calculate the magnitude is:
+         * @code{.cpp}
+         * magnitude = sqrt(x^2 + y^2 + z^2 + w^2)
+         * @endcode
+         */
         template<AnyNumber TNumber>
         OTR_INLINE static auto Magnitude(const Vec4D<TNumber>& vector)
         {
             return Math::SquareRoot(MagnitudeSquared(vector));
         }
 
+        /**
+         * @brief This function clamps the magnitude of a 4D vector.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         * @tparam TMaxMagnitude The type of the maximum magnitude.
+         *
+         * @param vector The 4D vector.
+         * @param maxMagnitude The maximum magnitude.
+         *
+         * @return The clamped vector.
+         */
         template<AnyNumber TNumber, AnyNumber TMaxMagnitude>
         OTR_INLINE static auto ClampMagnitude(const Vec4D<TNumber>& vector, const TMaxMagnitude& maxMagnitude)
         {
@@ -1619,6 +2074,20 @@ namespace Otter::Math
             return vector;
         }
 
+        /**
+         * @brief Normalizes a 4D vector.
+         *
+         * @tparam TNumber The type of the coordinates of the vector.
+         *
+         * @param vector The 4D vector to be normalized.
+         *
+         * @return The normalized vector.
+         *
+         * @note The formula used to normalize the vector is:
+         * @code{.cpp}
+         * normalized_vector = vector / |vector|
+         * @endcode
+         */
         template<AnyNumber TNumber>
         OTR_INLINE static auto Normalise(const Vec4D<TNumber>& vector)
         {
@@ -1629,46 +2098,131 @@ namespace Otter::Math
             return vector / magnitude;
         }
 
+        /**
+         * @brief Calculates the dot product of two 4D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first 4D vector in the dot product calculation.
+         * @param rhs The second 4D vector in the dot product calculation.
+         *
+         * @return The dot product of the two input vectors.
+         *
+         * @note The formula used to calculate the dot product is:
+         * @code{.cpp}
+         * dot_product = lhs.x * rhs.x + lhs.y * rhs.y + lhs.z * rhs.z + lhs.w * rhs.w
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Dot(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
         {
             return lhs[0] * rhs[0] + lhs[1] * rhs[1] + lhs[2] * rhs[2] + lhs[3] * rhs[3];
         }
 
-        template<AnyNumber Tx, AnyNumber Ty>
-        OTR_INLINE static auto Cross(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
-        {
-            return Vec4D<decltype(lhs[0] * rhs[0] - lhs[0] * rhs[0] + lhs[0] * rhs[0])>{
-                lhs[1] * rhs[2] - lhs[2] * rhs[1],
-                lhs[2] * rhs[0] - lhs[0] * rhs[2],
-                lhs[0] * rhs[1] - lhs[1] * rhs[0]
-            };
-        }
-
+        /**
+         * @brief Calculates the squared distance between two 4D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first 4D vector.
+         * @param rhs The second 4D vector.
+         *
+         * @return The squared distance between the two vectors.
+         *
+         * @note The formula used to calculate the squared distance is:
+         * @code{.cpp}
+         * distance_squared = (lhs.x - rhs.x)^2 + (lhs.y - rhs.y)^2 + (lhs.z - rhs.z)^2 + (lhs.w - rhs.w)^2
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto DistanceSquared(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
         {
             return MagnitudeSquared(lhs - rhs);
         }
 
+        /**
+         * @brief Calculates the distance between two 4D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first 4D vector.
+         * @param rhs The second 4D vector.
+         *
+         * @return The distance between the two vectors.
+         *
+         * @note The formula used to calculate the distance is:
+         * @code{.cpp}
+         * distance = sqrt((lhs.x - rhs.x)^2 + (lhs.y - rhs.y)^2 + (lhs.z - rhs.z)^2 + (lhs.w - rhs.w)^2)
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Distance(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
         {
             return Magnitude(lhs - rhs);
         }
 
+        /**
+         * @brief Performs linear interpolation between two 4D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         * @tparam Tz The type of the linear interpolation parameter.
+         *
+         * @param lhs The first vector.
+         * @param rhs The second vector.
+         * @param t The linear interpolation parameter.
+         *
+         * @return The interpolated vector.
+         *
+         * @note The formula used for linear interpolation is:
+         * @code{.cpp}
+         * interpolated_vector = lhs + (rhs - lhs) * t
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto Lerp(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs, Tz t)
         {
             return lhs + (rhs - lhs) * t;
         }
 
+        /**
+         * @brief Performs clamped linear interpolation between two 4D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         * @tparam Tz The type of the linear interpolation parameter.
+         *
+         * @param lhs The first vector.
+         * @param rhs The second vector.
+         * @param t The linear interpolation parameter.
+         *
+         * @return The interpolated vector.
+         *
+         * @note The formula used for linear interpolation is:
+         * @code{.cpp}
+         * interpolated_vector = lhs + (rhs - lhs) * t
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto LerpClamped(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs, Tz t)
         {
             return Lerp(lhs, rhs, Math::Clamp(t, (Tz) 0.0, (Tz) 1.0));
         }
 
+        /**
+         * @brief Calculates the coordinate-wise maximum of two 4D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first input vector.
+         * @param rhs The second input vector.
+         *
+         * @return The coordinate-wise maximum of the two input vectors.
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Max(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
         {
@@ -1678,6 +2232,17 @@ namespace Otter::Math
                                                               Math::Max(lhs[3], rhs[3]));
         }
 
+        /**
+         * @brief Calculates the coordinate-wise minimum of two 4D vectors.
+         *
+         * @tparam Tx The type of the coordinates of the first vector.
+         * @tparam Ty The type of the coordinates of the second vector.
+         *
+         * @param lhs The first input vector.
+         * @param rhs The second input vector.
+         *
+         * @return The coordinate-wise minimum of the two input vectors.
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Min(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
         {
@@ -1687,6 +2252,44 @@ namespace Otter::Math
                                                               Math::Min(lhs[3], rhs[3]));
         }
 
+        /**
+         * @brief Clamps a 4D vector to a specified range.
+         *
+         * @tparam Tx The type of the coordinates of the input vector.
+         * @tparam Ty The type of the coordinates of the minimum vector.
+         * @tparam Tz The type of the coordinates of the maximum vector.
+         *
+         * @param value The input vector to be clamped.
+         * @param min The minimum vector specifying the lower bounds of the range.
+         * @param max The maximum vector specifying the upper bounds of the range.
+         *
+         * @return The clamped vector.
+         */
+        template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
+        OTR_INLINE static auto Clamp(const Vec4D<Tx>& value, const Vec4D<Ty>& min, const Vec4D<Tz>& max)
+        {
+            return Vec4D<decltype(Math::Clamp(value[0], min[0], max[0]))>(Math::Clamp(value[0], min[0], max[0]),
+                                                                          Math::Clamp(value[1], min[1], max[1]),
+                                                                          Math::Clamp(value[2], min[2], max[2]),
+                                                                          Math::Clamp(value[3], min[3], max[3]));
+        }
+
+        /**
+         * @brief Projects a 4D vector onto a given normal vector
+         *
+         * @tparam Tx The type of the coordinates of the vector.
+         * @tparam Ty The type of the coordinates of the normal vector.
+         *
+         * @param vector The vector to be projected
+         * @param normal The normal vector onto which the projection is performed
+         *
+         * @return The projected vector
+         *
+         * @note The formula used to calculate the projected vector is:
+         * @code{.cpp}
+         * projected_vector = dot(vector, normal) / |normal| * normal
+         * @endcode
+         */
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Project(const Vec4D<Tx>& vector, const Vec4D<Ty>& normal)
         {
@@ -1697,6 +2300,21 @@ namespace Otter::Math
             return (Dot(vector, normal) / magnitudeSquared) * normal;
         }
 
+        /**
+         * @brief Move towards a target 4D vector with a maximum distance delta.
+         *
+         * @tparam Tx The type of the coordinates of the current vector.
+         * @tparam Ty The type of the coordinates of the target vector.
+         * @tparam Tz Type of the maximum distance delta.
+         *
+         * @param current The current vector.
+         * @param target The target vector.
+         * @param maxDistanceDelta The maximum distance that can be covered in one step.
+         *
+         * @return A new vector that moves towards the target vector by the maximum distance delta.
+         *
+         * @note If the current vector is approximately equal to the target, the target is returned.
+         */
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto MoveTowards(const Vec4D<Tx>& current, const Vec4D<Ty>& target, Tz maxDistanceDelta)
         {
