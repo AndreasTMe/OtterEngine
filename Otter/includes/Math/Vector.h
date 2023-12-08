@@ -36,6 +36,16 @@ namespace Otter
 
 namespace Otter::Math
 {
+    /**
+     * @brief A class representing a vector in n-dimensional space.
+     *
+     * @tparam TDimension The dimension of the vector.
+     * @tparam TNumber The type of the elements in the vector.
+     *
+     * @note The dimension of the vector can be 2, 3 or 4.
+     * @note This class is can be used directly but it would be preferred to use the Vector2D, Vector3D and
+     * Vector4D aliases instead.
+     */
     template<UInt8 TDimension, AnyNumber TNumber> requires Dimension<TDimension>
     struct Vector final
     {
@@ -45,18 +55,35 @@ namespace Otter::Math
         TNumber m_Values[TDimension];
 
     public:
+        /**
+         * @brief Default constructor that initializes the vector with zero values.
+         */
         constexpr Vector()
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] = static_cast<TNumber>(0.0);
         }
 
+        /**
+         * @brief Constructs a Vector object with all elements initialized to the given scalar value.
+         *
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param scalar The scalar value to initialize the vector elements with.
+         */
         constexpr explicit Vector(TNumber scalar)
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] = scalar;
         }
 
+        /**
+         * @brief Constructs a Vector object with elements initialised from an initializer list.
+         *
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param list The list containing the elements to initialise the vector with.
+         */
         constexpr Vector(InitialiserList<TNumber> list)
         {
             OTR_ASSERT_MSG(list.size() == TDimension, "Initialiser list size does not match Vector size")
@@ -66,18 +93,44 @@ namespace Otter::Math
                 m_Values[i++] = value;
         }
 
+        /**
+         * @brief Copy constructor for Vector objects.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param other The Vector object to copy from.
+         */
         Vector(const Vector<TDimension, TNumber>& other)
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] = other.m_Values[i];
         }
 
+        /**
+         * @brief Move constructor for Vector objects.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param other The Vector object to move from.
+         */
         Vector(Vector<TDimension, TNumber>&& other) noexcept
         {
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] = other.m_Values[i];
         }
 
+        /**
+         * @brief Copy assignment operator for Vector objects.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param other The Vector object to copy from.
+         *
+         * @return A reference to the current Vector object after the copy assignment.
+         */
         Vector<TDimension, TNumber>& operator=(const Vector<TDimension, TNumber>& other)
         {
             if (this == &other)
@@ -89,6 +142,16 @@ namespace Otter::Math
             return *this;
         }
 
+        /**
+         * @brief Move assignment operator for Vector objects.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param other The Vector object to move from.
+         *
+         * @return A reference to the current Vector object after the move assignment.
+         */
         Vector<TDimension, TNumber>& operator=(Vector<TDimension, TNumber>&& other) noexcept
         {
             if (this == &other)
@@ -100,18 +163,44 @@ namespace Otter::Math
             return *this;
         }
 
+        /**
+         * @brief Accesses the element at the specified index.
+         *
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param index The index of the element to access.
+         *
+         * @return A reference to the element at the specified index.
+         */
         TNumber& operator[](UInt8 index)
         {
             OTR_ASSERT_MSG(index < TDimension, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
+        /**
+         * @brief Accesses the element at the specified index.
+         *
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param index The index of the element to access.
+         *
+         * @return A reference to the element at the specified index.
+         */
         const TNumber& operator[](UInt8 index) const
         {
             OTR_ASSERT_MSG(index < TDimension, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
+        /**
+         * @brief Conversion operator that allows the vector to be converted to a different vector type.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TOtherNumber The type of the elements in the resulting vector.
+         *
+         * @return A new vector with elements converted to the specified type.
+         */
         template<AnyNumber TOtherNumber>
         explicit operator Vector<TDimension, TOtherNumber>() const
         {
@@ -123,6 +212,17 @@ namespace Otter::Math
             return result;
         }
 
+        /**
+         * @brief Adds another vector to the current vector, element-wise.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the current vector.
+         * @tparam TOtherNumber The type of the elements in the other vector.
+         *
+         * @param other The vector to be added to the current vector.
+         *
+         * @return A reference to the updated current vector after the addition.
+         */
         template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator+=(const Vector<TDimension, TOtherNumber>& other)
         {
@@ -132,6 +232,16 @@ namespace Otter::Math
             return *this;
         }
 
+        /**
+         * @brief Adds another vector to the current vector, element-wise.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param other The vector to be added to the current vector.
+         *
+         * @return A reference to the updated current vector after the addition.
+         */
         Vector<TDimension, TNumber>& operator+=(const Vector<TDimension, TNumber>& other) noexcept
         {
             for (UInt8 i = 0; i < TDimension; ++i)
@@ -140,6 +250,17 @@ namespace Otter::Math
             return *this;
         }
 
+        /**
+         * @brief Subtracts another vector from the current vector, element-wise.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the current vector.
+         * @tparam TOtherNumber The type of the elements in the other vector.
+         *
+         * @param other The vector to be subtracted from the current vector.
+         *
+         * @return A reference to the updated current vector after the subtraction.
+         */
         template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator-=(const Vector<TDimension, TOtherNumber>& other)
         {
@@ -149,6 +270,16 @@ namespace Otter::Math
             return *this;
         }
 
+        /**
+         * @brief Subtracts another vector from the current vector, element-wise.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the vector.
+         *
+         * @param other The vector to be subtracted from the current vector.
+         *
+         * @return A reference to the updated current vector after the subtraction.
+         */
         Vector<TDimension, TNumber>& operator-=(const Vector<TDimension, TNumber>& other) noexcept
         {
             for (UInt8 i = 0; i < TDimension; ++i)
@@ -157,6 +288,17 @@ namespace Otter::Math
             return *this;
         }
 
+        /**
+         * @brief Multiplies the current vector by a scalar value, element-wise.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TOtherNumber The type of the scalar value.
+         *
+         * @param scalar The scalar value to multiply the vector elements with.
+         *
+         * @return A reference to the updated current vector after the multiplication.
+         */
         template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator*=(TOtherNumber scalar) noexcept
         {
@@ -166,6 +308,17 @@ namespace Otter::Math
             return *this;
         }
 
+        /**
+         * @brief Divides the current vector by a scalar value, element-wise.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TOtherNumber The type of the scalar value.
+         *
+         * @param scalar The scalar value to divide the vector elements with.
+         *
+         * @return A reference to the updated current vector after the division.
+         */
         template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator/=(TOtherNumber scalar) noexcept
         {
@@ -177,6 +330,18 @@ namespace Otter::Math
             return *this;
         }
 
+        /**
+         * @brief Adds the `rhs` vector to the `lhs` vector, element-wise.
+         *
+         * @tparam TDimension The dimension of the vectors.
+         * @tparam TNumber The type of the elements in the left vector.
+         * @tparam TOtherNumber The type of the elements in the right vector.
+         *
+         * @param lhs The left-hand side vector.
+         * @param rhs The right-hand side vector.
+         *
+         * @return The result of the addition.
+         */
         template<AnyNumber TOtherNumber>
         friend decltype(auto) operator+(Vector<TDimension, TNumber> lhs,
                                         const Vector<TDimension, TOtherNumber>& rhs)
@@ -185,6 +350,18 @@ namespace Otter::Math
             return lhs;
         }
 
+        /**
+         * @brief Subtracts the `rhs` vector from the `lhs` vector, element-wise.
+         *
+         * @tparam TDimension The dimension of the vectors.
+         * @tparam TNumber The type of the elements in the left vector.
+         * @tparam TOtherNumber The type of the elements in the right vector.
+         *
+         * @param lhs The left-hand side vector.
+         * @param rhs The right-hand side vector.
+         *
+         * @return The result of the subtraction.
+         */
         template<AnyNumber TOtherNumber>
         friend decltype(auto) operator-(Vector<TDimension, TNumber> lhs,
                                         const Vector<TDimension, TOtherNumber>& rhs)
@@ -193,6 +370,18 @@ namespace Otter::Math
             return lhs;
         }
 
+        /**
+         * @brief Multiplies the `lhs` vector with a scalar value, element-wise.
+         *
+         * @tparam TDimension The dimension of the vectors.
+         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TOtherNumber The type of the scalar value.
+         *
+         * @param lhs The vector.
+         * @param rhs The scalar value.
+         *
+         * @return The result of the multiplication.
+         */
         template<AnyNumber TOtherNumber>
         friend decltype(auto) operator*(Vector<TDimension, TNumber> lhs, TOtherNumber rhs)
         {
@@ -200,6 +389,18 @@ namespace Otter::Math
             return lhs;
         }
 
+        /**
+         * @brief Divides the `lhs` vector with a scalar value, element-wise.
+         *
+         * @tparam TDimension The dimension of the vectors.
+         * @tparam TNumber The type of the elements in the vector.
+         * @tparam TOtherNumber The type of the scalar value.
+         *
+         * @param lhs The vector.
+         * @param rhs The scalar value.
+         *
+         * @return The result of the division.
+         */
         template<AnyNumber TOtherNumber>
         friend decltype(auto) operator/(Vector<TDimension, TNumber> lhs, TOtherNumber rhs)
         {
@@ -209,6 +410,23 @@ namespace Otter::Math
             return lhs;
         }
 
+        /**
+         * @brief Compares the current Vector instance with another Vector instance for equality.
+         *
+         * @tparam TDimension The dimension of the vectors.
+         * @tparam TNumber The type of the elements in the current vector.
+         * @tparam TOtherNumber The type of the elements in the other Vector.
+         *
+         * @param other The other Vector instance to compare with.
+         *
+         * @return true if the current Vector instance is equal to the other Vector instance,
+         *         false otherwise.
+         *
+         * @note The comparison behavior is different based on the data types of the elements. If both TNumber and
+         * TOtherNumber are integral types, the function compares each element of the vectors using the '==' operator.
+         * If either TNumber or TOtherNumber are floating-point types, the function uses the Math::AreApproximatelyEqual
+         * function to compare each element of the vectors with a specified tolerance.
+         */
         template<AnyNumber TOtherNumber>
         bool operator==(const Vector<TDimension, TOtherNumber>& other) const noexcept
         {
@@ -228,6 +446,20 @@ namespace Otter::Math
             return true;
         }
 
+        /**
+         * @brief Compares the current Vector instance with another Vector instance for inequality.
+         *
+         * @tparam TDimension The dimension of the vectors.
+         * @tparam TNumber The type of the elements in the current vector.
+         * @tparam TOtherNumber The type of the elements in the other Vector.
+         *
+         * @param other The other Vector instance to compare with.
+         *
+         * @return true if the current Vector instance is not equal to the other Vector instance,
+         *         false otherwise.
+         *
+         * @note The '!=' operator is implemented in terms of the '==' operator.
+         */
         template<AnyNumber TOtherNumber>
         bool operator!=(const Vector<TDimension, TOtherNumber>& other) const noexcept
         {
@@ -239,18 +471,96 @@ namespace Otter::Math
 #pragma clang diagnostic pop
         }
 
+        /**
+         * @brief Getter for the X coordinate value.
+         *
+         * @tparam TNumber The number type.
+         *
+         * @return The X coordinate value.
+         */
         [[nodiscard]] OTR_INLINE TNumber GetX() const noexcept { return m_Values[0]; }
+
+        /**
+         * @brief Setter for the X coordinate value.
+         *
+         * @tparam TNumber The value type.
+         *
+         * @param x The value to set.
+         */
         OTR_INLINE void SetX(TNumber x) noexcept { m_Values[0] = x; }
 
+        /**
+         * @brief Getter for the Y coordinate value.
+         *
+         * @tparam TNumber The number type.
+         *
+         * @return The Y coordinate value.
+         */
         [[nodiscard]] OTR_INLINE TNumber GetY() const noexcept { return m_Values[1]; }
+
+        /**
+         * @brief Setter for the Y coordinate value.
+         *
+         * @tparam TNumber The value type.
+         *
+         * @param x The value to set.
+         */
         OTR_INLINE void SetY(TNumber y) noexcept { m_Values[1] = y; }
 
+        /**
+         * @brief Getter for the Z coordinate value.
+         *
+         * @tparam TNumber The number type.
+         *
+         * @return The Z coordinate value.
+         *
+         * @note This function is only available for 3D and 4D vectors.
+         */
         [[nodiscard]] OTR_INLINE TNumber GetZ() const noexcept requires (TDimension >= 3) { return m_Values[2]; }
+
+        /**
+         * @brief Setter for the Z coordinate value.
+         *
+         * @tparam TNumber The value type.
+         *
+         * @param x The value to set.
+         *
+         * @note This function is only available for 3D and 4D vectors.
+         */
         OTR_INLINE void SetZ(TNumber z) noexcept requires (TDimension >= 3) { m_Values[2] = z; }
 
+        /**
+         * @brief Getter for the W coordinate value.
+         *
+         * @tparam TNumber The number type.
+         *
+         * @return The W coordinate value.
+         *
+         * @note This function is only available for 4D vectors.
+         */
         [[nodiscard]] OTR_INLINE TNumber GetW() const noexcept requires (TDimension == 4) { return m_Values[3]; }
+
+        /**
+         * @brief Setter for the W coordinate value.
+         *
+         * @tparam TNumber The value type.
+         *
+         * @param x The value to set.
+         *
+         * @note This function is only available for 4D vectors.
+         */
         OTR_INLINE void SetW(TNumber w) noexcept requires (TDimension == 4) { m_Values[3] = w; }
 
+        /**
+         * @brief Returns a vector with the X element set to -1.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with the X element set to -1.
+         *
+         * @note This function is only available for 2D and 3D vectors.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Left() requires (TDimension < 4)
         {
             if constexpr (TDimension == 2)
@@ -262,6 +572,16 @@ namespace Otter::Math
                                           static_cast<TNumber>(0.0));
         }
 
+        /**
+         * @brief Returns a vector with the X element set to 1.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with the X element set to 1.
+         *
+         * @note This function is only available for 2D and 3D vectors.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Right() requires (TDimension < 4)
         {
             if constexpr (TDimension == 2)
@@ -272,6 +592,16 @@ namespace Otter::Math
                                           static_cast<TNumber>(0.0));
         }
 
+        /**
+         * @brief Returns a vector with the Y element set to -1.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with the Y element set to -1.
+         *
+         * @note This function is only available for 2D and 3D vectors.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Down() requires (TDimension < 4)
         {
             if constexpr (TDimension == 2)
@@ -282,6 +612,16 @@ namespace Otter::Math
                                           static_cast<TNumber>(0.0));
         }
 
+        /**
+         * @brief Returns a vector with the Y element set to 1.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with the Y element set to 1.
+         *
+         * @note This function is only available for 2D and 3D vectors.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Up() requires (TDimension < 4)
         {
             if constexpr (TDimension == 2)
@@ -292,31 +632,83 @@ namespace Otter::Math
                                           static_cast<TNumber>(0.0));
         }
 
+        /**
+         * @brief Returns a vector with the Z element set to -1.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with the Z element set to -1.
+         *
+         * @note This function is only available for 3D vectors.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Back() requires (TDimension == 3)
         {
             return Vector<3, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(0.0), static_cast<TNumber>(-1.0));
         }
 
+        /**
+         * @brief Returns a vector with the Z element set to 1.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with the Z element set to 1.
+         *
+         * @note This function is only available for 3D vectors.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Forward() requires (TDimension == 3)
         {
             return Vector<3, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(0.0), static_cast<TNumber>(1.0));
         }
 
+        /**
+         * @brief Returns a vector with all elements set to one.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with all elements set to one.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> One()
         {
             return Vector<TDimension, TNumber>(static_cast<TNumber>(1.0));
         }
 
+        /**
+         * @brief Returns a vector with all elements set to zero.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with all elements set to zero.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Zero()
         {
             return Vector<TDimension, TNumber>(static_cast<TNumber>(0.0));
         }
 
+        /**
+         * @brief Returns a vector with all elements set to positive infinity.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with all elements set to positive infinity.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> PositiveInfinity()
         {
             return Vector<TDimension, TNumber>(Math::PositiveInfinity<TNumber>());
         }
 
+        /**
+         * @brief Returns a vector with all elements set to negative infinity.
+         *
+         * @tparam TDimension The dimension of the vector.
+         * @tparam TNumber The number type.
+         *
+         * @return The vector with all elements set to negative infinity.
+         */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> NegativeInfinity()
         {
             return Vector<TDimension, TNumber>(Math::NegativeInfinity<TNumber>());
