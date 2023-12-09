@@ -10,12 +10,12 @@ class Stack_Fixture : public ::testing::Test
 protected:
     void SetUp() override
     {
-        OTR_MEMORY_SYSTEM.Initialise(1_KiB);
+        Otter::MemorySystem::Initialise(1_KiB);
     }
 
     void TearDown() override
     {
-        OTR_MEMORY_SYSTEM.Shutdown();
+        Otter::MemorySystem::Shutdown();
     }
 };
 

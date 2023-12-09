@@ -111,15 +111,15 @@ namespace Otter
         ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
-            OTR_MEMORY_SYSTEM.CheckMemoryFootprint([&]()
-                                                   {
-                                                       MemoryDebugPair pair[1];
-                                                       pair[0] = { debugName, m_Data };
+            MemorySystem::CheckMemoryFootprint([&]()
+                                               {
+                                                   MemoryDebugPair pair[1];
+                                                   pair[0] = { debugName, m_Data };
 
-                                                       return MemoryDebugHandle{ pair, 1 };
-                                                   },
-                                                   &footprint,
-                                                   nullptr);
+                                                   return MemoryDebugHandle{ pair, 1 };
+                                               },
+                                               &footprint,
+                                               nullptr);
 
             return ReadOnlySpan<MemoryFootprint, 1>{ footprint };
         }

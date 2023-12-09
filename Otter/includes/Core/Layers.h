@@ -13,22 +13,6 @@ namespace Otter
     public:
         virtual ~Layer() = default;
 
-        OTR_DISABLE_OBJECT_COPIES(Layer)
-        OTR_DISABLE_OBJECT_MOVES(Layer)
-
-        template<typename T = Layer>
-        [[nodiscard]] static Layer* Create(bool isEnabled)
-        {
-            return Otter::New<T>(isEnabled);
-        }
-
-        template<typename T = Layer>
-        static void Delete(T* layer)
-        {
-            if (layer)
-                Otter::Delete<T>(layer);
-        }
-
         virtual void OnEnable() { m_IsEnabled = true; }
         virtual void OnDisable() { m_IsEnabled = false; }
         virtual void OnUpdate(const TimeStep& step) = 0;

@@ -4,14 +4,17 @@
 
 namespace Otter
 {
+    bool              MemorySystem::s_HasInitialised = false;
+    FreeListAllocator MemorySystem::s_Allocator{ };
+
     void MemorySystem::Initialise(const UInt64 memoryRequirements)
     {
-        OTR_INTERNAL_ASSERT_MSG(!m_HasInitialised, "Memory has already been initialised")
+        OTR_INTERNAL_ASSERT_MSG(!s_HasInitialised, "Memory has already been initialised")
 
         void* memory = Platform::Allocate(memoryRequirements);
 
-        m_Allocator      = FreeListAllocator(memory, memoryRequirements, FreeListAllocator::Policy::FirstFit);
-        m_HasInitialised = true;
+        s_Allocator      = FreeListAllocator(memory, memoryRequirements, FreeListAllocator::Policy::FirstFit);
+        s_HasInitialised = true;
 
         OTR_LOG_DEBUG("Memory system initialized with {0} bytes available", memoryRequirements)
     }
@@ -19,21 +22,21 @@ namespace Otter
     void MemorySystem::Shutdown()
     {
         OTR_LOG_DEBUG("Shutting down memory system...")
-        OTR_INTERNAL_ASSERT_MSG(m_HasInitialised, "Memory has not been initialised")
+        OTR_INTERNAL_ASSERT_MSG(s_HasInitialised, "Memory has not been initialised")
 
-        void* memoryBlock = m_Allocator.GetMemoryUnsafePointer();
+        void* memoryBlock = s_Allocator.GetMemoryUnsafePointer();
         if (memoryBlock)
         {
-            Platform::MemoryClear(memoryBlock, m_Allocator.GetMemorySize());
+            Platform::MemoryClear(memoryBlock, s_Allocator.GetMemorySize());
             Platform::Free(memoryBlock);
         }
 
-        m_HasInitialised = false;
+        s_HasInitialised = false;
     }
 
     UnsafeHandle MemorySystem::Allocate(const UInt64 size, const UInt16 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
-        if (!m_HasInitialised)
+        if (!s_HasInitialised)
             return { };
 
         OTR_INTERNAL_ASSERT_MSG(size > 0, "Allocation size must be greater than 0 bytes")
@@ -41,7 +44,7 @@ namespace Otter
                                 "Allocation alignment must be greater than or equal to the platform alignment")
 
         UnsafeHandle handle{ };
-        handle.Pointer = m_Allocator.Allocate(size, alignment);
+        handle.Pointer = s_Allocator.Allocate(size, alignment);
         handle.Size    = size;
 
         Platform::MemoryClear(handle.Pointer, handle.Size);
@@ -53,7 +56,7 @@ namespace Otter
                                           const UInt64 size,
                                           const UInt16 alignment /*= OTR_PLATFORM_MEMORY_ALIGNMENT*/)
     {
-        if (!m_HasInitialised)
+        if (!s_HasInitialised)
             return { };
 
         OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Existing handle must not be null")
@@ -69,13 +72,13 @@ namespace Otter
         }
 
         UnsafeHandle newHandle{ };
-        newHandle.Pointer = m_Allocator.Allocate(size, alignment);
+        newHandle.Pointer = s_Allocator.Allocate(size, alignment);
         newHandle.Size    = size;
 
         Platform::MemoryClear(newHandle.Pointer, newHandle.Size);
         Platform::MemoryCopy(newHandle.Pointer, handle.Pointer, size);
 
-        m_Allocator.Free(handle.Pointer);
+        s_Allocator.Free(handle.Pointer);
         handle.Pointer = nullptr;
         handle.Size    = 0;
 
@@ -84,17 +87,17 @@ namespace Otter
 
     void MemorySystem::Free(void* block)
     {
-        if (!m_HasInitialised)
+        if (!s_HasInitialised)
             return;
 
         OTR_INTERNAL_ASSERT_MSG(block != nullptr, "Block to be freed must not be null")
 
-        m_Allocator.Free(block);
+        s_Allocator.Free(block);
     }
 
     void MemorySystem::MemoryCopy(void* destination, const void* source, UInt64 size)
     {
-        if (!m_HasInitialised)
+        if (!s_HasInitialised)
         {
             OTR_LOG_WARNING(
                 "Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
@@ -110,7 +113,7 @@ namespace Otter
 
     void MemorySystem::MemoryClear(void* block, const UInt64 size)
     {
-        if (!m_HasInitialised)
+        if (!s_HasInitialised)
         {
             OTR_LOG_WARNING(
                 "Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
@@ -130,7 +133,7 @@ namespace Otter
     {
         OTR_INTERNAL_ASSERT_MSG(outFootprints != nullptr, "Out-Footprints pointer must not be null")
 
-        if (!m_HasInitialised)
+        if (!s_HasInitialised)
         {
             OTR_LOG_WARNING(
                 "Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
@@ -150,7 +153,7 @@ namespace Otter
             if (!data.GetPointer())
                 continue;
 
-            m_Allocator.GetMemoryFootprint(data.GetPointer(),
+            s_Allocator.GetMemoryFootprint(data.GetPointer(),
                                            &outFootprints[i].Size,
                                            &outFootprints[i].Offset,
                                            &outFootprints[i].Padding,

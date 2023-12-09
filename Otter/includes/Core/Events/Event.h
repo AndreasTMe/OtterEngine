@@ -104,13 +104,13 @@ namespace Otter
 
         Event(const Event& other)
         {
-            OTR_MEMORY_SYSTEM.MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
+            MemorySystem::MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
         }
 
         Event(Event&& other) noexcept
         {
-            OTR_MEMORY_SYSTEM.MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
-            OTR_MEMORY_SYSTEM.MemoryClear(other.m_Data, sizeof(m_Data));
+            MemorySystem::MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
+            MemorySystem::MemoryClear(other.m_Data, sizeof(m_Data));
         }
 
         Event& operator=(const Event& other)
@@ -118,7 +118,7 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            OTR_MEMORY_SYSTEM.MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
+            MemorySystem::MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
 
             return *this;
         }
@@ -128,8 +128,8 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            OTR_MEMORY_SYSTEM.MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
-            OTR_MEMORY_SYSTEM.MemoryClear(other.m_Data, sizeof(m_Data));
+            MemorySystem::MemoryCopy(m_Data, other.m_Data, sizeof(m_Data));
+            MemorySystem::MemoryClear(other.m_Data, sizeof(m_Data));
 
             return *this;
         }
@@ -183,7 +183,7 @@ namespace Otter
             }
             else
             {
-                OTR_MEMORY_SYSTEM.MemoryCopy(&m_Data[offset], &value, sizeof(T));
+                MemorySystem::MemoryCopy(&m_Data[offset], &value, sizeof(T));
             }
         }
 
@@ -221,7 +221,7 @@ namespace Otter
             else
             {
                 T value = (T) 0.0;
-                OTR_MEMORY_SYSTEM.MemoryCopy(&value, &m_Data[offset], sizeof(T));
+                MemorySystem::MemoryCopy(&value, &m_Data[offset], sizeof(T));
 
                 return value;
             }

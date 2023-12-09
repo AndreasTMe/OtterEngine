@@ -19,21 +19,18 @@ namespace Otter
     class Application
     {
     public:
-        virtual ~Application()
-        {
-            for (auto* layer: m_Layers)
-                Layer::Delete(layer);
-        }
+        explicit Application(const ApplicationConfiguration& config);
+        virtual ~Application();
 
         void Run();
 
     protected:
-        explicit Application(const ApplicationConfiguration& config)
-            : k_Configuration(config)
+        template<typename TLayer, typename... Args>
+        requires IsDerivedFrom<TLayer, Layer>
+        void PushLayer(Args&& ... args)
         {
+            m_Layers.Add(New<TLayer>(std::forward<Args>(args)...));
         }
-
-        // TODO: Add functionality for adding/removing layers.
 
     private:
         const ApplicationConfiguration k_Configuration;
