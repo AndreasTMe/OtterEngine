@@ -20,46 +20,38 @@ namespace Otter
         OTR_DISABLE_OBJECT_COPIES(EventSystem)
         OTR_DISABLE_OBJECT_MOVES(EventSystem)
 
-        OTR_INLINE static EventSystem& GetInstance()
-        {
-            static EventSystem instance;
-            return instance;
-        }
-
-        void Initialise();
-        void Shutdown();
+        static void Initialise();
+        static void Shutdown();
 
         template<typename TEvent, typename... TArgs>
         requires IsBaseOf<Event, TEvent>
-        void Schedule(TArgs&& ... args)
+        static void Schedule(TArgs&& ... args)
         {
-            if (m_BlockEvents)
+            if (s_BlockEvents)
                 return;
 
             auto e = (Event) TEvent(std::forward<TArgs>(args)...);
             if (e.IsBlocking())
-                m_BlockEvents = true;
+                s_BlockEvents = true;
 
-            m_Events.TryEnqueue(e);
+            s_Events.TryEnqueue(e);
         }
 
-        void Process();
+        static void Process();
 
     private:
         OTR_WITH_DEFAULT_CONSTRUCTOR(EventSystem)
 
-        Queue<Event>                        m_Events;
-        Span<Func<bool, const Event&>*, 12> m_EventListeners;
+        static Queue<Event>                        s_Events;
+        static Span<Func<bool, const Event&>*, 12> s_EventListeners;
 
-        bool m_IsInitialised = false;
-        bool m_BlockEvents   = false;
+        static bool s_IsInitialised;
+        static bool s_BlockEvents;
 
         template<typename TEvent = Event, typename TActionArg = const TEvent&>
         requires IsBaseOf<Event, TEvent>
-        void AddListener(EventType type, Func<bool, TActionArg>* action);
+        static void AddListener(EventType type, Func<bool, TActionArg>* action);
     };
 }
-
-#define OTR_EVENT_SYSTEM Otter::EventSystem::GetInstance()
 
 #endif //OTTERENGINE_EVENTSYSTEM_H

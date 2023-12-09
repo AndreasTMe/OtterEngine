@@ -10,12 +10,12 @@ class HashSet_Fixture : public ::testing::Test
 protected:
     void SetUp() override
     {
-        OTR_MEMORY_SYSTEM.Initialise(4_KiB);
+        Otter::MemorySystem::Initialise(4_KiB);
     }
 
     void TearDown() override
     {
-        OTR_MEMORY_SYSTEM.Shutdown();
+        Otter::MemorySystem::Shutdown();
     }
 };
 
@@ -211,7 +211,7 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
         if (footprints1[i].GetData().GetPointer())
         {
             EXPECT_EQ(footprints1[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints1[i].Offset, OTR_MEMORY_SYSTEM.GetMemorySize());
+            EXPECT_LT(footprints1[i].Offset, Otter::MemorySystem::GetMemorySize());
             EXPECT_EQ(footprints1[i].Padding, 0);
             EXPECT_EQ(footprints1[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
@@ -230,10 +230,10 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
 
     Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints1, footprintsSize);
 
-    EXPECT_EQ(hashSetByteSize, OTR_MEMORY_SYSTEM.GetUsedMemory())
+    EXPECT_EQ(hashSetByteSize, Otter::MemorySystem::GetUsedMemory())
                     << "HashSet should have allocated " << hashSetByteSize
                     << " bytes of memory but has allocated "
-                    << OTR_MEMORY_SYSTEM.GetUsedMemory()
+                    << Otter::MemorySystem::GetUsedMemory()
                     << " bytes instead";
 
     hashSet.TryAdd(6);
@@ -260,7 +260,7 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprints3[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
     EXPECT_NE(footprints3[0].GetData().GetPointer(), firstAllocationPointer);
     EXPECT_EQ(footprints3[0].Size, OTR_ALLOCATED_MEMORY(Otter::Bucket<int>, expectedCapacity));
-    EXPECT_LT(footprints3[0].Offset, OTR_MEMORY_SYSTEM.GetMemorySize());
+    EXPECT_LT(footprints3[0].Offset, Otter::MemorySystem::GetMemorySize());
     EXPECT_EQ(footprints3[0].Padding, 0);
     EXPECT_EQ(footprints3[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
@@ -273,7 +273,7 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
         if (footprints3[i].GetData().GetPointer())
         {
             EXPECT_EQ(footprints3[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints3[i].Offset, OTR_MEMORY_SYSTEM.GetMemorySize());
+            EXPECT_LT(footprints3[i].Offset, Otter::MemorySystem::GetMemorySize());
             EXPECT_EQ(footprints3[i].Padding, 0);
             EXPECT_EQ(footprints3[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
@@ -290,10 +290,10 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
 
     Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints3, footprintsSize);
 
-    EXPECT_EQ(hashSetByteSize, OTR_MEMORY_SYSTEM.GetUsedMemory())
+    EXPECT_EQ(hashSetByteSize, Otter::MemorySystem::GetUsedMemory())
                     << "HashSet should have allocated " << hashSetByteSize
                     << " bytes of memory but has allocated "
-                    << OTR_MEMORY_SYSTEM.GetUsedMemory()
+                    << Otter::MemorySystem::GetUsedMemory()
                     << " bytes instead";
 
     hashSet.TryAdd(9);
@@ -314,7 +314,7 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprints4[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
     EXPECT_NE(footprints4[0].GetData().GetPointer(), firstAllocationPointer);
     EXPECT_EQ(footprints4[0].Size, OTR_ALLOCATED_MEMORY(Otter::Bucket<int>, expectedCapacity));
-    EXPECT_LT(footprints4[0].Offset, OTR_MEMORY_SYSTEM.GetMemorySize());
+    EXPECT_LT(footprints4[0].Offset, Otter::MemorySystem::GetMemorySize());
     EXPECT_EQ(footprints4[0].Padding, 0);
     EXPECT_EQ(footprints4[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
@@ -327,7 +327,7 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
         if (footprints4[i].GetData().GetPointer())
         {
             EXPECT_EQ(footprints4[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints4[i].Offset, OTR_MEMORY_SYSTEM.GetMemorySize());
+            EXPECT_LT(footprints4[i].Offset, Otter::MemorySystem::GetMemorySize());
             EXPECT_EQ(footprints4[i].Padding, 0);
             EXPECT_EQ(footprints4[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
@@ -344,10 +344,10 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
 
     Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints4, footprintsSize);
 
-    EXPECT_EQ(hashSetByteSize, OTR_MEMORY_SYSTEM.GetUsedMemory())
+    EXPECT_EQ(hashSetByteSize, Otter::MemorySystem::GetUsedMemory())
                     << "HashSet should have allocated " << hashSetByteSize
                     << " bytes of memory but has allocated "
-                    << OTR_MEMORY_SYSTEM.GetUsedMemory()
+                    << Otter::MemorySystem::GetUsedMemory()
                     << " bytes instead";
 
     hashSet.TryAdd(15);
@@ -373,7 +373,7 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
 
     Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints5, footprintsSize);
 
-    EXPECT_EQ(OTR_MEMORY_SYSTEM.GetUsedMemory(), 0)
+    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0)
                     << "HashSet should have allocated 0 bytes of memory but has allocated "
-                    << OTR_MEMORY_SYSTEM.GetUsedMemory() << " bytes instead";
+                    << Otter::MemorySystem::GetUsedMemory() << " bytes instead";
 }

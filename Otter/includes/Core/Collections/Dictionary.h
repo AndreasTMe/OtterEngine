@@ -322,24 +322,24 @@ namespace Otter
                 return;
             }
 
-            OTR_MEMORY_SYSTEM.CheckMemoryFootprint([&]()
+            MemorySystem::CheckMemoryFootprint([&]()
+                                               {
+                                                   MemoryDebugPair pairs[1 + m_Capacity];
+                                                   pairs[0] = { debugName, m_Buckets };
+
+                                                   for (UInt64 i = 0; i < m_Capacity; i++)
                                                    {
-                                                       MemoryDebugPair pairs[1 + m_Capacity];
-                                                       pairs[0] = { debugName, m_Buckets };
+                                                       pairs[i + 1] = MemoryDebugPair(
+                                                           ("bucket_" + std::to_string(i)).c_str(),
+                                                           m_Buckets[i].IsCreated() ? m_Buckets[i].Items
+                                                                                    : nullptr
+                                                       );
+                                                   }
 
-                                                       for (UInt64 i = 0; i < m_Capacity; i++)
-                                                       {
-                                                           pairs[i + 1] = MemoryDebugPair(
-                                                               ("bucket_" + std::to_string(i)).c_str(),
-                                                               m_Buckets[i].IsCreated() ? m_Buckets[i].Items
-                                                                                        : nullptr
-                                                           );
-                                                       }
-
-                                                       return MemoryDebugHandle{ pairs, 1 + m_Capacity };
-                                                   },
-                                                   outFootprints,
-                                                   nullptr);
+                                                   return MemoryDebugHandle{ pairs, 1 + m_Capacity };
+                                               },
+                                               outFootprints,
+                                               nullptr);
         }
 #endif
 

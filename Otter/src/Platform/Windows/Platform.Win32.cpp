@@ -192,7 +192,7 @@ namespace Otter::Internal
         {
             case WM_QUIT:
             case WM_CLOSE:
-                OTR_EVENT_SYSTEM.Schedule<WindowCloseEvent>();
+                EventSystem::Schedule<WindowCloseEvent>();
                 return 0;
             case WM_DESTROY:
                 PostQuitMessage(0);
@@ -211,13 +211,13 @@ namespace Otter::Internal
                 switch (wParam)
                 {
                     case SIZE_MINIMIZED:
-                        OTR_EVENT_SYSTEM.Schedule<WindowMinimizedEvent>();
+                        EventSystem::Schedule<WindowMinimizedEvent>();
                         break;
                     case SIZE_MAXIMIZED:
-                        OTR_EVENT_SYSTEM.Schedule<WindowMaximizedEvent>();
+                        EventSystem::Schedule<WindowMaximizedEvent>();
                         break;
                     case SIZE_RESTORED:
-                        OTR_EVENT_SYSTEM.Schedule<WindowRestoredEvent>();
+                        EventSystem::Schedule<WindowRestoredEvent>();
                         break;
                     default:
                         break;
@@ -225,9 +225,9 @@ namespace Otter::Internal
 
                 RECT clientRect;
                 GetClientRect(window, &clientRect);
-                OTR_EVENT_SYSTEM.Schedule<WindowResizeEvent>(clientRect.right - clientRect.left,
-                                                             clientRect.bottom - clientRect.top,
-                                                             userIsResizing);
+                EventSystem::Schedule<WindowResizeEvent>(clientRect.right - clientRect.left,
+                                                         clientRect.bottom - clientRect.top,
+                                                         userIsResizing);
             }
                 break;
             case WM_KEYDOWN:
@@ -280,18 +280,18 @@ namespace Otter::Internal
             if (repeatCount > 0)
             {
                 staticRepeatCount += repeatCount;
-                OTR_EVENT_SYSTEM.Schedule<KeyRepeatEvent>(keyCode, staticRepeatCount);
+                EventSystem::Schedule<KeyRepeatEvent>(keyCode, staticRepeatCount);
             }
             else
             {
                 staticRepeatCount = 1;
-                OTR_EVENT_SYSTEM.Schedule<KeyPressedEvent>(keyCode);
+                EventSystem::Schedule<KeyPressedEvent>(keyCode);
             }
         }
         else
         {
             staticRepeatCount = 0;
-            OTR_EVENT_SYSTEM.Schedule<KeyReleasedEvent>(keyCode);
+            EventSystem::Schedule<KeyReleasedEvent>(keyCode);
         }
     }
 
@@ -300,32 +300,32 @@ namespace Otter::Internal
         switch (message)
         {
             case WM_MOUSEMOVE:
-                OTR_EVENT_SYSTEM.Schedule<MouseMovedEvent>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+                EventSystem::Schedule<MouseMovedEvent>(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
                 break;
             case WM_MOUSEWHEEL:
             {
                 Int16 delta = GET_WHEEL_DELTA_WPARAM(wParam);
                 if (delta != 0)
-                    OTR_EVENT_SYSTEM.Schedule<MouseScrollEvent>(delta > 0);
+                    EventSystem::Schedule<MouseScrollEvent>(delta > 0);
             }
                 break;
             case WM_LBUTTONDOWN:
-                OTR_EVENT_SYSTEM.Schedule<MouseButtonPressedEvent>(MouseButton::Left);
+                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Left);
                 break;
             case WM_LBUTTONUP:
-                OTR_EVENT_SYSTEM.Schedule<MouseButtonReleasedEvent>(MouseButton::Left);
+                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Left);
                 break;
             case WM_MBUTTONDOWN:
-                OTR_EVENT_SYSTEM.Schedule<MouseButtonPressedEvent>(MouseButton::Middle);
+                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Middle);
                 break;
             case WM_MBUTTONUP:
-                OTR_EVENT_SYSTEM.Schedule<MouseButtonReleasedEvent>(MouseButton::Middle);
+                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Middle);
                 break;
             case WM_RBUTTONDOWN:
-                OTR_EVENT_SYSTEM.Schedule<MouseButtonPressedEvent>(MouseButton::Right);
+                EventSystem::Schedule<MouseButtonPressedEvent>(MouseButton::Right);
                 break;
             case WM_RBUTTONUP:
-                OTR_EVENT_SYSTEM.Schedule<MouseButtonReleasedEvent>(MouseButton::Right);
+                EventSystem::Schedule<MouseButtonReleasedEvent>(MouseButton::Right);
                 break;
             default:
                 break;

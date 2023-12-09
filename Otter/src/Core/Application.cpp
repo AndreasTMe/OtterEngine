@@ -8,11 +8,30 @@
 
 namespace Otter
 {
+    Application::Application(const ApplicationConfiguration& config)
+        : k_Configuration(config)
+    {
+        MemorySystem::Initialise(k_Configuration.MemoryRequirements);
+        EventSystem::Initialise();
+    }
+
+    Application::~Application()
+    {
+        for (auto* layer: m_Layers)
+            Delete<Layer>(layer);
+
+        m_Layers.ClearDestructive();
+
+        EventSystem::Shutdown();
+        MemorySystem::Shutdown();
+
+        OTR_LOG_DEBUG("Total allocation after system shutdown: {0} / {1} bytes",
+                      MemorySystem::GetUsedMemory(),
+                      MemorySystem::GetMemorySize())
+    }
+
     void Application::Run()
     {
-        OTR_MEMORY_SYSTEM.Initialise(k_Configuration.MemoryRequirements);
-        OTR_EVENT_SYSTEM.Initialise();
-
         auto* platform = Platform::CreatePlatform({ k_Configuration.Title,
                                                     k_Configuration.Width,
                                                     k_Configuration.Height,
@@ -23,17 +42,17 @@ namespace Otter
 
             Platform::DestroyPlatform(platform);
 
-            OTR_EVENT_SYSTEM.Shutdown();
-            OTR_MEMORY_SYSTEM.Shutdown();
+            EventSystem::Shutdown();
+            MemorySystem::Shutdown();
 
             return;
         }
 
-        if (OTR_GRAPHICS_SYSTEM.TryInitialise(platform->GetUnsafeContext()))
+        if (GraphicsSystem::TryInitialise(platform->GetUnsafeContext()))
         {
             OTR_LOG_DEBUG("Total allocation after system initialisation: {0} / {1} bytes",
-                          OTR_MEMORY_SYSTEM.GetUsedMemory(),
-                          OTR_MEMORY_SYSTEM.GetMemorySize())
+                          MemorySystem::GetUsedMemory(),
+                          MemorySystem::GetMemorySize())
 
             m_Time = New<Time>(TimeConfiguration{ 60.0, 75.0, 0.01 },
                                [platform]() { return platform->GetAbsoluteTime(); });
@@ -45,7 +64,7 @@ namespace Otter
 
                 // Logic Update
                 platform->CaptureWindowEvents();
-                OTR_EVENT_SYSTEM.Process();
+                EventSystem::Process();
 
                 for (const auto& layer: m_Layers)
                     layer->OnUpdate(m_Time->GetDeltaTime());
@@ -60,12 +79,12 @@ namespace Otter
                 }
 
                 // Render
-                OTR_GRAPHICS_SYSTEM.RenderFrame();
+                GraphicsSystem::RenderFrame();
             }
 
             Delete<Time>(m_Time);
 
-            OTR_GRAPHICS_SYSTEM.Shutdown();
+            GraphicsSystem::Shutdown();
         }
         else
         {
@@ -74,12 +93,5 @@ namespace Otter
 
         platform->Shutdown();
         Platform::DestroyPlatform(platform);
-
-        OTR_EVENT_SYSTEM.Shutdown();
-        OTR_MEMORY_SYSTEM.Shutdown();
-
-        OTR_LOG_DEBUG("Total allocation after system shutdown: {0} / {1} bytes",
-                      OTR_MEMORY_SYSTEM.GetUsedMemory(),
-                      OTR_MEMORY_SYSTEM.GetMemorySize())
     }
 }
