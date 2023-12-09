@@ -1,23 +1,33 @@
 #ifndef OTTERENGINE_TYPES_LOGLEVEL_H
 #define OTTERENGINE_TYPES_LOGLEVEL_H
 
+#include "Core/Defines/Defines.Utilities.h"
 #include "Core/Types/Types.Base.h"
-
-#define LOG_LEVEL_LIST          \
-    REPLACE_WITH(Trace,0x00)    \
-    REPLACE_WITH(Debug,0x01)    \
-    REPLACE_WITH(Info,0x02)     \
-    REPLACE_WITH(Warning,0x03)  \
-    REPLACE_WITH(Error,0x04)    \
-    REPLACE_WITH(Fatal,0x05)
 
 namespace Otter
 {
+    /**
+     * @brief The type of the log level. Its size is 1 byte.
+     */
     enum class LogLevel : UInt8
     {
-#define REPLACE_WITH(Item, Value) Item = Value,
-        LOG_LEVEL_LIST
-#undef REPLACE_WITH
+        /// @brief The trace log level.
+        Trace = 0x00,
+
+        /// @brief The debug log level.
+        Debug = 0x01,
+
+        /// @brief The info log level.
+        Info = 0x02,
+
+        /// @brief The warning log level.
+        Warning = 0x03,
+
+        /// @brief The error log level.
+        Error = 0x04,
+
+        /// @brief The fatal log level.
+        Fatal = 0x05,
     };
 }
 
@@ -26,15 +36,29 @@ OStream& operator<<(OStream& os, const Otter::LogLevel& logLevel)
 {
     switch (logLevel)
     {
-#define REPLACE_WITH(Item, Value) case Otter::LogLevel::Item: os << "LogLevel::" << #Item; break;
-        LOG_LEVEL_LIST
-#undef REPLACE_WITH
+        case Otter::LogLevel::Trace:
+            os << OTR_NAME_OF(Otter::LogLevel::Trace);
+            break;
+        case Otter::LogLevel::Debug:
+            os << OTR_NAME_OF(Otter::LogLevel::Debug);
+            break;
+        case Otter::LogLevel::Info:
+            os << OTR_NAME_OF(Otter::LogLevel::Info);
+            break;
+        case Otter::LogLevel::Warning:
+            os << OTR_NAME_OF(Otter::LogLevel::Warning);
+            break;
+        case Otter::LogLevel::Error:
+            os << OTR_NAME_OF(Otter::LogLevel::Error);
+            break;
+        case Otter::LogLevel::Fatal:
+            os << OTR_NAME_OF(Otter::LogLevel::Fatal);
+            break;
         default:
-            os << "LogLevel[Unknown]";
+            os << "Unknown LogLevel";
     }
 
     return os;
 }
-#undef LOG_LEVEL_LIST
 
 #endif //OTTERENGINE_TYPES_LOGLEVEL_H
