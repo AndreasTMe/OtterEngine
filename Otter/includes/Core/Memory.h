@@ -25,7 +25,7 @@ namespace Otter
     };
 
     /**
-     * @brief Represents the application's memory system that manages the allocation and de-allocation of memory.
+     * @brief The application's memory system that manages the allocation and de-allocation of memory.
      */
     class MemorySystem final
     {
