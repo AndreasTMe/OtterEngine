@@ -6,11 +6,7 @@
 
 namespace Otter::Internal
 {
-    struct LinuxPlatformWindowData
-    {
-    };
-
-    bool LinuxPlatform::Startup(const char* title, UInt16 width, UInt16 height)
+    bool LinuxPlatform::TryInitialise()
     {
         return false;
     }
@@ -25,7 +21,7 @@ namespace Otter::Internal
 
     Double64 LinuxPlatform::GetAbsoluteTime() const
     {
-        return 0;
+        return 0.0;
     }
 }
 
