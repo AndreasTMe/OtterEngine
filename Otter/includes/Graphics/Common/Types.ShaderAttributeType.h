@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_TYPES_SHADERATTRIBUTETYPE_H
 #define OTTERENGINE_TYPES_SHADERATTRIBUTETYPE_H
 
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 
 #define SHADER_ATTRIBUTE_TYPE_LIST  \
     REPLACE_WITH(Float, 0x01)       \

@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_TYPES_TEXTUREDIMENSION_H
 #define OTTERENGINE_TYPES_TEXTUREDIMENSION_H
 
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 
 #define TEXTURE_DIMENSION_LIST  \
     REPLACE_WITH(TwoD, 0x01)    \

@@ -1,9 +1,8 @@
-#include "Otter.PCH.h"
-
 // TODO: Remove this.
 #include <thread>
 
 #include "Core/Application.h"
+#include "Core/Events/EventSystem.h"
 #include "Graphics/GraphicsSystem.h"
 
 namespace Otter

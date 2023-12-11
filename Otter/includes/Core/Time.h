@@ -2,8 +2,8 @@
 #define OTTERENGINE_TIME_H
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Logger.h"
+#include "Core/BaseTypes.h"
+#include "Core/Assert.h"
 #include "Core/Function.h"
 
 namespace Otter

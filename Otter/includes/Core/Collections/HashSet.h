@@ -1,11 +1,7 @@
 #ifndef OTTERENGINE_HASHSET_H
 #define OTTERENGINE_HASHSET_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Memory.h"
 #include "Core/Function.h"
-
 #include "Core/Collections/Utils/HashBucket.h"
 #include "Core/Collections/Utils/HashUtils.h"
 
@@ -278,9 +274,9 @@ namespace Otter
         }
 #endif
 
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Buckets && m_Capacity > 0; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
+        [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
+        [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Buckets && m_Capacity > 0; }
+        [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
 
     private:
         static constexpr Int64   k_63BitMask       = 0x7FFFFFFFFFFFFFFF;

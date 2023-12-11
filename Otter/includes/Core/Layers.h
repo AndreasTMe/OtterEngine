@@ -2,8 +2,6 @@
 #define OTTERENGINE_LAYERS_H
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Memory.h"
 #include "Core/Time.h"
 
 namespace Otter

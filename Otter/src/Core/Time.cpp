@@ -1,5 +1,3 @@
-#include "Otter.PCH.h"
-
 #include "Core/Time.h"
 
 namespace Otter

@@ -1,11 +1,6 @@
 #ifndef OTTERENGINE_MATRIX_H
 #define OTTERENGINE_MATRIX_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Logger.h"
-#include "Math/Math.Concepts.h"
-#include "Math/Core.h"
 #include "Math/Vector.h"
 #include "Math/Quaternion.h"
 

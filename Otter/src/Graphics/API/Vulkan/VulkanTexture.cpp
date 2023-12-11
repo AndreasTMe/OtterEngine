@@ -1,6 +1,5 @@
-#include "Otter.PCH.h"
-
 #include "Graphics/API/Vulkan/VulkanTexture.h"
+
 #include "Graphics/API/Vulkan/VulkanDataBuffer.h"
 
 #define STB_IMAGE_IMPLEMENTATION

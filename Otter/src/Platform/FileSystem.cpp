@@ -1,8 +1,8 @@
-#include "Otter.PCH.h"
-
 #include "Platform/FileSystem.h"
 
 #include <sys/stat.h>
+
+#include "Core/Logger.h"
 
 namespace Otter::FileSystem
 {

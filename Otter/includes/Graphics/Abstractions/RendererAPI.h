@@ -1,7 +1,6 @@
 #ifndef OTTERENGINE_RENDERERAPI_H
 #define OTTERENGINE_RENDERERAPI_H
 
-#include "Core/Defines.h"
 #include "Core/Collections/Collection.h"
 #include "Graphics/Abstractions/Shader.h"
 #include "Graphics/Abstractions/Texture.h"

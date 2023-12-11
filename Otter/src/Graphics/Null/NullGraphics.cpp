@@ -1,5 +1,3 @@
-#include "Otter.PCH.h"
-
 #if OTR_GRAPHICS_NULL
 
 #include "Graphics/Abstractions/Renderer.h"

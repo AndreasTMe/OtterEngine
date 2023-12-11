@@ -1,6 +1,8 @@
 #ifndef OTTERENGINE_FILESYSTEM_H
 #define OTTERENGINE_FILESYSTEM_H
 
+#include "Core/BaseTypes.h"
+
 namespace Otter::FileSystem
 {
     /**

@@ -2,7 +2,8 @@
 #define OTTERENGINE_EVENT_H
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
+#include "Core/Events/EventCategory.h"
+#include "Core/Events/EventType.h"
 #include "Core/Memory.h"
 
 namespace Otter
@@ -204,7 +205,15 @@ namespace Otter
     class Event
     {
     public:
-        OTR_WITH_DEFAULT_CONSTRUCTOR(Event)
+        /**
+         * @brief Constructor.
+         */
+        Event() = default;
+
+        /**
+         * @brief Destructor.
+         */
+        ~Event() = default;
 
         /**
          * @brief Copy constructor.

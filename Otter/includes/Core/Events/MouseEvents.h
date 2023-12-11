@@ -1,7 +1,8 @@
 #ifndef OTTERENGINE_MOUSEEVENTS_H
 #define OTTERENGINE_MOUSEEVENTS_H
 
-#include "Core/Types.h"
+#include "Core/Defines.h"
+#include "Core/Input/MouseButton.h"
 #include "Core/Events/Event.h"
 
 namespace Otter

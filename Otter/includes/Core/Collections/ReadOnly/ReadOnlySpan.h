@@ -1,10 +1,7 @@
 #ifndef OTTERENGINE_READONLYSPAN_H
 #define OTTERENGINE_READONLYSPAN_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Logger.h"
-
+#include "Core/Assert.h"
 #include "Core/Collections/Iterators/LinearIterator.h"
 
 namespace Otter
@@ -15,9 +12,9 @@ namespace Otter
     template<typename T, UInt64 Size>
     struct ReadOnlySpan final
     {
-    public:
         using ConstIterator = LinearIterator<const T>;
 
+    public:
         ReadOnlySpan()
         {
             if (std::is_default_constructible<T>::value)
@@ -31,9 +28,12 @@ namespace Otter
                     m_Data[i].~T();
         }
 
-        OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
-        OTR_DISABLE_OBJECT_COPIES(ReadOnlySpan)
-        OTR_DISABLE_OBJECT_MOVES(ReadOnlySpan)
+        ReadOnlySpan(ReadOnlySpan&) = delete;
+        ReadOnlySpan(const ReadOnlySpan&) = delete;
+        ReadOnlySpan& operator=(const ReadOnlySpan&) = delete;
+
+        ReadOnlySpan(ReadOnlySpan&&) = delete;
+        ReadOnlySpan& operator=(ReadOnlySpan&&) = delete;
 
         ReadOnlySpan(InitialiserList<T> list)
         {
@@ -67,6 +67,11 @@ namespace Otter
 
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
+
+        OTR_INLINE ConstIterator begin() const noexcept { return ConstIterator(m_Data); }
+        OTR_INLINE ConstIterator end() const noexcept { return ConstIterator(m_Data + Size); }
+        OTR_INLINE ConstIterator rbegin() const noexcept { return ConstIterator(m_Data + Size - 1); }
+        OTR_INLINE ConstIterator rend() const noexcept { return ConstIterator(m_Data - 1); }
 
     private:
         T m_Data[Size];

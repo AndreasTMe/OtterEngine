@@ -1,8 +1,6 @@
 #ifndef OTTERENGINE_HASHBUCKET_H
 #define OTTERENGINE_HASHBUCKET_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
 #include "Core/Memory.h"
 
 namespace Otter
@@ -66,11 +64,7 @@ namespace Otter
         UInt64 Capacity = 0;
         UInt64 Count    = 0;
 
-        Bucket()
-        {
-            if (IsCreated())
-                Buffer::Delete<BucketItem<T>>(Items, Capacity);
-        }
+        Bucket() = default;
 
         ~Bucket()
         {
@@ -136,8 +130,8 @@ namespace Otter
             return *this;
         }
 
-        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return Items && Capacity > 0; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return Count == 0; }
+        [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return Items && Capacity > 0; }
+        [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return Count == 0; }
     };
 }
 

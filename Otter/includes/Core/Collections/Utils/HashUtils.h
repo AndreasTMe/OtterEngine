@@ -1,8 +1,7 @@
 #ifndef OTTERENGINE_HASHUTILS_H
 #define OTTERENGINE_HASHUTILS_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 
 namespace Otter::Internal
 {
@@ -13,7 +12,8 @@ namespace Otter::Internal
         [[nodiscard]] static UInt64 GetPreviousPrime(UInt64 value);
 
     private:
-        OTR_WITH_DEFAULT_CONSTRUCTOR(HashUtils)
+        HashUtils() = default;
+        ~HashUtils() = default;
     };
 }
 

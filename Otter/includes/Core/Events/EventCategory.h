@@ -1,7 +1,7 @@
-#ifndef OTTERENGINE_TYPES_EVENTCATEGORY_H
-#define OTTERENGINE_TYPES_EVENTCATEGORY_H
+#ifndef OTTERENGINE_EVENTCATEGORY_H
+#define OTTERENGINE_EVENTCATEGORY_H
 
-#include "Core/Defines/Defines.Utilities.h"
+#include "Core/Defines.h"
 
 namespace Otter
 {
@@ -43,12 +43,12 @@ OStream& operator<<(OStream& os, const Otter::EventCategory& eventCategory)
 {
     if (eventCategory == Otter::EventCategory::None)
     {
-        os << "EventCategory::None";
+        os << OTR_NAME_OF(Otter::EventCategory::None);
         return os;
     }
     else if (eventCategory == Otter::EventCategory::All)
     {
-        os << "EventCategory::All";
+        os << OTR_NAME_OF(Otter::EventCategory::All);
         return os;
     }
 
@@ -87,4 +87,4 @@ OStream& operator<<(OStream& os, const Otter::EventCategory& eventCategory)
 }
 #undef EVENT_CATEGORY_LIST
 
-#endif //OTTERENGINE_TYPES_EVENTCATEGORY_H
+#endif //OTTERENGINE_EVENTCATEGORY_H

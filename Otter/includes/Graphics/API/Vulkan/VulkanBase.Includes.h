@@ -1,8 +1,7 @@
 #ifndef OTTERENGINE_VULKANBASE_INCLUDES_H
 #define OTTERENGINE_VULKANBASE_INCLUDES_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
+#include "Core/Assert.h"
 
 #include <vulkan/vulkan.h>
 

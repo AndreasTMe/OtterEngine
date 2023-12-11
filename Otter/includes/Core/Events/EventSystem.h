@@ -2,7 +2,7 @@
 #define OTTERENGINE_EVENTSYSTEM_H
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 #include "Core/Delegates.h"
 #include "Core/Collections/Span.h"
 #include "Core/Collections/Queue.h"
@@ -16,8 +16,30 @@ namespace Otter
     class EventSystem final
     {
     public:
-        OTR_DISABLE_OBJECT_COPIES(EventSystem)
-        OTR_DISABLE_OBJECT_MOVES(EventSystem)
+        /**
+         * @brief Deleted copy constructor.
+         */
+        EventSystem(EventSystem&) = delete;
+
+        /**
+         * @brief Deleted copy constructor.
+         */
+        EventSystem(const EventSystem&) = delete;
+
+        /**
+         * @brief Deleted copy assignment operator.
+         */
+        EventSystem& operator=(const EventSystem&) = delete;
+
+        /**
+         * @brief Deleted move constructor.
+         */
+        EventSystem(EventSystem&&) = delete;
+
+        /**
+         * @brief Deleted move assignment operator.
+         */
+        EventSystem& operator=(EventSystem&&) = delete;
 
         /**
          * @brief Initialises the event system.
@@ -59,7 +81,15 @@ namespace Otter
         static void Process();
 
     private:
-        OTR_WITH_DEFAULT_CONSTRUCTOR(EventSystem)
+        /**
+         * @brief Constructor.
+         */
+        EventSystem() = default;
+
+        /**
+         * @brief Destructor.
+         */
+        ~EventSystem() = default;
 
         static Queue<Event>                        s_Events;
         static Span<Func<bool, const Event&>*, 12> s_EventListeners;

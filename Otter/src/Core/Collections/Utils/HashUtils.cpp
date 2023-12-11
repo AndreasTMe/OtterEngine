@@ -1,6 +1,6 @@
-#include "Otter.PCH.h"
-
 #include "Core/Collections/Utils/HashUtils.h"
+
+#include "Core/Collections/Span.h"
 
 namespace Otter::Internal
 {

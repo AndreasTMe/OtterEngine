@@ -5,7 +5,6 @@ set(GRAPHICS_API_FOUND 0)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 file(GLOB_RECURSE HEADERS includes/*.h)
-list(REMOVE_ITEM HEADERS includes/Otter.PCH.h)
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
 
@@ -37,7 +36,6 @@ if (NOT GRAPHICS_API_FOUND)
     endif ()
 endif ()
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE includes/Otter.PCH.h)
 target_include_directories(${PROJECT_NAME} PRIVATE includes)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE

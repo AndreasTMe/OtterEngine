@@ -1,10 +1,6 @@
 #ifndef OTTERENGINE_LIST_H
 #define OTTERENGINE_LIST_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Memory.h"
-
 #include "Core/Collections/Collection.h"
 #include "Core/Collections/Iterators/LinearIterator.h"
 
@@ -22,9 +18,6 @@ namespace Otter
         OTR_COLLECTION_CONSTRUCT(List)
         OTR_COLLECTION_COPY(List)
         OTR_COLLECTION_MOVE(List)
-
-        OTR_WITH_ITERATOR(Iterator, base::m_Data, base::m_Count)
-        OTR_WITH_CONST_ITERATOR(ConstIterator, base::m_Data, base::m_Count)
 
         [[nodiscard]] T& operator[](UInt64 index)
         {
@@ -130,6 +123,16 @@ namespace Otter
             base::m_Count--;
             return true;
         }
+
+        OTR_INLINE Iterator begin() noexcept { return Iterator(base::m_Data); }
+        OTR_INLINE Iterator end() noexcept { return Iterator(base::m_Data + base::m_Count); }
+        OTR_INLINE Iterator rbegin() noexcept { return Iterator(base::m_Data + base::m_Count - 1); }
+        OTR_INLINE Iterator rend() noexcept { return Iterator(base::m_Data - 1); }
+
+        OTR_INLINE ConstIterator begin() const noexcept { return ConstIterator(base::m_Data); }
+        OTR_INLINE ConstIterator end() const noexcept { return ConstIterator(base::m_Data + base::m_Count); }
+        OTR_INLINE ConstIterator rbegin() const noexcept { return ConstIterator(base::m_Data + base::m_Count - 1); }
+        OTR_INLINE ConstIterator rend() const noexcept { return ConstIterator(base::m_Data - 1); }
     };
 }
 

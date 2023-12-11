@@ -2,7 +2,6 @@
 #define OTTERENGINE_VULKANTEXTURE_H
 
 #include "Graphics/Abstractions/Texture.h"
-#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Device.h"
 
 namespace Otter::Graphics::Vulkan

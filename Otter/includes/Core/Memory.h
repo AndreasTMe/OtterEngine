@@ -2,8 +2,8 @@
 #define OTTERENGINE_MEMORY_H
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Logger.h"
+#include "Core/BaseTypes.h"
+#include "Core/Assert.h"
 #include "Core/Function.h"
 
 #include "Core/Allocators/FreeListAllocator.h"
@@ -30,8 +30,30 @@ namespace Otter
     class MemorySystem final
     {
     public:
-        OTR_DISABLE_OBJECT_COPIES(MemorySystem)
-        OTR_DISABLE_OBJECT_MOVES(MemorySystem)
+        /**
+         * @brief Deleted copy constructor.
+         */
+        MemorySystem(MemorySystem&) = delete;
+
+        /**
+         * @brief Deleted copy constructor.
+         */
+        MemorySystem(const MemorySystem&) = delete;
+
+        /**
+         * @brief Deleted copy assignment operator.
+         */
+        MemorySystem& operator=(const MemorySystem&) = delete;
+
+        /**
+         * @brief Deleted move constructor.
+         */
+        MemorySystem(MemorySystem&&) = delete;
+
+        /**
+         * @brief Deleted move assignment operator.
+         */
+        MemorySystem& operator=(MemorySystem&&) = delete;
 
         /**
          * @brief Initialises the memory system.
@@ -125,7 +147,15 @@ namespace Otter
         [[nodiscard]] static constexpr UInt64 GetMemorySize() { return s_Allocator.GetMemorySize(); }
 
     private:
-        OTR_WITH_DEFAULT_CONSTRUCTOR(MemorySystem)
+        /**
+         * @brief Constructor.
+         */
+        MemorySystem() = default;
+
+        /**
+         * @brief Destructor.
+         */
+        ~MemorySystem() = default;
 
         static bool              s_HasInitialised;
         static FreeListAllocator s_Allocator;

@@ -2,7 +2,7 @@
 #define OTTERENGINE_SHADERATTRIBUTE_H
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 #include "Graphics/Common/Types.ShaderAttributeType.h"
 #include "Graphics/Common/Types.ShaderAttributeSize.h"
 

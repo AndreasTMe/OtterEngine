@@ -1,5 +1,3 @@
-#include "Otter.PCH.h"
-
 #include "Core/Allocators/FreeListAllocator.h"
 
 namespace Otter
@@ -43,14 +41,14 @@ namespace Otter
 
         if (remainingSpace > sizeof(Node))
         {
-            Node* nextNode = (Node * )((UIntPtr) foundNode + requiredSpace);
+            Node* nextNode = (Node*) ((UIntPtr) foundNode + requiredSpace);
             nextNode->Size = remainingSpace;
             nextNode->Next = nullptr;
             Insert(nextNode, foundNode);
         }
         Remove(foundNode, previousNode);
 
-        auto* header = (Header * )((UIntPtr*) foundNode + bodyPadding);
+        auto* header = (Header*) ((UIntPtr*) foundNode + bodyPadding);
         header->Size    = requiredSpace;
         header->Padding = bodyPadding;
 
@@ -76,7 +74,7 @@ namespace Otter
             OTR_LOG_ERROR("Freed size is greater than or equal to the allocator size!")
         }
 
-        Node* nodeToInsert = (Node * )(headerAddress);
+        Node* nodeToInsert = (Node*) (headerAddress);
         nodeToInsert->Size = header->Size + header->Padding;
         nodeToInsert->Next = nullptr;
 
@@ -90,7 +88,7 @@ namespace Otter
                 break;
             }
             iteratorPrevious = iteratorCurrent;
-            iteratorCurrent = iteratorCurrent->Next;
+            iteratorCurrent  = iteratorCurrent->Next;
         }
 
         m_MemoryUsed -= nodeToInsert->Size;
@@ -119,7 +117,7 @@ namespace Otter
                           (UIntPtr) block - OTR_ALIGNED_OFFSET(sizeof(Header), OTR_PLATFORM_MEMORY_ALIGNMENT);
         const Header* const header = (Header*) headerAddress;
 
-        *outSize      = header->Size;
+        *outSize = header->Size;
         *outOffset =
             headerAddress - (UIntPtr) m_Memory + OTR_ALIGNED_OFFSET(sizeof(Header), OTR_PLATFORM_MEMORY_ALIGNMENT);
         *outPadding   = header->Padding;
@@ -144,7 +142,7 @@ namespace Otter
                 break;
 
             itPrevious = itCurrent;
-            itCurrent = itCurrent->Next;
+            itCurrent  = itCurrent->Next;
         }
 
         if (padding)
@@ -172,7 +170,7 @@ namespace Otter
         {
             itPadding = GetAlignmentPadding((UIntPtr) itCurrent, alignment);
             UInt64 requiredSpace = size + itPadding;
-            UInt64 difference = itCurrent->Size - requiredSpace;
+            UInt64 difference    = itCurrent->Size - requiredSpace;
 
             if (difference == 0)
             {
@@ -186,7 +184,7 @@ namespace Otter
             }
 
             itPrevious = itCurrent;
-            itCurrent         = itCurrent->Next;
+            itCurrent  = itCurrent->Next;
         }
 
         if (padding)

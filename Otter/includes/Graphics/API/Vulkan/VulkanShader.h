@@ -1,7 +1,6 @@
 #ifndef OTTERENGINE_VULKANSHADER_H
 #define OTTERENGINE_VULKANSHADER_H
 
-#include "Core/Defines.h"
 #include "Graphics/Abstractions/Shader.h"
 #include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 

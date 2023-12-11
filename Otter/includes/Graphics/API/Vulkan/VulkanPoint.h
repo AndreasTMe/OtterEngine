@@ -1,7 +1,6 @@
 #ifndef OTTERENGINE_VULKANPOINT_H
 #define OTTERENGINE_VULKANPOINT_H
 
-#include "Core/Types.h"
 #include "Core/Collections/Span.h"
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
 #include "Math/Vector.h"

@@ -1,11 +1,7 @@
 #ifndef OTTERENGINE_READONLYARRAY_H
 #define OTTERENGINE_READONLYARRAY_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Logger.h"
 #include "Core/Memory.h"
-
 #include "Core/Collections/Iterators/LinearIterator.h"
 
 #if !OTR_RUNTIME
@@ -20,9 +16,9 @@ namespace Otter
     template<typename T, UInt64 Size>
     struct ReadOnlyArray final
     {
-    public:
         using ConstIterator = LinearIterator<const T>;
 
+    public:
         ReadOnlyArray()
         {
             if constexpr (Size > 0)
@@ -36,9 +32,12 @@ namespace Otter
             m_Data = nullptr;
         }
 
-        OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, Size)
-        OTR_DISABLE_OBJECT_COPIES(ReadOnlyArray)
-        OTR_DISABLE_OBJECT_MOVES(ReadOnlyArray)
+        ReadOnlyArray(ReadOnlyArray&) = delete;
+        ReadOnlyArray(const ReadOnlyArray&) = delete;
+        ReadOnlyArray& operator=(const ReadOnlyArray&) = delete;
+
+        ReadOnlyArray(ReadOnlyArray&&) = delete;
+        ReadOnlyArray& operator=(ReadOnlyArray&&) = delete;
 
         ReadOnlyArray(InitialiserList<T> list)
             : ReadOnlyArray()
@@ -93,7 +92,12 @@ namespace Otter
 
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && Size > 0; }
+        [[nodiscard]] OTR_INLINE bool IsCreated() const { return m_Data && Size > 0; }
+
+        OTR_INLINE ConstIterator begin() const noexcept { return ConstIterator(m_Data); }
+        OTR_INLINE ConstIterator end() const noexcept { return ConstIterator(m_Data + Size); }
+        OTR_INLINE ConstIterator rbegin() const noexcept { return ConstIterator(m_Data + Size - 1); }
+        OTR_INLINE ConstIterator rend() const noexcept { return ConstIterator(m_Data - 1); }
 
     private:
         T* m_Data;

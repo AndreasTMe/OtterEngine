@@ -1,9 +1,7 @@
 #ifndef OTTERENGINE_ASSET_H
 #define OTTERENGINE_ASSET_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Logger.h"
+#include "Core/Assert.h"
 #include "Graphics/Abstractions/Texture.h"
 #include "Graphics/Abstractions/Shader.h"
 

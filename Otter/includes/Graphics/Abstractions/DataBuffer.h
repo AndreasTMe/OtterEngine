@@ -1,8 +1,6 @@
 #ifndef OTTERENGINE_DATABUFFER_H
 #define OTTERENGINE_DATABUFFER_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
 #include "Core/Collections/List.h"
 #include "Graphics/Abstractions/ShaderAttribute.h"
 #include "Graphics/Common/Types.BufferType.h"
@@ -29,7 +27,7 @@ namespace Otter::Graphics
             m_AttributeLayout.ClearDestructive();
         }
 
-        [[nodiscard]] OTR_INLINE const List <ShaderAttribute>& GetAttributeLayout() const { return m_AttributeLayout; }
+        [[nodiscard]] OTR_INLINE const List<ShaderAttribute>& GetAttributeLayout() const { return m_AttributeLayout; }
         OTR_INLINE void SetAttributeLayout(InitialiserList<ShaderAttribute> attributes)
         {
             m_AttributeLayout.ClearDestructive();
@@ -40,7 +38,7 @@ namespace Otter::Graphics
     protected:
         VertexBuffer() : DataBuffer(), m_AttributeLayout() { }
 
-        List <ShaderAttribute> m_AttributeLayout;
+        List<ShaderAttribute> m_AttributeLayout;
     };
 
     class IndexBuffer : public DataBuffer

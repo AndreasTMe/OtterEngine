@@ -1,8 +1,6 @@
 #ifndef OTTERENGINE_SPRITE_H
 #define OTTERENGINE_SPRITE_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
 #include "Core/Collections/Span.h"
 #include "Math/Vector.h"
 #include "Math/Geometry/Rectangle.h"

@@ -16,8 +16,30 @@ namespace Otter
     class GlobalActions final
     {
     public:
-        OTR_DISABLE_OBJECT_COPIES(GlobalActions)
-        OTR_DISABLE_OBJECT_MOVES(GlobalActions)
+        /**
+         * @brief Deleted copy constructor.
+         */
+        GlobalActions(GlobalActions&) = delete;
+
+        /**
+         * @brief Deleted copy constructor.
+         */
+        GlobalActions(const GlobalActions&) = delete;
+
+        /**
+         * @brief Deleted copy assignment operator.
+         */
+        GlobalActions& operator=(const GlobalActions&) = delete;
+
+        /**
+         * @brief Deleted move constructor.
+         */
+        GlobalActions(GlobalActions&&) = delete;
+
+        /**
+         * @brief Deleted move assignment operator.
+         */
+        GlobalActions& operator=(GlobalActions&&) = delete;
 
         /**
          * @brief Get the instance of the global actions.

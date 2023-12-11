@@ -1,5 +1,3 @@
-#include "Otter.PCH.h"
-
 #include "Graphics/API/Vulkan/VulkanPipelines.h"
 #include "Graphics/API/Vulkan/VulkanPoint.h"
 
@@ -8,9 +6,9 @@ namespace Otter::Graphics::Vulkan
     void CreatePipeline(const VkDevice& logicalDevice,
                         const VkRenderPass& renderPass,
                         const VkAllocationCallbacks* const allocator,
-                        const Enumerable <VkPipelineShaderStageCreateInfo>& shaderStages,
-                        const Enumerable <VkDescriptorSetLayout>& descriptorSetLayouts,
-                        const Enumerable <VkPushConstantRange>& pushConstantRanges,
+                        const Enumerable<VkPipelineShaderStageCreateInfo>& shaderStages,
+                        const Enumerable<VkDescriptorSetLayout>& descriptorSetLayouts,
+                        const Enumerable<VkPushConstantRange>& pushConstantRanges,
                         const VkExtent2D& extent,
                         VkPipelineLayout* outPipelineLayout,
                         VkPipeline* outPipeline)

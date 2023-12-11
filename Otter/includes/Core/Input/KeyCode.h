@@ -1,8 +1,8 @@
-#ifndef OTTERENGINE_TYPES_KEYCODE_H
-#define OTTERENGINE_TYPES_KEYCODE_H
+#ifndef OTTERENGINE_KEYCODE_H
+#define OTTERENGINE_KEYCODE_H
 
-#include "Core/Defines/Defines.Utilities.h"
-#include "Core/Types/Types.Base.h"
+#include "Core/Defines.h"
+#include "Core/BaseTypes.h"
 
 namespace Otter
 {
@@ -769,4 +769,4 @@ OStream& operator<<(OStream& os, const Otter::KeyCode& keyCode)
     return os;
 }
 
-#endif //OTTERENGINE_TYPES_KEYCODE_H
+#endif //OTTERENGINE_KEYCODE_H

@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_TYPES_SHADERATTRIBUTESIZE_H
 #define OTTERENGINE_TYPES_SHADERATTRIBUTESIZE_H
 
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 
 #define SHADER_ATTRIBUTE_SIZE_LIST  \
     REPLACE_WITH(Bit8, 1)           \

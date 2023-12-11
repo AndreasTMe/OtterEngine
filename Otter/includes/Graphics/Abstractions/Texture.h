@@ -2,7 +2,7 @@
 #define OTTERENGINE_TEXTURE_H
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 
 namespace Otter::Graphics
 {
