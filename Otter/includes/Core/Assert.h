@@ -1,14 +1,14 @@
-#ifndef OTTERENGINE_DEFINES_ASSERTIONS_H
-#define OTTERENGINE_DEFINES_ASSERTIONS_H
+#ifndef OTTERENGINE_ASSERT_H
+#define OTTERENGINE_ASSERT_H
 
-#include "Defines.Platform.h"
-#include "Defines.Compilation.h"
+#include "Core/Defines.h"
+#include "Core/Logger.h"
 
 #if defined(OTR_DEBUG)
     #define OTR_INTERNAL_ASSERTIONS_ENABLED 1
     #define OTR_ASSERTIONS_ENABLED 1
 #elif defined(OTR_EDITOR)
-    #define OTR_INTERNAL_ASSERTIONS_ENABLED 0
+#define OTR_INTERNAL_ASSERTIONS_ENABLED 0
     #define OTR_ASSERTIONS_ENABLED 1
 #elif defined(OTR_RUNTIME)
     #define OTR_INTERNAL_ASSERTIONS_ENABLED 0
@@ -43,7 +43,7 @@
         }
 
 #else
-    #define OTR_INTERNAL_ASSERT(assertion)
+#define OTR_INTERNAL_ASSERT(assertion)
     #define OTR_INTERNAL_ASSERT_MSG(assertion, ...)
 #endif
 
@@ -78,7 +78,7 @@
             }                                                           \
         }
 #else
-    #define OTR_ASSERT_SCOPE(scope)
+#define OTR_ASSERT_SCOPE(scope)
     #define OTR_ASSERT_VARIABLE_DECLARATION(declaration)
     #define OTR_ASSERT_METHOD_DECLARATION(declaration)
 
@@ -86,4 +86,4 @@
     #define OTR_ASSERT_MSG(assertion, ...)
 #endif
 
-#endif //OTTERENGINE_DEFINES_ASSERTIONS_H
+#endif //OTTERENGINE_ASSERT_H

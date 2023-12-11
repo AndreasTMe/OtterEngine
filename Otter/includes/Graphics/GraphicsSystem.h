@@ -8,8 +8,30 @@ namespace Otter
     class GraphicsSystem final
     {
     public:
-        OTR_DISABLE_OBJECT_COPIES(GraphicsSystem)
-        OTR_DISABLE_OBJECT_MOVES(GraphicsSystem)
+        /**
+         * @brief Deleted copy constructor.
+         */
+        GraphicsSystem(GraphicsSystem&) = delete;
+
+        /**
+         * @brief Deleted copy constructor.
+         */
+        GraphicsSystem(const GraphicsSystem&) = delete;
+
+        /**
+         * @brief Deleted copy assignment operator.
+         */
+        GraphicsSystem& operator=(const GraphicsSystem&) = delete;
+
+        /**
+         * @brief Deleted move constructor.
+         */
+        GraphicsSystem(GraphicsSystem&&) = delete;
+
+        /**
+         * @brief Deleted move assignment operator.
+         */
+        GraphicsSystem& operator=(GraphicsSystem&&) = delete;
 
         static bool TryInitialise(const void* platformContext);
         static void Shutdown();
@@ -17,7 +39,8 @@ namespace Otter
         static void RenderFrame();
 
     private:
-        OTR_WITH_DEFAULT_CONSTRUCTOR(GraphicsSystem)
+        GraphicsSystem() = default;
+        ~GraphicsSystem() = default;
 
         static Graphics::RendererAPI* s_Renderer;
     };

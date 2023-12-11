@@ -2,7 +2,7 @@
 #define OTTERENGINE_PLATFORM_H
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 
 namespace Otter
 {

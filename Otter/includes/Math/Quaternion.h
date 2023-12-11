@@ -1,10 +1,6 @@
 #ifndef OTTERENGINE_QUATERNION_H
 #define OTTERENGINE_QUATERNION_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Logger.h"
-#include "Math/Math.Concepts.h"
 #include "Math/Core.h"
 
 namespace Otter

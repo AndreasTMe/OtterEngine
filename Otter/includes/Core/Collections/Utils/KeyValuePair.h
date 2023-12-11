@@ -1,8 +1,6 @@
 #ifndef OTTERENGINE_KEYVALUEPAIR_H
 #define OTTERENGINE_KEYVALUEPAIR_H
 
-#include <bits/move.h>
-
 namespace Otter
 {
     template<typename TKey, typename TValue>

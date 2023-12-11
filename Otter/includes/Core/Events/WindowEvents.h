@@ -1,6 +1,7 @@
 #ifndef OTTERENGINE_WINDOWEVENTS_H
 #define OTTERENGINE_WINDOWEVENTS_H
 
+#include "Core/Defines.h"
 #include "Core/Events/Event.h"
 
 namespace Otter

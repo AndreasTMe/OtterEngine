@@ -3,8 +3,6 @@
 
 #include <type_traits>
 
-#include "Core/Types.h"
-
 namespace Otter
 {
     template<typename T>

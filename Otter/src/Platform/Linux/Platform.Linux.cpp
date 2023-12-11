@@ -1,5 +1,3 @@
-#include "Otter.PCH.h"
-
 #include "Platform/Linux/Platform.Linux.h"
 
 #if OTR_PLATFORM_LINUX

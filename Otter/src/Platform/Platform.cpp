@@ -1,5 +1,3 @@
-#include "Otter.PCH.h"
-
 #include "Platform/Platform.h"
 
 #if OTR_PLATFORM_WINDOWS
@@ -9,6 +7,9 @@
 #else
 #error "Unsupported platform"
 #endif
+
+#include "Core/Assert.h"
+#include "Core/Memory.h"
 
 namespace Otter
 {

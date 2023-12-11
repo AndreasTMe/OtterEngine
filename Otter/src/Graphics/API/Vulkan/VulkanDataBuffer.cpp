@@ -1,5 +1,3 @@
-#include "Otter.PCH.h"
-
 #include "Graphics/API/Vulkan/VulkanDataBuffer.h"
 
 namespace Otter::Graphics::Vulkan
@@ -323,7 +321,7 @@ namespace Otter::Graphics::Vulkan
         vkUpdateDescriptorSets(m_DevicePair->LogicalDevice, 1, &descriptorWrite, 0, VK_NULL_HANDLE);
     }
 
-    void VulkanUniformBuffer::UpdateAll(const List <VkDescriptorSet>& descriptorSets,
+    void VulkanUniformBuffer::UpdateAll(const List<VkDescriptorSet>& descriptorSets,
                                         const UInt8 maxFramesInFlight,
                                         const UInt32 size,
                                         const UInt32 offset) const

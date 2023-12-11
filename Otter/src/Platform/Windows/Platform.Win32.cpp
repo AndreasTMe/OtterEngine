@@ -1,11 +1,14 @@
-#include "Otter.PCH.h"
-
 #include "Platform/Windows/Platform.Win32.h"
 
 #if OTR_PLATFORM_WINDOWS
 
 #include <windows.h>
 #include <windowsx.h>
+
+#include "Core/Assert.h"
+#include "Core/Memory.h"
+#include "Core/Events/EventSystem.h"
+#include "Core/GlobalActions.h"
 
 namespace Otter::Internal
 {

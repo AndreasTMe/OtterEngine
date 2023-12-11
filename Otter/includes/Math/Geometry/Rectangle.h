@@ -1,8 +1,6 @@
 #ifndef OTTERENGINE_RECTANGLE_H
 #define OTTERENGINE_RECTANGLE_H
 
-#include "Core/Defines.h"
-#include "Math/Math.Concepts.h"
 #include "Math/Vector.h"
 
 namespace Otter::Math

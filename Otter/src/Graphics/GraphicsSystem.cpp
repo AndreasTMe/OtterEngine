@@ -1,6 +1,6 @@
-#include "Otter.PCH.h"
-
 #include "Graphics/GraphicsSystem.h"
+
+#include "Core/Collections/List.h"
 #include "Assets/Asset.h"
 
 namespace Otter
@@ -15,13 +15,13 @@ namespace Otter
         if (!s_Renderer)
             return false;
 
-        List < Graphics::Shader * > shaders;
+        List<Graphics::Shader*> shaders;
         shaders.Reserve(2);
         shaders.TryAddRange({
                                 Asset::Create<AssetType::Shader>("Assets/Shaders/default.glsl")
                             });
 
-        List < Graphics::Texture * > textures;
+        List<Graphics::Texture*> textures;
         textures.Reserve(2);
         textures.TryAddRange({
                                  Asset::Create<AssetType::Texture>("Assets/Textures/texture.jpg")

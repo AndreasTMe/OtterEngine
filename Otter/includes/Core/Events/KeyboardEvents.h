@@ -1,7 +1,8 @@
 #ifndef OTTERENGINE_KEYBOARDEVENTS_H
 #define OTTERENGINE_KEYBOARDEVENTS_H
 
-#include "Core/Types.h"
+#include "Core/Defines.h"
+#include "Core/Input/KeyCode.h"
 #include "Core/Events/Event.h"
 
 namespace Otter

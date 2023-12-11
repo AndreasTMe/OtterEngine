@@ -4,9 +4,7 @@
 #include <cmath>
 #include <limits>
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
-#include "Core/Logger.h"
+#include "Core/Assert.h"
 #include "Math/Math.Concepts.h"
 
 // TODO: Add SIMD support.

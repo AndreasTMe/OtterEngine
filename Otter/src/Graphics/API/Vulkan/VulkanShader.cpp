@@ -1,6 +1,6 @@
-#include "Otter.PCH.h"
-
 #include "Graphics/API/Vulkan/VulkanShader.h"
+
+#include "Core/Memory.h"
 #include "Platform/FileSystem.h"
 
 #if OTR_GRAPHICS_VULKAN_ENABLED

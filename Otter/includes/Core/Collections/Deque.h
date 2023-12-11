@@ -1,10 +1,7 @@
 #ifndef OTTERENGINE_DEQUE_H
 #define OTTERENGINE_DEQUE_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
 #include "Core/Memory.h"
-
 #include "Core/Collections/Iterators/LinearIterator.h"
 
 #if !OTR_RUNTIME
@@ -20,15 +17,7 @@ namespace Otter
         using ConstIterator = LinearIterator<const T>;
 
     public:
-        OTR_WITH_ITERATOR(Iterator, m_Data, m_Count)
-        OTR_WITH_CONST_ITERATOR(ConstIterator, m_Data, m_Count)
-
-        Deque()
-        {
-            if (IsCreated())
-                Buffer::Delete<T>(m_Data, m_Capacity);
-        }
-
+        Deque() = default;
         ~Deque()
         {
             if (IsCreated())
@@ -278,12 +267,21 @@ namespace Otter
         }
 #endif
 
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const { return m_Capacity; }
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const { return m_Count; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const { return m_Data && m_Capacity > 0; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const { return m_Count == 0; }
-
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
+        [[nodiscard]] OTR_INLINE UInt64 GetCapacity() const { return m_Capacity; }
+        [[nodiscard]] OTR_INLINE UInt64 GetCount() const { return m_Count; }
+        [[nodiscard]] OTR_INLINE bool IsCreated() const { return m_Data && m_Capacity > 0; }
+        [[nodiscard]] OTR_INLINE bool IsEmpty() const { return m_Count == 0; }
+
+        OTR_INLINE Iterator begin() noexcept { return Iterator(m_Data); }
+        OTR_INLINE Iterator end() noexcept { return Iterator(m_Data + m_Count); }
+        OTR_INLINE Iterator rbegin() noexcept { return Iterator(m_Data + m_Count - 1); }
+        OTR_INLINE Iterator rend() noexcept { return Iterator(m_Data - 1); }
+
+        OTR_INLINE ConstIterator begin() const noexcept { return ConstIterator(m_Data); }
+        OTR_INLINE ConstIterator end() const noexcept { return ConstIterator(m_Data + m_Count); }
+        OTR_INLINE ConstIterator rbegin() const noexcept { return ConstIterator(m_Data + m_Count - 1); }
+        OTR_INLINE ConstIterator rend() const noexcept { return ConstIterator(m_Data - 1); }
 
     private:
         T* m_Data = nullptr;

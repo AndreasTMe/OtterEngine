@@ -1,6 +1,7 @@
-#include "Otter.PCH.h"
-
 #include "Graphics/API/Vulkan/VulkanRenderer.h"
+
+#include "Core/GlobalActions.h"
+#include "Core/Collections/HashSet.h"
 #include "Graphics/API/Vulkan/VulkanExtensions.h"
 #include "Graphics/API/Vulkan/VulkanSwapchains.h"
 #include "Graphics/API/Vulkan/VulkanShader.h"
@@ -527,9 +528,9 @@ namespace Otter::Graphics::Vulkan
     void VulkanRenderer::CreateLogicalDevice(const VkAllocationCallbacks* const allocator,
                                              VulkanDevicePair* outDevicePair)
     {
-        List <VkDeviceQueueCreateInfo> queueCreateInfos;
+        List<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-        HashSet <UInt32> uniqueQueueFamilies = {
+        HashSet<UInt32> uniqueQueueFamilies = {
             outDevicePair->GraphicsQueueFamily.Index,
             outDevicePair->PresentationQueueFamily.Index
         };
@@ -780,7 +781,7 @@ namespace Otter::Graphics::Vulkan
     void VulkanRenderer::CreateCommandBuffers(const VkDevice& logicalDevice,
                                               const VkCommandPool& commandPool,
                                               UInt32 commandBufferCount,
-                                              List <VkCommandBuffer>& outCommandBuffers)
+                                              List<VkCommandBuffer>& outCommandBuffers)
     {
         VkCommandBufferAllocateInfo commandBufferAllocateInfo{ };
         commandBufferAllocateInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -795,7 +796,7 @@ namespace Otter::Graphics::Vulkan
         Collections::New<VkCommandBuffer>(tempCommandBuffers, commandBufferCount, outCommandBuffers);
     }
 
-    void VulkanRenderer::DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers)
+    void VulkanRenderer::DestroyCommandBuffers(List<VkCommandBuffer>& outCommandBuffers)
     {
         outCommandBuffers.ClearDestructive();
     }
@@ -865,7 +866,7 @@ namespace Otter::Graphics::Vulkan
         const auto spriteVertices  = gs_Sprite.GetVertices();
         const auto spriteTexCoords = gs_Sprite.GetTexCoords();
 
-        List <Vertex> vertices;
+        List<Vertex> vertices;
         vertices.Reserve(spriteVertices.GetSize());
 
         for (UInt64 i = 0; i < spriteVertices.GetSize(); i++)
@@ -890,7 +891,7 @@ namespace Otter::Graphics::Vulkan
 
     void VulkanRenderer::CreateIndexBuffer()
     {
-        List <UInt16> triangles;
+        List<UInt16> triangles;
         Collections::New<UInt16>({ 0, 1, 2, 2, 3, 0 }, triangles);
 
         VkDeviceSize bufferSize = sizeof(triangles[0]) * triangles.GetCount();
@@ -962,10 +963,10 @@ namespace Otter::Graphics::Vulkan
 
     void VulkanRenderer::CreateDescriptorSets()
     {
-        Enumerable <VkDescriptorSetLayout> layouts = Enumerable<VkDescriptorSetLayout>::Of({ m_Descriptor.SetLayout,
-                                                                                             m_Descriptor.SetLayout,
-                                                                                             m_Descriptor.SetLayout });
-        VkDescriptorSetAllocateInfo        descriptorSetAllocateInfo{ };
+        Enumerable<VkDescriptorSetLayout> layouts = Enumerable<VkDescriptorSetLayout>::Of({ m_Descriptor.SetLayout,
+                                                                                            m_Descriptor.SetLayout,
+                                                                                            m_Descriptor.SetLayout });
+        VkDescriptorSetAllocateInfo       descriptorSetAllocateInfo{ };
         descriptorSetAllocateInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         descriptorSetAllocateInfo.descriptorPool     = m_Descriptor.Pool;
         descriptorSetAllocateInfo.descriptorSetCount = m_Swapchain.MaxFramesInFlight;
@@ -995,7 +996,7 @@ namespace Otter::Graphics::Vulkan
             descriptorWrite.descriptorCount = 1;
             descriptorWrite.pBufferInfo     = &bufferInfo;
 
-            List <VkWriteDescriptorSet> descriptorWrites;
+            List<VkWriteDescriptorSet> descriptorWrites;
             descriptorWrites.Reserve(1 + gs_Textures.GetCount());
             descriptorWrites.Add(descriptorWrite);
 

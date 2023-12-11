@@ -6,11 +6,35 @@
 #include <sstream>
 
 #include "Core/Defines.h"
-#include "Core/Types.h"
+#include "Core/BaseTypes.h"
 #include "Platform/Platform.h"
 
 namespace Otter
 {
+    /**
+     * @brief The type of the log level. Its size is 1 byte.
+     */
+    enum class LogLevel : UInt8
+    {
+        /// @brief The trace log level.
+        Trace = 0x00,
+
+        /// @brief The debug log level.
+        Debug = 0x01,
+
+        /// @brief The info log level.
+        Info = 0x02,
+
+        /// @brief The warning log level.
+        Warning = 0x03,
+
+        /// @brief The error log level.
+        Error = 0x04,
+
+        /// @brief The fatal log level.
+        Fatal = 0x05,
+    };
+
     /**
      * @brief The class used to log messages to the console. Should not be used directly, use the macros instead.
      * This allows for removing specific log levels from builds.
@@ -18,8 +42,30 @@ namespace Otter
     class Logger final
     {
     public:
-        OTR_DISABLE_OBJECT_COPIES(Logger)
-        OTR_DISABLE_OBJECT_MOVES(Logger)
+        /**
+         * @brief Deleted copy constructor.
+         */
+        Logger(Logger&) = delete;
+
+        /**
+         * @brief Deleted copy constructor.
+         */
+        Logger(const Logger&) = delete;
+
+        /**
+         * @brief Deleted copy assignment operator.
+         */
+        Logger& operator=(const Logger&) = delete;
+
+        /**
+         * @brief Deleted move constructor.
+         */
+        Logger(Logger&&) = delete;
+
+        /**
+         * @brief Deleted move assignment operator.
+         */
+        Logger& operator=(Logger&&) = delete;
 
         /**
          * @brief The logger builder/singleton.
@@ -163,11 +209,122 @@ namespace Otter
         }
 
     private:
-        OTR_WITH_DEFAULT_CONSTRUCTOR(Logger);
+        /**
+         * @brief Constructor.
+         */
+        Logger() = default;
+
+        /**
+         * @brief Destructor.
+         */
+        ~Logger() = default;
 
         LogLevel          m_LogLevel   = LogLevel::Trace;
         std::stringstream m_LogMessage = std::stringstream(std::string());
     };
+}
+
+#if OTR_DEBUG
+
+#define OTR_LOG_TRACE(...)                              \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Trace, __VA_ARGS__)  \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+#define OTR_LOG_DEBUG(...)                              \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Debug, __VA_ARGS__)  \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+#define OTR_LOG_INFO(...)                               \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Info, __VA_ARGS__)   \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+#define OTR_LOG_WARNING(...)                            \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Warning, __VA_ARGS__)\
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+#define OTR_LOG_ERROR(...)                              \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Error, __VA_ARGS__)  \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+#define OTR_LOG_FATAL(...)                              \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Fatal, __VA_ARGS__)  \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+
+#elif OTR_EDITOR
+
+#define OTR_LOG_TRACE(...)
+#define OTR_LOG_DEBUG(...)
+#define OTR_LOG_INFO(...)                               \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Info, __VA_ARGS__)   \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+#define OTR_LOG_WARNING(...)                            \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Warning, __VA_ARGS__)\
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+#define OTR_LOG_ERROR(...)                              \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Error, __VA_ARGS__)  \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+#define OTR_LOG_FATAL(...)                              \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Fatal, __VA_ARGS__)  \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+
+#elif OTR_RUNTIME
+
+#define OTR_LOG_TRACE(...)
+#define OTR_LOG_DEBUG(...)
+#define OTR_LOG_INFO(...)
+#define OTR_LOG_WARNING(...)
+#define OTR_LOG_ERROR(...)
+#define OTR_LOG_FATAL(...)                              \
+    Otter::Logger::GetBuilder()                         \
+        ->Prepare(Otter::LogLevel::Fatal, __VA_ARGS__)  \
+        ->CaptureSource(__FILE__, __LINE__)             \
+        ->Log();
+
+#endif
+
+template<typename OStream>
+OStream& operator<<(OStream& os, const Otter::LogLevel& logLevel)
+{
+    switch (logLevel)
+    {
+        case Otter::LogLevel::Trace:
+            os << OTR_NAME_OF(Otter::LogLevel::Trace);
+            break;
+        case Otter::LogLevel::Debug:
+            os << OTR_NAME_OF(Otter::LogLevel::Debug);
+            break;
+        case Otter::LogLevel::Info:
+            os << OTR_NAME_OF(Otter::LogLevel::Info);
+            break;
+        case Otter::LogLevel::Warning:
+            os << OTR_NAME_OF(Otter::LogLevel::Warning);
+            break;
+        case Otter::LogLevel::Error:
+            os << OTR_NAME_OF(Otter::LogLevel::Error);
+            break;
+        case Otter::LogLevel::Fatal:
+            os << OTR_NAME_OF(Otter::LogLevel::Fatal);
+            break;
+        default:
+            os << "Unknown LogLevel";
+    }
+
+    return os;
 }
 
 #endif // OTTERENGINE_LOGGER_H

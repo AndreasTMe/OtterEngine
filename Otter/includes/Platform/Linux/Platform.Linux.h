@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_PLATFORM_LINUX_H
 #define OTTERENGINE_PLATFORM_LINUX_H
 
-#include "Core/Defines/Defines.Platform.h"
+#include "Core/Defines.h"
 
 #if OTR_PLATFORM_LINUX
 

@@ -1,8 +1,6 @@
 #ifndef OTTERENGINE_COLLECTION_H
 #define OTTERENGINE_COLLECTION_H
 
-#include "Core/Defines.h"
-#include "Core/Types.h"
 #include "Core/Memory.h"
 
 #if !OTR_RUNTIME
@@ -197,12 +195,11 @@ namespace Otter
         }
 #endif
 
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCapacity() const noexcept { return m_Capacity; }
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Data && m_Capacity > 0; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
-
         [[nodiscard]] OTR_INLINE const T* GetData() const noexcept { return m_Data; }
+        [[nodiscard]] OTR_INLINE UInt64 GetCapacity() const noexcept { return m_Capacity; }
+        [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
+        [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Data && m_Capacity > 0; }
+        [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
 
     protected:
         Collection()

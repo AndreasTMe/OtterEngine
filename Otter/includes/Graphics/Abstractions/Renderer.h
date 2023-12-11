@@ -1,7 +1,6 @@
 #ifndef OTTERENGINE_RENDERER_H
 #define OTTERENGINE_RENDERER_H
 
-#include "Core/Defines.h"
 #include "Core/Collections/Collection.h"
 #include "Graphics/Abstractions/Shader.h"
 

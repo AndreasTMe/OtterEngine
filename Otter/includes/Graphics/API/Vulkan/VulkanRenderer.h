@@ -1,9 +1,7 @@
 #ifndef OTTERENGINE_VULKANRENDERER_H
 #define OTTERENGINE_VULKANRENDERER_H
 
-#include "Core/Defines.h"
 #include "Graphics/Abstractions/RendererAPI.h"
-#include "Graphics/API/Vulkan/VulkanBase.Includes.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Device.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Swapchain.h"
 #include "Graphics/API/Vulkan/Types/VulkanTypes.Descriptors.h"
@@ -38,15 +36,15 @@ namespace Otter::Graphics::Vulkan
 #if !OTR_RUNTIME
         VkDebugUtilsMessengerEXT m_DebugMessenger = VK_NULL_HANDLE;
 #endif
-        VulkanDevicePair     m_DevicePair;
-        VulkanSwapchain      m_Swapchain;
-        List <VkImage>       m_SwapchainImages;
-        List <VkImageView>   m_SwapchainImageViews;
-        List <VkFramebuffer> m_SwapchainFrameBuffers;
-        VkRenderPass         m_RenderPass     = VK_NULL_HANDLE;
-        VulkanDescriptor     m_Descriptor;
-        VkPipelineLayout     m_PipelineLayout = VK_NULL_HANDLE;
-        VkPipeline           m_Pipeline       = VK_NULL_HANDLE;
+        VulkanDevicePair    m_DevicePair;
+        VulkanSwapchain     m_Swapchain;
+        List<VkImage>       m_SwapchainImages;
+        List<VkImageView>   m_SwapchainImageViews;
+        List<VkFramebuffer> m_SwapchainFrameBuffers;
+        VkRenderPass        m_RenderPass     = VK_NULL_HANDLE;
+        VulkanDescriptor    m_Descriptor;
+        VkPipelineLayout    m_PipelineLayout = VK_NULL_HANDLE;
+        VkPipeline          m_Pipeline       = VK_NULL_HANDLE;
 
         VulkanVertexBuffer * m_VertexBuffer  = nullptr;
         VulkanIndexBuffer  * m_IndexBuffer   = nullptr;
@@ -100,8 +98,8 @@ namespace Otter::Graphics::Vulkan
         static void CreateCommandBuffers(const VkDevice& logicalDevice,
                                          const VkCommandPool& commandPool,
                                          UInt32 commandBufferCount,
-                                         List <VkCommandBuffer>& outCommandBuffers);
-        static void DestroyCommandBuffers(List <VkCommandBuffer>& outCommandBuffers);
+                                         List<VkCommandBuffer>& outCommandBuffers);
+        static void DestroyCommandBuffers(List<VkCommandBuffer>& outCommandBuffers);
 
         // HELP: VkDescriptorSet related
         void CreateDescriptorSetLayout();

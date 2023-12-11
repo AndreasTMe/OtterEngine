@@ -2,6 +2,7 @@
 #define OTTERENGINE_APPLICATION_H
 
 #include "Core/Defines.h"
+#include "Core/BaseTypes.h"
 #include "Core/Collections/List.h"
 #include "Core/Layers.h"
 #include "Core/Time.h"

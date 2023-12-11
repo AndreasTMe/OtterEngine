@@ -1,6 +1,5 @@
-#include "Otter.PCH.h"
-
 #include "Graphics/API/Vulkan/VulkanSwapchains.h"
+
 #include "Math/Core.h"
 
 namespace Otter::Graphics::Vulkan
@@ -125,7 +124,7 @@ namespace Otter::Graphics::Vulkan
         }
     }
 
-    VkSurfaceFormatKHR SelectSwapchainSurfaceFormat(const List <VkSurfaceFormatKHR>& surfaceFormats)
+    VkSurfaceFormatKHR SelectSwapchainSurfaceFormat(const List<VkSurfaceFormatKHR>& surfaceFormats)
     {
         for (const auto& surfaceFormat: surfaceFormats)
             if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
@@ -135,7 +134,7 @@ namespace Otter::Graphics::Vulkan
         return surfaceFormats[0];
     }
 
-    VkPresentModeKHR SelectSwapchainPresentMode(const List <VkPresentModeKHR>& presentModes)
+    VkPresentModeKHR SelectSwapchainPresentMode(const List<VkPresentModeKHR>& presentModes)
     {
         for (const auto& presentMode: presentModes)
             if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
@@ -159,7 +158,7 @@ namespace Otter::Graphics::Vulkan
 
     void CreateSwapchainImages(const VkDevice& logicalDevice,
                                const VkSwapchainKHR& swapchain,
-                               List <VkImage>& swapchainImages)
+                               List<VkImage>& swapchainImages)
     {
         OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
                                 "Logical device must be initialized before creating swapchain images")
@@ -177,9 +176,9 @@ namespace Otter::Graphics::Vulkan
 
     void CreateSwapchainImageViews(const VkDevice& logicalDevice,
                                    const VkAllocationCallbacks* const allocator,
-                                   const List <VkImage>& swapchainImages,
+                                   const List<VkImage>& swapchainImages,
                                    const VkFormat& imageFormat,
-                                   List <VkImageView>& swapchainImageViews)
+                                   List<VkImageView>& swapchainImageViews)
     {
         OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
                                 "Logical device must be initialized before creating swapchain image views")
@@ -216,9 +215,9 @@ namespace Otter::Graphics::Vulkan
     void CreateSwapchainFrameBuffers(const VkDevice& logicalDevice,
                                      const VkAllocationCallbacks* const allocator,
                                      const VkExtent2D& swapChainExtent,
-                                     const List <VkImageView>& swapchainImageViews,
+                                     const List<VkImageView>& swapchainImageViews,
                                      const VkRenderPass& renderPass,
-                                     List <VkFramebuffer>& swapchainFrameBuffers)
+                                     List<VkFramebuffer>& swapchainFrameBuffers)
     {
         OTR_INTERNAL_ASSERT_MSG(logicalDevice != VK_NULL_HANDLE,
                                 "Logical device must be initialized before creating swapchain image views")

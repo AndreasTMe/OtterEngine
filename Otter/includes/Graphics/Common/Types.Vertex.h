@@ -1,7 +1,6 @@
 #ifndef OTTERENGINE_TYPES_VERTEX_H
 #define OTTERENGINE_TYPES_VERTEX_H
 
-#include "Core/Types.h"
 #include "Math/Vector.h"
 
 namespace Otter::Graphics

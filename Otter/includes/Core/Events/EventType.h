@@ -1,8 +1,8 @@
-#ifndef OTTERENGINE_TYPES_EVENTTYPE_H
-#define OTTERENGINE_TYPES_EVENTTYPE_H
+#ifndef OTTERENGINE_EVENTTYPE_H
+#define OTTERENGINE_EVENTTYPE_H
 
-#include "Core/Defines/Defines.Utilities.h"
-#include "Core/Types/Types.Base.h"
+#include "Core/Defines.h"
+#include "Core/BaseTypes.h"
 
 namespace Otter
 {
@@ -116,4 +116,4 @@ OStream& operator<<(OStream& os, const Otter::EventType& eventType)
     return os;
 }
 
-#endif //OTTERENGINE_TYPES_EVENTTYPE_H
+#endif //OTTERENGINE_EVENTTYPE_H
