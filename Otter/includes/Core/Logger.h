@@ -11,18 +11,36 @@
 
 namespace Otter
 {
+    /**
+     * @brief The class used to log messages to the console. Should not be used directly, use the macros instead.
+     * This allows for removing specific log levels from builds.
+     */
     class Logger final
     {
     public:
         OTR_DISABLE_OBJECT_COPIES(Logger)
         OTR_DISABLE_OBJECT_MOVES(Logger)
 
+        /**
+         * @brief The logger builder/singleton.
+         *
+         * @return The logger.
+         */
         [[nodiscard]] OTR_INLINE static Logger* GetBuilder()
         {
             static Logger builder;
             return &builder;
         }
 
+        /**
+         * @brief Prepares the logger for logging a message, and formats the message.
+         *
+         * @param logLevel The log level of the message.
+         * @param message The message to log.
+         * @param args Additional arguments to insert into the message using the format {0}, {1}, etc.
+         *
+         * @return The logger.
+         */
         template<typename... TArgs>
         Logger* Prepare(LogLevel logLevel, const char* message, TArgs&& ... args)
         {
@@ -96,6 +114,15 @@ namespace Otter
             return this;
         }
 
+        /**
+         * @brief Prepares the logger for logging an assertion failure, and formats the message.
+         *
+         * @param assertion The assertion that failed.
+         * @param message The message to log.
+         * @param args Additional arguments to insert into the message using the format {0}, {1}, etc.
+         *
+         * @return The logger.
+         */
         template<typename... TArgs>
         Logger* PrepareAssertion(const char* assertion, const char* message, TArgs&& ... args)
         {
@@ -111,6 +138,14 @@ namespace Otter
             return Prepare(LogLevel::Fatal, assertionMessage.c_str(), args...);
         }
 
+        /**
+         * @brief Captures the source of the log message.
+         *
+         * @param file The file the log message was created in.
+         * @param line The line the log message was created on.
+         *
+         * @return The logger.
+         */
         Logger* CaptureSource(const char* file, UInt32 line)
         {
             m_LogMessage << "\n\tfrom " << file << ":" << line << std::endl;
@@ -118,6 +153,9 @@ namespace Otter
             return this;
         }
 
+        /**
+         * @brief Logs the message to the console and clears the internal message buffer.
+         */
         void Log()
         {
             Platform::Log(m_LogMessage.str().c_str(), (UInt8) m_LogLevel);
