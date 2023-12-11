@@ -1,23 +1,29 @@
 #ifndef OTTERENGINE_TYPES_MOUSEBUTTON_H
 #define OTTERENGINE_TYPES_MOUSEBUTTON_H
 
+#include "Core/Defines/Defines.Utilities.h"
 #include "Core/Types/Types.Base.h"
-
-#define MOUSE_BUTTON_LIST       \
-    REPLACE_WITH(Left,0x01)     \
-    REPLACE_WITH(Middle,0x02)   \
-    REPLACE_WITH(Right,0x03)
 
 namespace Otter
 {
+    /**
+     * @brief The mouse button type. Its size is 1 byte.
+     */
     enum class MouseButton : UInt8
     {
+        /// @brief No mouse button.
         None = 0x00,
 
-#define REPLACE_WITH(Item, Value) Item = Value,
-        MOUSE_BUTTON_LIST
-#undef REPLACE_WITH
+        /// @brief The left mouse button.
+        Left = 0x01,
 
+        /// @brief The middle mouse button.
+        Middle = 0x02,
+
+        /// @brief The right mouse button.
+        Right = 0x03,
+
+        /// @brief The maximum value of the enum.
         Max = 0xFF
     };
 }
@@ -27,15 +33,26 @@ OStream& operator<<(OStream& os, const Otter::MouseButton& mouseButton)
 {
     switch (mouseButton)
     {
-#define REPLACE_WITH(Item, Value) case Otter::MouseButton::Item: os << "MouseButton::" << #Item; break;
-        MOUSE_BUTTON_LIST
-#undef REPLACE_WITH
+        case Otter::MouseButton::None:
+            os << OTR_NAME_OF(Otter::MouseButton::None);
+            break;
+        case Otter::MouseButton::Left:
+            os << OTR_NAME_OF(Otter::MouseButton::Left);
+            break;
+        case Otter::MouseButton::Middle:
+            os << OTR_NAME_OF(Otter::MouseButton::Middle);
+            break;
+        case Otter::MouseButton::Right:
+            os << OTR_NAME_OF(Otter::MouseButton::Right);
+            break;
+        case Otter::MouseButton::Max:
+            os << OTR_NAME_OF(Otter::MouseButton::Max);
+            break;
         default:
-            os << "MouseButton[Unknown]";
+            os << "Unknown MouseButton";
     }
 
     return os;
 }
-#undef MOUSE_BUTTON_LIST
 
 #endif //OTTERENGINE_TYPES_MOUSEBUTTON_H

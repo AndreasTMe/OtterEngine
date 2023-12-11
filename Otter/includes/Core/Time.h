@@ -8,6 +8,9 @@
 
 namespace Otter
 {
+    /**
+     * @brief Configuration structure, used to pass time configuration to the Time class.
+     */
     struct TimeConfiguration final
     {
     public:
@@ -16,12 +19,22 @@ namespace Otter
         Double64 FixedDeltaTime = 0.0;
     };
 
+    /// @brief Time step alias, used to represent time in seconds.
     using TimeStep = Double64;
 
+    /**
+     * @brief Time class, used to manage time in the engine.
+     */
     struct Time final
     {
     public:
-        explicit Time(const TimeConfiguration& config, const Function<Double64()>& getTimeCallback)
+        /**
+         * @brief Constructor.
+         *
+         * @param config Time configuration (frame rate limits, fixed delta time).
+         * @param getTimeCallback Callback used to get the current time.
+         */
+        Time(const TimeConfiguration& config, const Function<Double64()>& getTimeCallback)
             : k_InverseFrameRateMin(config.FrameRateMin == 0.0 ? 0.0 : 1.0 / config.FrameRateMin),
               k_InverseFrameRateMax(config.FrameRateMax == 0.0 ? 0.0 : 1.0 / config.FrameRateMax),
               k_FixedDeltaTime(config.FixedDeltaTime)
@@ -36,14 +49,41 @@ namespace Otter
 
             m_GetTimeCallback = getTimeCallback;
         }
+
+        /**
+         * @brief Destructor.
+         */
         ~Time() = default;
 
+        /**
+         * @brief Starts the time by setting the last frame time.
+         */
         void Start();
+
+        /**
+         * @brief Refreshes the time by calculating the delta time.
+         */
         void Refresh();
 
+        /**
+         * @brief Checks if there are fixed steps left in the current frame.
+         *
+         * @return True if the time has fixed steps left, false otherwise.
+         */
         [[nodiscard]] bool HasFixedStepsLeft();
 
+        /**
+         * @brief Getter for the delta time.
+         *
+         * @return The delta time.
+         */
         [[nodiscard]] OTR_INLINE TimeStep GetDeltaTime() const { return m_DeltaTime; }
+
+        /**
+         * @brief Getter for the fixed delta time.
+         *
+         * @return The fixed delta time.
+         */
         [[nodiscard]] OTR_INLINE TimeStep GetFixedDeltaTime() const { return k_FixedDeltaTime; }
 
     private:

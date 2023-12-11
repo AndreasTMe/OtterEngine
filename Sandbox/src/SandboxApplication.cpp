@@ -1,5 +1,4 @@
 #include <Otter.h>
-#include "Core/GlobalActions.h"
 
 namespace Sandbox
 {
