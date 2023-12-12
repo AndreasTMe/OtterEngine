@@ -118,7 +118,8 @@ TEST_F(Deque_Fixture, TryPopFront)
     EXPECT_TRUE(deque.TryPeekBack(&out));
     EXPECT_EQ(out, 5);
 
-    EXPECT_TRUE(deque.TryPopFront());
+    EXPECT_TRUE(deque.TryPopFront(&out));
+    EXPECT_EQ(out, 2);
     EXPECT_TRUE(deque.TryPopFront());
     EXPECT_TRUE(deque.TryPopFront());
     EXPECT_TRUE(deque.TryPopFront());
@@ -136,7 +137,8 @@ TEST_F(Deque_Fixture, TryPopBack)
     EXPECT_TRUE(deque.TryPeekBack(&out));
     EXPECT_EQ(out, 4);
 
-    EXPECT_TRUE(deque.TryPopBack());
+    EXPECT_TRUE(deque.TryPopBack(&out));
+    EXPECT_EQ(out, 4);
     EXPECT_TRUE(deque.TryPopBack());
     EXPECT_TRUE(deque.TryPopBack());
     EXPECT_TRUE(deque.TryPopBack());
@@ -211,6 +213,22 @@ TEST_F(Deque_Fixture, Expand)
     EXPECT_EQ(deque.GetCount(), 2);
 }
 
+TEST_F(Deque_Fixture, Shrink)
+{
+    Deque<int> deque = { 1, 2, 3, 4, 5 };
+    deque.Shrink(3);
+
+    EXPECT_NE(deque.GetData(), nullptr);
+    EXPECT_EQ(deque.GetCapacity(), 5);
+    EXPECT_EQ(deque.GetCount(), 5);
+
+    deque.Shrink(3, true);
+
+    EXPECT_NE(deque.GetData(), nullptr);
+    EXPECT_EQ(deque.GetCapacity(), 2);
+    EXPECT_EQ(deque.GetCount(), 2);
+}
+
 TEST_F(Deque_Fixture, Clear)
 {
     Deque<int> deque = { 1, 2, 3, 4, 5 };
@@ -252,7 +270,7 @@ TEST_F(Deque_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint2.GetSize(), 1);
 
     EXPECT_EQ(footprint2[0].GetData().GetName(), OTR_NAME_OF(Deque<int>));
-    EXPECT_NE(footprint1[0].GetData().GetPointer(), nullptr);
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), nullptr);
     EXPECT_NE(footprint2[0].GetData().GetPointer(), footprint1[0].GetData().GetPointer())
                     << "Pointer should have changed because of capacity increase (reallocation)";
     EXPECT_EQ(footprint2[0].Size, OTR_ALLOCATED_MEMORY(int, deque.GetCapacity()));

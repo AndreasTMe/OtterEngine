@@ -13,19 +13,34 @@ namespace Otter
     template<typename T, UInt64 Size>
     struct ReadOnlyArray;
 
+    /**
+     * @brief An array of a fixed size. All elements are heap allocated.
+     *
+     * @tparam T The type of the elements in the array.
+     * @tparam Size The size of the array.
+     */
     template<typename T, UInt64 Size>
     struct Array final
     {
+        /// @brief Alias for an iterator.
         using Iterator = LinearIterator<T>;
+
+        /// @brief Alias for a const iterator.
         using ConstIterator = LinearIterator<const T>;
 
     public:
-
+        /**
+         * @brief Constructor.
+         */
         Array()
         {
             if constexpr (Size > 0)
                 m_Data = Buffer::New<T>(Size);
         }
+
+        /**
+         * @brief Destructor.
+         */
         ~Array()
         {
             if (IsCreated())
@@ -34,6 +49,11 @@ namespace Otter
             m_Data = nullptr;
         }
 
+        /**
+         * @brief Creates an array from an initialiser list.
+         *
+         * @param list The initialiser list.
+         */
         Array(InitialiserList<T> list)
             : Array()
         {
@@ -44,12 +64,22 @@ namespace Otter
                 m_Data[i++] = value;
         }
 
+        /**
+         * @brief Copy constructor.
+         *
+         * @param other The other array to copy.
+         */
         Array(const Array<T, Size>& other)
             : Array()
         {
             m_Data = other.m_Data;
         }
 
+        /**
+         * @brief Move constructor.
+         *
+         * @param other The other array to move.
+         */
         Array(Array<T, Size>&& other) noexcept
             : Array()
         {
@@ -58,6 +88,13 @@ namespace Otter
             other.m_Data = nullptr;
         }
 
+        /**
+         * @brief Copy assignment operator.
+         *
+         * @param other The other array to copy.
+         *
+         * @return A reference to this array.
+         */
         Array<T, Size>& operator=(const Array<T, Size>& other)
         {
             if (this == &other)
@@ -69,6 +106,13 @@ namespace Otter
             return *this;
         }
 
+        /**
+         * @brief Move assignment operator.
+         *
+         * @param other The other array to move.
+         *
+         * @return A reference to this array.
+         */
         Array<T, Size>& operator=(Array<T, Size>&& other) noexcept
         {
             if (this == &other)
@@ -82,14 +126,28 @@ namespace Otter
             return *this;
         }
 
-        T& operator[](UInt64 index)
+        /**
+         * @brief Gets the element at the specified index.
+         *
+         * @param index The index.
+         *
+         * @return The element at the specified index.
+         */
+        [[nodiscard]] OTR_INLINE T& operator[](UInt64 index)
         {
             OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
             OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
             return m_Data[index];
         }
 
-        const T& operator[](UInt64 index) const
+        /**
+         * @brief Gets the element at the specified index.
+         *
+         * @param index The index.
+         *
+         * @return The element at the specified index.
+         */
+        [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
             OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
             OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
@@ -102,6 +160,13 @@ namespace Otter
         }
 
 #if !OTR_RUNTIME
+        /**
+         * @brief Gets the memory footprint of the array.
+         *
+         * @param debugName The name used for debugging.
+         *
+         * @return The memory footprint of the array.
+         */
         ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
@@ -119,18 +184,82 @@ namespace Otter
         }
 #endif
 
+        /**
+         * @brief Gets a pointer to the data of the array.
+         *
+         * @return A pointer to the data of the array.
+         */
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
+
+        /**
+         * @brief Gets the size of the array.
+         *
+         * @return The size of the array.
+         */
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
+
+        /**
+         * @brief Checks whether the array has been created. An array is created when it has been initialised with
+         * a valid size and has not been destroyed.
+         *
+         * @return True if the array has been created, false otherwise.
+         */
         [[nodiscard]] OTR_INLINE bool IsCreated() const { return m_Data && Size > 0; }
 
+        /**
+         * @brief Gets an iterator to the first element of the array.
+         *
+         * @return An iterator to the first element of the array.
+         */
         OTR_INLINE Iterator begin() noexcept { return Iterator(m_Data); }
+
+        /**
+         * @brief Gets an iterator to the last element of the array.
+         *
+         * @return An iterator to the last element of the array.
+         */
         OTR_INLINE Iterator end() noexcept { return Iterator(m_Data + Size); }
+
+        /**
+         * @brief Gets a reverse iterator to the last element of the array.
+         *
+         * @return A reverse iterator to the last element of the array.
+         */
         OTR_INLINE Iterator rbegin() noexcept { return Iterator(m_Data + Size - 1); }
+
+        /**
+         * @brief Gets a reverse iterator to the first element of the array.
+         *
+         * @return A reverse iterator to the first element of the array.
+         */
         OTR_INLINE Iterator rend() noexcept { return Iterator(m_Data - 1); }
 
+        /**
+         * @brief Gets a const iterator to the first element of the array.
+         *
+         * @return A const iterator to the first element of the array.
+         */
         OTR_INLINE ConstIterator begin() const noexcept { return ConstIterator(m_Data); }
+
+        /**
+         * @brief Gets a const iterator to the last element of the array.
+         *
+         * @return A const iterator to the last element of the array.
+         */
         OTR_INLINE ConstIterator end() const noexcept { return ConstIterator(m_Data + Size); }
+
+        /**
+         * @brief Gets a reverse const iterator to the last element of the array.
+         *
+         * @return A reverse const iterator to the last element of the array.
+         */
         OTR_INLINE ConstIterator rbegin() const noexcept { return ConstIterator(m_Data + Size - 1); }
+
+        /**
+         * @brief Gets a reverse const iterator to the first element of the array.
+         *
+         * @return A reverse const iterator to the first element of the array.
+         */
         OTR_INLINE ConstIterator rend() const noexcept { return ConstIterator(m_Data - 1); }
 
     private:

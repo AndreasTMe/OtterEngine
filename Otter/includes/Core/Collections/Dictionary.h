@@ -8,25 +8,46 @@
 
 namespace Otter
 {
+    /**
+     * @brief A collection of unique key-value pairs that are stored in buckets and can be accessed by their key's hash.
+     * The capacity of the dictionary is automatically expanded to the next prime when the item count reaches
+     * the capacity in order to maintain a low collision rate.
+     *
+     * @tparam T The type of the items in the dictionary.
+     */
     template<typename TKey, typename TValue>
     class Dictionary final
     {
+        /// @brief Alias for HashUtils.
         using HashUtils = Internal::HashUtils;
+
+        /// @brief Alias for a KeyValuePair.
         using KeyValuePair = KeyValuePair<TKey, TValue>;
 
     public:
+        /**
+         * @brief Constructor.
+         */
         Dictionary()
         {
             if (IsCreated())
                 Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
         }
 
+        /**
+         * @brief Destructor.
+         */
         ~Dictionary()
         {
             if (IsCreated())
                 Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
         }
 
+        /**
+         * @brief Creates a dictionary from an initialiser list.
+         *
+         * @param list The initialiser list.
+         */
         Dictionary(InitialiserList<KeyValuePair> list)
             : Dictionary()
         {
@@ -38,6 +59,11 @@ namespace Otter
                 TryAdd(pair.Key, pair.Value);
         }
 
+        /**
+         * @brief Copy constructor.
+         *
+         * @param other The dictionary to copy.
+         */
         Dictionary(const Dictionary<TKey, TValue>& other)
             : Dictionary()
         {
@@ -46,6 +72,11 @@ namespace Otter
             m_Count    = other.m_Count;
         }
 
+        /**
+         * @brief Move constructor.
+         *
+         * @param other The dictionary to move.
+         */
         Dictionary(Dictionary<TKey, TValue>&& other) noexcept
             : Dictionary()
         {
@@ -58,6 +89,13 @@ namespace Otter
             other.m_Count    = 0;
         }
 
+        /**
+         * @brief Copy assignment operator.
+         *
+         * @param other The dictionary to copy.
+         *
+         * @return A reference to this dictionary.
+         */
         Dictionary<TKey, TValue>& operator=(const Dictionary<TKey, TValue>& other)
         {
             if (this == &other)
@@ -73,6 +111,13 @@ namespace Otter
             return *this;
         }
 
+        /**
+         * @brief Move assignment operator.
+         *
+         * @param other The dictionary to move.
+         *
+         * @return A reference to this dictionary.
+         */
         Dictionary<TKey, TValue>& operator=(Dictionary<TKey, TValue>&& other) noexcept
         {
             if (this == &other)
@@ -92,6 +137,14 @@ namespace Otter
             return *this;
         }
 
+        /**
+         * @brief Tries to add a key-value pair to the dictionary.
+         *
+         * @param key The key of the pair.
+         * @param value The value of the pair.
+         *
+         * @return True if the pair was added, false otherwise.
+         */
         bool TryAdd(const TKey& key, const TValue& value)
         {
             if (m_Count >= m_Capacity)
@@ -128,6 +181,14 @@ namespace Otter
             return true;
         }
 
+        /**
+         * @brief Tries to add a key-value pair to the dictionary.
+         *
+         * @param key The key of the pair.
+         * @param value The value of the pair.
+         *
+         * @return True if the pair was added, false otherwise.
+         */
         bool TryAdd(TKey&& key, TValue&& value) noexcept
         {
             if (m_Count >= m_Capacity)
@@ -164,6 +225,14 @@ namespace Otter
             return true;
         }
 
+        /**
+         * @brief Tries to get the value associated with the specified key.
+         *
+         * @param key The key of the value to get.
+         * @param outValue The value associated with the key.
+         *
+         * @return True if the value was retrieved, false otherwise.
+         */
         bool TryGet(const TKey& key, TValue* outValue) const
         {
             if (!IsCreated())
@@ -187,6 +256,14 @@ namespace Otter
             return false;
         }
 
+        /**
+         * @brief Tries to remove the value associated with the specified key.
+         *
+         * @param key The key of the value to remove.
+         * @param outValue The value associated with the key.
+         *
+         * @return True if the value was removed, false otherwise.
+         */
         bool TryRemove(const TKey& key)
         {
             if (!IsCreated())
@@ -215,6 +292,13 @@ namespace Otter
             return false;
         }
 
+        /**
+         * @brief Checks if the dictionary contains a given key.
+         *
+         * @param key The key of the item to check.
+         *
+         * @return True if the dictionary contains the key, false otherwise.
+         */
         [[nodiscard]] bool Contains(const TKey& key) const
         {
             if (!IsCreated())
@@ -233,6 +317,11 @@ namespace Otter
             return false;
         }
 
+        /**
+         * @brief Performs a given callback on each key-value pair in the dictionary.
+         *
+         * @param callback The callback to perform.
+         */
         void ForEach(Function<void(const TKey&, const TValue&)> callback) const
         {
             if (!IsCreated())
@@ -248,6 +337,11 @@ namespace Otter
             }
         }
 
+        /**
+         * @brief Performs a given callback on each key in the dictionary.
+         *
+         * @param callback The callback to perform.
+         */
         void ForEachKey(Function<void(const TKey&)> callback) const
         {
             if (!IsCreated())
@@ -263,6 +357,11 @@ namespace Otter
             }
         }
 
+        /**
+         * @brief Performs a given callback on each value in the dictionary.
+         *
+         * @param callback The callback to perform.
+         */
         void ForEachValue(Function<void(const TValue&)> callback) const
         {
             if (!IsCreated())
@@ -278,6 +377,9 @@ namespace Otter
             }
         }
 
+        /**
+         * @brief Clears the dictionary.
+         */
         void Clear()
         {
             if (!IsCreated())
@@ -297,6 +399,9 @@ namespace Otter
             m_Count = 0;
         }
 
+        /**
+         * @brief Clears the dictionary and deletes the data.
+         */
         void ClearDestructive()
         {
             if (IsCreated())
@@ -308,6 +413,13 @@ namespace Otter
         }
 
 #if !OTR_RUNTIME
+        /**
+         * @brief Gets the memory footprint of the dictionary.
+         *
+         * @param debugName The name of the dictionary for debugging purposes.
+         *
+         * @return The memory footprint of the dictionary.
+         */
         void GetMemoryFootprint(const char* const debugName,
                                 MemoryFootprint* outFootprints,
                                 UInt64* outFootprintsSize) const
@@ -339,9 +451,27 @@ namespace Otter
         }
 #endif
 
-        [[nodiscard]] OTR_INLINE constexpr UInt64 GetCount() const noexcept { return m_Count; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsCreated() const noexcept { return m_Buckets && m_Capacity > 0; }
-        [[nodiscard]] OTR_INLINE constexpr bool IsEmpty() const noexcept { return m_Count == 0; }
+        /**
+         * @brief Gets the item count of the hashset.
+         *
+         * @return The item count of the hashset.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
+
+        /**
+         * @brief Checks whether the hashset has been created. A hashset is created when it has been initialised
+         * with a valid capacity and has not been destroyed.
+         *
+         * @return True if the hashset has been created, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Buckets && m_Capacity > 0; }
+
+        /**
+         * @brief Checks whether the hashset is empty.
+         *
+         * @return True if the hashset is empty, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
 
     private:
         static constexpr Int64   k_63BitMask       = 0x7FFFFFFFFFFFFFFF;
@@ -352,6 +482,9 @@ namespace Otter
         UInt64 m_Capacity = 0;
         UInt64 m_Count    = 0;
 
+        /**
+         * @brief Used to expand the size of the dictionary.
+         */
         void Expand()
         {
             UInt64 newCapacity = m_Capacity == 0
@@ -399,6 +532,11 @@ namespace Otter
             m_Capacity = newCapacity;
         }
 
+        /**
+         * @brief Resizes a bucket of the dictionary. Each bucket is essentially a dynamic array.
+         *
+         * @param bucket The bucket to resize.
+         */
         void ResizeBucket(Bucket<KeyValuePair>* bucket) const
         {
             UInt64 newCapacity = bucket->Capacity * k_ResizingFactor;
@@ -413,12 +551,21 @@ namespace Otter
             bucket->Capacity = newCapacity;
         }
 
-        [[nodiscard]] bool ExistsInBucket(const KeyValuePair& value,
+        /**
+         * @brief Checks whether a key-value pair exists in a bucket.
+         *
+         * @param pair The key-value pair to check.
+         * @param hash The hash of the key.
+         * @param bucket The bucket to check.
+         *
+         * @return True if the key-value pair exists in the bucket, false otherwise.
+         */
+        [[nodiscard]] bool ExistsInBucket(const KeyValuePair& pair,
                                           const UInt64 hash,
                                           const Bucket<KeyValuePair>& bucket) const
         {
             for (UInt64 i = 0; i < bucket.Count; i++)
-                if (bucket.Items[i].Data.Key == value.Key && bucket.Items[i].Hash == hash)
+                if (bucket.Items[i].Data.Key == pair.Key && bucket.Items[i].Hash == hash)
                     return true;
 
             return false;
