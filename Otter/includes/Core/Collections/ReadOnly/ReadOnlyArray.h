@@ -13,17 +13,31 @@ namespace Otter
     template<typename T, UInt64 Size>
     struct Array;
 
+    /**
+     * @brief A read-only array of a fixed size. All elements are heap allocated.
+     *
+     * @tparam T The type of the elements in the array.
+     * @tparam Size The size of the array.
+     */
     template<typename T, UInt64 Size>
     struct ReadOnlyArray final
     {
+        /// @brief Alias for a const iterator.
         using ConstIterator = LinearIterator<const T>;
 
     public:
+        /**
+         * @brief Constructor.
+         */
         ReadOnlyArray()
         {
             if constexpr (Size > 0)
                 m_Data = Buffer::New<T>(Size);
         }
+
+        /**
+         * @brief Destructor.
+         */
         ~ReadOnlyArray()
         {
             if (IsCreated())
@@ -32,13 +46,36 @@ namespace Otter
             m_Data = nullptr;
         }
 
+        /**
+         * @brief Deleted copy constructor.
+         */
         ReadOnlyArray(ReadOnlyArray&) = delete;
+
+        /**
+         * @brief Deleted copy constructor.
+         */
         ReadOnlyArray(const ReadOnlyArray&) = delete;
+
+        /**
+         * @brief Deleted copy assignment operator.
+         */
         ReadOnlyArray& operator=(const ReadOnlyArray&) = delete;
 
+        /**
+         * @brief Deleted move constructor.
+         */
         ReadOnlyArray(ReadOnlyArray&&) = delete;
+
+        /**
+         * @brief Deleted move assignment operator.
+         */
         ReadOnlyArray& operator=(ReadOnlyArray&&) = delete;
 
+        /**
+         * @brief Creates a read-only array from an initialiser list.
+         *
+         * @param list The initialiser list.
+         */
         ReadOnlyArray(InitialiserList<T> list)
             : ReadOnlyArray()
         {
@@ -49,6 +86,11 @@ namespace Otter
                 m_Data[i++] = value;
         }
 
+        /**
+         * @brief Creates a read-only array by copying a normal array.
+         *
+         * @param other The normal array.
+         */
         explicit ReadOnlyArray(const Array<T, Size>& other)
             : ReadOnlyArray()
         {
@@ -56,6 +98,11 @@ namespace Otter
                 m_Data[i] = other.m_Data[i];
         }
 
+        /**
+         * @brief Creates a read-only array by moving a normal array.
+         *
+         * @param other The normal array.
+         */
         explicit ReadOnlyArray(Array<T, Size>&& other) noexcept
             : ReadOnlyArray()
         {
@@ -65,7 +112,14 @@ namespace Otter
             other.m_Data = nullptr;
         }
 
-        const T& operator[](UInt64 index) const
+        /**
+         * @brief Gets the element at the specified index.
+         *
+         * @param index The index.
+         *
+         * @return The element at the specified index.
+         */
+        [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
             OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
             OTR_ASSERT_MSG(index < Size, "ReadOnlyArray index out of bounds")
@@ -73,6 +127,13 @@ namespace Otter
         }
 
 #if !OTR_RUNTIME
+        /**
+         * @brief Gets the memory footprint of the array.
+         *
+         * @param debugName The name used for debugging.
+         *
+         * @return The memory footprint of the array.
+         */
         ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
@@ -90,13 +151,54 @@ namespace Otter
         }
 #endif
 
+        /**
+         * @brief Gets a pointer to the data of the array.
+         *
+         * @return A pointer to the data of the array.
+         */
         [[nodiscard]] OTR_INLINE const T* GetData() const { return m_Data; }
+
+        /**
+         * @brief Gets the size of the array.
+         *
+         * @return The size of the array.
+         */
         [[nodiscard]] OTR_INLINE constexpr UInt64 GetSize() const { return Size; }
+
+        /**
+         * @brief Checks whether the array has been created. An array is created when it has been initialised with
+         * a valid size and has not been destroyed.
+         *
+         * @return True if the array has been created, false otherwise.
+         */
         [[nodiscard]] OTR_INLINE bool IsCreated() const { return m_Data && Size > 0; }
 
+        /**
+         * @brief Gets a const iterator to the first element of the array.
+         *
+         * @return A const iterator to the first element of the array.
+         */
         OTR_INLINE ConstIterator begin() const noexcept { return ConstIterator(m_Data); }
+
+        /**
+         * @brief Gets a const iterator to the last element of the array.
+         *
+         * @return A const iterator to the last element of the array.
+         */
         OTR_INLINE ConstIterator end() const noexcept { return ConstIterator(m_Data + Size); }
+
+        /**
+         * @brief Gets a reverse const iterator to the last element of the array.
+         *
+         * @return A reverse const iterator to the last element of the array.
+         */
         OTR_INLINE ConstIterator rbegin() const noexcept { return ConstIterator(m_Data + Size - 1); }
+
+        /**
+         * @brief Gets a reverse const iterator to the first element of the array.
+         *
+         * @return A reverse const iterator to the first element of the array.
+         */
         OTR_INLINE ConstIterator rend() const noexcept { return ConstIterator(m_Data - 1); }
 
     private:

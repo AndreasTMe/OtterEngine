@@ -12,9 +12,21 @@ namespace Otter
     template<typename T>
     class Collection;
 
+    /**
+     * @brief A static class that contains methods for creating collections.
+     */
     class Collections final
     {
     public:
+        /**
+         * @brief Creates a new collection from a pointer to some data and their count.
+         *
+         * @tparam T The type of the collection.
+         *
+         * @param data The pointer to the data.
+         * @param count The count of the data.
+         * @param outCollection The collection to create.
+         */
         template<typename T>
         static void New(const T* const data, const UInt64 count, Collection<T>& outCollection)
         {
@@ -35,6 +47,15 @@ namespace Otter
             }
         }
 
+        /**
+         * @brief Creates a new collection from an initialiser list.
+         *
+         * @tparam T The type of the collection.
+         *
+         * @param list The initialiser list.
+         *
+         * @return The created collection.
+         */
         template<typename T>
         static Collection<T> New(InitialiserList<T> list)
         {
@@ -49,6 +70,14 @@ namespace Otter
             return collection;
         }
 
+        /**
+         * @brief Creates a new collection from an initialiser list.
+         *
+         * @tparam T The type of the collection.
+         *
+         * @param list The initialiser list.
+         * @param outCollection The collection to create.
+         */
         template<typename T>
         static void New(InitialiserList<T> list, Collection<T>& outCollection)
         {
@@ -63,25 +92,50 @@ namespace Otter
                 outCollection.m_Data[outCollection.m_Count++] = item;
         }
 
+        /**
+         * @brief Creates an empty collection.
+         *
+         * @tparam T The type of the collection.
+         *
+         * @return The created collection.
+         */
         template<typename T>
         OTR_INLINE static Collection<T> Empty() { return Collection<T>(); }
     };
 
+    /**
+     * @brief A collection of items.
+     *
+     * @tparam T The type of the collection.
+     */
     template<typename T>
     class Collection
     {
     public:
+        /**
+         * @brief Destructor.
+         */
         ~Collection()
         {
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Capacity);
         }
 
+        /**
+         * @brief Used to reserve space for the collection.
+         *
+         * @param capacity The capacity to reserve.
+         */
         void Reserve(const UInt64 capacity)
         {
             RecreateEmpty(capacity);
         }
 
+        /**
+         * @brief Used to expand the size of the collection by a given amount.
+         *
+         * @param amount The amount to expand the collection by.
+         */
         void Expand(const UInt64 amount = 0)
         {
             UInt64 newCapacity = CalculateExpandCapacity(amount);
@@ -98,6 +152,12 @@ namespace Otter
             m_Capacity = newCapacity;
         }
 
+        /**
+         * @brief Used to shrink the size of the collection by a given amount.
+         *
+         * @param amount The amount to shrink the collection by.
+         * @param isDestructive Whether or not the shrink is destructive. If true, some data may be lost.
+         */
         void Shrink(const UInt64 amount = 0, const bool isDestructive = false)
         {
             UInt64 newCapacity = CalculateShrinkCapacity(amount, isDestructive);
@@ -123,7 +183,14 @@ namespace Otter
                 m_Count = newCapacity;
         }
 
-        bool Contains(const T& item) const
+        /**
+         * @brief Checks if the collection contains a given item.
+         *
+         * @param item The item to check for.
+         *
+         * @return True if the collection contains the item, false otherwise.
+         */
+        [[nodiscard]] bool Contains(const T& item) const
         {
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)
@@ -132,7 +199,14 @@ namespace Otter
             return false;
         }
 
-        bool Contains(T&& item) const noexcept
+        /**
+         * @brief Checks if the collection contains a given item.
+         *
+         * @param item The item to check for.
+         *
+         * @return True if the collection contains the item, false otherwise.
+         */
+        [[nodiscard]] bool Contains(T&& item) const noexcept
         {
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)
@@ -141,7 +215,15 @@ namespace Otter
             return false;
         }
 
-        bool TryGetIndexOf(const T& item, UInt64& index) const
+        /**
+         * @brief Tries to get the index of a given item.
+         *
+         * @param item The item to get the index of.
+         * @param index The index of the item.
+         *
+         * @return True if the item was found, false otherwise.
+         */
+        [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64& index) const
         {
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)
@@ -153,7 +235,15 @@ namespace Otter
             return false;
         }
 
-        bool TryGetIndexOf(T&& item, UInt64& index) const noexcept
+        /**
+         * @brief Tries to get the index of a given item.
+         *
+         * @param item The item to get the index of.
+         * @param index The index of the item.
+         *
+         * @return True if the item was found, false otherwise.
+         */
+        [[nodiscard]] bool TryGetIndexOf(T&& item, UInt64& index) const noexcept
         {
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)
@@ -165,8 +255,14 @@ namespace Otter
             return false;
         }
 
+        /**
+         * @brief Clears the collection.
+         */
         OTR_INLINE void Clear() { m_Count = 0; }
 
+        /**
+         * @brief Clears the collection and deletes the data.
+         */
         void ClearDestructive()
         {
             if (IsCreated())
@@ -178,7 +274,14 @@ namespace Otter
         }
 
 #if !OTR_RUNTIME
-        ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
+        /**
+         * @brief Gets the memory footprint of the collection.
+         *
+         * @param debugName The name of the collection for debugging purposes.
+         *
+         * @return The memory footprint of the collection.
+         */
+        [[nodiscard]] ReadOnlySpan<MemoryFootprint, 1> GetMemoryFootprint(const char* const debugName) const
         {
             MemoryFootprint footprint = { };
             MemorySystem::CheckMemoryFootprint([&]()
@@ -195,13 +298,46 @@ namespace Otter
         }
 #endif
 
+        /**
+         * @brief Gets a pointer to the data of the collection.
+         *
+         * @return A pointer to the data of the collection.
+         */
         [[nodiscard]] OTR_INLINE const T* GetData() const noexcept { return m_Data; }
+
+        /**
+         * @brief Gets the capacity of the collection.
+         *
+         * @return The capacity of the collection.
+         */
         [[nodiscard]] OTR_INLINE UInt64 GetCapacity() const noexcept { return m_Capacity; }
+
+        /**
+         * @brief Gets the item count of the collection.
+         *
+         * @return The item count of the collection.
+         */
         [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
+
+        /**
+         * @brief Checks whether the collection has been created. A collection is created when it has been initialised
+         * with a valid capacity and has not been destroyed.
+         *
+         * @return True if the collection has been created, false otherwise.
+         */
         [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Data && m_Capacity > 0; }
+
+        /**
+         * @brief Checks whether the collection is empty.
+         *
+         * @return True if the collection is empty, false otherwise.
+         */
         [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
 
     protected:
+        /**
+         * @brief Constructor.
+         */
         Collection()
             : m_Data(nullptr), m_Capacity(0), m_Count(0)
         {
@@ -216,6 +352,11 @@ namespace Otter
         friend class Collections;
 
     private:
+        /**
+         * @brief Recreates the collection with a given capacity. Deletes any existing data.
+         *
+         * @param capacity The capacity to recreate the collection with.
+         */
         void RecreateEmpty(const UInt64 capacity)
         {
             if (IsCreated())
@@ -226,6 +367,13 @@ namespace Otter
             m_Count    = 0;
         }
 
+        /**
+         * @brief Calculates the new capacity when expanding the collection.
+         *
+         * @param expandAmount The amount to expand the collection by.
+         *
+         * @return The new capacity.
+         */
         UInt64 CalculateExpandCapacity(const UInt64 expandAmount)
         {
             UInt64 newCapacity;
@@ -238,6 +386,14 @@ namespace Otter
             return newCapacity;
         }
 
+        /**
+         * @brief Calculates the new capacity when shrinking the collection.
+         *
+         * @param shrinkAmount The amount to shrink the collection by.
+         * @param isDestructive Whether or not the shrink is destructive. If true, some data may be lost.
+         *
+         * @return The new capacity.
+         */
         UInt64 CalculateShrinkCapacity(const UInt64 shrinkAmount, const bool isDestructive)
         {
             if (m_Capacity == 0)

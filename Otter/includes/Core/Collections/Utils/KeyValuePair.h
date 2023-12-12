@@ -3,6 +3,12 @@
 
 namespace Otter
 {
+    /**
+     * @brief A structure that represents a key-value pair.
+     *
+     * @tparam TKey The type of the key.
+     * @tparam TValue The type of the value.
+     */
     template<typename TKey, typename TValue>
     struct KeyValuePair final
     {
@@ -10,27 +16,57 @@ namespace Otter
         TKey   Key;
         TValue Value;
 
+        /**
+         * @brief Constructor.
+         */
         KeyValuePair() = default;
+
+        /**
+         * @brief Destructor.
+         */
         ~KeyValuePair() = default;
 
+        /**
+         * @brief Constructor.
+         *
+         * @param key The key.
+         * @param value The value.
+         */
         KeyValuePair(const TKey& key, const TValue& value)
         {
             Key   = key;
             Value = value;
         }
 
+        /**
+         * @brief Copy constructor.
+         *
+         * @param other The key-value pair to copy.
+         */
         KeyValuePair(const KeyValuePair& other)
         {
             Key   = other.Key;
             Value = other.Value;
         }
 
+        /**
+         * @brief Move constructor.
+         *
+         * @param other The key-value pair to move.
+         */
         KeyValuePair(KeyValuePair&& other) noexcept
         {
             Key   = std::move(other.Key);
             Value = std::move(other.Value);
         }
 
+        /**
+         * @brief Copy assignment operator.
+         *
+         * @param other The key-value pair to copy.
+         *
+         * @return A reference to this key-value pair.
+         */
         KeyValuePair& operator=(const KeyValuePair& other)
         {
             if (this == &other)
@@ -42,6 +78,13 @@ namespace Otter
             return *this;
         }
 
+        /**
+         * @brief Move assignment operator.
+         *
+         * @param other The key-value pair to move.
+         *
+         * @return A reference to this key-value pair.
+         */
         KeyValuePair& operator=(KeyValuePair&& other) noexcept
         {
             if (this == &other)
