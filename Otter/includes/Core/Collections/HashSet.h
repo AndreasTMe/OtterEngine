@@ -7,24 +7,43 @@
 
 namespace Otter
 {
+    /**
+     * @brief A collection of unique items that are stored in buckets and can be accessed by their hash. The capacity
+     * of the hashset is automatically expanded to the next prime when the item count reaches the capacity in order
+     * to maintain a low collision rate.
+     *
+     * @tparam T The type of the items in the hashset.
+     */
     template<typename T>
     class HashSet final
     {
+        /// @brief Alias for HashUtils.
         using HashUtils = Internal::HashUtils;
 
     public:
+        /**
+         * @brief Constructor.
+         */
         HashSet()
         {
             if (IsCreated())
                 Buffer::Delete<Bucket<T>>(m_Buckets, m_Capacity);
         }
 
+        /**
+         * @brief Destructor.
+         */
         ~HashSet()
         {
             if (IsCreated())
                 Buffer::Delete<Bucket<T>>(m_Buckets, m_Capacity);
         }
 
+        /**
+         * @brief Creates a hashset from an initialiser list.
+         *
+         * @param list The initialiser list.
+         */
         HashSet(InitialiserList<T> list)
             : HashSet()
         {
@@ -36,6 +55,11 @@ namespace Otter
                 TryAdd(item);
         }
 
+        /**
+         * @brief Copy constructor.
+         *
+         * @param other The hashset to copy.
+         */
         HashSet(const HashSet<T>& other)
             : HashSet()
         {
@@ -44,6 +68,11 @@ namespace Otter
             m_Count    = other.m_Count;
         }
 
+        /**
+         * @brief Move constructor.
+         *
+         * @param other The hashset to move.
+         */
         HashSet(HashSet<T>&& other) noexcept
             : HashSet()
         {
@@ -56,6 +85,13 @@ namespace Otter
             other.m_Count    = 0;
         }
 
+        /**
+         * @brief Copy assignment operator.
+         *
+         * @param other The hashset to copy.
+         *
+         * @return A reference to this hashset.
+         */
         HashSet<T>& operator=(const HashSet<T>& other)
         {
             if (this == &other)
@@ -71,6 +107,13 @@ namespace Otter
             return *this;
         }
 
+        /**
+         * @brief Move assignment operator.
+         *
+         * @param other The hashset to move.
+         *
+         * @return A reference to this hashset.
+         */
         HashSet<T>& operator=(HashSet<T>&& other) noexcept
         {
             if (this == &other)
@@ -90,6 +133,13 @@ namespace Otter
             return *this;
         }
 
+        /**
+         * @brief Tries to add an item to the hashset.
+         *
+         * @param item The item to add.
+         *
+         * @return True if the item was added, false otherwise.
+         */
         bool TryAdd(const T& value)
         {
             if (m_Count >= m_Capacity)
@@ -126,6 +176,13 @@ namespace Otter
             return true;
         }
 
+        /**
+         * @brief Tries to add an item to the hashset.
+         *
+         * @param item The item to add.
+         *
+         * @return True if the item was added, false otherwise.
+         */
         bool TryAdd(T&& value) noexcept
         {
             if (m_Count >= m_Capacity)
@@ -162,6 +219,13 @@ namespace Otter
             return true;
         }
 
+        /**
+         * @brief Tries to remove an item from the hashset.
+         *
+         * @param item The item to remove.
+         *
+         * @return True if the item was removed, false otherwise.
+         */
         bool TryRemove(const T& value)
         {
             UInt64 hash  = GetHashCode(value) & k_63BitMask;
@@ -187,6 +251,13 @@ namespace Otter
             return false;
         }
 
+        /**
+         * @brief Checks if the hashset contains a given item.
+         *
+         * @param item The item to check for.
+         *
+         * @return True if the hashset contains the item, false otherwise.
+         */
         [[nodiscard]] bool Contains(const T& value) const
         {
             UInt64 hash  = GetHashCode(value) & k_63BitMask;
@@ -201,7 +272,12 @@ namespace Otter
             return false;
         }
 
-        void ForEach(Function<void(const T&)> callback)
+        /**
+         * @brief Performs a given callback on each item in the hashset.
+         *
+         * @param callback The callback to perform.
+         */
+        void ForEach(Function<void(const T&)> callback) const
         {
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
@@ -213,6 +289,9 @@ namespace Otter
             }
         }
 
+        /**
+         * @brief Clears the hashset.
+         */
         void Clear()
         {
             if (!IsCreated())
@@ -232,6 +311,9 @@ namespace Otter
             m_Count = 0;
         }
 
+        /**
+         * @brief Clears the hashset and deletes the data.
+         */
         void ClearDestructive()
         {
             if (IsCreated())
@@ -243,6 +325,13 @@ namespace Otter
         }
 
 #if !OTR_RUNTIME
+        /**
+         * @brief Gets the memory footprint of the hashset.
+         *
+         * @param debugName The name of the hashset for debugging purposes.
+         *
+         * @return The memory footprint of the hashset.
+         */
         void GetMemoryFootprint(const char* const debugName,
                                 MemoryFootprint* outFootprints,
                                 UInt64* outFootprintsSize) const
@@ -274,8 +363,26 @@ namespace Otter
         }
 #endif
 
+        /**
+         * @brief Gets the item count of the hashset.
+         *
+         * @return The item count of the hashset.
+         */
         [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
+
+        /**
+         * @brief Checks whether the hashset has been created. A hashset is created when it has been initialised
+         * with a valid capacity and has not been destroyed.
+         *
+         * @return True if the hashset has been created, false otherwise.
+         */
         [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Buckets && m_Capacity > 0; }
+
+        /**
+         * @brief Checks whether the hashset is empty.
+         *
+         * @return True if the hashset is empty, false otherwise.
+         */
         [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
 
     private:
@@ -287,6 +394,9 @@ namespace Otter
         UInt64 m_Capacity = 0;
         UInt64 m_Count    = 0;
 
+        /**
+         * @brief Used to expand the size of the hashset.
+         */
         void Expand()
         {
             UInt64 newCapacity = m_Capacity == 0
@@ -334,6 +444,11 @@ namespace Otter
             m_Capacity = newCapacity;
         }
 
+        /**
+         * @brief Resizes a bucket of the hashset. Each bucket is essentially a dynamic array.
+         *
+         * @param bucket The bucket to resize.
+         */
         void ResizeBucket(Bucket<T>* bucket)
         {
             UInt64 newCapacity = bucket->Capacity * k_ResizingFactor;
@@ -348,6 +463,15 @@ namespace Otter
             bucket->Capacity = newCapacity;
         }
 
+        /**
+         * @brief Checks if an item exists in a bucket.
+         *
+         * @param item The item to check for.
+         * @param hash The hash of the item.
+         * @param bucket The bucket to check in.
+         *
+         * @return True if the item exists in the bucket, false otherwise.
+         */
         [[nodiscard]] bool ExistsInBucket(const T& value, const UInt64 hash, const Bucket<T>& bucket) const
         {
             for (UInt64 i = 0; i < bucket.Count; i++)

@@ -125,6 +125,8 @@ namespace Otter
          * @brief Used to reserve space for the collection.
          *
          * @param capacity The capacity to reserve.
+         *
+         * @note This operation is destructive and will delete any existing data.
          */
         void Reserve(const UInt64 capacity)
         {
