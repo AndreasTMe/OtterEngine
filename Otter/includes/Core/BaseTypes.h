@@ -137,6 +137,18 @@ struct VariadicArgs
 };
 
 /**
+ * @brief Concept for checking if a type has a hash method.
+ *
+ * @tparam T The type to check.
+ */
+template<typename T>
+concept HasCustomHashCode =
+requires(T t)
+{
+    { t.GetHashCode() } -> std::convertible_to<UInt64>;
+};
+
+/**
  * @brief Calculates the hash code for a given value. The hash code is calculated using the std::hash function object.
  *
  * @tparam T The type of the value.
@@ -148,7 +160,10 @@ struct VariadicArgs
 template<typename T>
 [[nodiscard]] OTR_INLINE constexpr UInt64 GetHashCode(const T& value)
 {
-    return std::hash<T>{ }(value);
+    if constexpr (HasCustomHashCode<T>)
+        return value.GetHashCode();
+    else
+        return std::hash<T>{ }(value);
 }
 
 /**

@@ -376,7 +376,7 @@ namespace Otter
          *
          * @return The new capacity.
          */
-        UInt64 CalculateExpandCapacity(const UInt64 expandAmount)
+        [[nodiscard]] UInt64 CalculateExpandCapacity(const UInt64 expandAmount) const
         {
             UInt64 newCapacity;
 
@@ -396,7 +396,7 @@ namespace Otter
          *
          * @return The new capacity.
          */
-        UInt64 CalculateShrinkCapacity(const UInt64 shrinkAmount, const bool isDestructive)
+        [[nodiscard]] UInt64 CalculateShrinkCapacity(const UInt64 shrinkAmount, const bool isDestructive) const
         {
             if (m_Capacity == 0)
                 return 0;

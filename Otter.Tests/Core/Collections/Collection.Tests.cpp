@@ -61,7 +61,7 @@ TEST_F(Collection_Fixture, Collections_NewRawPointer)
     EXPECT_EQ(collection.GetCapacity(), 5);
     EXPECT_EQ(collection.GetCount(), 5);
 
-    Otter::Buffer::Delete(data, 5);
+    Otter::Buffer::Delete<int>(data, 5);
 }
 
 TEST_F(Collection_Fixture, Reserve)

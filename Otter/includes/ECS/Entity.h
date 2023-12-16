@@ -89,6 +89,16 @@ namespace Otter::ECS
          */
         [[nodiscard]] OTR_INLINE bool IsValid() const noexcept { return m_Id > 0; }
 
+        /**
+         * @brief Gets the hash code of the entity.
+         *
+         * @return Hash code of the entity.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetHashCode() const noexcept
+        {
+            return std::hash<UInt64>{ }(m_Id);
+        }
+
     private:
         /**
          * @brief Constructor.
@@ -100,14 +110,5 @@ namespace Otter::ECS
         friend class EntityManager;
     };
 }
-
-template<>
-struct std::hash<Otter::ECS::Entity>
-{
-    UInt64 operator()(const Otter::ECS::Entity& entity) const noexcept
-    {
-        return std::hash<UInt64>{ }(entity.GetId());
-    }
-};
 
 #endif //OTTERENGINE_ENTITY_H

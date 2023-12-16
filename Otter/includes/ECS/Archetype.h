@@ -1,7 +1,7 @@
 #ifndef OTTERENGINE_ARCHETYPE_H
 #define OTTERENGINE_ARCHETYPE_H
 
-#include "Core/BaseTypes.h"
+#include "Core/Collections/BitSet.h"
 
 namespace Otter::ECS
 {
@@ -21,7 +21,10 @@ namespace Otter::ECS
         /**
          * @brief Constructor.
          */
-        Archetype() = default;
+        Archetype()
+            : m_Id(0), m_ComponentMask()
+        {
+        }
 
         /**
          * @brief Destructor.
@@ -35,7 +38,8 @@ namespace Otter::ECS
          */
         Archetype(const Archetype& other)
         {
-            m_Id = other.m_Id;
+            m_Id            = other.m_Id;
+            m_ComponentMask = other.m_ComponentMask;
         }
 
         /**
@@ -45,7 +49,10 @@ namespace Otter::ECS
          */
         Archetype(Archetype&& other) noexcept
         {
-            m_Id = other.m_Id;
+            m_Id            = other.m_Id;
+            m_ComponentMask = std::move(other.m_ComponentMask);
+
+            other.m_Id = 0;
         }
 
         /**
@@ -60,7 +67,8 @@ namespace Otter::ECS
             if (this == &other)
                 return *this;
 
-            m_Id = other.m_Id;
+            m_Id            = other.m_Id;
+            m_ComponentMask = other.m_ComponentMask;
 
             return *this;
         }
@@ -77,7 +85,10 @@ namespace Otter::ECS
             if (this == &other)
                 return *this;
 
-            m_Id = other.m_Id;
+            m_Id            = other.m_Id;
+            m_ComponentMask = std::move(other.m_ComponentMask);
+
+            other.m_Id = 0;
 
             return *this;
         }
@@ -114,20 +125,21 @@ namespace Otter::ECS
          */
         [[nodiscard]] OTR_INLINE bool IsValid() const noexcept { return m_Id > 0; }
 
+        /**
+         * @brief Gets the hash code of the archetype.
+         *
+         * @return Hash code of the archetype.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetHashCode() const noexcept
+        {
+            return std::hash<UInt64>{ }(m_Id); // TODO: Change from id to component mask
+        }
+
     private:
         UInt64 m_Id;
-        // TODO: Component mask, use a bitset with length taken from Otter::ECS::ComponentRegistry
+        BitSet m_ComponentMask;
         // TODO: List of components
     };
 }
-
-template<>
-struct std::hash<Otter::ECS::Archetype>
-{
-    UInt64 operator()(const Otter::ECS::Archetype& archetype) const noexcept
-    {
-        return std::hash<UInt64>{ }(archetype.GetId()); // TODO: Change from id to component mask
-    }
-};
 
 #endif //OTTERENGINE_ARCHETYPE_H
