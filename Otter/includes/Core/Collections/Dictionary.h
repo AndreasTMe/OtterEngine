@@ -28,11 +28,7 @@ namespace Otter
         /**
          * @brief Constructor.
          */
-        Dictionary()
-        {
-            if (IsCreated())
-                Buffer::Delete<Bucket<KeyValuePair>>(m_Buckets, m_Capacity);
-        }
+        Dictionary() = default;
 
         /**
          * @brief Destructor.

@@ -14,6 +14,11 @@ namespace Otter::ECS
     {
     public:
         /**
+         * @brief Constructor.
+         */
+        Entity() = default;
+
+        /**
         * @brief Destructor.
         */
         ~Entity() = default;
@@ -69,13 +74,6 @@ namespace Otter::ECS
         OTR_INLINE bool operator!=(const Entity& other) const noexcept { return m_Id != other.m_Id; }
 
         /**
-         * @brief Creates an empty entity.
-         *
-         * @return Empty entity.
-         */
-        [[nodiscard]] OTR_INLINE static Entity Empty() noexcept { return { }; }
-
-        /**
          * @brief Gets the id of the entity.
          *
          * @return Id of the entity.
@@ -100,11 +98,6 @@ namespace Otter::ECS
         }
 
     private:
-        /**
-         * @brief Constructor.
-         */
-        Entity() = default;
-
         UInt64 m_Id;
 
         friend class EntityManager;

@@ -41,9 +41,6 @@ namespace Otter
 
             Platform::DestroyPlatform(platform);
 
-            EventSystem::Shutdown();
-            MemorySystem::Shutdown();
-
             return;
         }
 

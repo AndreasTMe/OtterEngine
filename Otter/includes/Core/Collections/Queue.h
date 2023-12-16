@@ -25,11 +25,7 @@ namespace Otter
         /**
          * @brief Constructor.
          */
-        Queue()
-        {
-            if (IsCreated())
-                Buffer::Delete<T>(m_Data, m_Capacity);
-        }
+        Queue() = default;
 
         /**
          * @brief Destructor.

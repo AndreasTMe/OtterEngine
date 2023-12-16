@@ -23,10 +23,7 @@ namespace Otter
         /**
          * @brief Constructor.
          */
-        BitSet()
-            : m_Data(nullptr), m_Size(0)
-        {
-        }
+        BitSet() = default;
 
         /**
          * @brief Destructor.
@@ -345,8 +342,8 @@ namespace Otter
         }
 
     private:
-        UInt64* m_Data;
-        UInt64 m_Size;
+        UInt64* m_Data = nullptr;
+        UInt64 m_Size = 0;
 
         /**
          * @brief Recreates the bitset with a given size. Deletes any existing data.

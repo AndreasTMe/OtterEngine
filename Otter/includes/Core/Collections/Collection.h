@@ -340,16 +340,11 @@ namespace Otter
         /**
          * @brief Constructor.
          */
-        Collection()
-            : m_Data(nullptr), m_Capacity(0), m_Count(0)
-        {
-            if (IsCreated())
-                Buffer::Delete<T>(m_Data, m_Capacity);
-        }
+        Collection() = default;
 
-        T* m_Data;
-        UInt64 m_Capacity;
-        UInt64 m_Count;
+        T* m_Data = nullptr;
+        UInt64 m_Capacity = 0;
+        UInt64 m_Count    = 0;
 
         friend class Collections;
 
