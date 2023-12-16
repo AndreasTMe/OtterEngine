@@ -154,6 +154,11 @@ namespace Otter
             return m_Data[index];
         }
 
+        /**
+         * @brief Converts the array to a read only array.
+         *
+         * @return The read only array.
+         */
         [[nodiscard]] OTR_INLINE const ReadOnlyArray<T, Size> AsReadOnly() const
         {
             return ReadOnlyArray<T, Size>(*this);

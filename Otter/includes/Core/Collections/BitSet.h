@@ -2,25 +2,48 @@
 #define OTTERENGINE_BITSET_H
 
 #include "Core/Memory.h"
+#include "Core/Collections/Iterators/LinearIterator.h"
+
+#if !OTR_RUNTIME
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
+#endif
 
 namespace Otter
 {
 #define UINT64_BITS 64
 
+    /**
+     * @brief A bitset of a fixed size. All elements are heap allocated.
+     *
+     * @note Under the hood, the bitset uses an array of 64-bit unsigned integers.
+     */
     class BitSet
     {
     public:
+        /**
+         * @brief Constructor.
+         */
         BitSet()
             : m_Data(nullptr), m_Size(0)
         {
         }
 
+        /**
+         * @brief Destructor.
+         */
         ~BitSet()
         {
-            ClearDestructive();
+            if (IsCreated())
+                Buffer::Delete<UInt64>(m_Data, m_Size);
+
+            m_Data = nullptr;
         }
 
+        /**
+         * @brief Creates a bitset from an initialiser list.
+         *
+         * @param list The initialiser list.
+         */
         BitSet(InitialiserList<bool> list)
             : BitSet()
         {
@@ -31,6 +54,11 @@ namespace Otter
                 Set(index++, item);
         }
 
+        /**
+         * @brief Copy constructor.
+         *
+         * @param other BitSet to copy from.
+         */
         BitSet(const BitSet& other)
         {
             m_Size = other.m_Size;
@@ -40,6 +68,11 @@ namespace Otter
                 m_Data[i] = other.m_Data[i];
         }
 
+        /**
+         * @brief Move constructor.
+         *
+         * @param other BitSet to move from.
+         */
         BitSet(BitSet&& other) noexcept
         {
             m_Data = other.m_Data;
@@ -49,6 +82,13 @@ namespace Otter
             other.m_Size = 0;
         }
 
+        /**
+         * @brief Copy assignment operator.
+         *
+         * @param other BitSet to copy from.
+         *
+         * @return Reference to this bitset.
+         */
         BitSet& operator=(const BitSet& other)
         {
             if (this == &other)
@@ -66,6 +106,13 @@ namespace Otter
             return *this;
         }
 
+        /**
+         * @brief Move assignment operator.
+         *
+         * @param other BitSet to move from.
+         *
+         * @return Reference to this bitset.
+         */
         BitSet& operator=(BitSet&& other) noexcept
         {
             if (this == &other)
@@ -83,6 +130,13 @@ namespace Otter
             return *this;
         }
 
+        /**
+         * @brief Equality operator.
+         *
+         * @param other BitSet to compare to.
+         *
+         * @return True if the bitsets are equal, false otherwise.
+         */
         [[nodiscard]] OTR_INLINE bool operator==(const BitSet& other) const
         {
             if (m_Size != other.m_Size)
@@ -95,8 +149,22 @@ namespace Otter
             return true;
         }
 
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other BitSet to compare to.
+         *
+         * @return True if the bitsets are not equal, false otherwise.
+         */
         [[nodiscard]] OTR_INLINE bool operator!=(const BitSet& other) const { return !(*this == other); }
 
+        /**
+         * @brief Gets the bit at the specified index.
+         *
+         * @param index The index.
+         *
+         * @return The bit at the specified index.
+         */
         [[nodiscard]] bool Get(const UInt64 index) const
         {
             OTR_INTERNAL_ASSERT_MSG(index < m_Size * UINT64_BITS, "Index out of range")
@@ -107,6 +175,12 @@ namespace Otter
             return (m_Data[i] & (1ULL << j)) != 0;
         }
 
+        /**
+         * @brief Sets the bit at the specified index.
+         *
+         * @param index The index.
+         * @param value The value to set.
+         */
         void Set(const UInt64 index, const bool value)
         {
             OTR_INTERNAL_ASSERT_MSG(index < m_Size * UINT64_BITS, "Index out of range")
@@ -120,14 +194,26 @@ namespace Otter
                 m_Data[i] &= ~(1ULL << j);
         }
 
+        /**
+         * @brief Used to reserve memory for the bitset.
+         *
+         * @param bitsSize The size of the bitset in bits.
+         *
+         * @note This operation is destructive and will delete any existing data.
+         */
         void Reserve(const UInt64 bitsSize)
         {
             RecreateEmpty(bitsSize);
         }
 
-        void Expand(const UInt64 amount = 0)
+        /**
+         * @brief Used to expand the size of the bitset by a given amount.
+         *
+         * @param bitAmount The amount to expand the bitset by.
+         */
+        void Expand(const UInt64 bitAmount = 0)
         {
-            UInt64 newSize = CalculateExpandSize(amount);
+            UInt64 newSize = CalculateExpandSize(bitAmount);
 
             auto* newData = Buffer::New<UInt64>(newSize);
 
@@ -141,9 +227,14 @@ namespace Otter
             m_Size = newSize;
         }
 
-        void Shrink(const UInt64 amount = 0)
+        /**
+         * @brief Used to shrink the size of the bitset by a given amount.
+         *
+         * @param bitAmount The amount to shrink the bitset by.
+         */
+        void Shrink(const UInt64 bitAmount = 0)
         {
-            UInt64 newSize = CalculateShrinkSize(amount);
+            UInt64 newSize = CalculateShrinkSize(bitAmount);
 
             if (IsEmpty() || newSize == 0)
             {
@@ -163,12 +254,18 @@ namespace Otter
             m_Size = newSize;
         }
 
+        /**
+         * @brief Clears the bitset.
+         */
         void Clear()
         {
             for (UInt64 i = 0; i < m_Size; i++)
                 m_Data[i] = 0;
         }
 
+        /**
+         * @brief Clears the bitset and deletes the data.
+         */
         void ClearDestructive()
         {
             if (IsCreated())
@@ -176,29 +273,6 @@ namespace Otter
 
             m_Size = 0;
             m_Data = nullptr;
-        }
-
-        [[nodiscard]] OTR_INLINE UInt64 GetSize() const { return m_Size; }
-
-        [[nodiscard]] OTR_INLINE UInt64 GetBitSize() const { return m_Size * sizeof(UInt64) * 8; }
-
-        [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Data && m_Size > 0; }
-
-        [[nodiscard]] OTR_INLINE bool IsEmpty() const { return m_Size == 0; }
-
-        /**
-         * @brief Gets the hash code of the bitset.
-         *
-         * @return Hash code of the bitset.
-         */
-        [[nodiscard]] OTR_INLINE UInt64 GetHashCode() const noexcept
-        {
-            UInt64 hash = 0;
-
-            for (UInt64 i = 0; i < m_Size * UINT64_BITS; i++)
-                hash ^= std::hash<bool>{ }(m_Data[i]) << i;
-
-            return hash;
         }
 
 #if !OTR_RUNTIME
@@ -226,10 +300,59 @@ namespace Otter
         }
 #endif
 
+        /**
+         * @brief Gets the size of the bitset.
+         *
+         * @return The size of the bitset.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetSize() const { return m_Size; }
+
+        /**
+         * @brief Gets the size of the bitset in bits.
+         *
+         * @return The size of the bitset in bits.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetBitsSize() const { return m_Size * UINT64_BITS; }
+
+        /**
+         * @brief Checks whether the bitset has been created. A bitset is created when it has been initialised
+         * with a valid size and has not been destroyed.
+         *
+         * @return True if the bitset has been created, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Data && m_Size > 0; }
+
+        /**
+         * @brief Checks whether the bitset is empty.
+         *
+         * @return True if the bitset is empty, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool IsEmpty() const { return m_Size == 0; }
+
+        /**
+         * @brief Gets the hash code of the bitset.
+         *
+         * @return Hash code of the bitset.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetHashCode() const noexcept
+        {
+            UInt64 hash = 0;
+
+            for (UInt64 i = 0; i < m_Size * UINT64_BITS; i++)
+                hash ^= std::hash<bool>{ }(m_Data[i]) << i;
+
+            return hash;
+        }
+
     private:
         UInt64* m_Data;
         UInt64 m_Size;
 
+        /**
+         * @brief Recreates the bitset with a given size. Deletes any existing data.
+         *
+         * @param bitsSize The size to recreate the bitset with in bits.
+         */
         void RecreateEmpty(const UInt64 bitsSize)
         {
             if (IsCreated())
@@ -239,20 +362,34 @@ namespace Otter
             m_Data = Buffer::New<UInt64>(m_Size);
         }
 
-        [[nodiscard]] UInt64 CalculateExpandSize(const UInt64 expandAmount) const
+        /**
+         * @brief Calculates the new size when expanding the bitset.
+         *
+         * @param expandBitAmount The amount to expand the bitset by in bits.
+         *
+         * @return The new size.
+         */
+        [[nodiscard]] UInt64 CalculateExpandSize(const UInt64 expandBitAmount) const
         {
             const UInt64 itemsSize = m_Size * UINT64_BITS;
             UInt64       newSize;
 
-            if (expandAmount == 0)
+            if (expandBitAmount == 0)
                 newSize = itemsSize == 0 ? 0 : itemsSize * 1.5; // NOLINT(*-narrowing-conversions)
             else
-                newSize = itemsSize + expandAmount;
+                newSize = itemsSize + expandBitAmount;
 
             return GetActualOrMinimumSize(newSize);
         }
 
-        [[nodiscard]] UInt64 CalculateShrinkSize(const UInt64 shrinkAmount) const
+        /**
+         * @brief Calculates the new size when shrinking the bitset.
+         *
+         * @param shrinkBitAmount The amount to shrink the bitset by in bits.
+         *
+         * @return The new size.
+         */
+        [[nodiscard]] UInt64 CalculateShrinkSize(const UInt64 shrinkBitAmount) const
         {
             if (m_Size == 0)
                 return 0;
@@ -260,16 +397,23 @@ namespace Otter
             const UInt64 itemsSize = m_Size * UINT64_BITS;
             UInt64       newSize;
 
-            if (shrinkAmount == 0)
+            if (shrinkBitAmount == 0)
                 newSize = itemsSize * 0.75; // NOLINT(*-narrowing-conversions)
-            else if (shrinkAmount > itemsSize)
+            else if (shrinkBitAmount > itemsSize)
                 newSize = 0;
             else
-                newSize = itemsSize - shrinkAmount;
+                newSize = itemsSize - shrinkBitAmount;
 
             return GetActualOrMinimumSize(newSize);
         }
 
+        /**
+         * @brief Gets the actual size or the minimum size.
+         *
+         * @param bitsSize The size in bits.
+         *
+         * @return The actual size or the minimum size (not in bits).
+         */
         [[nodiscard]] OTR_INLINE static UInt64 GetActualOrMinimumSize(const UInt64 bitsSize)
         {
             if (bitsSize < UINT64_BITS * 2)

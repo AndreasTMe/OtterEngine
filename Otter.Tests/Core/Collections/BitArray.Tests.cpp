@@ -156,7 +156,7 @@ TEST_F(BitSet_Fixture, Reserve)
     EXPECT_FALSE(bitset.IsEmpty());
     EXPECT_TRUE(bitset.IsCreated());
 
-    for (UInt64 i = 0; i < bitset.GetBitSize(); ++i)
+    for (UInt64 i = 0; i < bitset.GetBitsSize(); ++i)
         EXPECT_EQ(bitset.Get(i), false);
 }
 
@@ -175,7 +175,7 @@ TEST_F(BitSet_Fixture, Expand)
     for (UInt64 i = 0; i < 8; ++i)
         EXPECT_EQ(bitset.Get(i), i % 2 == 0);
 
-    for (UInt64 i = 8; i < bitset.GetBitSize(); ++i)
+    for (UInt64 i = 8; i < bitset.GetBitsSize(); ++i)
         EXPECT_EQ(bitset.Get(i), false);
 }
 
@@ -186,14 +186,14 @@ TEST_F(BitSet_Fixture, Shrink)
 
     EXPECT_EQ(bitset.GetSize(), 4);
 
-    for (UInt64 i = 0; i < bitset.GetBitSize(); ++i)
+    for (UInt64 i = 0; i < bitset.GetBitsSize(); ++i)
         bitset.Set(i, i % 2 == 0);
 
     bitset.Shrink(100); // 100 / 64 = 1.5625 -> 1 UInt64s
 
     EXPECT_EQ(bitset.GetSize(), 3);
 
-    for (UInt64 i = 0; i < bitset.GetBitSize(); ++i)
+    for (UInt64 i = 0; i < bitset.GetBitsSize(); ++i)
         EXPECT_EQ(bitset.Get(i), i % 2 == 0);
 }
 
@@ -209,7 +209,7 @@ TEST_F(BitSet_Fixture, Clear)
     EXPECT_FALSE(bitset.IsEmpty());
     EXPECT_TRUE(bitset.IsCreated());
 
-    for (UInt64 i = 0; i < bitset.GetBitSize(); ++i)
+    for (UInt64 i = 0; i < bitset.GetBitsSize(); ++i)
         EXPECT_EQ(bitset.Get(i), false);
 }
 
