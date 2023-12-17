@@ -3,7 +3,7 @@
 
 #include "Core/BaseTypes.h"
 
-namespace Otter::ECS
+namespace Otter
 {
     class EntityManager;
 
