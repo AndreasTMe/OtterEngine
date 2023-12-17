@@ -1,7 +1,6 @@
 #ifndef OTTERENGINE_ASSERT_H
 #define OTTERENGINE_ASSERT_H
 
-#include "Core/Defines.h"
 #include "Core/Logger.h"
 
 #if defined(OTR_DEBUG)
