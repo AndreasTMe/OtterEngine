@@ -1,5 +1,6 @@
 #include "Graphics/API/Vulkan/VulkanSwapchains.h"
 
+#include "Core/Collections/ReadOnly/ReadOnlySpan.h"
 #include "Math/Core.h"
 
 namespace Otter::Graphics::Vulkan
