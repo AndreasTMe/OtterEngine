@@ -161,10 +161,7 @@ namespace Otter
         /**
          * @brief Constructor.
          */
-        Enumerable()
-            : m_Data(nullptr), m_Count(0)
-        {
-        }
+        Enumerable() = default;
 
         T* m_Data = nullptr;
         UInt64 m_Count = 0;

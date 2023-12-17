@@ -24,11 +24,7 @@ namespace Otter
         /**
          * @brief Constructor.
          */
-        HashSet()
-        {
-            if (IsCreated())
-                Buffer::Delete<Bucket<T>>(m_Buckets, m_Capacity);
-        }
+        HashSet() = default;
 
         /**
          * @brief Destructor.
