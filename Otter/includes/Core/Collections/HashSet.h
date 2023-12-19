@@ -2,12 +2,12 @@
 #define OTTERENGINE_HASHSET_H
 
 #include "Core/Function.h"
+#include "Core/Collections/BitSet.h"
 #include "Core/Collections/Utils/HashBucket.h"
 #include "Core/Collections/Utils/HashUtils.h"
 
 #if !OTR_RUNTIME
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
-#include "BitSet.h"
 #endif
 
 namespace Otter
@@ -74,7 +74,7 @@ namespace Otter
             m_Count                = other.m_Count;
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
-//            m_Collisions           = other.m_Collisions;
+            m_Collisions           = other.m_Collisions;
         }
 
         /**
@@ -90,7 +90,7 @@ namespace Otter
             m_Count                = std::move(other.m_Count);
             m_CurrentMaxCollisions = std::move(other.m_CurrentMaxCollisions);
             m_SlotsInUse           = std::move(other.m_SlotsInUse);
-//            m_Collisions           = std::move(other.m_Collisions);
+            m_Collisions           = std::move(other.m_Collisions);
 
             other.m_Slots                = nullptr;
             other.m_Capacity             = 0;
@@ -118,7 +118,7 @@ namespace Otter
             m_Count                = other.m_Count;
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
-//            m_Collisions           = other.m_Collisions;
+            m_Collisions           = other.m_Collisions;
 
             return *this;
         }
@@ -143,7 +143,7 @@ namespace Otter
             m_Count                = std::move(other.m_Count);
             m_CurrentMaxCollisions = std::move(other.m_CurrentMaxCollisions);
             m_SlotsInUse           = std::move(other.m_SlotsInUse);
-//            m_Collisions           = std::move(other.m_Collisions);
+            m_Collisions           = std::move(other.m_Collisions);
 
             other.m_Slots                = nullptr;
             other.m_Capacity             = 0;
@@ -170,12 +170,12 @@ namespace Otter
 
             if (!m_SlotsInUse.Get(index))
             {
-                m_Slots[index].Data        = value;
-                m_Slots[index].Hash        = hash;
-                m_Slots[index].IsCollision = false;
-                m_Slots[index].Collision   = nullptr;
+                m_Slots[index].Data      = value;
+                m_Slots[index].Hash      = hash;
+                m_Slots[index].Collision = nullptr;
 
                 m_SlotsInUse.Set(index, true);
+                m_Collisions.Set(index, false);
 
                 m_Count++;
 
@@ -205,12 +205,12 @@ namespace Otter
 
             if (!m_SlotsInUse.Get(index))
             {
-                m_Slots[index].Data        = std::move(value);
-                m_Slots[index].Hash        = hash;
-                m_Slots[index].IsCollision = false;
-                m_Slots[index].Collision   = nullptr;
+                m_Slots[index].Data      = std::move(value);
+                m_Slots[index].Hash      = hash;
+                m_Slots[index].Collision = nullptr;
 
                 m_SlotsInUse.Set(index, true);
+                m_Collisions.Set(index, false);
 
                 m_Count++;
 
@@ -269,7 +269,7 @@ namespace Otter
                 }
 
                 m_SlotsInUse.Set(slot - m_Slots, false);
-                slot->IsCollision = false;
+                m_Collisions.Set(slot - m_Slots, false);
                 m_Count--;
 
                 return true;
@@ -406,8 +406,6 @@ namespace Otter
             T      Data;
             UInt64 Hash;
 
-            bool IsCollision;
-
             Slot* Collision;
         };
 
@@ -435,12 +433,13 @@ namespace Otter
 
             Slot* newSlots = Buffer::New<Slot>(newCapacity);
             BitSet newSlotsInUse;
+            BitSet newCollisions;
 
             m_CurrentMaxCollisions = 0;
 
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (!m_SlotsInUse.Get(i) || m_Slots[i].IsCollision)
+                if (!m_SlotsInUse.Get(i) || m_Collisions.Get(i))
                     continue;
 
                 UInt64 hash  = m_Slots[i].Hash & k_63BitMask;
@@ -448,12 +447,12 @@ namespace Otter
 
                 if (!newSlotsInUse.Get(index))
                 {
-                    newSlots[index].Data        = m_Slots[i].Data;
-                    newSlots[index].Hash        = hash;
-                    newSlots[index].IsCollision = false;
-                    newSlots[index].Collision   = nullptr;
+                    newSlots[index].Data      = m_Slots[i].Data;
+                    newSlots[index].Hash      = hash;
+                    newSlots[index].Collision = nullptr;
 
                     newSlotsInUse.Set(index, true);
+                    newCollisions.Set(index, false);
                 }
             }
 
@@ -461,7 +460,7 @@ namespace Otter
 
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
-                if (!m_Slots[i].IsCollision)
+                if (!m_Collisions.Get(i))
                     continue;
 
                 UInt64 hash  = m_Slots[i].Hash & k_63BitMask;
@@ -469,12 +468,12 @@ namespace Otter
 
                 if (!newSlotsInUse.Get(index))
                 {
-                    newSlots[index].Data        = m_Slots[i].Data;
-                    newSlots[index].Hash        = hash;
-                    newSlots[index].IsCollision = false;
-                    newSlots[index].Collision   = nullptr;
+                    newSlots[index].Data      = m_Slots[i].Data;
+                    newSlots[index].Hash      = hash;
+                    newSlots[index].Collision = nullptr;
 
                     newSlotsInUse.Set(index, true);
+                    newCollisions.Set(index, false);
 
                     continue;
                 }
@@ -503,12 +502,12 @@ namespace Otter
                         continue;
                     }
 
-                    newSlots[currentEmptySlot].Data        = m_Slots[i].Data;
-                    newSlots[currentEmptySlot].Hash        = hash;
-                    newSlots[currentEmptySlot].IsCollision = true;
-                    newSlots[currentEmptySlot].Collision   = nullptr;
+                    newSlots[currentEmptySlot].Data      = m_Slots[i].Data;
+                    newSlots[currentEmptySlot].Hash      = hash;
+                    newSlots[currentEmptySlot].Collision = nullptr;
 
                     newSlotsInUse.Set(currentEmptySlot, true);
+                    newCollisions.Set(currentEmptySlot, true);
                     slot->Collision = &newSlots[currentEmptySlot];
                 }
             }
@@ -520,6 +519,7 @@ namespace Otter
             m_Capacity = newCapacity;
 
             m_SlotsInUse = std::move(newSlotsInUse);
+            m_Collisions = std::move(newCollisions);
         }
 
         /**
@@ -557,12 +557,12 @@ namespace Otter
                 if (m_SlotsInUse.Get(i))
                     continue;
 
-                m_Slots[i].Data        = value;
-                m_Slots[i].Hash        = hash;
-                m_Slots[i].IsCollision = true;
-                m_Slots[i].Collision   = nullptr;
+                m_Slots[i].Data      = value;
+                m_Slots[i].Hash      = hash;
+                m_Slots[i].Collision = nullptr;
 
                 m_SlotsInUse.Set(i, true);
+                m_Collisions.Set(i, true);
                 slot->Collision = &m_Slots[i];
                 m_Count++;
 
