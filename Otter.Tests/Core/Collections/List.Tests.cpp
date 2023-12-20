@@ -242,3 +242,21 @@ TEST_F(List_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint3[0].Padding, 0);
     EXPECT_EQ(footprint3[0].Alignment, 0);
 }
+
+TEST_F(List_Fixture, Iterator)
+{
+    List<int> list = { 1, 2, 3, 4, 5 };
+
+    UInt64 i = 0;
+    for (auto& element: list)
+        EXPECT_EQ(element, ++i);
+
+    for (auto it = list.rbegin(); it != list.rend(); --it)
+        EXPECT_EQ(*it, i--);
+
+    for (auto it = list.cbegin(); it != list.cend(); ++it)
+        EXPECT_EQ(*it, ++i);
+
+    for (auto it = list.crbegin(); it != list.crend(); --it)
+        EXPECT_EQ(*it, i--);
+}

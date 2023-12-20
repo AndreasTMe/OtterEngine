@@ -176,3 +176,21 @@ TEST_F(Stack_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint3[0].Padding, 0);
     EXPECT_EQ(footprint3[0].Alignment, 0);
 }
+
+TEST_F(Stack_Fixture, Iterator)
+{
+    Stack<int> stack = { 1, 2, 3, 4, 5 };
+
+    UInt64 i = 0;
+    for (auto& element: stack)
+        EXPECT_EQ(element, ++i);
+
+    for (auto it = stack.rbegin(); it != stack.rend(); --it)
+        EXPECT_EQ(*it, i--);
+
+    for (auto it = stack.cbegin(); it != stack.cend(); ++it)
+        EXPECT_EQ(*it, ++i);
+
+    for (auto it = stack.crbegin(); it != stack.crend(); --it)
+        EXPECT_EQ(*it, i--);
+}

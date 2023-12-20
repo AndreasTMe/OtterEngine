@@ -291,3 +291,21 @@ TEST_F(Deque_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint3[0].Padding, 0);
     EXPECT_EQ(footprint3[0].Alignment, 0);
 }
+
+TEST_F(Deque_Fixture, Iterator)
+{
+    Deque<int> deque = { 1, 2, 3, 4, 5 };
+
+    UInt64 i = 0;
+    for (auto& element: deque)
+        EXPECT_EQ(element, ++i);
+
+    for (auto it = deque.rbegin(); it != deque.rend(); --it)
+        EXPECT_EQ(*it, i--);
+
+    for (auto it = deque.cbegin(); it != deque.cend(); ++it)
+        EXPECT_EQ(*it, ++i);
+
+    for (auto it = deque.crbegin(); it != deque.crend(); --it)
+        EXPECT_EQ(*it, i--);
+}
