@@ -246,3 +246,22 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint3[0].Padding, 0);
     EXPECT_EQ(footprint3[0].Alignment, 0);
 }
+
+TEST_F(HashSet_Fixture, Iterator)
+{
+    int          temp[]  = { 1, 2, 5, 6 };
+    HashSet<int> hashSet = { 1, 2, 5, 6 };
+
+    UInt64    i  = 0;
+    for (auto it = hashSet.cbegin(); it != hashSet.cend(); ++it)
+    {
+        EXPECT_EQ(*it, temp[i]);
+        ++i;
+    }
+
+    for (auto it = hashSet.crbegin(); it != hashSet.crend(); --it)
+    {
+        EXPECT_EQ(*it, temp[i]);
+        --i;
+    }
+}

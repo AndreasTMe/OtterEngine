@@ -3,8 +3,9 @@
 
 #include "Core/Function.h"
 #include "Core/Collections/BitSet.h"
-#include "Core/Collections/Utils/HashBucket.h"
+#include "Core/Collections/Utils/HashSlot.h"
 #include "Core/Collections/Utils/HashUtils.h"
+#include "Core/Collections/Iterators/SlotIterator.h"
 
 #if !OTR_RUNTIME
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
@@ -24,6 +25,8 @@ namespace Otter
     {
         /// @brief Alias for HashUtils.
         using HashUtils = Internal::HashUtils;
+
+        using SlotIterator = SlotIterator<T>;
 
     public:
         /**
@@ -53,7 +56,7 @@ namespace Otter
             if (m_Capacity < k_InitialCapacity)
                 m_Capacity = k_InitialCapacity;
 
-            m_Slots                = Buffer::New<Slot>(m_Capacity);
+            m_Slots                = Buffer::New<Slot<T>>(m_Capacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
@@ -441,22 +444,65 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
 
-    private:
-        struct Slot final
+        /**
+         * @brief Gets a const iterator to the first element of the hash set.
+         *
+         * @return A const iterator to the first element of the hash set.
+         */
+        OTR_INLINE SlotIterator cbegin() const noexcept
         {
-        public:
-            T      Data;
-            UInt64 Hash;
+            return SlotIterator(m_Slots,
+                                m_Slots,
+                                m_Capacity,
+                                m_SlotsInUse);
+        }
 
-            Slot* Next;
-        };
+        /**
+         * @brief Gets a const iterator to the last element of the hash set.
+         *
+         * @return A const iterator to the last element of the hash set.
+         */
+        OTR_INLINE SlotIterator cend() const noexcept
+        {
+            return SlotIterator(m_Slots,
+                                m_Slots + m_Capacity - 1,
+                                m_Capacity,
+                                m_SlotsInUse);
+        }
 
+        /**
+         * @brief Gets a reverse const iterator to the last element of the hash set.
+         *
+         * @return A reverse const iterator to the last element of the hash set.
+         */
+        OTR_INLINE SlotIterator crbegin() const noexcept
+        {
+            return SlotIterator(m_Slots,
+                                m_Slots + m_Capacity - 1,
+                                m_Capacity,
+                                m_SlotsInUse);
+        }
+
+        /**
+         * @brief Gets a reverse const iterator to the first element of the hash set.
+         *
+         * @return A reverse const iterator to the first element of the hash set.
+         */
+        OTR_INLINE SlotIterator crend() const noexcept
+        {
+            return SlotIterator(m_Slots,
+                                m_Slots - 1,
+                                m_Capacity,
+                                m_SlotsInUse);
+        }
+
+    private:
         static constexpr Int64   k_63BitMask       = 0x7FFFFFFFFFFFFFFF;
         static constexpr UInt64  k_MaxCollisions   = 2;
         static constexpr UInt16  k_InitialCapacity = 3;
         static constexpr Float16 k_ResizingFactor  = static_cast<Float16>(1.5);
 
-        Slot* m_Slots = nullptr;
+        Slot<T>* m_Slots = nullptr;
         UInt64 m_Capacity             = 0;
         UInt64 m_Count                = 0;
         UInt64 m_CurrentMaxCollisions = 0;
@@ -473,7 +519,7 @@ namespace Otter
                                  ? k_InitialCapacity
                                  : HashUtils::GetNextPrime(m_Capacity * k_ResizingFactor);
 
-            Slot* newSlots = Buffer::New<Slot>(newCapacity);
+            Slot<T>* newSlots = Buffer::New<Slot<T>>(newCapacity);
             BitSet newSlotsInUse;
             BitSet newCollisions;
 
@@ -616,7 +662,7 @@ namespace Otter
 
         void Destroy()
         {
-            Buffer::Delete<Slot>(m_Slots, m_Capacity);
+            Buffer::Delete<Slot<T>>(m_Slots, m_Capacity);
 
             m_SlotsInUse.ClearDestructive();
             m_Collisions.ClearDestructive();
