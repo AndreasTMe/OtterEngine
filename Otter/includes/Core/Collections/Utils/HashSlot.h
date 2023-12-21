@@ -21,7 +21,7 @@ namespace Otter
         /**
          * @brief Constructor.
          */
-        Slot() : Data(), Hash(0) { }
+        Slot() : Data(), Hash(0), Next(nullptr) { }
 
         /**
          * @brief Destructor.
@@ -99,6 +99,20 @@ namespace Otter
             other.Next = nullptr;
 
             return *this;
+        }
+
+        /**
+         * @brief Sets the data of the slot.
+         *
+         * @param data The data to set.
+         * @param hash The hash of the data.
+         * @param next The next slot in the chain, if any.
+         */
+        void Set(const T& data, const UInt64 hash, Slot<T>* next = nullptr)
+        {
+            Data = data;
+            Hash = hash;
+            Next = next;
         }
     };
 }

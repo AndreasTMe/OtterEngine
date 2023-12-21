@@ -11,12 +11,12 @@ namespace Otter
     {
     public:
         SlotIterator(Slot<T>* head, Slot<T>* ptr, UInt64 capacity, const BitSet& slotsInUse) // NOLINT(*-pass-by-value)
-            : k_Head(head), m_Ptr(ptr), m_Capacity(capacity), m_SlotsInUse(slotsInUse)
+            : k_Head(head), k_Capacity(capacity), k_SlotsInUse(slotsInUse), m_Ptr(ptr)
         {
             if (k_Head == m_Ptr)
             {
                 auto index = 0;
-                while (index < m_Capacity && !m_SlotsInUse.Get(index))
+                while (index < k_Capacity && !k_SlotsInUse.Get(index))
                 {
                     m_Ptr++;
                     index++;
@@ -24,8 +24,8 @@ namespace Otter
             }
             else
             {
-                auto index = m_Capacity - 1;
-                while (k_Head < m_Ptr && !m_SlotsInUse.Get(index))
+                auto index = k_Capacity - 1;
+                while (k_Head < m_Ptr && !k_SlotsInUse.Get(index))
                 {
                     m_Ptr--;
                     index--;
@@ -38,10 +38,10 @@ namespace Otter
             m_Ptr++;
 
             auto index = m_Ptr - k_Head;
-            if (m_SlotsInUse.Get(index))
+            if (k_SlotsInUse.Get(index))
                 return *this;
 
-            while (index <= m_Capacity && !m_SlotsInUse.Get(index))
+            while (index <= k_Capacity && !k_SlotsInUse.Get(index))
             {
                 m_Ptr++;
                 index++;
@@ -62,10 +62,10 @@ namespace Otter
             m_Ptr--;
 
             auto index = m_Ptr - k_Head;
-            if (index >= 0 && m_SlotsInUse.Get(index))
+            if (index >= 0 && k_SlotsInUse.Get(index))
                 return *this;
 
-            while (k_Head < m_Ptr && !m_SlotsInUse.Get(index))
+            while (k_Head < m_Ptr && !k_SlotsInUse.Get(index))
             {
                 m_Ptr--;
                 index--;
@@ -89,10 +89,10 @@ namespace Otter
 
     private:
         const Slot<T>* const k_Head;
+        const UInt64 k_Capacity;
+        const BitSet k_SlotsInUse;
 
         Slot<T>* m_Ptr;
-        UInt64 m_Capacity;
-        BitSet m_SlotsInUse;
     };
 }
 

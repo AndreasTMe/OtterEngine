@@ -100,6 +100,8 @@ TEST_F(HashSet_Fixture, TryAdd)
     EXPECT_FALSE(hashSet.TryAdd(5));
     value = 12;
     EXPECT_TRUE(hashSet.TryAdd(value)); // Collision with previous value
+    value = 19;
+    EXPECT_TRUE(hashSet.TryAdd(value)); // Collision with previous value
 
     EXPECT_TRUE(hashSet.TryAdd(6));
     EXPECT_TRUE(hashSet.TryAdd(187)); // Current capacity: 11
@@ -107,7 +109,7 @@ TEST_F(HashSet_Fixture, TryAdd)
     EXPECT_TRUE(hashSet.TryAdd(374)); // Resized capacity: 17 -> Collision for capacity 11 and 17
     EXPECT_TRUE(hashSet.Contains(374));
 
-    EXPECT_EQ(hashSet.GetCount(), 12);
+    EXPECT_EQ(hashSet.GetCount(), 13);
     EXPECT_FALSE(hashSet.IsEmpty());
 }
 
@@ -207,7 +209,7 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
 
     auto footprint1 = hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>));
-    EXPECT_EQ(footprint1.GetSize(), 1);
+    EXPECT_EQ(footprint1.GetSize(), 3);
 
     auto* pointer1 = footprint1[0].GetData().GetPointer();
 
@@ -217,12 +219,17 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint1[0].Padding, 0);
     EXPECT_EQ(footprint1[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
+    EXPECT_EQ(footprint1[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint1[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint1[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint1[2].GetData().GetPointer(), nullptr);
+
     hashSet.TryAdd(6);
     hashSet.TryAdd(7);
     hashSet.TryAdd(8);
 
     auto footprint2 = hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>));
-    EXPECT_EQ(footprint2.GetSize(), 1);
+    EXPECT_EQ(footprint2.GetSize(), 3);
 
     EXPECT_EQ(footprint2[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
     EXPECT_NE(footprint2[0].GetData().GetPointer(), pointer1);
@@ -234,10 +241,15 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint2[0].Padding, 0);
     EXPECT_EQ(footprint2[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
+    EXPECT_EQ(footprint2[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint2[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint2[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint2[2].GetData().GetPointer(), nullptr);
+
     hashSet.ClearDestructive();
 
     auto footprint3 = hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>));
-    EXPECT_EQ(footprint3.GetSize(), 1);
+    EXPECT_EQ(footprint3.GetSize(), 3);
 
     EXPECT_EQ(footprint3[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
     EXPECT_EQ(footprint3[0].GetData().GetPointer(), nullptr);
@@ -245,6 +257,11 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint3[0].Offset, 0);
     EXPECT_EQ(footprint3[0].Padding, 0);
     EXPECT_EQ(footprint3[0].Alignment, 0);
+
+    EXPECT_EQ(footprint3[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_EQ(footprint3[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint3[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_EQ(footprint3[2].GetData().GetPointer(), nullptr);
 }
 
 TEST_F(HashSet_Fixture, Iterator)
