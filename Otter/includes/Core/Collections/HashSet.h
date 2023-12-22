@@ -254,100 +254,6 @@ namespace Otter
         }
 
         /**
-         * @brief Used to expand the size of the hashset.
-         *
-         * @param amount The amount to expand the hashset by.
-         */
-        void Expand(const UInt64 amount = 0)
-        {
-            UInt64 newCapacity = m_Capacity == 0
-                                 ? k_InitialCapacity
-                                 : HashUtils::GetNextPrime(m_Capacity * k_ResizingFactor);
-
-            Slot<T>* newSlots = Buffer::New<Slot<T>>(newCapacity);
-            BitSet newSlotsInUse;
-            BitSet newCollisions;
-
-            m_CurrentMaxCollisions = 0;
-
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (!HasItemStoredAt(i) || HasCollisionStoredAt(i))
-                    continue;
-
-                UInt64 hash  = m_Slots[i].Hash & k_63BitMask;
-                UInt64 index = hash % newCapacity;
-
-                if (!newSlotsInUse.Get(index))
-                {
-                    newSlots[index].Set(m_Slots[i].Data, hash);
-                    newSlotsInUse.Set(index, true);
-                    newCollisions.Set(index, false);
-                }
-            }
-
-            UInt64 currentEmptySlot = 0;
-
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (!HasCollisionStoredAt(i))
-                    continue;
-
-                UInt64 hash  = m_Slots[i].Hash & k_63BitMask;
-                UInt64 index = hash % newCapacity;
-
-                if (!newSlotsInUse.Get(index))
-                {
-                    newSlots[index].Set(m_Slots[i].Data, hash);
-                    newSlotsInUse.Set(index, true);
-                    newCollisions.Set(index, false);
-
-                    continue;
-                }
-
-                auto* slot = &newSlots[index];
-                auto collisionCount = 0;
-
-                while (slot)
-                {
-                    collisionCount++;
-
-                    if (!slot->Next)
-                        break;
-
-                    slot = slot->Next;
-                }
-
-                if (collisionCount > m_CurrentMaxCollisions)
-                    m_CurrentMaxCollisions = collisionCount;
-
-                while (currentEmptySlot < newCapacity)
-                {
-                    if (newSlotsInUse.Get(currentEmptySlot))
-                    {
-                        currentEmptySlot++;
-                        continue;
-                    }
-
-                    newSlots[currentEmptySlot].Set(m_Slots[i].Data, hash);
-                    newSlotsInUse.Set(currentEmptySlot, true);
-                    newCollisions.Set(currentEmptySlot, true);
-
-                    slot->Next = &newSlots[currentEmptySlot];
-                }
-            }
-
-            if (IsCreated())
-                Destroy();
-
-            m_Slots    = newSlots;
-            m_Capacity = newCapacity;
-
-            m_SlotsInUse = std::move(newSlotsInUse);
-            m_Collisions = std::move(newCollisions);
-        }
-
-        /**
          * @brief Checks if the hashset contains a given item.
          *
          * @param item The item to check for.
@@ -383,7 +289,7 @@ namespace Otter
          *
          * @return True if the item was found, false otherwise.
          */
-        bool TryGetIndex(const T& value, UInt64* outIndex) const
+        [[nodiscard]] bool TryGetIndex(const T& value, UInt64* outIndex) const
         {
             OTR_ASSERT_MSG(outIndex, "outIndex cannot be null.")
 
@@ -421,6 +327,20 @@ namespace Otter
 
                 callback(m_Slots[i].Data);
             }
+        }
+
+        void EnsureCapacity(const UInt64 capacity)
+        {
+            if (capacity <= m_Capacity)
+                return;
+
+            if (IsEmpty())
+            {
+                RecreateEmpty(HashUtils::GetNextPrime(capacity));
+                return;
+            }
+
+            Expand(capacity - m_Capacity);
         }
 
         /**
@@ -711,6 +631,88 @@ namespace Otter
          * @return True if the slot has a collision stored in it, false otherwise.
          */
         [[nodiscard]] bool HasCollisionStoredAt(const UInt64 index) const { return m_Collisions.Get(index); }
+
+        /**
+         * @brief Used to expand the size of the hashset.
+         */
+        void Expand(const UInt64 amount = 0)
+        {
+            UInt64 newCapacity = CalculateExpandCapacity(amount);
+
+            if (IsEmpty())
+            {
+                RecreateEmpty(newCapacity);
+                return;
+            }
+
+            HashSet<T> newHashSet;
+            newHashSet.RecreateEmpty(newCapacity);
+
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!HasItemStoredAt(i))
+                    continue;
+
+                newHashSet.TryAdd(m_Slots[i].Data);
+            }
+
+            if (IsCreated())
+                Destroy();
+
+            m_Slots = Buffer::New<Slot<T>>(newCapacity);
+            
+            for (UInt64 i = 0; i < newCapacity; i++)
+                if (newHashSet.HasItemStoredAt(i))
+                    m_Slots[i] = std::move(newHashSet.m_Slots[i]);
+
+            m_Capacity             = newHashSet.m_Capacity;
+            m_CurrentMaxCollisions = newHashSet.m_CurrentMaxCollisions;
+
+            m_SlotsInUse = std::move(newHashSet.m_SlotsInUse);
+            m_Collisions = std::move(newHashSet.m_Collisions);
+        }
+
+        /**
+         * @brief Recreates the hashset with a given capacity. Deletes any existing data.
+         *
+         * @param capacity The capacity to recreate the hashset with.
+         */
+        void RecreateEmpty(const UInt64 capacity)
+        {
+            if (IsCreated())
+                Destroy();
+
+            m_Slots    = capacity > 0 ? Buffer::New<Slot<T>>(capacity) : nullptr;
+            m_Capacity = capacity;
+            m_Count    = 0;
+
+            if (capacity == 0)
+                return;
+
+            m_SlotsInUse.Reserve(capacity);
+            m_Collisions.Reserve(capacity);
+        }
+
+        /**
+         * @brief Calculates the new capacity when expanding the hashset.
+         *
+         * @param expandAmount The amount to expand the hashset by.
+         *
+         * @return The new capacity.
+         */
+        [[nodiscard]] UInt64 CalculateExpandCapacity(const UInt64 expandAmount) const
+        {
+            UInt64 newCapacity;
+
+            if (expandAmount == 0)
+                newCapacity = m_Capacity == 0
+                              ? k_InitialCapacity
+                              : HashUtils::GetNextPrime(m_Capacity * k_ResizingFactor);
+            else
+                newCapacity = HashUtils::GetNextPrime(m_Capacity + expandAmount);
+
+            return newCapacity;
+        }
 
         /**
          * @brief Destroys the hashset.
