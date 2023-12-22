@@ -54,3 +54,15 @@ TEST(ReadOnlySpan, Initialisation_MoveSpan)
         EXPECT_EQ(span[i], 0);
     }
 }
+
+TEST(ReadOnlySpan, Iterator)
+{
+    ReadOnlySpan<int, 5> span = { 1, 2, 3, 4, 5 };
+
+    UInt64    i  = 0;
+    for (auto it = span.cbegin(); it != span.cend(); ++it)
+        EXPECT_EQ(*it, ++i);
+
+    for (auto it = span.crbegin(); it != span.crend(); --it)
+        EXPECT_EQ(*it, i--);
+}

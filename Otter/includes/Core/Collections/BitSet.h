@@ -164,7 +164,10 @@ namespace Otter
          */
         [[nodiscard]] bool Get(const UInt64 index) const
         {
-            OTR_INTERNAL_ASSERT_MSG(index < m_Size * UINT64_BITS, "Index out of range")
+            if (!IsCreated())
+                return false;
+
+            OTR_INTERNAL_ASSERT_MSG(index < GetBitsSize(), "Index out of range")
 
             UInt64 i = index / UINT64_BITS;
             UInt64 j = index % UINT64_BITS;
@@ -180,7 +183,11 @@ namespace Otter
          */
         void Set(const UInt64 index, const bool value)
         {
-            OTR_INTERNAL_ASSERT_MSG(index < m_Size * UINT64_BITS, "Index out of range")
+            if (!IsCreated())
+                Reserve(index + 1);
+
+            if (index >= GetBitsSize())
+                Expand(index - GetBitsSize() + 1);
 
             UInt64 i = index / UINT64_BITS;
             UInt64 j = index % UINT64_BITS;

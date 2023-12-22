@@ -89,3 +89,21 @@ TEST(Span, AsReadOnly)
     for (UInt64 i = 0; i < span.GetSize(); ++i)
         EXPECT_EQ(readOnly[i], span[i]);
 }
+
+TEST(Span, Iterator)
+{
+    Span<int, 5> span = { 1, 2, 3, 4, 5 };
+
+    UInt64 i = 0;
+    for (auto& element: span)
+        EXPECT_EQ(element, ++i);
+
+    for (auto it = span.rbegin(); it != span.rend(); --it)
+        EXPECT_EQ(*it, i--);
+
+    for (auto it = span.cbegin(); it != span.cend(); ++it)
+        EXPECT_EQ(*it, ++i);
+
+    for (auto it = span.crbegin(); it != span.crend(); --it)
+        EXPECT_EQ(*it, i--);
+}

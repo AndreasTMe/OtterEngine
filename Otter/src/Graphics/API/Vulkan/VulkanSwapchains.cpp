@@ -127,19 +127,27 @@ namespace Otter::Graphics::Vulkan
 
     VkSurfaceFormatKHR SelectSwapchainSurfaceFormat(const List<VkSurfaceFormatKHR>& surfaceFormats)
     {
-        for (const auto& surfaceFormat: surfaceFormats)
+        for (auto it = surfaceFormats.cbegin(); it != surfaceFormats.cend(); ++it)
+        {
+            auto surfaceFormat = *it;
+
             if (surfaceFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
                 surfaceFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
                 return surfaceFormat;
+        }
 
         return surfaceFormats[0];
     }
 
     VkPresentModeKHR SelectSwapchainPresentMode(const List<VkPresentModeKHR>& presentModes)
     {
-        for (const auto& presentMode: presentModes)
+        for (auto it = presentModes.cbegin(); it != presentModes.cend(); ++it)
+        {
+            auto presentMode = *it;
+
             if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
                 return presentMode;
+        }
 
         return VK_PRESENT_MODE_FIFO_KHR;
     }
@@ -187,11 +195,12 @@ namespace Otter::Graphics::Vulkan
         VkImageView tempSwapchainImageViews[swapchainImages.GetCount()];
 
         UInt64 index = 0;
-        for (const auto& swapchainImage: swapchainImages)
+
+        for (auto swapchainImage = swapchainImages.cbegin(); swapchainImage != swapchainImages.cend(); ++swapchainImage)
         {
             VkImageViewCreateInfo createInfo{ };
             createInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            createInfo.image                           = swapchainImage;
+            createInfo.image                           = *swapchainImage;
             createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
             createInfo.format                          = imageFormat;
             createInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;

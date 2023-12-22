@@ -82,3 +82,15 @@ TEST_F(ReadOnlyArray_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint[0].Padding, 0);
     EXPECT_EQ(footprint[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 }
+
+TEST_F(ReadOnlyArray_Fixture, Iterator)
+{
+    ReadOnlyArray<int, 5> array = { 1, 2, 3, 4, 5 };
+
+    UInt64    i  = 0;
+    for (auto it = array.cbegin(); it != array.cend(); ++it)
+        EXPECT_EQ(*it, ++i);
+
+    for (auto it = array.crbegin(); it != array.crend(); --it)
+        EXPECT_EQ(*it, i--);
+}

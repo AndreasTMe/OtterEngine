@@ -5,6 +5,8 @@
 template<typename T>
 using HashSet = Otter::HashSet<T>;
 
+using HashUtils = Otter::Internal::HashUtils;
+
 class HashSet_Fixture : public ::testing::Test
 {
 protected:
@@ -23,6 +25,7 @@ TEST_F(HashSet_Fixture, Initialisation_Default)
 {
     HashSet<int> hashSet;
 
+    EXPECT_EQ(hashSet.GetCapacity(), 0);
     EXPECT_EQ(hashSet.GetCount(), 0);
     EXPECT_TRUE(hashSet.IsEmpty());
     EXPECT_FALSE(hashSet.IsCreated());
@@ -32,11 +35,13 @@ TEST_F(HashSet_Fixture, Initialisation_FromInitialisationList)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 4, 4, 5 };
 
+    EXPECT_EQ(hashSet.GetCapacity(), 7);
     EXPECT_EQ(hashSet.GetCount(), 5);
     EXPECT_FALSE(hashSet.IsEmpty());
 
-    hashSet = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    hashSet = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10 };
 
+    EXPECT_EQ(hashSet.GetCapacity(), 11);
     EXPECT_EQ(hashSet.GetCount(), 10);
     EXPECT_FALSE(hashSet.IsEmpty());
 }
@@ -81,31 +86,59 @@ TEST_F(HashSet_Fixture, Assignment_Move)
     EXPECT_FALSE(move.IsEmpty());
 }
 
-TEST_F(HashSet_Fixture, TryAdd)
+TEST_F(HashSet_Fixture, TryAdd_SimpleCases)
 {
     HashSet<int> hashSet;
 
-    int value = 2;
     EXPECT_TRUE(hashSet.TryAdd(1));
+
+    int value = 2;
     EXPECT_TRUE(hashSet.TryAdd(value));
-    EXPECT_FALSE(hashSet.TryAdd(value));
+    EXPECT_FALSE(hashSet.TryAdd(value)) << "Value already exists";
     EXPECT_TRUE(hashSet.TryAdd(3));
 
+    UInt64 capacity = HashSet<int>::GetDefaultInitialCapacity();
+    EXPECT_EQ(hashSet.GetCapacity(), capacity);
+
     EXPECT_TRUE(hashSet.TryAdd(4));
-    EXPECT_TRUE(hashSet.TryAdd(11)); // Collision with previous value
-    EXPECT_TRUE(hashSet.TryAdd(18)); // Collision with previous value
-    EXPECT_TRUE(hashSet.TryAdd(25)); // Collision with previous value
+    EXPECT_NE(hashSet.GetCapacity(), capacity) << "Capacity should have increased";
+    EXPECT_EQ(hashSet.GetCapacity(), HashUtils::GetNextPrime(hashSet.GetCount() * HashSet<int>::GetResizingFactor()));
+    capacity = hashSet.GetCapacity();
 
-    EXPECT_TRUE(hashSet.TryAdd(5));
-    EXPECT_FALSE(hashSet.TryAdd(5));
-    value = 12;
-    EXPECT_TRUE(hashSet.TryAdd(value)); // Collision with previous value
-
-    EXPECT_EQ(hashSet.GetCount(), 9);
-    EXPECT_FALSE(hashSet.IsEmpty());
+    EXPECT_TRUE(hashSet.TryAdd(11)) << "Collision with 4, should be added";
+    EXPECT_TRUE(hashSet.TryAdd(18)) << "Collision with 4, should be added";
+    EXPECT_TRUE(hashSet.TryAdd(25)) << "Collision with 4, should be added";
+    EXPECT_NE(hashSet.GetCapacity(), capacity) << "Capacity should have increased";
+    EXPECT_EQ(hashSet.GetCapacity(), HashUtils::GetNextPrime(hashSet.GetCount() * HashSet<int>::GetResizingFactor()));
 }
 
-TEST_F(HashSet_Fixture, TryRemove)
+TEST_F(HashSet_Fixture, TryAdd_CollisionSlots)
+{
+    HashSet<int> hashSet;
+
+    EXPECT_TRUE(hashSet.TryAdd(0));
+    UInt64 capacity = HashSet<int>::GetDefaultInitialCapacity();
+    EXPECT_EQ(hashSet.GetCapacity(), capacity);
+
+    UInt64 index = 0;
+    EXPECT_TRUE(hashSet.TryGetIndex(0, &index));
+    EXPECT_EQ(index, 0) << "0 should be at index 0";
+
+    EXPECT_TRUE(hashSet.TryAdd(3)) << "Collision with 0, should be added";
+    EXPECT_TRUE(hashSet.TryGetIndex(3, &index));
+    EXPECT_EQ(index, 1) << "0 should be at index 0, and since 3 is a collision, it should be at index 1 (next "
+                           "available slot)";
+
+    EXPECT_TRUE(hashSet.TryAdd(1)) << "Collision with item at index 1, should be added";
+    EXPECT_TRUE(hashSet.TryGetIndex(1, &index));
+    EXPECT_EQ(index, 1) << "1 should replace item at index 1";
+    EXPECT_TRUE(hashSet.TryGetIndex(3, &index));
+    EXPECT_EQ(index, 2) << "3 should have been moved to index 2, since it was a collision (next available slot)";
+
+    EXPECT_EQ(hashSet.GetCapacity(), capacity) << "Capacity should not have increased";
+}
+
+TEST_F(HashSet_Fixture, TryRemove_SimpleCases)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
 
@@ -113,6 +146,7 @@ TEST_F(HashSet_Fixture, TryRemove)
     EXPECT_TRUE(hashSet.TryRemove(1));
     EXPECT_TRUE(hashSet.TryRemove(value));
     EXPECT_TRUE(hashSet.TryRemove(3));
+    EXPECT_FALSE(hashSet.TryRemove(11)) << "Collision with 4, should not be removed";
     EXPECT_TRUE(hashSet.TryRemove(4));
     EXPECT_TRUE(hashSet.TryRemove(5));
 
@@ -124,6 +158,17 @@ TEST_F(HashSet_Fixture, TryRemove)
 
     EXPECT_EQ(hashSet.GetCount(), 0);
     EXPECT_TRUE(hashSet.IsEmpty());
+}
+
+TEST_F(HashSet_Fixture, TryRemove_Collisions)
+{
+    HashSet<int> hashSet = { 0, 3, 6 };
+
+    EXPECT_TRUE(hashSet.TryRemove(3));
+
+    hashSet = { 0, 3, 6 };
+
+    EXPECT_FALSE(hashSet.TryRemove(9)) << "Collision with all items, should not be removed";
 }
 
 TEST_F(HashSet_Fixture, Contains)
@@ -152,6 +197,8 @@ TEST_F(HashSet_Fixture, ForEach)
                     {
                         EXPECT_EQ(value, ++count);
                     });
+
+    EXPECT_EQ(count, 5);
 }
 
 TEST_F(HashSet_Fixture, Clear)
@@ -161,11 +208,23 @@ TEST_F(HashSet_Fixture, Clear)
     EXPECT_EQ(hashSet.GetCount(), 5);
     EXPECT_FALSE(hashSet.IsEmpty());
 
+    EXPECT_FALSE(hashSet.TryAdd(1));
+    EXPECT_FALSE(hashSet.TryAdd(2));
+    EXPECT_FALSE(hashSet.TryAdd(3));
+    EXPECT_FALSE(hashSet.TryAdd(4));
+    EXPECT_FALSE(hashSet.TryAdd(5));
+
     hashSet.Clear();
 
     EXPECT_EQ(hashSet.GetCount(), 0);
     EXPECT_TRUE(hashSet.IsEmpty());
     EXPECT_TRUE(hashSet.IsCreated());
+
+    EXPECT_TRUE(hashSet.TryAdd(1));
+    EXPECT_TRUE(hashSet.TryAdd(2));
+    EXPECT_TRUE(hashSet.TryAdd(3));
+    EXPECT_TRUE(hashSet.TryAdd(4));
+    EXPECT_TRUE(hashSet.TryAdd(5));
 }
 
 TEST_F(HashSet_Fixture, ClearDestructive)
@@ -184,196 +243,79 @@ TEST_F(HashSet_Fixture, ClearDestructive)
 
 TEST_F(HashSet_Fixture, GetMemoryFootprint)
 {
-    HashSet<int> hashSet          = { 1, 2, 3, 4, 5 };
-    UInt64       expectedCapacity = Otter::Internal::HashUtils::GetNextPrime(5);
-    UInt64       hashSetByteSize  = 0;
+    HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
 
-    UInt64 footprintsSize = 0;
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1 + expectedCapacity);
+    auto footprint1 = hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>));
+    EXPECT_EQ(footprint1.GetSize(), 3);
 
-    auto* footprints1 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), footprints1, &footprintsSize);
+    auto* pointer1 = footprint1[0].GetData().GetPointer();
 
-    EXPECT_EQ(footprints1[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
-    EXPECT_NE(footprints1[0].GetData().GetPointer(), nullptr);
-    EXPECT_EQ(footprints1[0].Size, OTR_ALLOCATED_MEMORY(Otter::Bucket<int>, expectedCapacity));
-    EXPECT_EQ(footprints1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
-    EXPECT_EQ(footprints1[0].Padding, 0);
-    EXPECT_EQ(footprints1[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
+    EXPECT_EQ(footprint1[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
+    EXPECT_NE(pointer1, nullptr);
+    EXPECT_NE(footprint1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
+    EXPECT_EQ(footprint1[0].Padding, 0);
+    EXPECT_EQ(footprint1[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-    hashSetByteSize += footprints1[0].Size;
-
-    for (UInt64 i = 1; i < footprintsSize; ++i)
-    {
-        EXPECT_EQ(footprints1[i].GetData().GetName(), "bucket_" + std::to_string(i - 1));
-
-        if (footprints1[i].GetData().GetPointer())
-        {
-            EXPECT_EQ(footprints1[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints1[i].Offset, Otter::MemorySystem::GetMemorySize());
-            EXPECT_EQ(footprints1[i].Padding, 0);
-            EXPECT_EQ(footprints1[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-            hashSetByteSize += footprints1[i].Size;
-        }
-        else
-        {
-            EXPECT_EQ(footprints1[i].Size, 0);
-            EXPECT_EQ(footprints1[i].Offset, 0);
-            EXPECT_EQ(footprints1[i].Padding, 0);
-            EXPECT_EQ(footprints1[i].Alignment, 0);
-        }
-    }
-
-    const void* const firstAllocationPointer = footprints1[0].GetData().GetPointer();
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints1, footprintsSize);
-
-    EXPECT_EQ(hashSetByteSize, Otter::MemorySystem::GetUsedMemory())
-                    << "HashSet should have allocated " << hashSetByteSize
-                    << " bytes of memory but has allocated "
-                    << Otter::MemorySystem::GetUsedMemory()
-                    << " bytes instead";
+    EXPECT_EQ(footprint1[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint1[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint1[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint1[2].GetData().GetPointer(), nullptr);
 
     hashSet.TryAdd(6);
     hashSet.TryAdd(7);
-
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1 + expectedCapacity);
-
-    auto* footprints2 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), footprints2, &footprintsSize);
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints2, footprintsSize);
-
     hashSet.TryAdd(8);
 
-    expectedCapacity = Otter::Internal::HashUtils::GetNextPrime(8);
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1 + expectedCapacity)
-                    << "Capacity should have increased because of the new element, capacity should now be 11";
+    auto footprint2 = hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>));
+    EXPECT_EQ(footprint2.GetSize(), 3);
 
-    auto* footprints3 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), footprints3, &footprintsSize);
+    EXPECT_EQ(footprint2[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), pointer1);
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), nullptr);
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), footprint1[0].GetData().GetPointer())
+                    << "Pointer should have changed because of capacity increase (reallocation)";
+    EXPECT_NE(footprint2[0].Offset, footprint1[0].Offset)
+                    << "Offset should have changed because of capacity increase (reallocation)";
+    EXPECT_EQ(footprint2[0].Padding, 0);
+    EXPECT_EQ(footprint2[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-    EXPECT_EQ(footprints3[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
-    EXPECT_NE(footprints3[0].GetData().GetPointer(), firstAllocationPointer);
-    EXPECT_EQ(footprints3[0].Size, OTR_ALLOCATED_MEMORY(Otter::Bucket<int>, expectedCapacity));
-    EXPECT_LT(footprints3[0].Offset, Otter::MemorySystem::GetMemorySize());
-    EXPECT_EQ(footprints3[0].Padding, 0);
-    EXPECT_EQ(footprints3[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-    hashSetByteSize = footprints3[0].Size;
-
-    for (UInt64 i = 1; i < footprintsSize; ++i)
-    {
-        EXPECT_EQ(footprints3[i].GetData().GetName(), "bucket_" + std::to_string(i - 1));
-
-        if (footprints3[i].GetData().GetPointer())
-        {
-            EXPECT_EQ(footprints3[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints3[i].Offset, Otter::MemorySystem::GetMemorySize());
-            EXPECT_EQ(footprints3[i].Padding, 0);
-            EXPECT_EQ(footprints3[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-            hashSetByteSize += footprints3[i].Size;
-        }
-        else
-        {
-            EXPECT_EQ(footprints3[i].Size, 0);
-            EXPECT_EQ(footprints3[i].Offset, 0);
-            EXPECT_EQ(footprints3[i].Padding, 0);
-            EXPECT_EQ(footprints3[i].Alignment, 0);
-        }
-    }
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints3, footprintsSize);
-
-    EXPECT_EQ(hashSetByteSize, Otter::MemorySystem::GetUsedMemory())
-                    << "HashSet should have allocated " << hashSetByteSize
-                    << " bytes of memory but has allocated "
-                    << Otter::MemorySystem::GetUsedMemory()
-                    << " bytes instead";
-
-    hashSet.TryAdd(9);
-    hashSet.TryAdd(10);
-    hashSet.TryAdd(11);
-    hashSet.TryAdd(12);
-    hashSet.TryAdd(13);
-    hashSet.TryAdd(14);
-
-    expectedCapacity = Otter::Internal::HashUtils::GetNextPrime(14);
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1 + expectedCapacity)
-                    << "Capacity should have increased because of the new element, capacity should now be 17";
-
-    auto* footprints4 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), footprints4, &footprintsSize);
-
-    EXPECT_EQ(footprints4[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
-    EXPECT_NE(footprints4[0].GetData().GetPointer(), firstAllocationPointer);
-    EXPECT_EQ(footprints4[0].Size, OTR_ALLOCATED_MEMORY(Otter::Bucket<int>, expectedCapacity));
-    EXPECT_LT(footprints4[0].Offset, Otter::MemorySystem::GetMemorySize());
-    EXPECT_EQ(footprints4[0].Padding, 0);
-    EXPECT_EQ(footprints4[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-    hashSetByteSize = footprints4[0].Size;
-
-    for (UInt64 i = 1; i < footprintsSize; ++i)
-    {
-        EXPECT_EQ(footprints4[i].GetData().GetName(), "bucket_" + std::to_string(i - 1));
-
-        if (footprints4[i].GetData().GetPointer())
-        {
-            EXPECT_EQ(footprints4[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints4[i].Offset, Otter::MemorySystem::GetMemorySize());
-            EXPECT_EQ(footprints4[i].Padding, 0);
-            EXPECT_EQ(footprints4[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-            hashSetByteSize += footprints4[i].Size;
-        }
-        else
-        {
-            EXPECT_EQ(footprints4[i].Size, 0);
-            EXPECT_EQ(footprints4[i].Offset, 0);
-            EXPECT_EQ(footprints4[i].Padding, 0);
-            EXPECT_EQ(footprints4[i].Alignment, 0);
-        }
-    }
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints4, footprintsSize);
-
-    EXPECT_EQ(hashSetByteSize, Otter::MemorySystem::GetUsedMemory())
-                    << "HashSet should have allocated " << hashSetByteSize
-                    << " bytes of memory but has allocated "
-                    << Otter::MemorySystem::GetUsedMemory()
-                    << " bytes instead";
-
-    hashSet.TryAdd(15);
-    hashSet.TryAdd(16);
-    hashSet.TryAdd(17);
-    hashSet.TryAdd(18);
+    EXPECT_EQ(footprint2[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint2[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint2[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint2[2].GetData().GetPointer(), nullptr);
 
     hashSet.ClearDestructive();
 
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1)
-                    << "Capacity should be 0 after destructive clear, should just contain the buckets list";
+    auto footprint3 = hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>));
+    EXPECT_EQ(footprint3.GetSize(), 3);
 
-    auto* footprints5 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    hashSet.GetMemoryFootprint(OTR_NAME_OF(HashSet<int>), footprints5, &footprintsSize);
+    EXPECT_EQ(footprint3[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
+    EXPECT_EQ(footprint3[0].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint3[0].Size, 0);
+    EXPECT_EQ(footprint3[0].Offset, 0);
+    EXPECT_EQ(footprint3[0].Padding, 0);
+    EXPECT_EQ(footprint3[0].Alignment, 0);
 
-    EXPECT_EQ(footprints5[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
-    EXPECT_EQ(footprints5[0].GetData().GetPointer(), nullptr);
-    EXPECT_EQ(footprints5[0].Size, 0);
-    EXPECT_EQ(footprints5[0].Offset, 0);
-    EXPECT_EQ(footprints5[0].Padding, 0);
-    EXPECT_EQ(footprints5[0].Alignment, 0);
+    EXPECT_EQ(footprint3[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_EQ(footprint3[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint3[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_EQ(footprint3[2].GetData().GetPointer(), nullptr);
+}
 
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints5, footprintsSize);
+TEST_F(HashSet_Fixture, Iterator)
+{
+    int          temp[]  = { 1, 2, 5, 6 };
+    HashSet<int> hashSet = { 1, 2, 5, 6 };
 
-    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0)
-                    << "HashSet should have allocated 0 bytes of memory but has allocated "
-                    << Otter::MemorySystem::GetUsedMemory() << " bytes instead";
+    UInt64    i  = 0;
+    for (auto it = hashSet.cbegin(); it != hashSet.cend(); ++it)
+    {
+        EXPECT_EQ(*it, temp[i]);
+        ++i;
+    }
+
+    for (auto it = hashSet.crbegin(); it != hashSet.crend(); --it)
+    {
+        EXPECT_EQ(*it, temp[i]);
+        --i;
+    }
 }
