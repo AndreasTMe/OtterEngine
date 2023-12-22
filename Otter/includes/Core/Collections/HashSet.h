@@ -51,11 +51,7 @@ namespace Otter
         HashSet(InitialiserList<T> list)
             : HashSet()
         {
-            m_Capacity = HashUtils::GetNextPrime(list.size());
-
-            if (m_Capacity < k_InitialCapacity)
-                m_Capacity = k_InitialCapacity;
-
+            m_Capacity             = k_InitialCapacity;
             m_Slots                = Buffer::New<Slot<T>>(m_Capacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
@@ -230,7 +226,7 @@ namespace Otter
 
             auto* slot = &m_Slots[index];
 
-            while (HasItemStoredAt(slot - m_Slots) && slot->Data != value)
+            while (HasItemStoredAt(slot - m_Slots) && !slot->Matches(value, hash))
             {
                 if (!slot->Next)
                     return false;
@@ -238,227 +234,31 @@ namespace Otter
                 slot = slot->Next;
             }
 
-            if (HasItemStoredAt(slot - m_Slots) && slot->Data == value && slot->Hash == hash)
+            if (slot->Next)
             {
-                if (slot->Next)
-                {
-                    if constexpr (std::is_move_assignable_v<T>)
-                        slot->Data = std::move(slot->Next->Data);
-                    else
-                        slot->Data = slot->Next->Data;
+                if constexpr (std::is_move_assignable_v<T>)
+                    slot->Data = std::move(slot->Next->Data);
+                else
+                    slot->Data = slot->Next->Data;
 
-                    slot->Hash = slot->Next->Hash;
-                    slot->Next = slot->Next->Next;
-
-                    m_Count--;
-
-                    return true;
-                }
-
-                m_SlotsInUse.Set(slot - m_Slots, false);
-                m_Collisions.Set(slot - m_Slots, false);
-                m_Count--;
-
-                return true;
+                slot->Hash = slot->Next->Hash;
+                slot->Next = slot->Next->Next;
             }
 
-            return false;
+            m_SlotsInUse.Set(slot - m_Slots, false);
+            m_Collisions.Set(slot - m_Slots, false);
+
+            m_Count--;
+
+            return true;
         }
-
-        /**
-         * @brief Checks if the hashset contains a given item.
-         *
-         * @param item The item to check for.
-         *
-         * @return True if the hashset contains the item, false otherwise.
-         */
-        [[nodiscard]] bool Contains(const T& value) const
-        {
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
-            UInt64 index = hash % m_Capacity;
-
-            if (!HasItemStoredAt(index))
-                return false;
-
-            auto* slot = &m_Slots[index];
-
-            while (HasItemStoredAt(slot - m_Slots) && slot->Data != value)
-            {
-                if (!slot->Next)
-                    return false;
-
-                slot = slot->Next;
-            }
-
-            if (HasItemStoredAt(slot - m_Slots) && slot->Data == value && slot->Hash == hash)
-                return true;
-
-            return false;
-        }
-
-        /**
-         * @brief Performs a given callback on each item in the hashset.
-         *
-         * @param callback The callback to perform.
-         */
-        void ForEach(Function<void(const T&)> callback) const
-        {
-            for (UInt64 i = 0; i < m_Capacity; i++)
-            {
-                if (!HasItemStoredAt(i))
-                    continue;
-
-                callback(m_Slots[i].Data);
-            }
-        }
-
-        /**
-         * @brief Clears the hashset.
-         */
-        void Clear()
-        {
-            if (!IsCreated())
-                return;
-
-            m_SlotsInUse.Clear();
-            m_Collisions.Clear();
-
-            m_Count = 0;
-        }
-
-        /**
-         * @brief Clears the hashset and deletes the data.
-         */
-        void ClearDestructive()
-        {
-            if (IsCreated())
-                Destroy();
-
-            m_Slots    = nullptr;
-            m_Capacity = 0;
-            m_Count    = 0;
-        }
-
-#if !OTR_RUNTIME
-        /**
-         * @brief Gets the memory footprint of the hashset.
-         *
-         * @param debugName The name of the hashset for debugging purposes.
-         *
-         * @return The memory footprint of the hashset.
-         */
-        [[nodiscard]] ReadOnlySpan<MemoryFootprint, 3> GetMemoryFootprint(const char* const debugName) const
-        {
-            MemoryFootprint footprint = { };
-            MemorySystem::CheckMemoryFootprint([&]()
-                                               {
-                                                   MemoryDebugPair pair[1];
-                                                   pair[0] = { debugName, m_Slots };
-
-                                                   return MemoryDebugHandle{ pair, 1 };
-                                               },
-                                               &footprint,
-                                               nullptr);
-
-            auto slotsInUseFootprint = m_SlotsInUse.GetMemoryFootprint(OTR_NAME_OF(BitSet));
-            auto collisionsFootprint = m_Collisions.GetMemoryFootprint(OTR_NAME_OF(BitSet));
-
-            return ReadOnlySpan<MemoryFootprint, 3>{ footprint, slotsInUseFootprint[0], collisionsFootprint[0] };
-        }
-#endif
-
-        /**
-         * @brief Gets the item count of the hashset.
-         *
-         * @return The item count of the hashset.
-         */
-        [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
-
-        /**
-         * @brief Checks whether the hashset has been created. A hashset is created when it has been initialised
-         * with a valid capacity and has not been destroyed.
-         *
-         * @return True if the hashset has been created, false otherwise.
-         */
-        [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Slots && m_Capacity > 0; }
-
-        /**
-         * @brief Checks whether the hashset is empty.
-         *
-         * @return True if the hashset is empty, false otherwise.
-         */
-        [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
-
-        /**
-         * @brief Gets a const iterator to the first element of the hash set.
-         *
-         * @return A const iterator to the first element of the hash set.
-         */
-        OTR_INLINE SlotIterator cbegin() const noexcept
-        {
-            return SlotIterator(m_Slots,
-                                m_Slots,
-                                m_Capacity,
-                                m_SlotsInUse);
-        }
-
-        /**
-         * @brief Gets a const iterator to the last element of the hash set.
-         *
-         * @return A const iterator to the last element of the hash set.
-         */
-        OTR_INLINE SlotIterator cend() const noexcept
-        {
-            return SlotIterator(m_Slots,
-                                m_Slots + m_Capacity - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
-        }
-
-        /**
-         * @brief Gets a reverse const iterator to the last element of the hash set.
-         *
-         * @return A reverse const iterator to the last element of the hash set.
-         */
-        OTR_INLINE SlotIterator crbegin() const noexcept
-        {
-            return SlotIterator(m_Slots,
-                                m_Slots + m_Capacity - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
-        }
-
-        /**
-         * @brief Gets a reverse const iterator to the first element of the hash set.
-         *
-         * @return A reverse const iterator to the first element of the hash set.
-         */
-        OTR_INLINE SlotIterator crend() const noexcept
-        {
-            return SlotIterator(m_Slots,
-                                m_Slots - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
-        }
-
-    private:
-        static constexpr Int64   k_63BitMask       = 0x7FFFFFFFFFFFFFFF;
-        static constexpr UInt64  k_MaxCollisions   = 2;
-        static constexpr UInt16  k_InitialCapacity = 3;
-        static constexpr Float16 k_ResizingFactor  = static_cast<Float16>(1.5);
-
-        Slot<T>* m_Slots = nullptr;
-        UInt64 m_Capacity             = 0;
-        UInt64 m_Count                = 0;
-        UInt64 m_CurrentMaxCollisions = 0;
-
-        BitSet m_SlotsInUse{ };
-        BitSet m_Collisions{ };
 
         /**
          * @brief Used to expand the size of the hashset.
+         *
+         * @param amount The amount to expand the hashset by.
          */
-        void Expand()
+        void Expand(const UInt64 amount = 0)
         {
             UInt64 newCapacity = m_Capacity == 0
                                  ? k_InitialCapacity
@@ -546,6 +346,249 @@ namespace Otter
             m_SlotsInUse = std::move(newSlotsInUse);
             m_Collisions = std::move(newCollisions);
         }
+
+        /**
+         * @brief Checks if the hashset contains a given item.
+         *
+         * @param item The item to check for.
+         *
+         * @return True if the hashset contains the item, false otherwise.
+         */
+        [[nodiscard]] bool Contains(const T& value) const
+        {
+            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (!HasItemStoredAt(index))
+                return false;
+
+            auto* slot = &m_Slots[index];
+
+            while (HasItemStoredAt(slot - m_Slots) && !slot->Matches(value, hash))
+            {
+                if (!slot->Next)
+                    return false;
+
+                slot = slot->Next;
+            }
+
+            return true;
+        }
+
+        /**
+         * @brief Tries to get the index of an item in the hashset.
+         *
+         * @param value The item to get the index of.
+         * @param outIndex The index of the item.
+         *
+         * @return True if the item was found, false otherwise.
+         */
+        bool TryGetIndex(const T& value, UInt64* outIndex) const
+        {
+            OTR_ASSERT_MSG(outIndex, "outIndex cannot be null.")
+
+            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (!HasItemStoredAt(index))
+                return false;
+
+            auto* slot = &m_Slots[index];
+
+            while (HasItemStoredAt(slot - m_Slots) && !slot->Matches(value, hash))
+            {
+                if (!slot->Next)
+                    return false;
+
+                slot = slot->Next;
+            }
+
+            *outIndex = slot - m_Slots;
+            return true;
+        }
+
+        /**
+         * @brief Performs a given callback on each item in the hashset.
+         *
+         * @param callback The callback to perform.
+         */
+        void ForEach(Function<void(const T&)> callback) const
+        {
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!HasItemStoredAt(i))
+                    continue;
+
+                callback(m_Slots[i].Data);
+            }
+        }
+
+        /**
+         * @brief Clears the hashset.
+         */
+        void Clear()
+        {
+            if (!IsCreated())
+                return;
+
+            m_SlotsInUse.Clear();
+            m_Collisions.Clear();
+
+            m_Count = 0;
+        }
+
+        /**
+         * @brief Clears the hashset and deletes the data.
+         */
+        void ClearDestructive()
+        {
+            if (IsCreated())
+                Destroy();
+
+            m_Slots    = nullptr;
+            m_Capacity = 0;
+            m_Count    = 0;
+        }
+
+#if !OTR_RUNTIME
+        /**
+         * @brief Gets the memory footprint of the hashset.
+         *
+         * @param debugName The name of the hashset for debugging purposes.
+         *
+         * @return The memory footprint of the hashset.
+         */
+        [[nodiscard]] ReadOnlySpan<MemoryFootprint, 3> GetMemoryFootprint(const char* const debugName) const
+        {
+            MemoryFootprint footprint = { };
+            MemorySystem::CheckMemoryFootprint([&]()
+                                               {
+                                                   MemoryDebugPair pair[1];
+                                                   pair[0] = { debugName, m_Slots };
+
+                                                   return MemoryDebugHandle{ pair, 1 };
+                                               },
+                                               &footprint,
+                                               nullptr);
+
+            auto slotsInUseFootprint = m_SlotsInUse.GetMemoryFootprint(OTR_NAME_OF(BitSet));
+            auto collisionsFootprint = m_Collisions.GetMemoryFootprint(OTR_NAME_OF(BitSet));
+
+            return ReadOnlySpan<MemoryFootprint, 3>{ footprint, slotsInUseFootprint[0], collisionsFootprint[0] };
+        }
+#endif
+
+        /**
+         * @brief Gets the item capacity of the hashset.
+         *
+         * @return The capacity of the hashset.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetCapacity() const noexcept { return m_Capacity; }
+
+        /**
+         * @brief Gets the item count of the hashset.
+         *
+         * @return The item count of the hashset.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
+
+        /**
+         * @brief Gets the default initial capacity of the hashset.
+         *
+         * @return The default initial capacity of the hashset.
+         */
+        [[nodiscard]] OTR_INLINE static constexpr UInt16 GetDefaultInitialCapacity() noexcept
+        {
+            return k_InitialCapacity;
+        }
+
+        /**
+         * @brief Gets the resizing factor of the hashset.
+         *
+         * @return The resizing factor of the hashset.
+         */
+        [[nodiscard]] OTR_INLINE static constexpr Float16 GetResizingFactor() noexcept { return k_ResizingFactor; }
+
+        /**
+         * @brief Checks whether the hashset has been created. A hashset is created when it has been initialised
+         * with a valid capacity and has not been destroyed.
+         *
+         * @return True if the hashset has been created, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Slots && m_Capacity > 0; }
+
+        /**
+         * @brief Checks whether the hashset is empty.
+         *
+         * @return True if the hashset is empty, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
+
+        /**
+         * @brief Gets a const iterator to the first element of the hash set.
+         *
+         * @return A const iterator to the first element of the hash set.
+         */
+        OTR_INLINE SlotIterator cbegin() const noexcept
+        {
+            return SlotIterator(m_Slots,
+                                m_Slots,
+                                m_Capacity,
+                                m_SlotsInUse);
+        }
+
+        /**
+         * @brief Gets a const iterator to the last element of the hash set.
+         *
+         * @return A const iterator to the last element of the hash set.
+         */
+        OTR_INLINE SlotIterator cend() const noexcept
+        {
+            return SlotIterator(m_Slots,
+                                m_Slots + m_Capacity - 1,
+                                m_Capacity,
+                                m_SlotsInUse);
+        }
+
+        /**
+         * @brief Gets a reverse const iterator to the last element of the hash set.
+         *
+         * @return A reverse const iterator to the last element of the hash set.
+         */
+        OTR_INLINE SlotIterator crbegin() const noexcept
+        {
+            return SlotIterator(m_Slots,
+                                m_Slots + m_Capacity - 1,
+                                m_Capacity,
+                                m_SlotsInUse);
+        }
+
+        /**
+         * @brief Gets a reverse const iterator to the first element of the hash set.
+         *
+         * @return A reverse const iterator to the first element of the hash set.
+         */
+        OTR_INLINE SlotIterator crend() const noexcept
+        {
+            return SlotIterator(m_Slots,
+                                m_Slots - 1,
+                                m_Capacity,
+                                m_SlotsInUse);
+        }
+
+    private:
+        static constexpr Int64   k_63BitMask       = 0x7FFFFFFFFFFFFFFF;
+        static constexpr UInt64  k_MaxCollisions   = 2;
+        static constexpr UInt16  k_InitialCapacity = 3;
+        static constexpr Float16 k_ResizingFactor  = static_cast<Float16>(1.5);
+
+        Slot<T>* m_Slots = nullptr;
+        UInt64 m_Capacity             = 0;
+        UInt64 m_Count                = 0;
+        UInt64 m_CurrentMaxCollisions = 0;
+
+        BitSet m_SlotsInUse{ };
+        BitSet m_Collisions{ };
 
         /**
          * @brief Tries to add an item to an empty slot in the hashset.

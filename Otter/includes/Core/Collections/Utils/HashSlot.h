@@ -108,11 +108,24 @@ namespace Otter
          * @param hash The hash of the data.
          * @param next The next slot in the chain, if any.
          */
-        void Set(const T& data, const UInt64 hash, Slot<T>* next = nullptr)
+        OTR_INLINE void Set(const T& data, const UInt64 hash, Slot<T>* next = nullptr)
         {
             Data = data;
             Hash = hash;
             Next = next;
+        }
+
+        /**
+         * @brief Checks if the slot matches the given data and hash.
+         *
+         * @param data The data to check.
+         * @param hash The hash to check.
+         *
+         * @return True if the slot matches the data and hash, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool Matches(const T& data, const UInt64 hash) const
+        {
+            return Data == data && Hash == hash;
         }
     };
 }

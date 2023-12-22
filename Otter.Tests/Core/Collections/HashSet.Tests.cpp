@@ -5,6 +5,8 @@
 template<typename T>
 using HashSet = Otter::HashSet<T>;
 
+using HashUtils = Otter::Internal::HashUtils;
+
 class HashSet_Fixture : public ::testing::Test
 {
 protected:
@@ -23,6 +25,7 @@ TEST_F(HashSet_Fixture, Initialisation_Default)
 {
     HashSet<int> hashSet;
 
+    EXPECT_EQ(hashSet.GetCapacity(), 0);
     EXPECT_EQ(hashSet.GetCount(), 0);
     EXPECT_TRUE(hashSet.IsEmpty());
     EXPECT_FALSE(hashSet.IsCreated());
@@ -32,11 +35,13 @@ TEST_F(HashSet_Fixture, Initialisation_FromInitialisationList)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 4, 4, 5 };
 
+    EXPECT_EQ(hashSet.GetCapacity(), 7);
     EXPECT_EQ(hashSet.GetCount(), 5);
     EXPECT_FALSE(hashSet.IsEmpty());
 
-    hashSet = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+    hashSet = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 10, 10 };
 
+    EXPECT_EQ(hashSet.GetCapacity(), 11);
     EXPECT_EQ(hashSet.GetCount(), 10);
     EXPECT_FALSE(hashSet.IsEmpty());
 }
@@ -81,39 +86,59 @@ TEST_F(HashSet_Fixture, Assignment_Move)
     EXPECT_FALSE(move.IsEmpty());
 }
 
-TEST_F(HashSet_Fixture, TryAdd)
+TEST_F(HashSet_Fixture, TryAdd_SimpleCases)
 {
     HashSet<int> hashSet;
 
-    int value = 2;
     EXPECT_TRUE(hashSet.TryAdd(1));
+
+    int value = 2;
     EXPECT_TRUE(hashSet.TryAdd(value));
-    EXPECT_FALSE(hashSet.TryAdd(value));
+    EXPECT_FALSE(hashSet.TryAdd(value)) << "Value already exists";
     EXPECT_TRUE(hashSet.TryAdd(3));
 
+    UInt64 capacity = HashSet<int>::GetDefaultInitialCapacity();
+    EXPECT_EQ(hashSet.GetCapacity(), capacity);
+
     EXPECT_TRUE(hashSet.TryAdd(4));
-    EXPECT_TRUE(hashSet.TryAdd(11)); // Collision with previous value
-    EXPECT_TRUE(hashSet.TryAdd(18)); // Collision with previous value
-    EXPECT_TRUE(hashSet.TryAdd(25)); // Collision with previous value
+    EXPECT_NE(hashSet.GetCapacity(), capacity) << "Capacity should have increased";
+    EXPECT_EQ(hashSet.GetCapacity(), HashUtils::GetNextPrime(hashSet.GetCount() * HashSet<int>::GetResizingFactor()));
+    capacity = hashSet.GetCapacity();
 
-    EXPECT_TRUE(hashSet.TryAdd(5));
-    EXPECT_FALSE(hashSet.TryAdd(5));
-    value = 12;
-    EXPECT_TRUE(hashSet.TryAdd(value)); // Collision with previous value
-    value = 19;
-    EXPECT_TRUE(hashSet.TryAdd(value)); // Collision with previous value
-
-    EXPECT_TRUE(hashSet.TryAdd(6));
-    EXPECT_TRUE(hashSet.TryAdd(187)); // Current capacity: 11
-    EXPECT_TRUE(hashSet.Contains(187));
-    EXPECT_TRUE(hashSet.TryAdd(374)); // Resized capacity: 17 -> Collision for capacity 11 and 17
-    EXPECT_TRUE(hashSet.Contains(374));
-
-    EXPECT_EQ(hashSet.GetCount(), 13);
-    EXPECT_FALSE(hashSet.IsEmpty());
+    EXPECT_TRUE(hashSet.TryAdd(11)) << "Collision with 4, should be added";
+    EXPECT_TRUE(hashSet.TryAdd(18)) << "Collision with 4, should be added";
+    EXPECT_TRUE(hashSet.TryAdd(25)) << "Collision with 4, should be added";
+    EXPECT_NE(hashSet.GetCapacity(), capacity) << "Capacity should have increased";
+    EXPECT_EQ(hashSet.GetCapacity(), HashUtils::GetNextPrime(hashSet.GetCount() * HashSet<int>::GetResizingFactor()));
 }
 
-TEST_F(HashSet_Fixture, TryRemove)
+TEST_F(HashSet_Fixture, TryAdd_CollisionSlots)
+{
+    HashSet<int> hashSet;
+
+    EXPECT_TRUE(hashSet.TryAdd(0));
+    UInt64 capacity = HashSet<int>::GetDefaultInitialCapacity();
+    EXPECT_EQ(hashSet.GetCapacity(), capacity);
+
+    UInt64 index = 0;
+    EXPECT_TRUE(hashSet.TryGetIndex(0, &index));
+    EXPECT_EQ(index, 0) << "0 should be at index 0";
+
+    EXPECT_TRUE(hashSet.TryAdd(3)) << "Collision with 0, should be added";
+    EXPECT_TRUE(hashSet.TryGetIndex(3, &index));
+    EXPECT_EQ(index, 1) << "0 should be at index 0, and since 3 is a collision, it should be at index 1 (next "
+                           "available slot)";
+
+    EXPECT_TRUE(hashSet.TryAdd(1)) << "Collision with item at index 1, should be added";
+    EXPECT_TRUE(hashSet.TryGetIndex(1, &index));
+    EXPECT_EQ(index, 1) << "1 should replace item at index 1";
+    EXPECT_TRUE(hashSet.TryGetIndex(3, &index));
+    EXPECT_EQ(index, 2) << "3 should have been moved to index 2, since it was a collision (next available slot)";
+
+    EXPECT_EQ(hashSet.GetCapacity(), capacity) << "Capacity should not have increased";
+}
+
+TEST_F(HashSet_Fixture, TryRemove_SimpleCases)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
 
@@ -121,6 +146,7 @@ TEST_F(HashSet_Fixture, TryRemove)
     EXPECT_TRUE(hashSet.TryRemove(1));
     EXPECT_TRUE(hashSet.TryRemove(value));
     EXPECT_TRUE(hashSet.TryRemove(3));
+    EXPECT_FALSE(hashSet.TryRemove(11)) << "Collision with 4, should not be removed";
     EXPECT_TRUE(hashSet.TryRemove(4));
     EXPECT_TRUE(hashSet.TryRemove(5));
 
@@ -132,6 +158,17 @@ TEST_F(HashSet_Fixture, TryRemove)
 
     EXPECT_EQ(hashSet.GetCount(), 0);
     EXPECT_TRUE(hashSet.IsEmpty());
+}
+
+TEST_F(HashSet_Fixture, TryRemove_Collisions)
+{
+    HashSet<int> hashSet = { 0, 3, 6 };
+
+    EXPECT_TRUE(hashSet.TryRemove(3));
+
+    hashSet = { 0, 3, 6 };
+
+    EXPECT_FALSE(hashSet.TryRemove(9)) << "Collision with all items, should not be removed";
 }
 
 TEST_F(HashSet_Fixture, Contains)
@@ -215,7 +252,7 @@ TEST_F(HashSet_Fixture, GetMemoryFootprint)
 
     EXPECT_EQ(footprint1[0].GetData().GetName(), OTR_NAME_OF(HashSet<int>));
     EXPECT_NE(pointer1, nullptr);
-    EXPECT_EQ(footprint1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
+    EXPECT_NE(footprint1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
     EXPECT_EQ(footprint1[0].Padding, 0);
     EXPECT_EQ(footprint1[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
