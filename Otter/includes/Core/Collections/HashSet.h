@@ -26,6 +26,7 @@ namespace Otter
         /// @brief Alias for HashUtils.
         using HashUtils = Internal::HashUtils;
 
+        /// @brief Alias for a slot iterator.
         using SlotIterator = SlotIterator<T>;
 
     public:
@@ -51,8 +52,9 @@ namespace Otter
         HashSet(InitialiserList<T> list)
             : HashSet()
         {
-            m_Capacity             = k_InitialCapacity;
-            m_Slots                = Buffer::New<Slot<T>>(m_Capacity);
+            m_Capacity = k_InitialCapacity;
+            m_Slots    = Buffer::New < Slot<T>>
+            (m_Capacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
@@ -159,24 +161,24 @@ namespace Otter
          *
          * @return True if the item was added, false otherwise.
          */
-        bool TryAdd(const T& value)
+        bool TryAdd(const T& item)
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
 
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 hash = GetHashCode(item) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (!HasItemStoredAt(index))
-                return TryAddToEmptySlot(value, hash, index);
+                return TryAddToEmptySlot(item, hash, index);
 
-            if (m_Slots[index].Hash == hash && m_Slots[index].Data == value)
+            if (m_Slots[index].Hash == hash && m_Slots[index].Data == item)
                 return false;
 
             if (HasCollisionStoredAt(index))
-                return TryAddToCollisionSlot(value, hash, index);
+                return TryAddToCollisionSlot(item, hash, index);
 
-            return TryAddNewCollision(value, index, hash);
+            return TryAddNewCollision(item, index, hash);
         }
 
         /**
@@ -186,24 +188,24 @@ namespace Otter
          *
          * @return True if the item was added, false otherwise.
          */
-        bool TryAdd(T&& value) noexcept
+        bool TryAdd(T&& item) noexcept
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
 
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
+            UInt64 hash = GetHashCode(item) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (!HasItemStoredAt(index))
-                return TryAddToEmptySlot(std::move(value), hash, index);
+                return TryAddToEmptySlot(std::move(item), hash, index);
 
-            if (m_Slots[index].Hash == hash && m_Slots[index].Data == value)
+            if (m_Slots[index].Hash == hash && m_Slots[index].Data == item)
                 return false;
 
             if (HasCollisionStoredAt(index))
-                return TryAddToCollisionSlot(std::move(value), hash, index);
+                return TryAddToCollisionSlot(std::move(item), hash, index);
 
-            return TryAddNewCollision(std::move(value), index, hash);
+            return TryAddNewCollision(std::move(item), index, hash);
         }
 
         /**
@@ -213,40 +215,28 @@ namespace Otter
          *
          * @return True if the item was removed, false otherwise.
          */
-        bool TryRemove(const T& value)
+        bool TryRemove(const T& item)
         {
-            if (m_Count == 0)
+            if (IsEmpty())
                 return false;
 
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
-            UInt64 index = hash % m_Capacity;
-
-            if (!HasItemStoredAt(index))
+            UInt64 index;
+            if (!Exists(item, &index))
                 return false;
 
-            auto* slot = &m_Slots[index];
-
-            while (HasItemStoredAt(slot - m_Slots) && !slot->Matches(value, hash))
-            {
-                if (!slot->Next)
-                    return false;
-
-                slot = slot->Next;
-            }
-
-            if (slot->Next)
+            if (m_Slots[index].Next)
             {
                 if constexpr (std::is_move_assignable_v<T>)
-                    slot->Data = std::move(slot->Next->Data);
+                    m_Slots[index].Data = std::move(m_Slots[index].Next->Data);
                 else
-                    slot->Data = slot->Next->Data;
+                    m_Slots[index].Data = m_Slots[index].Next->Data;
 
-                slot->Hash = slot->Next->Hash;
-                slot->Next = slot->Next->Next;
+                m_Slots[index].Hash = m_Slots[index].Next->Hash;
+                m_Slots[index].Next = m_Slots[index].Next->Next;
             }
 
-            m_SlotsInUse.Set(slot - m_Slots, false);
-            m_Collisions.Set(slot - m_Slots, false);
+            m_SlotsInUse.Set(index, false);
+            m_Collisions.Set(index, false);
 
             m_Count--;
 
@@ -260,57 +250,30 @@ namespace Otter
          *
          * @return True if the hashset contains the item, false otherwise.
          */
-        [[nodiscard]] bool Contains(const T& value) const
+        [[nodiscard]] bool Contains(const T& item) const
         {
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
-            UInt64 index = hash % m_Capacity;
-
-            if (!HasItemStoredAt(index))
+            if (IsEmpty())
                 return false;
 
-            auto* slot = &m_Slots[index];
-
-            while (HasItemStoredAt(slot - m_Slots) && !slot->Matches(value, hash))
-            {
-                if (!slot->Next)
-                    return false;
-
-                slot = slot->Next;
-            }
-
-            return true;
+            return Exists(item);
         }
 
         /**
          * @brief Tries to get the index of an item in the hashset.
          *
-         * @param value The item to get the index of.
+         * @param item The item to get the index of.
          * @param outIndex The index of the item.
          *
          * @return True if the item was found, false otherwise.
          */
-        [[nodiscard]] bool TryGetIndex(const T& value, UInt64* outIndex) const
+        [[nodiscard]] bool TryGetIndex(const T& item, UInt64* outIndex) const
         {
-            OTR_ASSERT_MSG(outIndex, "outIndex cannot be null.")
-
-            UInt64 hash  = GetHashCode(value) & k_63BitMask;
-            UInt64 index = hash % m_Capacity;
-
-            if (!HasItemStoredAt(index))
+            if (IsEmpty())
                 return false;
 
-            auto* slot = &m_Slots[index];
+            OTR_ASSERT_MSG(outIndex, "outIndex cannot be null.")
 
-            while (HasItemStoredAt(slot - m_Slots) && !slot->Matches(value, hash))
-            {
-                if (!slot->Next)
-                    return false;
-
-                slot = slot->Next;
-            }
-
-            *outIndex = slot - m_Slots;
-            return true;
+            return Exists(item, outIndex);
         }
 
         /**
@@ -320,6 +283,9 @@ namespace Otter
          */
         void ForEach(Function<void(const T&)> callback) const
         {
+            if (IsEmpty())
+                return;
+
             for (UInt64 i = 0; i < m_Capacity; i++)
             {
                 if (!HasItemStoredAt(i))
@@ -329,6 +295,11 @@ namespace Otter
             }
         }
 
+        /**
+         * @brief Ensures that the hashset has a given capacity.
+         *
+         * @param capacity The capacity to ensure.
+         */
         void EnsureCapacity(const UInt64 capacity)
         {
             if (capacity <= m_Capacity)
@@ -348,7 +319,7 @@ namespace Otter
          */
         void Clear()
         {
-            if (!IsCreated())
+            if (IsEmpty())
                 return;
 
             m_SlotsInUse.Clear();
@@ -513,7 +484,7 @@ namespace Otter
         /**
          * @brief Tries to add an item to an empty slot in the hashset.
          *
-         * @param value The item to add.
+         * @param item The item to add.
          * @param hash The hash of the item.
          * @param index The index it should be added to.
          *
@@ -521,9 +492,9 @@ namespace Otter
          *
          * @note This function assumes that the slot is empty, so it always returns true.
          */
-        bool TryAddToEmptySlot(const T& value, const UInt64 hash, const UInt64 index)
+        bool TryAddToEmptySlot(const T& item, const UInt64 hash, const UInt64 index)
         {
-            m_Slots[index].Set(value, hash);
+            m_Slots[index].Set(item, hash);
             m_SlotsInUse.Set(index, true);
             m_Collisions.Set(index, false);
 
@@ -535,7 +506,7 @@ namespace Otter
         /**
          * @brief Tries to add an item to a slot that already has a collision stored in it.
          *
-         * @param value The item to add.
+         * @param item The item to add.
          * @param hash The hash of the item.
          * @param index The index it should be added to.
          *
@@ -547,7 +518,7 @@ namespace Otter
          * the collision from the linked list. The new item is then added to the collision slot (which is now empty) and
          * re-adds the original collision to the hashset.
          */
-        bool TryAddToCollisionSlot(const T& value, const UInt64 hash, const UInt64 index)
+        bool TryAddToCollisionSlot(const T& item, const UInt64 hash, const UInt64 index)
         {
             auto collisionData = m_Slots[index].Data;
             auto* slot = &m_Slots[m_Slots[index].Hash % m_Capacity];
@@ -558,7 +529,7 @@ namespace Otter
             if (slot->Next)
                 slot->Next = slot->Next->Next;
 
-            m_Slots[index].Set(value, hash);
+            m_Slots[index].Set(item, hash);
             m_SlotsInUse.Set(index, true);
             m_Collisions.Set(index, false);
 
@@ -566,7 +537,7 @@ namespace Otter
         }
 
         /**
-         * @brief Tries to add an collision to the hashset.
+         * @brief Tries to add a collision to the hashset.
          *
          * @param item The collision to add.
          * @param collisionIndex The index of the collision.
@@ -574,7 +545,7 @@ namespace Otter
          *
          * @return True if the collision was added, false otherwise.
          */
-        bool TryAddNewCollision(const T& value, const UInt64 collisionIndex, const UInt64 hash)
+        bool TryAddNewCollision(const T& item, const UInt64 collisionIndex, const UInt64 hash)
         {
             auto* slot = &m_Slots[collisionIndex];
             auto collisionCount = 0;
@@ -583,7 +554,7 @@ namespace Otter
             {
                 collisionCount++;
 
-                if (HasItemStoredAt(slot - m_Slots) && slot->Data == value && slot->Hash == hash)
+                if (HasItemStoredAt(slot - m_Slots) && slot->Data == item && slot->Hash == hash)
                     return false;
 
                 if (!slot->Next)
@@ -600,7 +571,7 @@ namespace Otter
                 if (HasItemStoredAt(i))
                     continue;
 
-                m_Slots[i].Set(value, hash);
+                m_Slots[i].Set(item, hash);
                 m_SlotsInUse.Set(i, true);
                 m_Collisions.Set(i, true);
 
@@ -633,7 +604,43 @@ namespace Otter
         [[nodiscard]] bool HasCollisionStoredAt(const UInt64 index) const { return m_Collisions.Get(index); }
 
         /**
+         * @brief Checks an item's presence in the hashset.
+         *
+         * @param item The item to get the index of.
+         * @param outIndex The index of the item.
+         *
+         * @return True if the item was found, false otherwise.
+         *
+         * @note It assumes the hashset is not empty.
+         */
+        bool Exists(const T& item, UInt64* outIndex = nullptr) const
+        {
+            UInt64 hash  = GetHashCode(item) & k_63BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (!HasItemStoredAt(index))
+                return false;
+
+            auto* slot = &m_Slots[index];
+
+            while (HasItemStoredAt(slot - m_Slots) && !slot->Matches(item, hash))
+            {
+                if (!slot->Next)
+                    return false;
+
+                slot = slot->Next;
+            }
+
+            if (outIndex)
+                *outIndex = slot - m_Slots;
+
+            return true;
+        }
+
+        /**
          * @brief Used to expand the size of the hashset.
+         *
+         * @param amount The amount to expand the hashset by.
          */
         void Expand(const UInt64 amount = 0)
         {
@@ -659,8 +666,9 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots = Buffer::New<Slot<T>>(newCapacity);
-            
+            m_Slots = Buffer::New < Slot<T>>
+            (newCapacity);
+
             for (UInt64 i = 0; i < newCapacity; i++)
                 if (newHashSet.HasItemStoredAt(i))
                     m_Slots[i] = std::move(newHashSet.m_Slots[i]);
@@ -682,7 +690,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots    = capacity > 0 ? Buffer::New<Slot<T>>(capacity) : nullptr;
+            m_Slots = capacity > 0 ? Buffer::New < Slot<T>>(capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
 
