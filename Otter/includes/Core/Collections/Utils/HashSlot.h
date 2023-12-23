@@ -127,6 +127,24 @@ namespace Otter
         {
             return Data == data && Hash == hash;
         }
+
+        /**
+         * @brief Checks if the key-value pair slot matches the given key and hash.
+         *
+         * @param key The key to check.
+         * @param hash The hash to check.
+         *
+         * @return True if the key-value pair slot matches the key and hash, false otherwise.
+         */
+        template<typename TKey, typename TValue>
+        requires (requires(T t) {
+            { t.Key } -> std::convertible_to<TKey>;
+            { t.Value } -> std::convertible_to<TValue>;
+        })
+        [[nodiscard]] OTR_INLINE bool MatchesKey(const TKey& key, const UInt64 hash) const
+        {
+            return Data.Key == key && Hash == hash;
+        }
     };
 }
 

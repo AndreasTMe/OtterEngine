@@ -201,6 +201,22 @@ TEST_F(HashSet_Fixture, ForEach)
     EXPECT_EQ(count, 5);
 }
 
+TEST_F(HashSet_Fixture, EnsureCapacity)
+{
+    HashSet<int> hashSet;
+
+    EXPECT_EQ(hashSet.GetCapacity(), 0);
+
+    hashSet.EnsureCapacity(10);
+
+    EXPECT_GE(hashSet.GetCapacity(), 10);
+
+    EXPECT_TRUE(hashSet.TryAdd(1));
+    hashSet.EnsureCapacity(15);
+    EXPECT_GE(hashSet.GetCapacity(), 15);
+    EXPECT_TRUE(hashSet.Contains(1));
+}
+
 TEST_F(HashSet_Fixture, Clear)
 {
     HashSet<int> hashSet = { 1, 2, 3, 4, 5 };

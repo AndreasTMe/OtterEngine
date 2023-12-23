@@ -5,6 +5,8 @@
 template<typename TKey, typename TValue>
 using Dictionary = Otter::Dictionary<TKey, TValue>;
 
+using HashUtils = Otter::Internal::HashUtils;
+
 class Dictionary_Fixture : public ::testing::Test
 {
 protected:
@@ -34,6 +36,7 @@ TEST_F(Dictionary_Fixture, Initialisation_FromInitialisationList)
                                        { 2, 2 },
                                        { 3, 3 }};
 
+    EXPECT_EQ(dictionary.GetCapacity(), 3);
     EXPECT_EQ(dictionary.GetCount(), 3);
     EXPECT_FALSE(dictionary.IsEmpty());
 
@@ -42,6 +45,7 @@ TEST_F(Dictionary_Fixture, Initialisation_FromInitialisationList)
                   { 3, 3 },
                   { 4, 4 }};
 
+    EXPECT_EQ(dictionary.GetCapacity(), 7);
     EXPECT_EQ(dictionary.GetCount(), 4);
     EXPECT_FALSE(dictionary.IsEmpty());
 }
@@ -106,28 +110,59 @@ TEST_F(Dictionary_Fixture, Assignment_Move)
     EXPECT_FALSE(dictionary.IsCreated());
 }
 
-TEST_F(Dictionary_Fixture, TryAdd)
+TEST_F(Dictionary_Fixture, TryAdd_SimpleCases)
 {
     Dictionary<int, int> dictionary;
 
-    int value = 2;
     EXPECT_TRUE(dictionary.TryAdd(1, 1));
+
+    int value = 2;
     EXPECT_TRUE(dictionary.TryAdd(value, value));
-    EXPECT_FALSE(dictionary.TryAdd(value, value));
+    EXPECT_FALSE(dictionary.TryAdd(value, value)) << "Value already exists";
+    EXPECT_FALSE(dictionary.TryAdd(value, value + 1)) << "Value already exists";
     EXPECT_TRUE(dictionary.TryAdd(3, 3));
 
+    UInt64 capacity = Dictionary<int, int>::GetDefaultInitialCapacity();
+    EXPECT_EQ(dictionary.GetCapacity(), capacity);
+
     EXPECT_TRUE(dictionary.TryAdd(4, 4));
-    EXPECT_TRUE(dictionary.TryAdd(11, 11)); // Collision with previous value
-    EXPECT_TRUE(dictionary.TryAdd(18, 18)); // Collision with previous value
-    EXPECT_TRUE(dictionary.TryAdd(25, 25)); // Collision with previous value
+    EXPECT_NE(dictionary.GetCapacity(), capacity) << "Capacity should have increased";
+    EXPECT_EQ(dictionary.GetCapacity(),
+              HashUtils::GetNextPrime(dictionary.GetCount() * Dictionary<int, int>::GetResizingFactor()));
+    capacity = dictionary.GetCapacity();
 
-    EXPECT_TRUE(dictionary.TryAdd(5, 5));
-    EXPECT_FALSE(dictionary.TryAdd(5, 5));
-    value = 12;
-    EXPECT_TRUE(dictionary.TryAdd(value, value)); // Collision with previous value
+    EXPECT_TRUE(dictionary.TryAdd(11, 11)) << "Collision with 4, should be added";
+    EXPECT_TRUE(dictionary.TryAdd(18, 18)) << "Collision with 4, should be added";
+    EXPECT_TRUE(dictionary.TryAdd(25, 25)) << "Collision with 4, should be added";
+    EXPECT_NE(dictionary.GetCapacity(), capacity) << "Capacity should have increased";
+    EXPECT_EQ(dictionary.GetCapacity(),
+              HashUtils::GetNextPrime(dictionary.GetCount() * Dictionary<int, int>::GetResizingFactor()));
+}
 
-    EXPECT_EQ(dictionary.GetCount(), 9);
-    EXPECT_FALSE(dictionary.IsEmpty());
+TEST_F(Dictionary_Fixture, TryAdd_CollisionSlots)
+{
+    Dictionary<int, int> dictionary;
+
+    EXPECT_TRUE(dictionary.TryAdd(0, 0));
+    UInt64 capacity = Dictionary<int, int>::GetDefaultInitialCapacity();
+    EXPECT_EQ(dictionary.GetCapacity(), capacity);
+
+    UInt64 index = 0;
+    EXPECT_TRUE(dictionary.TryGetIndex(0, &index));
+    EXPECT_EQ(index, 0) << "0 should be at index 0";
+
+    EXPECT_TRUE(dictionary.TryAdd(3, 3)) << "Collision with 0, should be added";
+    EXPECT_TRUE(dictionary.TryGetIndex(3, &index));
+    EXPECT_EQ(index, 1) << "0 should be at index 0, and since 3 is a collision, it should be at index 1 (next "
+                           "available slot)";
+
+    EXPECT_TRUE(dictionary.TryAdd(1, 1)) << "Collision with item at index 1, should be added";
+    EXPECT_TRUE(dictionary.TryGetIndex(1, &index));
+    EXPECT_EQ(index, 1) << "1 should replace item at index 1";
+    EXPECT_TRUE(dictionary.TryGetIndex(3, &index));
+    EXPECT_EQ(index, 2) << "3 should have been moved to index 2, since it was a collision (next available slot)";
+
+    EXPECT_EQ(dictionary.GetCapacity(), capacity) << "Capacity should not have increased";
 }
 
 TEST_F(Dictionary_Fixture, TryGet)
@@ -164,7 +199,7 @@ TEST_F(Dictionary_Fixture, TryGet)
     EXPECT_FALSE(dictionary.IsEmpty());
 }
 
-TEST_F(Dictionary_Fixture, TryRemove)
+TEST_F(Dictionary_Fixture, TryRemove_SimpleCases)
 {
     Dictionary<int, int> dictionary = {{ 1, 1 },
                                        { 2, 2 },
@@ -176,6 +211,7 @@ TEST_F(Dictionary_Fixture, TryRemove)
     EXPECT_TRUE(dictionary.TryRemove(1));
     EXPECT_TRUE(dictionary.TryRemove(value));
     EXPECT_TRUE(dictionary.TryRemove(3));
+    EXPECT_FALSE(dictionary.TryRemove(11)) << "Collision with 4, should not be removed";
     EXPECT_TRUE(dictionary.TryRemove(4));
     EXPECT_TRUE(dictionary.TryRemove(5));
 
@@ -187,6 +223,21 @@ TEST_F(Dictionary_Fixture, TryRemove)
 
     EXPECT_EQ(dictionary.GetCount(), 0);
     EXPECT_TRUE(dictionary.IsEmpty());
+}
+
+TEST_F(Dictionary_Fixture, TryRemove_Collisions)
+{
+    Dictionary<int, int> dictionary = {{ 0, 0 },
+                                       { 3, 3 },
+                                       { 6, 6 }};
+
+    EXPECT_TRUE(dictionary.TryRemove(3));
+
+    dictionary = {{ 0, 0 },
+                  { 3, 3 },
+                  { 6, 6 }};
+
+    EXPECT_FALSE(dictionary.TryRemove(9)) << "Collision with all items, should not be removed";
 }
 
 TEST_F(Dictionary_Fixture, Contains)
@@ -266,6 +317,22 @@ TEST_F(Dictionary_Fixture, ForEachValue)
     EXPECT_EQ(count, dictionary.GetCount());
 }
 
+TEST_F(Dictionary_Fixture, EnsureCapacity)
+{
+    Dictionary<int, int> dictionary;
+
+    EXPECT_EQ(dictionary.GetCapacity(), 0);
+
+    dictionary.EnsureCapacity(10);
+
+    EXPECT_GE(dictionary.GetCapacity(), 10);
+
+    EXPECT_TRUE(dictionary.TryAdd(1, 1));
+    dictionary.EnsureCapacity(15);
+    EXPECT_GE(dictionary.GetCapacity(), 15);
+    EXPECT_TRUE(dictionary.Contains(1));
+}
+
 TEST_F(Dictionary_Fixture, Clear)
 {
     Dictionary<int, int> dictionary = {{ 1, 1 },
@@ -304,200 +371,64 @@ TEST_F(Dictionary_Fixture, ClearDestructive)
 
 TEST_F(Dictionary_Fixture, GetMemoryFootprint)
 {
-    Dictionary<int, int> dictionary         = {{ 1, 1 },
-                                               { 2, 2 },
-                                               { 3, 3 },
-                                               { 4, 4 },
-                                               { 5, 5 }};
-    UInt64               expectedCapacity   = Otter::Internal::HashUtils::GetNextPrime(5);
-    UInt64               dictionaryByteSize = 0;
+    Dictionary<int, int> dictionary = {{ 1, 1 },
+                                       { 2, 2 },
+                                       { 3, 3 },
+                                       { 4, 4 },
+                                       { 5, 5 }};
 
-    UInt64 footprintsSize = 0;
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1 + expectedCapacity);
+    auto footprint1 = dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>));
+    EXPECT_EQ(footprint1.GetSize(), 3);
 
-    auto* footprints1 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), footprints1, &footprintsSize);
+    auto* pointer1 = footprint1[0].GetData().GetPointer();
 
-    EXPECT_EQ(footprints1[0].GetData().GetName(), OTR_NAME_OF(Dictionary<int, int>));
-    EXPECT_NE(footprints1[0].GetData().GetPointer(), nullptr);
-    EXPECT_EQ(footprints1[0].Size, OTR_ALLOCATED_MEMORY(Otter::Bucket<int>, expectedCapacity));
-    EXPECT_EQ(footprints1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
-    EXPECT_EQ(footprints1[0].Padding, 0);
-    EXPECT_EQ(footprints1[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
+    EXPECT_EQ(footprint1[0].GetData().GetName(), OTR_NAME_OF(Dictionary<int, int>));
+    EXPECT_NE(pointer1, nullptr);
+    EXPECT_NE(footprint1[0].Offset, Otter::FreeListAllocator::GetAllocatorHeaderSize());
+    EXPECT_EQ(footprint1[0].Padding, 0);
+    EXPECT_EQ(footprint1[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-    dictionaryByteSize += footprints1[0].Size;
-
-    for (UInt64 i = 1; i < footprintsSize; ++i)
-    {
-        EXPECT_EQ(footprints1[i].GetData().GetName(), "bucket_" + std::to_string(i - 1));
-
-        if (footprints1[i].GetData().GetPointer())
-        {
-            EXPECT_EQ(footprints1[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints1[i].Offset, Otter::MemorySystem::GetMemorySize());
-            EXPECT_EQ(footprints1[i].Padding, 0);
-            EXPECT_EQ(footprints1[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-            dictionaryByteSize += footprints1[i].Size;
-        }
-        else
-        {
-            EXPECT_EQ(footprints1[i].Size, 0);
-            EXPECT_EQ(footprints1[i].Offset, 0);
-            EXPECT_EQ(footprints1[i].Padding, 0);
-            EXPECT_EQ(footprints1[i].Alignment, 0);
-        }
-    }
-
-    const void* const firstAllocationPointer = footprints1[0].GetData().GetPointer();
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints1, footprintsSize);
-
-    EXPECT_EQ(dictionaryByteSize, Otter::MemorySystem::GetUsedMemory())
-                    << "Dictionary should have allocated " << dictionaryByteSize
-                    << " bytes of memory but has allocated "
-                    << Otter::MemorySystem::GetUsedMemory()
-                    << " bytes instead";
+    EXPECT_EQ(footprint1[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint1[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint1[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint1[2].GetData().GetPointer(), nullptr);
 
     dictionary.TryAdd(6, 6);
     dictionary.TryAdd(7, 7);
-
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1 + expectedCapacity);
-
-    auto* footprints2 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), footprints2, &footprintsSize);
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints2, footprintsSize);
-
     dictionary.TryAdd(8, 8);
 
-    expectedCapacity = Otter::Internal::HashUtils::GetNextPrime(8);
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1 + expectedCapacity)
-                    << "Capacity should have increased because of the new element, capacity should now be 11";
+    auto footprint2 = dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>));
+    EXPECT_EQ(footprint2.GetSize(), 3);
 
-    auto* footprints3 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), footprints3, &footprintsSize);
+    EXPECT_EQ(footprint2[0].GetData().GetName(), OTR_NAME_OF(Dictionary<int, int>));
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), pointer1);
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), nullptr);
+    EXPECT_NE(footprint2[0].GetData().GetPointer(), footprint1[0].GetData().GetPointer())
+                    << "Pointer should have changed because of capacity increase (reallocation)";
+    EXPECT_NE(footprint2[0].Offset, footprint1[0].Offset)
+                    << "Offset should have changed because of capacity increase (reallocation)";
+    EXPECT_EQ(footprint2[0].Padding, 0);
+    EXPECT_EQ(footprint2[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
 
-    EXPECT_EQ(footprints3[0].GetData().GetName(), OTR_NAME_OF(Dictionary<int, int>));
-    EXPECT_NE(footprints3[0].GetData().GetPointer(), firstAllocationPointer);
-    EXPECT_EQ(footprints3[0].Size, OTR_ALLOCATED_MEMORY(Otter::Bucket<int>, expectedCapacity));
-    EXPECT_LT(footprints3[0].Offset, Otter::MemorySystem::GetMemorySize());
-    EXPECT_EQ(footprints3[0].Padding, 0);
-    EXPECT_EQ(footprints3[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-    dictionaryByteSize = footprints3[0].Size;
-
-    for (UInt64 i = 1; i < footprintsSize; ++i)
-    {
-        EXPECT_EQ(footprints3[i].GetData().GetName(), "bucket_" + std::to_string(i - 1));
-
-        if (footprints3[i].GetData().GetPointer())
-        {
-            EXPECT_EQ(footprints3[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints3[i].Offset, Otter::MemorySystem::GetMemorySize());
-            EXPECT_EQ(footprints3[i].Padding, 0);
-            EXPECT_EQ(footprints3[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-            dictionaryByteSize += footprints3[i].Size;
-        }
-        else
-        {
-            EXPECT_EQ(footprints3[i].Size, 0);
-            EXPECT_EQ(footprints3[i].Offset, 0);
-            EXPECT_EQ(footprints3[i].Padding, 0);
-            EXPECT_EQ(footprints3[i].Alignment, 0);
-        }
-    }
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints3, footprintsSize);
-
-    EXPECT_EQ(dictionaryByteSize, Otter::MemorySystem::GetUsedMemory())
-                    << "Dictionary should have allocated " << dictionaryByteSize
-                    << " bytes of memory but has allocated "
-                    << Otter::MemorySystem::GetUsedMemory()
-                    << " bytes instead";
-
-    dictionary.TryAdd(9, 9);
-    dictionary.TryAdd(10, 10);
-    dictionary.TryAdd(11, 11);
-    dictionary.TryAdd(12, 12);
-    dictionary.TryAdd(13, 13);
-    dictionary.TryAdd(14, 14);
-
-    expectedCapacity = Otter::Internal::HashUtils::GetNextPrime(14);
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1 + expectedCapacity)
-                    << "Capacity should have increased because of the new element, capacity should now be 17";
-
-    auto* footprints4 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), footprints4, &footprintsSize);
-
-    EXPECT_EQ(footprints4[0].GetData().GetName(), OTR_NAME_OF(Dictionary<int, int>));
-    EXPECT_NE(footprints4[0].GetData().GetPointer(), firstAllocationPointer);
-    EXPECT_EQ(footprints4[0].Size, OTR_ALLOCATED_MEMORY(Otter::Bucket<int>, expectedCapacity));
-    EXPECT_LT(footprints4[0].Offset, Otter::MemorySystem::GetMemorySize());
-    EXPECT_EQ(footprints4[0].Padding, 0);
-    EXPECT_EQ(footprints4[0].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-    dictionaryByteSize = footprints4[0].Size;
-
-    for (UInt64 i = 1; i < footprintsSize; ++i)
-    {
-        EXPECT_EQ(footprints4[i].GetData().GetName(), "bucket_" + std::to_string(i - 1));
-
-        if (footprints4[i].GetData().GetPointer())
-        {
-            EXPECT_EQ(footprints4[i].Size, OTR_ALLOCATED_MEMORY(Otter::BucketItem<int>, 3));
-            EXPECT_LT(footprints4[i].Offset, Otter::MemorySystem::GetMemorySize());
-            EXPECT_EQ(footprints4[i].Padding, 0);
-            EXPECT_EQ(footprints4[i].Alignment, OTR_PLATFORM_MEMORY_ALIGNMENT);
-
-            dictionaryByteSize += footprints4[i].Size;
-        }
-        else
-        {
-            EXPECT_EQ(footprints4[i].Size, 0);
-            EXPECT_EQ(footprints4[i].Offset, 0);
-            EXPECT_EQ(footprints4[i].Padding, 0);
-            EXPECT_EQ(footprints4[i].Alignment, 0);
-        }
-    }
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints4, footprintsSize);
-
-    EXPECT_EQ(dictionaryByteSize, Otter::MemorySystem::GetUsedMemory())
-                    << "Dictionary should have allocated " << dictionaryByteSize
-                    << " bytes of memory but has allocated "
-                    << Otter::MemorySystem::GetUsedMemory()
-                    << " bytes instead";
-
-    dictionary.TryAdd(15, 15);
-    dictionary.TryAdd(16, 16);
-    dictionary.TryAdd(17, 17);
-    dictionary.TryAdd(18, 18);
+    EXPECT_EQ(footprint2[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint2[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint2[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_NE(footprint2[2].GetData().GetPointer(), nullptr);
 
     dictionary.ClearDestructive();
 
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), nullptr, &footprintsSize);
-    EXPECT_EQ(footprintsSize, 1)
-                    << "Capacity should be 0 after destructive clear, should just contain the buckets list";
+    auto footprint3 = dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>));
+    EXPECT_EQ(footprint3.GetSize(), 3);
 
-    auto* footprints5 = Otter::Buffer::New<Otter::MemoryFootprint>(footprintsSize);
-    dictionary.GetMemoryFootprint(OTR_NAME_OF(Dictionary<int, int>), footprints5, &footprintsSize);
+    EXPECT_EQ(footprint3[0].GetData().GetName(), OTR_NAME_OF(Dictionary<int, int>));
+    EXPECT_EQ(footprint3[0].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint3[0].Size, 0);
+    EXPECT_EQ(footprint3[0].Offset, 0);
+    EXPECT_EQ(footprint3[0].Padding, 0);
+    EXPECT_EQ(footprint3[0].Alignment, 0);
 
-    EXPECT_EQ(footprints5[0].GetData().GetName(), OTR_NAME_OF(Dictionary<int, int>));
-    EXPECT_EQ(footprints5[0].GetData().GetPointer(), nullptr);
-    EXPECT_EQ(footprints5[0].Size, 0);
-    EXPECT_EQ(footprints5[0].Offset, 0);
-    EXPECT_EQ(footprints5[0].Padding, 0);
-    EXPECT_EQ(footprints5[0].Alignment, 0);
-
-    Otter::Buffer::Delete<Otter::MemoryFootprint>(footprints5, footprintsSize);
-
-    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0)
-                    << "Dictionary should have allocated 0 bytes of memory but has allocated "
-                    << Otter::MemorySystem::GetUsedMemory() << " bytes instead";
+    EXPECT_EQ(footprint3[1].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_EQ(footprint3[1].GetData().GetPointer(), nullptr);
+    EXPECT_EQ(footprint3[2].GetData().GetName(), OTR_NAME_OF(BitSet));
+    EXPECT_EQ(footprint3[2].GetData().GetPointer(), nullptr);
 }

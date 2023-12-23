@@ -1,6 +1,8 @@
 #ifndef OTTERENGINE_KEYVALUEPAIR_H
 #define OTTERENGINE_KEYVALUEPAIR_H
 
+#include <utility>
+
 namespace Otter
 {
     /**
@@ -94,6 +96,30 @@ namespace Otter
             Value = std::move(other.Value);
 
             return *this;
+        }
+
+        /**
+         * @brief Equality operator.
+         *
+         * @param other The key-value pair to compare.
+         *
+         * @return True if the key-value pairs are equal, false otherwise.
+         */
+        bool operator==(const KeyValuePair& other) const
+        {
+            return Key == other.Key && Value == other.Value;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The key-value pair to compare.
+         *
+         * @return True if the key-value pairs are not equal, false otherwise.
+         */
+        bool operator!=(const KeyValuePair& other) const
+        {
+            return Key != other.Key || Value != other.Value;
         }
     };
 }
