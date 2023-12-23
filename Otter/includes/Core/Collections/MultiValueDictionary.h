@@ -172,24 +172,22 @@ namespace Otter
          */
         bool TryAdd(const TKey& key, const TValue& value)
         {
-//            if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
-//                Expand();
-//
-//            UInt64 hash  = GetHashCode(key) & k_63BitMask;
-//            UInt64 index = hash % m_Capacity;
-//
-//            if (!HasItemStoredAt(index))
-//                return TryAddToEmptySlot({ key, value }, hash, index);
-//
-//            if (m_Slots[index].template MatchesKey<TKey, TValue>(key, hash))
-//                return false;
-//
-//            if (HasCollisionStoredAt(index))
-//                return TryAddToCollisionSlot({ key, value }, hash, index);
-//
-//            return TryAddNewCollision({ key, value }, index, hash);
+            if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
+                Expand();
 
-            return false;
+            UInt64 hash  = GetHashCode(key) & k_63BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (!HasItemStoredAt(index))
+                return TryAddToEmptySlot({ key, { value }}, hash, index);
+
+            if (m_Slots[index].MatchesKey(key, hash))
+                return TryAddToListOfValues(value, index);
+
+            if (HasCollisionStoredAt(index))
+                return TryAddToCollisionSlot({ key, { value }}, hash, index);
+
+            return TryAddNewCollision({ key, { value }}, index, hash);
         }
 
         /**
@@ -202,46 +200,42 @@ namespace Otter
          */
         bool TryAdd(TKey&& key, TValue&& value) noexcept
         {
-//            if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
-//                Expand();
-//
-//            UInt64 hash  = GetHashCode(key) & k_63BitMask;
-//            UInt64 index = hash % m_Capacity;
-//
-//            if (!HasItemStoredAt(index))
-//                return TryAddToEmptySlot({ key, value }, hash, index);
-//
-//            if (m_Slots[index].Matches({ key, value }, hash))
-//                return false;
-//
-//            if (HasCollisionStoredAt(index))
-//                return TryAddToCollisionSlot({ key, value }, hash, index);
-//
-//            return TryAddNewCollision({ key, value }, index, hash);
+            if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
+                Expand();
 
-            return false;
+            UInt64 hash  = GetHashCode(key) & k_63BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (!HasItemStoredAt(index))
+                return TryAddToEmptySlot({ key, { value }}, hash, index);
+
+            if (m_Slots[index].MatchesKey(key, hash))
+                return TryAddToListOfValues(value, index);
+
+            if (HasCollisionStoredAt(index))
+                return TryAddToCollisionSlot({ key, { value }}, hash, index);
+
+            return TryAddNewCollision({ key, { value }}, index, hash);
         }
 
         /**
-         * @brief Tries to get the value associated with the specified key.
+         * @brief Tries to get the values associated with the specified key.
          *
          * @param key The key of the value to get.
-         * @param outValue The value associated with the key.
+         * @param values The values associated with the key.
          *
-         * @return True if the value was retrieved, false otherwise.
+         * @return True if the values were retrieved, false otherwise.
          */
-        bool TryGet(const TKey& key, TValue* outValue) const
+        bool TryGet(const TKey& key, List<TValue>& values) const
         {
-//            OTR_ASSERT_MSG(outValue, "outValue cannot be null.")
-//
-//            if (IsEmpty())
-//                return false;
-//
-//            UInt64 index;
-//            if (!Exists(key, &index))
-//                return false;
-//
-//            *outValue = m_Slots[index].Data.Value;
+            if (IsEmpty())
+                return false;
+
+            UInt64 index;
+            if (!Exists(key, &index))
+                return false;
+
+            values = m_Slots[index].Data.Value;
 
             return true;
         }
@@ -255,28 +249,28 @@ namespace Otter
          */
         bool TryRemove(const TKey& key)
         {
-//            if (IsEmpty())
-//                return false;
-//
-//            UInt64 index;
-//            if (!Exists(key, &index))
-//                return false;
-//
-//            if (m_Slots[index].Next)
-//            {
-//                if constexpr (std::is_move_assignable_v<KeyValuePair>)
-//                    m_Slots[index].Data = std::move(m_Slots[index].Next->Data);
-//                else
-//                    m_Slots[index].Data = m_Slots[index].Next->Data;
-//
-//                m_Slots[index].Hash = m_Slots[index].Next->Hash;
-//                m_Slots[index].Next = m_Slots[index].Next->Next;
-//            }
-//
-//            m_SlotsInUse.Set(index, false);
-//            m_Collisions.Set(index, false);
-//
-//            m_Count--;
+            if (IsEmpty())
+                return false;
+
+            UInt64 index;
+            if (!Exists(key, &index))
+                return false;
+
+            if (m_Slots[index].Next)
+            {
+                if constexpr (std::is_move_assignable_v<KeyValuePair>)
+                    m_Slots[index].Data = std::move(m_Slots[index].Next->Data);
+                else
+                    m_Slots[index].Data = m_Slots[index].Next->Data;
+
+                m_Slots[index].Hash = m_Slots[index].Next->Hash;
+                m_Slots[index].Next = m_Slots[index].Next->Next;
+            }
+
+            m_SlotsInUse.Set(index, false);
+            m_Collisions.Set(index, false);
+
+            m_Count--;
 
             return true;
         }
@@ -570,11 +564,30 @@ namespace Otter
          */
         bool TryAddToEmptySlot(const KeyValuePair& pair, const UInt64 hash, const UInt64 index)
         {
-//            m_Slots[index].Set(pair, hash);
-//            m_SlotsInUse.Set(index, true);
-//            m_Collisions.Set(index, false);
-//
-//            m_Count++;
+            m_Slots[index].Set(pair, hash);
+            m_SlotsInUse.Set(index, true);
+            m_Collisions.Set(index, false);
+
+            m_Count++;
+
+            return true;
+        }
+
+        /**
+         * @brief Tries to add a value to a list of values in a slot.
+         *
+         * @param value The value to add.
+         * @param index The index it should be added to.
+         *
+         * @return True if the value was added, false otherwise.
+         *
+         * @note Always returns true.
+         */
+        bool TryAddToListOfValues(const TValue& value, const UInt64 index)
+        {
+            m_Slots[index].Data.Value.Add(value);
+
+            m_Count++;
 
             return true;
         }
@@ -693,24 +706,24 @@ namespace Otter
          */
         bool Exists(const TKey& key, UInt64* outIndex = nullptr) const
         {
-//            UInt64 hash  = GetHashCode(key) & k_63BitMask;
-//            UInt64 index = hash % m_Capacity;
-//
-//            if (!HasItemStoredAt(index))
-//                return false;
-//
-//            auto* slot = &m_Slots[index];
-//
-//            while (HasItemStoredAt(slot - m_Slots) && !slot->template MatchesKey<TKey, TValue>(key, hash))
-//            {
-//                if (!slot->Next)
-//                    return false;
-//
-//                slot = slot->Next;
-//            }
-//
-//            if (outIndex)
-//                *outIndex = slot - m_Slots;
+            UInt64 hash  = GetHashCode(key) & k_63BitMask;
+            UInt64 index = hash % m_Capacity;
+
+            if (!HasItemStoredAt(index))
+                return false;
+
+            auto* slot = &m_Slots[index];
+
+            while (HasItemStoredAt(slot - m_Slots) && !slot->MatchesKey(key, hash))
+            {
+                if (!slot->Next)
+                    return false;
+
+                slot = slot->Next;
+            }
+
+            if (outIndex)
+                *outIndex = slot - m_Slots;
 
             return true;
         }

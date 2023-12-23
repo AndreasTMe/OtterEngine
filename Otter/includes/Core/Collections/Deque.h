@@ -49,7 +49,7 @@ namespace Otter
             : Deque()
         {
             m_Capacity = list.size();
-            m_Data     = Buffer::New<T>(m_Capacity);
+            m_Data     = Buffer::New < T > (m_Capacity);
 
             m_Count = 0;
             for (const T& item: list)
@@ -349,6 +349,7 @@ namespace Otter
                 m_Data[i] = m_Data[i + 1];
 
             m_Count--;
+
             return true;
         }
 
@@ -364,7 +365,7 @@ namespace Otter
             if (capacity <= m_Capacity)
                 return;
 
-            T* newData = Buffer::New<T>(capacity);
+            T* newData = Buffer::New < T > (capacity);
 
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
@@ -391,7 +392,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New<T>(newCapacity);
+            T* newData = Buffer::New < T > (newCapacity);
 
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
@@ -419,7 +420,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New<T>(newCapacity);
+            T* newData = Buffer::New < T > (newCapacity);
 
             for (UInt64 i = 0; i < m_Count && i < amount; i++)
                 newData[i] = m_Data[i];
@@ -582,7 +583,7 @@ namespace Otter
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Capacity);
 
-            m_Data     = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
+            m_Data     = capacity > 0 ? Buffer::New < T > (capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
         }

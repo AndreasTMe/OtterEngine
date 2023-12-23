@@ -180,7 +180,7 @@ namespace Otter
             if (!HasItemStoredAt(index))
                 return TryAddToEmptySlot({ key, value }, hash, index);
 
-            if (m_Slots[index].template MatchesKey<TKey, TValue>(key, hash))
+            if (m_Slots[index].MatchesKey(key, hash))
                 return false;
 
             if (HasCollisionStoredAt(index))
@@ -208,7 +208,7 @@ namespace Otter
             if (!HasItemStoredAt(index))
                 return TryAddToEmptySlot({ key, value }, hash, index);
 
-            if (m_Slots[index].Matches({ key, value }, hash))
+            if (m_Slots[index].MatchesKey(key, hash))
                 return false;
 
             if (HasCollisionStoredAt(index))
@@ -732,7 +732,7 @@ namespace Otter
 
             auto* slot = &m_Slots[index];
 
-            while (HasItemStoredAt(slot - m_Slots) && !slot->template MatchesKey<TKey, TValue>(key, hash))
+            while (HasItemStoredAt(slot - m_Slots) && !slot->MatchesKey(key, hash))
             {
                 if (!slot->Next)
                     return false;
