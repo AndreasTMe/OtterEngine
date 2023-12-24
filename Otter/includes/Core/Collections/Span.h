@@ -124,6 +124,24 @@ namespace Otter
         }
 
         /**
+         * @brief Equality operator.
+         *
+         * @param other The span to compare to.
+         *
+         * @return True if the spans are equal, false otherwise.
+         */
+        [[nodiscard]] bool operator==(const Span<T, Size>& other) const { return m_Data == other.m_Data; }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The span to compare to.
+         *
+         * @return True if the spans are not equal, false otherwise.
+         */
+        [[nodiscard]] bool operator!=(const Span<T, Size>& other) const { return !(*this == other); }
+
+        /**
          * @brief Gets the element at the specified index.
          *
          * @param index The index.

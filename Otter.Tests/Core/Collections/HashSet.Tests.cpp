@@ -322,14 +322,14 @@ TEST_F(HashSet_Fixture, Iterator)
     int          temp[]  = { 1, 2, 5, 6 };
     HashSet<int> hashSet = { 1, 2, 5, 6 };
 
-    UInt64    i  = 0;
-    for (auto it = hashSet.cbegin(); it != hashSet.cend(); ++it)
+    UInt64 i = 0;
+    for (const auto& item: hashSet)
     {
-        EXPECT_EQ(*it, temp[i]);
+        EXPECT_EQ(item, temp[i]);
         ++i;
     }
 
-    for (auto it = hashSet.crbegin(); it != hashSet.crend(); --it)
+    for (auto it = hashSet.rbegin(); it != hashSet.rend(); --it)
     {
         EXPECT_EQ(*it, temp[i]);
         --i;

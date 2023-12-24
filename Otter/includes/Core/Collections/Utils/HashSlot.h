@@ -136,10 +136,10 @@ namespace Otter
          *
          * @return True if the key-value pair slot matches the key and hash, false otherwise.
          */
-        template<typename TKey, typename TValue>
+        template<typename TKey>
         requires (requires(T t) {
             { t.Key } -> std::convertible_to<TKey>;
-            { t.Value } -> std::convertible_to<TValue>;
+            { t.Value };
         })
         [[nodiscard]] OTR_INLINE bool MatchesKey(const TKey& key, const UInt64 hash) const
         {

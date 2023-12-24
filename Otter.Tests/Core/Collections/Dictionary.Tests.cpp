@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "Core/Collections/Dictionary.h"
+#include "Core/Collections/List.h"
 
 template<typename TKey, typename TValue>
 using Dictionary = Otter::Dictionary<TKey, TValue>;
@@ -115,6 +116,8 @@ TEST_F(Dictionary_Fixture, TryAdd_SimpleCases)
     Dictionary<int, int> dictionary;
 
     EXPECT_TRUE(dictionary.TryAdd(1, 1));
+    EXPECT_FALSE(dictionary.TryAdd(1, 2));
+    EXPECT_TRUE(dictionary.TryAdd(1, 2, true));
 
     int value = 2;
     EXPECT_TRUE(dictionary.TryAdd(value, value));
@@ -273,6 +276,11 @@ TEST_F(Dictionary_Fixture, ForEach)
                                        { 4, 4 },
                                        { 5, 5 }};
 
+    dictionary.ForEach([](int key, int value)
+                       {
+                           value++;
+                       });
+
     int count = 0;
     dictionary.ForEach([&count](int key, int value)
                        {
@@ -281,6 +289,48 @@ TEST_F(Dictionary_Fixture, ForEach)
                        });
 
     EXPECT_EQ(count, dictionary.GetCount());
+
+    dictionary.ForEach([](int key, int* value)
+                       {
+                           (*value)++;
+                       });
+
+    count = 1;
+    dictionary.ForEach([&count](int key, int* value)
+                       {
+                           EXPECT_EQ(++count, *value);
+                       });
+
+    EXPECT_EQ(count, dictionary.GetCount() + 1);
+}
+
+TEST_F(Dictionary_Fixture, TryForKey)
+{
+    Dictionary<int, Otter::List<int>> dictionary = {{ 1, { 1, 2 }},
+                                                    { 2, { 1, 2 }}};
+
+    EXPECT_EQ(dictionary.GetCount(), 2);
+
+    Otter::List<int> list;
+    EXPECT_TRUE(dictionary.TryGet(1, &list));
+
+    EXPECT_EQ(list.GetCount(), 2);
+    for (auto& value: list)
+        EXPECT_EQ(value, 0);
+
+    list.Add(0);
+    EXPECT_EQ(list.GetCount(), 3);
+
+    EXPECT_TRUE(dictionary.TryGet(1, &list));
+    EXPECT_EQ(list.GetCount(), 2);
+
+    EXPECT_TRUE(dictionary.TryForKey(1, [](Otter::List<int>& value)
+    {
+        value.Add(3);
+    }));
+
+    EXPECT_TRUE(dictionary.TryGet(1, &list));
+    EXPECT_EQ(list.GetCount(), 3);
 }
 
 TEST_F(Dictionary_Fixture, ForEachKey)
@@ -308,6 +358,11 @@ TEST_F(Dictionary_Fixture, ForEachValue)
                                        { 4, 4 },
                                        { 5, 5 }};
 
+    dictionary.ForEachValue([](int value)
+                            {
+                                value++;
+                            });
+
     int count = 0;
     dictionary.ForEachValue([&count](int value)
                             {
@@ -315,6 +370,19 @@ TEST_F(Dictionary_Fixture, ForEachValue)
                             });
 
     EXPECT_EQ(count, dictionary.GetCount());
+
+    dictionary.ForEachValue([](int* value)
+                            {
+                                (*value)++;
+                            });
+
+    count = 1;
+    dictionary.ForEachValue([&count](int* value)
+                            {
+                                EXPECT_EQ(++count, *value);
+                            });
+
+    EXPECT_EQ(count, dictionary.GetCount() + 1);
 }
 
 TEST_F(Dictionary_Fixture, EnsureCapacity)
@@ -431,4 +499,29 @@ TEST_F(Dictionary_Fixture, GetMemoryFootprint)
     EXPECT_EQ(footprint3[1].GetData().GetPointer(), nullptr);
     EXPECT_EQ(footprint3[2].GetData().GetName(), OTR_NAME_OF(BitSet));
     EXPECT_EQ(footprint3[2].GetData().GetPointer(), nullptr);
+}
+
+TEST_F(Dictionary_Fixture, Iterator)
+{
+    int temp[] = { 1, 2, 5, 6 };
+
+    Dictionary<int, int> dictionary = {{ 1, 1 },
+                                       { 2, 2 },
+                                       { 5, 5 },
+                                       { 6, 6 }};
+
+    UInt64 i = 0;
+    for (const auto& [key, value]: dictionary)
+    {
+        EXPECT_EQ(key, temp[i]);
+        EXPECT_EQ(value, temp[i]);
+        ++i;
+    }
+
+    for (auto it = dictionary.rbegin(); it != dictionary.rend(); --it)
+    {
+        EXPECT_EQ((*it).Key, temp[i]);
+        EXPECT_EQ((*it).Value, temp[i]);
+        --i;
+    }
 }

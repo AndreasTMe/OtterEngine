@@ -195,10 +195,11 @@ namespace Otter
             if (index >= base::m_Count)
                 return false;
 
-            for (UInt64 i = index; i < base::m_Count - 1; i++)
-                base::m_Data[i] = base::m_Data[i + 1];
+            if (index != base::m_Count - 1)
+                base::m_Data[index] = std::move(base::m_Data[base::m_Count - 1]);
 
             base::m_Count--;
+
             return true;
         }
 

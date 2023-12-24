@@ -14,9 +14,9 @@
 namespace Otter
 {
     /**
-     * @brief A collection of unique items that are stored in buckets and can be accessed by their hash. The capacity
-     * of the hashset is automatically expanded to the next prime when the item count reaches the capacity in order
-     * to maintain a low collision rate.
+     * @brief A collection of unique items that are stored in a contiguous block of memory and can be accessed by
+     * their hash. The capacity of the hashset is automatically expanded to the next prime when the item count
+     * reaches the capacity in order to maintain a low collision rate.
      *
      * @tparam T The type of the items in the hashset.
      */
@@ -26,8 +26,11 @@ namespace Otter
         /// @brief Alias for HashUtils.
         using HashUtils = Internal::HashUtils;
 
-        /// @brief Alias for a slot iterator.
-        using SlotIterator = SlotIterator<T>;
+        /// @brief Alias for a slot.
+        using Slot = Slot<T>;
+
+        /// @brief Alias for a hashset iterator.
+        using Iterator = SlotIterator<T>;
 
     public:
         /**
@@ -52,9 +55,8 @@ namespace Otter
         HashSet(InitialiserList<T> list)
             : HashSet()
         {
-            m_Capacity = k_InitialCapacity;
-            m_Slots    = Buffer::New < Slot<T>>
-            (m_Capacity);
+            m_Capacity             = k_InitialCapacity;
+            m_Slots                = Buffer::New < Slot > (m_Capacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
@@ -166,13 +168,13 @@ namespace Otter
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
 
-            UInt64 hash = GetHashCode(item) & k_63BitMask;
+            UInt64 hash  = GetHashCode(item) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (!HasItemStoredAt(index))
                 return TryAddToEmptySlot(item, hash, index);
 
-            if (m_Slots[index].Hash == hash && m_Slots[index].Data == item)
+            if (m_Slots[index].Matches(item, hash))
                 return false;
 
             if (HasCollisionStoredAt(index))
@@ -193,13 +195,13 @@ namespace Otter
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
 
-            UInt64 hash = GetHashCode(item) & k_63BitMask;
+            UInt64 hash  = GetHashCode(item) & k_63BitMask;
             UInt64 index = hash % m_Capacity;
 
             if (!HasItemStoredAt(index))
                 return TryAddToEmptySlot(std::move(item), hash, index);
 
-            if (m_Slots[index].Hash == hash && m_Slots[index].Data == item)
+            if (m_Slots[index].Matches(item, hash))
                 return false;
 
             if (HasCollisionStoredAt(index))
@@ -268,10 +270,10 @@ namespace Otter
          */
         [[nodiscard]] bool TryGetIndex(const T& item, UInt64* outIndex) const
         {
+            OTR_ASSERT_MSG(outIndex, "outIndex cannot be null.")
+
             if (IsEmpty())
                 return false;
-
-            OTR_ASSERT_MSG(outIndex, "outIndex cannot be null.")
 
             return Exists(item, outIndex);
         }
@@ -420,12 +422,9 @@ namespace Otter
          *
          * @return A const iterator to the first element of the hash set.
          */
-        OTR_INLINE SlotIterator cbegin() const noexcept
+        OTR_INLINE Iterator begin() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -433,12 +432,9 @@ namespace Otter
          *
          * @return A const iterator to the last element of the hash set.
          */
-        OTR_INLINE SlotIterator cend() const noexcept
+        OTR_INLINE Iterator end() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots + m_Capacity - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -446,12 +442,9 @@ namespace Otter
          *
          * @return A reverse const iterator to the last element of the hash set.
          */
-        OTR_INLINE SlotIterator crbegin() const noexcept
+        OTR_INLINE Iterator rbegin() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots + m_Capacity - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -459,12 +452,9 @@ namespace Otter
          *
          * @return A reverse const iterator to the first element of the hash set.
          */
-        OTR_INLINE SlotIterator crend() const noexcept
+        OTR_INLINE Iterator rend() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots - 1, m_Capacity, m_SlotsInUse);
         }
 
     private:
@@ -473,7 +463,7 @@ namespace Otter
         static constexpr UInt16  k_InitialCapacity = 3;
         static constexpr Float16 k_ResizingFactor  = static_cast<Float16>(1.5);
 
-        Slot<T>* m_Slots = nullptr;
+        Slot* m_Slots = nullptr;
         UInt64 m_Capacity             = 0;
         UInt64 m_Count                = 0;
         UInt64 m_CurrentMaxCollisions = 0;
@@ -554,7 +544,7 @@ namespace Otter
             {
                 collisionCount++;
 
-                if (HasItemStoredAt(slot - m_Slots) && slot->Data == item && slot->Hash == hash)
+                if (HasItemStoredAt(slot - m_Slots) && slot->Matches(item, hash))
                     return false;
 
                 if (!slot->Next)
@@ -666,8 +656,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots = Buffer::New < Slot<T>>
-            (newCapacity);
+            m_Slots = Buffer::New < Slot > (newCapacity);
 
             for (UInt64 i = 0; i < newCapacity; i++)
                 if (newHashSet.HasItemStoredAt(i))
@@ -690,7 +679,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots = capacity > 0 ? Buffer::New < Slot<T>>(capacity) : nullptr;
+            m_Slots    = capacity > 0 ? Buffer::New < Slot > (capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
 
@@ -729,7 +718,7 @@ namespace Otter
          */
         void Destroy()
         {
-            Buffer::Delete<Slot<T>>(m_Slots, m_Capacity);
+            Buffer::Delete<Slot>(m_Slots, m_Capacity);
 
             m_SlotsInUse.ClearDestructive();
             m_Collisions.ClearDestructive();

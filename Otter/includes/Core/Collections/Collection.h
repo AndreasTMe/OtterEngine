@@ -36,7 +36,7 @@ namespace Otter
             if (outCollection.m_Data && outCollection.m_Capacity > 0)
                 Buffer::Delete<T>(outCollection.m_Data, outCollection.m_Capacity);
 
-            outCollection.m_Data     = Buffer::New<T>(count);
+            outCollection.m_Data     = Buffer::New < T > (count);
             outCollection.m_Capacity = count;
             outCollection.m_Count    = 0;
 
@@ -61,7 +61,7 @@ namespace Otter
         {
             Collection<T> collection;
             collection.m_Capacity = list.size();
-            collection.m_Data     = Buffer::New<T>(collection.m_Capacity);
+            collection.m_Data     = Buffer::New < T > (collection.m_Capacity);
 
             collection.m_Count = 0;
             for (const T& item: list)
@@ -85,7 +85,7 @@ namespace Otter
                 Buffer::Delete<T>(outCollection.m_Data, outCollection.m_Capacity);
 
             outCollection.m_Capacity = list.size();
-            outCollection.m_Data     = Buffer::New<T>(outCollection.m_Capacity);
+            outCollection.m_Data     = Buffer::New < T > (outCollection.m_Capacity);
 
             outCollection.m_Count = 0;
             for (const T& item: list)
@@ -122,6 +122,27 @@ namespace Otter
         }
 
         /**
+         * @brief Equality operator.
+         *
+         * @param other The collection to compare to.
+         *
+         * @return True if the collections are equal, false otherwise.
+         */
+        [[nodiscard]] bool operator==(const Collection<T>& other) const
+        {
+            return m_Data == other.m_Data && m_Capacity == other.m_Capacity && m_Count == other.m_Count;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The collection to compare to.
+         *
+         * @return True if the collections are not equal, false otherwise.
+         */
+        [[nodiscard]] bool operator!=(const Collection<T>& other) const { return !(*this == other); }
+
+        /**
          * @brief Used to reserve space for the collection.
          *
          * @param capacity The capacity to reserve.
@@ -142,7 +163,7 @@ namespace Otter
         {
             UInt64 newCapacity = CalculateExpandCapacity(amount);
 
-            T* newData = Buffer::New<T>(newCapacity);
+            T* newData = Buffer::New < T > (newCapacity);
 
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
@@ -170,7 +191,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New<T>(newCapacity);
+            T* newData = Buffer::New < T > (newCapacity);
 
             for (UInt64 i = 0; i < m_Count && i < amount; i++)
                 newData[i] = m_Data[i];
@@ -359,7 +380,7 @@ namespace Otter
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Capacity);
 
-            m_Data     = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
+            m_Data     = capacity > 0 ? Buffer::New < T > (capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
         }
