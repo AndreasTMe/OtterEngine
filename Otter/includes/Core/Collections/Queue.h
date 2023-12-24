@@ -45,7 +45,7 @@ namespace Otter
             : Queue()
         {
             m_Capacity   = list.size();
-            m_Data       = Buffer::New<T>(m_Capacity);
+            m_Data       = Buffer::New < T > (m_Capacity);
             m_Count      = 0;
             m_StartIndex = 0;
 
@@ -136,6 +136,30 @@ namespace Otter
 
             return *this;
         }
+
+        /**
+         * @brief Equality operator.
+         *
+         * @param other The queue to compare to.
+         *
+         * @return True if the queues are equal, false otherwise.
+         */
+        [[nodiscard]] bool operator==(const Queue<T>& other) const
+        {
+            return m_Data == other.m_Data
+                   && m_Capacity == other.m_Capacity
+                   && m_Count == other.m_Count
+                   && m_StartIndex == other.m_StartIndex;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The queue to compare to.
+         *
+         * @return True if the queues are not equal, false otherwise.
+         */
+        [[nodiscard]] bool operator!=(const Queue<T>& other) const { return !(*this == other); }
 
         /**
          * @brief Tries to enqueue an item into the queue.
@@ -272,7 +296,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New<T>(newCapacity);
+            T* newData = Buffer::New < T > (newCapacity);
 
             if (m_StartIndex + m_Count < m_Capacity)
             {
@@ -314,7 +338,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New<T>(newCapacity);
+            T* newData = Buffer::New < T > (newCapacity);
 
             if (m_StartIndex + m_Count < m_Capacity)
             {
@@ -496,7 +520,7 @@ namespace Otter
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Capacity);
 
-            m_Data       = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
+            m_Data       = capacity > 0 ? Buffer::New < T > (capacity) : nullptr;
             m_Capacity   = capacity;
             m_Count      = 0;
             m_StartIndex = 0;

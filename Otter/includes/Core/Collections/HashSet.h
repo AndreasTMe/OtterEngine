@@ -29,8 +29,8 @@ namespace Otter
         /// @brief Alias for a slot.
         using Slot = Slot<T>;
 
-        /// @brief Alias for a slot iterator.
-        using SlotIterator = SlotIterator<T>;
+        /// @brief Alias for a hashset iterator.
+        using Iterator = SlotIterator<T>;
 
     public:
         /**
@@ -422,12 +422,9 @@ namespace Otter
          *
          * @return A const iterator to the first element of the hash set.
          */
-        OTR_INLINE SlotIterator cbegin() const noexcept
+        OTR_INLINE Iterator begin() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -435,12 +432,9 @@ namespace Otter
          *
          * @return A const iterator to the last element of the hash set.
          */
-        OTR_INLINE SlotIterator cend() const noexcept
+        OTR_INLINE Iterator end() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots + m_Capacity - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -448,12 +442,9 @@ namespace Otter
          *
          * @return A reverse const iterator to the last element of the hash set.
          */
-        OTR_INLINE SlotIterator crbegin() const noexcept
+        OTR_INLINE Iterator rbegin() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots + m_Capacity - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -461,12 +452,9 @@ namespace Otter
          *
          * @return A reverse const iterator to the first element of the hash set.
          */
-        OTR_INLINE SlotIterator crend() const noexcept
+        OTR_INLINE Iterator rend() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots - 1, m_Capacity, m_SlotsInUse);
         }
 
     private:

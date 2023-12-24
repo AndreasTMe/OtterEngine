@@ -135,6 +135,27 @@ namespace Otter
         }
 
         /**
+         * @brief Equality operator.
+         *
+         * @param other The deque to compare to.
+         *
+         * @return True if the deques are equal, false otherwise.
+         */
+        [[nodiscard]] bool operator==(const Deque<T>& other) const
+        {
+            return m_Data == other.m_Data && m_Capacity == other.m_Capacity && m_Count == other.m_Count;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The deque to compare to.
+         *
+         * @return True if the deques are not equal, false otherwise.
+         */
+        [[nodiscard]] bool operator!=(const Deque<T>& other) const { return !(*this == other); }
+
+        /**
          * @brief Pushes an item to the front of the deque.
          *
          * @param value The item to push.

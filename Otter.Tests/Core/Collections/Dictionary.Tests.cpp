@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "Core/Collections/Dictionary.h"
+#include "Core/Collections/List.h"
 
 template<typename TKey, typename TValue>
 using Dictionary = Otter::Dictionary<TKey, TValue>;
@@ -115,6 +116,8 @@ TEST_F(Dictionary_Fixture, TryAdd_SimpleCases)
     Dictionary<int, int> dictionary;
 
     EXPECT_TRUE(dictionary.TryAdd(1, 1));
+    EXPECT_FALSE(dictionary.TryAdd(1, 2));
+    EXPECT_TRUE(dictionary.TryAdd(1, 2, true));
 
     int value = 2;
     EXPECT_TRUE(dictionary.TryAdd(value, value));
@@ -301,6 +304,35 @@ TEST_F(Dictionary_Fixture, ForEach)
     EXPECT_EQ(count, dictionary.GetCount() + 1);
 }
 
+TEST_F(Dictionary_Fixture, TryForKey)
+{
+    Dictionary<int, Otter::List<int>> dictionary = {{ 1, { 1, 2 }},
+                                                    { 2, { 1, 2 }}};
+
+    EXPECT_EQ(dictionary.GetCount(), 2);
+
+    Otter::List<int> list;
+    EXPECT_TRUE(dictionary.TryGet(1, &list));
+
+    EXPECT_EQ(list.GetCount(), 2);
+    for (auto& value: list)
+        EXPECT_EQ(value, 0);
+
+    list.Add(0);
+    EXPECT_EQ(list.GetCount(), 3);
+
+    EXPECT_TRUE(dictionary.TryGet(1, &list));
+    EXPECT_EQ(list.GetCount(), 2);
+
+    EXPECT_TRUE(dictionary.TryForKey(1, [](Otter::List<int>& value)
+    {
+        value.Add(3);
+    }));
+
+    EXPECT_TRUE(dictionary.TryGet(1, &list));
+    EXPECT_EQ(list.GetCount(), 3);
+}
+
 TEST_F(Dictionary_Fixture, ForEachKey)
 {
     Dictionary<int, int> dictionary = {{ 1, 1 },
@@ -478,15 +510,15 @@ TEST_F(Dictionary_Fixture, Iterator)
                                        { 5, 5 },
                                        { 6, 6 }};
 
-    UInt64    i  = 0;
-    for (auto it = dictionary.cbegin(); it != dictionary.cend(); ++it)
+    UInt64 i = 0;
+    for (const auto& [key, value]: dictionary)
     {
-        EXPECT_EQ((*it).Key, temp[i]);
-        EXPECT_EQ((*it).Value, temp[i]);
+        EXPECT_EQ(key, temp[i]);
+        EXPECT_EQ(value, temp[i]);
         ++i;
     }
 
-    for (auto it = dictionary.crbegin(); it != dictionary.crend(); --it)
+    for (auto it = dictionary.rbegin(); it != dictionary.rend(); --it)
     {
         EXPECT_EQ((*it).Key, temp[i]);
         EXPECT_EQ((*it).Value, temp[i]);

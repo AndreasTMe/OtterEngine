@@ -29,13 +29,13 @@ namespace Otter
         using HashUtils = Internal::HashUtils;
 
         /// @brief Alias for a KeyValuePair.
-        using KeyValuePair = KeyValuePair<TKey, TValue>;
+        using Pair = KeyValuePair<TKey, TValue>;
 
         /// @brief Alias for a slot.
-        using Slot = Slot<KeyValuePair>;
+        using Slot = Slot<Pair>;
 
         /// @brief Alias for a slot iterator.
-        using SlotIterator = SlotIterator<KeyValuePair>;
+        using Iterator = SlotIterator<Pair>;
 
     public:
         /**
@@ -57,7 +57,7 @@ namespace Otter
          *
          * @param list The initialiser list.
          */
-        Dictionary(InitialiserList<KeyValuePair> list)
+        Dictionary(InitialiserList<Pair> list)
             : Dictionary()
         {
             m_Capacity             = k_InitialCapacity;
@@ -65,7 +65,7 @@ namespace Otter
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
-            for (const KeyValuePair& item: list)
+            for (const Pair& item: list)
                 TryAdd(item.Key, item.Value);
         }
 
@@ -166,10 +166,11 @@ namespace Otter
          *
          * @param key The key of the pair.
          * @param value The value of the pair.
+         * @param replaceIfKeyExists Whether to replace the value if the key already exists.
          *
          * @return True if the pair was added, false otherwise.
          */
-        bool TryAdd(const TKey& key, const TValue& value)
+        bool TryAdd(const TKey& key, const TValue& value, bool replaceIfKeyExists = false)
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
@@ -181,7 +182,12 @@ namespace Otter
                 return TryAddToEmptySlot({ key, value }, hash, index);
 
             if (m_Slots[index].MatchesKey(key, hash))
-                return false;
+            {
+                if (replaceIfKeyExists)
+                    m_Slots[index].Data.Value = value;
+
+                return replaceIfKeyExists;
+            }
 
             if (HasCollisionStoredAt(index))
                 return TryAddToCollisionSlot({ key, value }, hash, index);
@@ -194,10 +200,11 @@ namespace Otter
          *
          * @param key The key of the pair.
          * @param value The value of the pair.
+         * @param replaceIfKeyExists Whether to replace the value if the key already exists.
          *
          * @return True if the pair was added, false otherwise.
          */
-        bool TryAdd(TKey&& key, TValue&& value) noexcept
+        bool TryAdd(TKey&& key, TValue&& value, bool replaceIfKeyExists = false) noexcept
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
@@ -209,7 +216,12 @@ namespace Otter
                 return TryAddToEmptySlot({ key, value }, hash, index);
 
             if (m_Slots[index].MatchesKey(key, hash))
-                return false;
+            {
+                if (replaceIfKeyExists)
+                    m_Slots[index].Data.Value = std::move(value);
+
+                return replaceIfKeyExists;
+            }
 
             if (HasCollisionStoredAt(index))
                 return TryAddToCollisionSlot({ key, value }, hash, index);
@@ -259,7 +271,7 @@ namespace Otter
 
             if (m_Slots[index].Next)
             {
-                if constexpr (std::is_move_assignable_v<KeyValuePair>)
+                if constexpr (std::is_move_assignable_v<Pair>)
                     m_Slots[index].Data = std::move(m_Slots[index].Next->Data);
                 else
                     m_Slots[index].Data = m_Slots[index].Next->Data;
@@ -345,6 +357,28 @@ namespace Otter
 
                 callback(m_Slots[i].Data.Key, &m_Slots[i].Data.Value);
             }
+        }
+
+        /**
+         * @brief Performs a given callback on each key in the dictionary.
+         *
+         * @param key The key to perform the callback on.
+         * @param callback The callback to perform.
+         *
+         * @return True if the key was found, false otherwise.
+         */
+        bool TryForKey(const TKey& key, Function<void(TValue&)> callback) const
+        {
+            if (IsEmpty())
+                return false;
+
+            UInt64 index;
+            if (!Exists(key, &index))
+                return false;
+
+            callback(m_Slots[index].Data.Value);
+
+            return true;
         }
 
         /**
@@ -529,12 +563,9 @@ namespace Otter
          *
          * @return A const iterator to the first element of the dictionary.
          */
-        OTR_INLINE SlotIterator cbegin() const noexcept
+        OTR_INLINE Iterator begin() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -542,12 +573,9 @@ namespace Otter
          *
          * @return A const iterator to the last element of the dictionary.
          */
-        OTR_INLINE SlotIterator cend() const noexcept
+        OTR_INLINE Iterator end() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots + m_Capacity - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -555,12 +583,9 @@ namespace Otter
          *
          * @return A reverse const iterator to the last element of the dictionary.
          */
-        OTR_INLINE SlotIterator crbegin() const noexcept
+        OTR_INLINE Iterator rbegin() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots + m_Capacity - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -568,12 +593,9 @@ namespace Otter
          *
          * @return A reverse const iterator to the first element of the dictionary.
          */
-        OTR_INLINE SlotIterator crend() const noexcept
+        OTR_INLINE Iterator rend() const noexcept
         {
-            return SlotIterator(m_Slots,
-                                m_Slots - 1,
-                                m_Capacity,
-                                m_SlotsInUse);
+            return Iterator(m_Slots, m_Slots - 1, m_Capacity, m_SlotsInUse);
         }
 
     private:
@@ -601,7 +623,7 @@ namespace Otter
          *
          * @note This function assumes that the slot is empty, so it always returns true.
          */
-        bool TryAddToEmptySlot(const KeyValuePair& pair, const UInt64 hash, const UInt64 index)
+        bool TryAddToEmptySlot(const Pair& pair, const UInt64 hash, const UInt64 index)
         {
             m_Slots[index].Set(pair, hash);
             m_SlotsInUse.Set(index, true);
@@ -627,7 +649,7 @@ namespace Otter
          * It then removes the collision from the linked list. The new key/value pair is then added to the collision
          * slot (which is now empty) and re-adds the original collision to the dictionary.
          */
-        bool TryAddToCollisionSlot(const KeyValuePair& pair, const UInt64 hash, const UInt64 index)
+        bool TryAddToCollisionSlot(const Pair& pair, const UInt64 hash, const UInt64 index)
         {
             auto collisionData = m_Slots[index].Data;
             auto* slot = &m_Slots[m_Slots[index].Hash % m_Capacity];
@@ -654,7 +676,7 @@ namespace Otter
          *
          * @return True if the collision was added, false otherwise.
          */
-        bool TryAddNewCollision(const KeyValuePair& pair, const UInt64 collisionIndex, const UInt64 hash)
+        bool TryAddNewCollision(const Pair& pair, const UInt64 collisionIndex, const UInt64 hash)
         {
             auto* slot = &m_Slots[collisionIndex];
             auto collisionCount = 0;

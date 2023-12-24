@@ -35,7 +35,7 @@ namespace Otter
         Array()
         {
             if constexpr (Size > 0)
-                m_Data = Buffer::New<T>(Size);
+                m_Data = Buffer::New < T > (Size);
         }
 
         /**
@@ -125,6 +125,24 @@ namespace Otter
 
             return *this;
         }
+
+        /**
+         * @brief Equality operator.
+         *
+         * @param other The array to compare to.
+         *
+         * @return True if the arrays are equal, false otherwise.
+         */
+        [[nodiscard]] bool operator==(const Array<T, Size>& other) const { return m_Data == other.m_Data; }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The array to compare to.
+         *
+         * @return True if the arrays are not equal, false otherwise.
+         */
+        [[nodiscard]] bool operator!=(const Array<T, Size>& other) const { return !(*this == other); }
 
         /**
          * @brief Gets the element at the specified index.
