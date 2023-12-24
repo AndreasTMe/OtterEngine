@@ -6,19 +6,6 @@
 
 namespace Otter::Graphics
 {
-    // HELP: Renderer
-    Renderer* Renderer::Create()
-    {
-        OTR_LOG_FATAL("NullGraphics is not a valid renderer!");
-        return nullptr;
-    }
-
-    void Renderer::Destroy(Renderer* outRenderer)
-    {
-        OTR_LOG_FATAL("NullGraphics is not a valid renderer!");
-        outRenderer = nullptr;
-    }
-
     // HELP: Shader
     Shader* Shader::Create(const char* const filePath)
     {

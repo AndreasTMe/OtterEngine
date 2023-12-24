@@ -8,6 +8,9 @@
 
 namespace Otter::Graphics
 {
+    /**
+     * @brief Shader attribute descriptor.
+     */
     struct ShaderAttribute final
     {
     public:
@@ -15,6 +18,11 @@ namespace Otter::Graphics
         ShaderAttributeSize Size;
         UInt16              Offset;
 
+        /**
+         * @brief Gets the bit offset of the attribute.
+         *
+         * @return The bit offset.
+         */
         [[nodiscard]] OTR_INLINE UInt32 GetBitOffset() const { return Offset * static_cast<UInt32>(Size); }
     };
 }
