@@ -13,6 +13,9 @@ namespace Otter
     struct TransformComponent final : public IComponent
     {
     public:
+        /// @brief The Id of the transform component.
+        static constexpr ComponentId Id = 1;
+
         /// @brief The position of the transform.
         Vector3D<Float32>   Position = Vector3D<Float32>::Zero();
         /// @brief The rotation of the transform.

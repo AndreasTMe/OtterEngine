@@ -41,16 +41,18 @@
             }                                                           \
         }
 
+    #define OTR_INTERNAL_STATIC_ASSERT(assertion) static_assert(assertion, #assertion)
+
+    #define OTR_INTERNAL_STATIC_ASSERT_MSG(assertion, message) static_assert(assertion, message)
+
 #else
-#define OTR_INTERNAL_ASSERT(assertion)
+    #define OTR_INTERNAL_ASSERT(assertion)
     #define OTR_INTERNAL_ASSERT_MSG(assertion, ...)
+    #define OTR_INTERNAL_STATIC_ASSERT(assertion)
+    #define OTR_INTERNAL_STATIC_ASSERT_MSG(assertion, message)
 #endif
 
 #if OTR_ASSERTIONS_ENABLED
-    #define OTR_ASSERT_SCOPE(scope) { scope }
-    #define OTR_ASSERT_VARIABLE_DECLARATION(declaration) declaration;
-    #define OTR_ASSERT_METHOD_DECLARATION(declaration) declaration
-
     #define OTR_ASSERT(assertion)                                       \
         {                                                               \
             if (assertion) { }                                          \
@@ -76,13 +78,16 @@
                 OTR_DEBUG_BREAK();                                      \
             }                                                           \
         }
-#else
-#define OTR_ASSERT_SCOPE(scope)
-    #define OTR_ASSERT_VARIABLE_DECLARATION(declaration)
-    #define OTR_ASSERT_METHOD_DECLARATION(declaration)
 
+    #define OTR_STATIC_ASSERT(assertion) static_assert(assertion, #assertion)
+
+    #define OTR_STATIC_ASSERT_MSG(assertion, message) static_assert(assertion, message)
+
+#else
     #define OTR_ASSERT(assertion)
     #define OTR_ASSERT_MSG(assertion, ...)
+    #define OTR_STATIC_ASSERT(assertion)
+    #define OTR_STATIC_ASSERT_MSG(assertion, message)
 #endif
 
 #endif //OTTERENGINE_ASSERT_H

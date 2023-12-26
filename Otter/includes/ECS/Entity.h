@@ -7,6 +7,9 @@ namespace Otter
 {
     class EntityManager;
 
+    /// @brief Type alias for entity Ids.
+    using EntityId = UInt64;
+
     /**
      * @brief Entity class that is used to identify an entity in the ECS.
      */
@@ -78,7 +81,7 @@ namespace Otter
          *
          * @return Id of the entity.
          */
-        [[nodiscard]] OTR_INLINE UInt64 GetId() const noexcept { return m_Id; }
+        [[nodiscard]] OTR_INLINE EntityId GetId() const noexcept { return m_Id; }
 
         /**
          * @brief Checks if the entity is valid.
@@ -98,7 +101,17 @@ namespace Otter
         }
 
     private:
-        UInt64 m_Id;
+        /**
+         * @brief Constructor.
+         *
+         * @param id Id of the entity.
+         */
+        explicit Entity(EntityId id) noexcept
+            : m_Id(id)
+        {
+        }
+
+        EntityId m_Id = 0;
 
         friend class EntityManager;
     };

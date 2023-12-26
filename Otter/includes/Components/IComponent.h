@@ -1,8 +1,13 @@
 #ifndef OTTERENGINE_ICOMPONENT_H
 #define OTTERENGINE_ICOMPONENT_H
 
+#include "Core/BaseTypes.h"
+
 namespace Otter
 {
+    /// @brief Type alias for component Ids.
+    using ComponentId = UInt16;
+
     /**
      * @brief Marker interface for all components to inherit from.
      *
@@ -44,6 +49,14 @@ namespace Otter
          */
         IComponent() = default;
     };
+
+    /**
+     * @brief Concept for checking if a type is derived from IComponent and has a static Id.
+     *
+     * @tparam T Type to check.
+     */
+    template<typename T>
+    concept IsComponent = requires { T::Id; } && IsDerivedFrom<T, IComponent>;
 }
 
 #endif //OTTERENGINE_ICOMPONENT_H
