@@ -12,6 +12,9 @@ namespace Otter
     struct CameraComponent final : public IComponent
     {
     public:
+        /// @brief The Id of the camera component.
+        static constexpr ComponentId Id = 3;
+
         /// @brief The background color of the camera.
         Vector4D<Float32> BackgroundColor = Vector4D<Float32>::Zero();
         /// @brief The near plane of the camera.

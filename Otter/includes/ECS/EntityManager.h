@@ -2,13 +2,14 @@
 #define OTTERENGINE_ENTITYMANAGER_H
 
 #include "Core/Collections/List.h"
-#include "Core/Collections/HashSet.h"
+#include "Core/Collections/Stack.h"
 #include "Core/Collections/Dictionary.h"
 
 #include "ECS/Entity.h"
 #include "ECS/Archetype.h"
 #include "Components/IComponent.h"
 #include "Components/Core/TransformComponent.h"
+#include "Components/Core/SpriteComponent.h"
 
 namespace Otter
 {
@@ -16,14 +17,14 @@ namespace Otter
     {
     public:
         /**
-         * @brief Deleted constructor.
+         * @brief Constructor.
          */
-        EntityManager() = delete;
+        EntityManager() = default;
 
         /**
-         * @brief Deleted destructor.
+         * @brief Destructor.
          */
-        ~EntityManager() = delete;
+        ~EntityManager() = default;
 
         /**
          * @brief Deleted copy constructor.
@@ -45,45 +46,68 @@ namespace Otter
          */
         EntityManager& operator=(EntityManager&& other) noexcept = delete;
 
-        // TODO: Probably something like this for initialising and destroying the world.
-        [[nodiscard]] static bool TryInitialiseWorld();
-        static void DestroyWorld();
+        [[nodiscard]] Entity CreateEntity();
+        void DestroyEntity(Entity entity);
+        void RefreshEntities();
 
-        [[nodiscard]] static Entity CreateEntity()
+        template<typename TComponent, typename... TComponents>
+        requires IsComponent<TComponent>
+        void RegisterComponents()
         {
-            static EntityId id = 0;
-            id++;
+            if (m_ComponentMaskLock)
+                return;
 
-            return Entity{ id };
+            RegisterComponentsRecursive<TComponent, TComponents...>();
         }
 
-        static void DestroyEntity(Entity entity)
-        {
-            // TODO: Implement this.
-        }
+        OTR_INLINE void LockComponentMask() { m_ComponentMaskLock = true; }
 
         template<typename TComponent>
         requires IsComponent<TComponent>
-        static bool TryAddComponent(Entity entity)
+        bool TryAddComponent(Entity entity)
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component ID must be greater than 0.");
+            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
 
             return false;
         }
 
         template<typename TComponent>
         requires IsComponent<TComponent>
-        static bool TryRemoveComponent(Entity entity)
+        bool TryRemoveComponent(Entity entity)
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component ID must be greater than 0.");
+            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
 
             return false;
         }
 
     private:
-        static Dictionary<Entity, ArchetypeId>               s_EntityToArchetype;
-        static Dictionary<ComponentId, HashSet<ArchetypeId>> s_ComponentToArchetypes;
-        static Dictionary<ArchetypeId, Archetype>            s_Archetypes;
+        // Entity Registry
+        List<Entity>               m_Entities;
+        Dictionary<Entity, UInt64> m_EntityToIndex;
+        Stack<Entity>              m_EntitiesToAdd;
+
+        // Component Registry
+        Dictionary<ComponentId, UInt64> m_ComponentToMaskIndex;
+        bool                            m_ComponentMaskLock = false;
+
+        void PopulateEntitiesToAdd();
+        void CleanUpEntities();
+
+        template<typename TComponent, typename... TComponents>
+        requires IsComponent<TComponent>
+        void RegisterComponentsRecursive()
+        {
+            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
+
+            if (m_ComponentToMaskIndex.Contains(TComponent::Id))
+                return;
+
+            UInt64 index = m_ComponentToMaskIndex.GetCount();
+            m_ComponentToMaskIndex.TryAdd(TComponent::Id, index);
+
+            if constexpr (sizeof...(TComponents) > 0 && (IsComponent<TComponents> && ...))
+                RegisterComponentsRecursive<TComponents...>();
+        }
     };
 }
 

@@ -56,7 +56,7 @@ namespace Otter
      * @tparam T Type to check.
      */
     template<typename T>
-    concept IsComponent = requires { T::Id; } && IsDerivedFrom<T, IComponent>;
+    concept IsComponent = IsDerivedFrom<T, IComponent> && requires { T::Id; };
 }
 
 #endif //OTTERENGINE_ICOMPONENT_H

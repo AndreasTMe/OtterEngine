@@ -2,9 +2,12 @@
 #define OTTERENGINE_ARCHETYPE_H
 
 #include "Core/BaseTypes.h"
+#include "Core/Collections/BitSet.h"
 
 namespace Otter
 {
+    class EntityManager;
+
     using ArchetypeId = UInt16;
 
     class Archetype
@@ -32,6 +35,7 @@ namespace Otter
         }
 
         ArchetypeId m_Id = 0;
+        BitSet      m_ComponentMask;
 
         friend class EntityManager;
     };
