@@ -56,7 +56,7 @@ namespace Otter
             : HashSet()
         {
             m_Capacity             = k_InitialCapacity;
-            m_Slots                = Buffer::New < Slot > (m_Capacity);
+            m_Slots                = Buffer::New<Slot>(m_Capacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
@@ -70,14 +70,16 @@ namespace Otter
          * @param other The hashset to copy.
          */
         HashSet(const HashSet<T>& other)
-            : HashSet()
         {
-            m_Slots                = other.m_Slots;
             m_Capacity             = other.m_Capacity;
             m_Count                = other.m_Count;
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
             m_Collisions           = other.m_Collisions;
+            m_Slots                = Buffer::New<Slot>(m_Capacity);
+
+            if (m_Count > 0)
+                MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
         }
 
         /**
@@ -86,7 +88,6 @@ namespace Otter
          * @param other The hashset to move.
          */
         HashSet(HashSet<T>&& other) noexcept
-            : HashSet()
         {
             m_Slots                = std::move(other.m_Slots);
             m_Capacity             = std::move(other.m_Capacity);
@@ -116,12 +117,15 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots                = other.m_Slots;
             m_Capacity             = other.m_Capacity;
             m_Count                = other.m_Count;
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
             m_Collisions           = other.m_Collisions;
+            m_Slots                = Buffer::New<Slot>(m_Capacity);
+
+            if (m_Count > 0)
+                MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
 
             return *this;
         }
@@ -656,7 +660,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots = Buffer::New < Slot > (newCapacity);
+            m_Slots = Buffer::New<Slot>(newCapacity);
 
             for (UInt64 i = 0; i < newCapacity; i++)
                 if (newHashSet.HasItemStoredAt(i))
@@ -679,7 +683,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots    = capacity > 0 ? Buffer::New < Slot > (capacity) : nullptr;
+            m_Slots    = capacity > 0 ? Buffer::New<Slot>(capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
 

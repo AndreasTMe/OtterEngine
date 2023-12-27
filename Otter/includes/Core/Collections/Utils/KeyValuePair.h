@@ -41,6 +41,18 @@ namespace Otter
         }
 
         /**
+         * @brief Constructor.
+         *
+         * @param key The key.
+         * @param value The value.
+         */
+        KeyValuePair(TKey&& key, TValue&& value)
+        {
+            Key   = std::move(key);
+            Value = std::move(value);
+        }
+
+        /**
          * @brief Copy constructor.
          *
          * @param other The key-value pair to copy.

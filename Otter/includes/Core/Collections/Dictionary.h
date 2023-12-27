@@ -61,7 +61,7 @@ namespace Otter
             : Dictionary()
         {
             m_Capacity             = k_InitialCapacity;
-            m_Slots                = Buffer::New < Slot > (k_InitialCapacity);
+            m_Slots                = Buffer::New<Slot>(k_InitialCapacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
@@ -75,14 +75,16 @@ namespace Otter
          * @param other The dictionary to copy.
          */
         Dictionary(const Dictionary<TKey, TValue>& other)
-            : Dictionary()
         {
-            m_Slots                = other.m_Slots;
             m_Capacity             = other.m_Capacity;
             m_Count                = other.m_Count;
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
             m_Collisions           = other.m_Collisions;
+            m_Slots                = Buffer::New<Slot>(m_Capacity);
+
+            if (m_Count > 0)
+                MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
         }
 
         /**
@@ -91,7 +93,6 @@ namespace Otter
          * @param other The dictionary to move.
          */
         Dictionary(Dictionary<TKey, TValue>&& other) noexcept
-            : Dictionary()
         {
             m_Slots                = std::move(other.m_Slots);
             m_Capacity             = std::move(other.m_Capacity);
@@ -121,12 +122,15 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots                = other.m_Slots;
             m_Capacity             = other.m_Capacity;
             m_Count                = other.m_Count;
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
             m_Collisions           = other.m_Collisions;
+            m_Slots                = Buffer::New<Slot>(m_Capacity);
+
+            if (m_Count > 0)
+                MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
 
             return *this;
         }
@@ -170,7 +174,7 @@ namespace Otter
          *
          * @return True if the pair was added, false otherwise.
          */
-        bool TryAdd(const TKey& key, const TValue& value, bool replaceIfKeyExists = false)
+        bool TryAdd(const TKey& key, const TValue& value, const bool replaceIfKeyExists = false)
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
@@ -204,7 +208,7 @@ namespace Otter
          *
          * @return True if the pair was added, false otherwise.
          */
-        bool TryAdd(TKey&& key, TValue&& value, bool replaceIfKeyExists = false) noexcept
+        bool TryAdd(TKey&& key, TValue&& value, const bool replaceIfKeyExists = false) noexcept
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
@@ -797,8 +801,8 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots = Buffer::New < Slot >
-                      (newCapacity);
+            m_Slots = Buffer::New<Slot>
+                (newCapacity);
 
             for (UInt64 i = 0; i < newCapacity; i++)
                 if (newDictionary.HasItemStoredAt(i))
@@ -821,7 +825,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots    = capacity > 0 ? Buffer::New < Slot > (capacity) : nullptr;
+            m_Slots    = capacity > 0 ? Buffer::New<Slot>(capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
 

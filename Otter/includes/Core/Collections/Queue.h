@@ -45,7 +45,7 @@ namespace Otter
             : Queue()
         {
             m_Capacity   = list.size();
-            m_Data       = Buffer::New < T > (m_Capacity);
+            m_Data       = Buffer::New<T>(m_Capacity);
             m_Count      = 0;
             m_StartIndex = 0;
 
@@ -59,12 +59,14 @@ namespace Otter
          * @param other The queue to copy.
          */
         Queue(const Queue<T>& other)
-            : Queue()
         {
-            m_Data       = other.m_Data;
             m_Capacity   = other.m_Capacity;
             m_Count      = other.m_Count;
             m_StartIndex = other.m_StartIndex;
+            m_Data       = Buffer::New<T>(m_Capacity);
+
+            if (m_Count > 0)
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Capacity * sizeof(T));
         }
 
         /**
@@ -73,7 +75,6 @@ namespace Otter
          * @param other The queue to move.
          */
         Queue(Queue<T>&& other) noexcept
-            : Queue()
         {
             m_Data       = std::move(other.m_Data);
             m_Capacity   = std::move(other.m_Capacity);
@@ -101,10 +102,13 @@ namespace Otter
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Capacity);
 
-            m_Data       = other.m_Data;
             m_Capacity   = other.m_Capacity;
             m_Count      = other.m_Count;
             m_StartIndex = other.m_StartIndex;
+            m_Data       = Buffer::New<T>(m_Capacity);
+
+            if (m_Count > 0)
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Capacity * sizeof(T));
 
             return *this;
         }
@@ -296,7 +300,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New < T > (newCapacity);
+            T* newData = Buffer::New<T>(newCapacity);
 
             if (m_StartIndex + m_Count < m_Capacity)
             {
@@ -338,7 +342,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New < T > (newCapacity);
+            T* newData = Buffer::New<T>(newCapacity);
 
             if (m_StartIndex + m_Count < m_Capacity)
             {
@@ -520,7 +524,7 @@ namespace Otter
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Capacity);
 
-            m_Data       = capacity > 0 ? Buffer::New < T > (capacity) : nullptr;
+            m_Data       = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
             m_Capacity   = capacity;
             m_Count      = 0;
             m_StartIndex = 0;

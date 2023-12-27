@@ -44,7 +44,7 @@ TEST_F(Stack_Fixture, Initialisation_Copy)
     Stack<int> stack = { 1, 2, 3, 4, 5 };
     Stack<int> copy  = stack;
 
-    EXPECT_EQ(copy.GetData(), stack.GetData());
+    EXPECT_NE(copy.GetData(), stack.GetData());
     EXPECT_EQ(copy.GetCapacity(), stack.GetCapacity());
     EXPECT_EQ(copy.GetCount(), stack.GetCount());
 }
@@ -67,7 +67,7 @@ TEST_F(Stack_Fixture, Assignment_Copy)
     Stack<int> copy;
     copy = stack;
 
-    EXPECT_EQ(copy.GetData(), stack.GetData());
+    EXPECT_NE(copy.GetData(), stack.GetData());
     EXPECT_EQ(copy.GetCapacity(), stack.GetCapacity());
     EXPECT_EQ(copy.GetCount(), stack.GetCount());
 }

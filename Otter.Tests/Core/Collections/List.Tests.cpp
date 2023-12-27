@@ -47,7 +47,7 @@ TEST_F(List_Fixture, Initialisation_Copy)
     List<int> list = { 1, 2, 3, 4, 5 };
     List<int> copy = list;
 
-    EXPECT_EQ(copy.GetData(), list.GetData());
+    EXPECT_NE(copy.GetData(), list.GetData());
     EXPECT_EQ(copy.GetCapacity(), list.GetCapacity());
     EXPECT_EQ(copy.GetCount(), list.GetCount());
 
@@ -76,7 +76,7 @@ TEST_F(List_Fixture, Assignment_Copy)
     List<int> copy;
     copy = list;
 
-    EXPECT_EQ(copy.GetData(), list.GetData());
+    EXPECT_NE(copy.GetData(), list.GetData());
     EXPECT_EQ(copy.GetCapacity(), list.GetCapacity());
     EXPECT_EQ(copy.GetCount(), list.GetCount());
 

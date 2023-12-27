@@ -36,7 +36,7 @@ namespace Otter
             if (outCollection.m_Data && outCollection.m_Capacity > 0)
                 Buffer::Delete<T>(outCollection.m_Data, outCollection.m_Capacity);
 
-            outCollection.m_Data     = Buffer::New < T > (count);
+            outCollection.m_Data     = Buffer::New<T>(count);
             outCollection.m_Capacity = count;
             outCollection.m_Count    = 0;
 
@@ -61,7 +61,7 @@ namespace Otter
         {
             Collection<T> collection;
             collection.m_Capacity = list.size();
-            collection.m_Data     = Buffer::New < T > (collection.m_Capacity);
+            collection.m_Data     = Buffer::New<T>(collection.m_Capacity);
 
             collection.m_Count = 0;
             for (const T& item: list)
@@ -85,7 +85,7 @@ namespace Otter
                 Buffer::Delete<T>(outCollection.m_Data, outCollection.m_Capacity);
 
             outCollection.m_Capacity = list.size();
-            outCollection.m_Data     = Buffer::New < T > (outCollection.m_Capacity);
+            outCollection.m_Data     = Buffer::New<T>(outCollection.m_Capacity);
 
             outCollection.m_Count = 0;
             for (const T& item: list)
@@ -163,7 +163,7 @@ namespace Otter
         {
             UInt64 newCapacity = CalculateExpandCapacity(amount);
 
-            T* newData = Buffer::New < T > (newCapacity);
+            T* newData = Buffer::New<T>(newCapacity);
 
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
@@ -191,7 +191,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New < T > (newCapacity);
+            T* newData = Buffer::New<T>(newCapacity);
 
             for (UInt64 i = 0; i < m_Count && i < amount; i++)
                 newData[i] = m_Data[i];
@@ -380,7 +380,7 @@ namespace Otter
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Capacity);
 
-            m_Data     = capacity > 0 ? Buffer::New < T > (capacity) : nullptr;
+            m_Data     = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
         }
@@ -463,11 +463,13 @@ namespace Otter
 
 #define OTR_COLLECTION_COPY(Type)                                                           \
     OTR_COLLECTION_CHILD(Type)(const OTR_COLLECTION_CHILD(Type)<T>& other)                  \
-        : Collection<T>()                                                                   \
     {                                                                                       \
         base::m_Capacity = other.m_Capacity;                                                \
         base::m_Count    = other.m_Count;                                                   \
-        base::m_Data     = other.m_Data;                                                    \
+        base::m_Data     = Buffer::New<T>(base::m_Capacity);                                \
+                                                                                            \
+        if (base::m_Count > 0)                                                              \
+            MemorySystem::MemoryCopy(base::m_Data, other.m_Data, base::m_Count * sizeof(T));\
     }                                                                                       \
                                                                                             \
     OTR_COLLECTION_CHILD(Type)<T>& operator=(const OTR_COLLECTION_CHILD(Type)<T>& other)    \
@@ -480,14 +482,16 @@ namespace Otter
                                                                                             \
         base::m_Capacity = other.m_Capacity;                                                \
         base::m_Count    = other.m_Count;                                                   \
-        base::m_Data     = other.m_Data;                                                    \
+        base::m_Data     = Buffer::New<T>(base::m_Capacity);                                \
+                                                                                            \
+        if (base::m_Count > 0)                                                              \
+            MemorySystem::MemoryCopy(base::m_Data, other.m_Data, base::m_Count * sizeof(T));\
                                                                                             \
         return *this;                                                                       \
     }
 
 #define OTR_COLLECTION_MOVE(Type)                                                               \
     OTR_COLLECTION_CHILD(Type)(OTR_COLLECTION_CHILD(Type)<T>&& other) noexcept                  \
-        : Collection<T>()                                                                       \
     {                                                                                           \
         base::m_Capacity = std::move(other.m_Capacity);                                         \
         base::m_Count    = std::move(other.m_Count);                                            \

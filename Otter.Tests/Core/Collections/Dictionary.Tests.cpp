@@ -315,8 +315,12 @@ TEST_F(Dictionary_Fixture, TryForKey)
     EXPECT_TRUE(dictionary.TryGet(1, &list));
 
     EXPECT_EQ(list.GetCount(), 2);
+
+    int count = 0;
     for (auto& value: list)
-        EXPECT_EQ(value, 0);
+        EXPECT_EQ(value, ++count);
+
+    EXPECT_EQ(count, list.GetCount());
 
     list.Add(0);
     EXPECT_EQ(list.GetCount(), 3);

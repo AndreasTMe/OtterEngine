@@ -35,7 +35,7 @@ namespace Otter
         Array()
         {
             if constexpr (Size > 0)
-                m_Data = Buffer::New < T > (Size);
+                m_Data = Buffer::New<T>(Size);
         }
 
         /**
@@ -70,9 +70,11 @@ namespace Otter
          * @param other The other array to copy.
          */
         Array(const Array<T, Size>& other)
-            : Array()
         {
-            m_Data = other.m_Data;
+            m_Data = Buffer::New<T>(Size);
+
+            if constexpr (Size > 0)
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
         }
 
         /**
@@ -81,7 +83,6 @@ namespace Otter
          * @param other The other array to move.
          */
         Array(Array<T, Size>&& other) noexcept
-            : Array()
         {
             m_Data = std::move(other.m_Data);
 
@@ -100,8 +101,10 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = other.m_Data[i];
+            m_Data = Buffer::New<T>(Size);
+
+            if constexpr (Size > 0)
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
 
             return *this;
         }

@@ -44,7 +44,7 @@ TEST_F(Deque_Fixture, Initialisation_Copy)
     Deque<int> deque = { 1, 2, 3, 4, 5 };
     Deque<int> copy  = deque;
 
-    EXPECT_EQ(copy.GetData(), deque.GetData());
+    EXPECT_NE(copy.GetData(), deque.GetData());
     EXPECT_EQ(copy.GetCapacity(), deque.GetCapacity());
     EXPECT_EQ(copy.GetCount(), deque.GetCount());
 }
