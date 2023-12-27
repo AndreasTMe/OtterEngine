@@ -8,14 +8,40 @@
 #include "ECS/Entity.h"
 #include "ECS/Archetype.h"
 #include "Components/IComponent.h"
-#include "Components/Core/TransformComponent.h"
-#include "Components/Core/SpriteComponent.h"
 
 namespace Otter
 {
-    class EntityManager
+    class EntityManager final
     {
     public:
+        class EntityBuilder final
+        {
+        public:
+            EntityBuilder(EntityManager* entityManager, Entity entity)
+                : m_EntityManager(entityManager), m_Entity(entity)
+            {
+            }
+            ~EntityBuilder() = default;
+
+            template<typename TComponent, typename... TArgs>
+            requires IsComponent<TComponent>
+            EntityBuilder& With(TArgs&& ... args)
+            {
+                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
+
+                // TODO: Create component and store it in an archetype.
+                // auto component = TComponent(std::forward<TArgs>(args)...);
+
+                return *this;
+            }
+
+            Entity Build() { return m_Entity; }
+
+        private:
+            EntityManager* m_EntityManager;
+            Entity m_Entity;
+        };
+
         /**
          * @brief Constructor.
          */
@@ -46,10 +72,6 @@ namespace Otter
          */
         EntityManager& operator=(EntityManager&& other) noexcept = delete;
 
-        [[nodiscard]] Entity CreateEntity();
-        void DestroyEntity(Entity entity);
-        void RefreshEntities();
-
         template<typename TComponent, typename... TComponents>
         requires IsComponent<TComponent>
         void RegisterComponents()
@@ -61,6 +83,10 @@ namespace Otter
         }
 
         OTR_INLINE void LockComponentMask() { m_ComponentMaskLock = true; }
+
+        [[nodiscard]] EntityBuilder CreateEntity();
+        void DestroyEntity(Entity entity);
+        void RefreshEntities();
 
         template<typename TComponent>
         requires IsComponent<TComponent>

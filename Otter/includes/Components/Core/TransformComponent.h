@@ -48,6 +48,20 @@ namespace Otter
         }
 
         /**
+         * @brief Constructor.
+         *
+         * @param position The position of the transform.
+         * @param rotation The rotation of the transform.
+         * @param scale The scale of the transform.
+         */
+        TransformComponent(Vector3D<Float32>&& position,
+                           Quaternion<Float32>&& rotation,
+                           Vector3D<Float32>&& scale)
+            : Position(std::move(position)), Rotation(std::move(rotation)), Scale(std::move(scale))
+        {
+        }
+
+        /**
          * @brief Copy constructor.
          *
          * @param other Transform to copy from.
