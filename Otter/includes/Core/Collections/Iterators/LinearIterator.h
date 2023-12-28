@@ -11,7 +11,7 @@ namespace Otter
      * @tparam T The type of the iterator.
      */
     template<typename T>
-    struct LinearIterator
+    struct LinearIterator final
     {
     public:
         /**

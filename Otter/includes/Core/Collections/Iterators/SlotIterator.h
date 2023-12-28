@@ -13,7 +13,7 @@ namespace Otter
      * @tparam T Type of the data stored in the Slots.
      */
     template<typename T>
-    struct SlotIterator
+    struct SlotIterator final
     {
     public:
         /**

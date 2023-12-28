@@ -193,7 +193,7 @@ namespace Otter
 
             T* newData = Buffer::New<T>(newCapacity);
 
-            for (UInt64 i = 0; i < m_Count && i < amount; i++)
+            for (UInt64 i = 0; i < m_Count && i < newCapacity; i++)
                 newData[i] = m_Data[i];
 
             if (IsCreated())
@@ -223,55 +223,21 @@ namespace Otter
         }
 
         /**
-         * @brief Checks if the collection contains a given item.
-         *
-         * @param item The item to check for.
-         *
-         * @return True if the collection contains the item, false otherwise.
-         */
-        [[nodiscard]] bool Contains(T&& item) const noexcept
-        {
-            for (UInt64 i = 0; i < m_Count; i++)
-                if (m_Data[i] == item)
-                    return true;
-
-            return false;
-        }
-
-        /**
          * @brief Tries to get the index of a given item.
          *
          * @param item The item to get the index of.
-         * @param index The index of the item.
+         * @param outIndex The index of the item.
          *
          * @return True if the item was found, false otherwise.
          */
-        [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64& index) const
+        [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64* outIndex) const
         {
+            OTR_ASSERT_MSG(outIndex, "Out index must not be null")
+
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)
                 {
-                    index = i;
-                    return true;
-                }
-
-            return false;
-        }
-
-        /**
-         * @brief Tries to get the index of a given item.
-         *
-         * @param item The item to get the index of.
-         * @param index The index of the item.
-         *
-         * @return True if the item was found, false otherwise.
-         */
-        [[nodiscard]] bool TryGetIndexOf(T&& item, UInt64& index) const noexcept
-        {
-            for (UInt64 i = 0; i < m_Count; i++)
-                if (m_Data[i] == item)
-                {
-                    index = i;
+                    *outIndex = i;
                     return true;
                 }
 

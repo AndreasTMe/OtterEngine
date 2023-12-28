@@ -103,8 +103,21 @@ namespace Otter
          * @param destination The destination of the memory copy.
          * @param source The source of the memory copy.
          * @param size The size of the memory copy in bytes.
+         *
+         * @note Copying overlapping memory blocks with this function is undefined behaviour.
          */
         static void MemoryCopy(void* destination, const void* source, UInt64 size);
+
+        /**
+         * @brief Copies a block of memory from one location to another.
+         *
+         * @param destination The destination of the memory copy.
+         * @param source The source of the memory copy.
+         * @param size The size of the memory copy in bytes.
+         *
+         * @note Allows copying overlapping memory blocks.
+         */
+        static void MemoryMove(void* destination, const void* source, UInt64 size);
 
         /**
          * @brief Clears a block of memory.

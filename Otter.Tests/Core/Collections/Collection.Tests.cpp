@@ -128,20 +128,20 @@ TEST_F(Collection_Fixture, TryGetIndexOf)
     Collection<int> collection = Collections::New<int>({ 1, 2, 3 });
 
     UInt64 index = 0;
-    EXPECT_TRUE(collection.TryGetIndexOf(1, index));
+    EXPECT_TRUE(collection.TryGetIndexOf(1, &index));
     EXPECT_EQ(index, 0);
 
     index = 0;
-    EXPECT_TRUE(collection.TryGetIndexOf(2, index));
+    EXPECT_TRUE(collection.TryGetIndexOf(2, &index));
     EXPECT_EQ(index, 1);
 
     index = 0;
     int value = 3;
-    EXPECT_TRUE(collection.TryGetIndexOf(value, index));
+    EXPECT_TRUE(collection.TryGetIndexOf(value, &index));
     EXPECT_EQ(index, 2);
 
     index = 0;
-    EXPECT_FALSE(collection.TryGetIndexOf(123, index));
+    EXPECT_FALSE(collection.TryGetIndexOf(123, &index));
     EXPECT_EQ(index, 0);
 }
 
@@ -153,7 +153,7 @@ TEST_F(Collection_Fixture, Clear)
     EXPECT_EQ(collection.GetCount(), 0);
 
     UInt64 index = 0;
-    EXPECT_FALSE(collection.TryGetIndexOf(0, index));
+    EXPECT_FALSE(collection.TryGetIndexOf(0, &index));
 }
 
 TEST_F(Collection_Fixture, ClearDestructive)

@@ -447,7 +447,7 @@ namespace Otter
 
             T* newData = Buffer::New<T>(newCapacity);
 
-            for (UInt64 i = 0; i < m_Count && i < amount; i++)
+            for (UInt64 i = 0; i < m_Count && i < newCapacity; i++)
                 newData[i] = m_Data[i];
 
             if (IsCreated())

@@ -401,37 +401,6 @@ namespace Otter
         }
 
         /**
-         * @brief Checks if the queue contains a given item.
-         *
-         * @param item The item to check for.
-         *
-         * @return True if the queue contains the item, false otherwise.
-         */
-        bool Contains(T&& item) const noexcept
-        {
-            if (m_StartIndex + m_Count <= m_Capacity)
-            {
-                for (UInt64 i = m_StartIndex; i < m_Count; i++)
-                    if (m_Data[i] == item)
-                        return true;
-            }
-            else
-            {
-                const auto endIndex = m_StartIndex + m_Count - m_Capacity;
-
-                for (UInt64 i = m_StartIndex; i < m_Capacity; i++)
-                    if (m_Data[i] == item)
-                        return true;
-
-                for (UInt64 i = 0; i <= endIndex; i++)
-                    if (m_Data[i] == item)
-                        return true;
-            }
-
-            return false;
-        }
-
-        /**
          * @brief Clears the queue.
          */
         OTR_INLINE void Clear()

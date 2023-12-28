@@ -11,7 +11,7 @@
 namespace Otter
 {
     template<typename T, UInt64 Size>
-    struct ReadOnlyArray;
+    class ReadOnlyArray;
 
     /**
      * @brief An array of a fixed size. All elements are heap allocated.
@@ -20,7 +20,7 @@ namespace Otter
      * @tparam Size The size of the array.
      */
     template<typename T, UInt64 Size>
-    struct Array final
+    class Array final
     {
         /// @brief Alias for an iterator.
         using Iterator = LinearIterator<T>;

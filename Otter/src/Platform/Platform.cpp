@@ -68,6 +68,14 @@ namespace Otter
         CopyMemory(destination, source, size);
     }
 
+    void Platform::MemoryMove(void* destination, const void* source, UInt64 size)
+    {
+        OTR_INTERNAL_ASSERT(source != nullptr)
+        OTR_INTERNAL_ASSERT_MSG(size > 0, "Move size must be greater than 0")
+
+        MoveMemory(destination, source, size);
+    }
+
     void Platform::MemoryClear(void* block, UInt64 size)
     {
         OTR_INTERNAL_ASSERT(block != nullptr)
@@ -163,6 +171,16 @@ namespace Otter
         memcpy(destination, source, size);
     }
 
+    void Platform::MemoryMove(void* destination, const void* source, UInt64 size)
+    {
+        OTR_LOG_FATAL("'Platform::MemoryMove' not supported for this platform")
+
+        OTR_INTERNAL_ASSERT(source != nullptr)
+        OTR_INTERNAL_ASSERT_MSG(size > 0, "Move size must be greater than 0")
+
+        memmove(destination, source, size);
+    }
+
     void Platform::MemoryClear(void* block, UInt64 size)
     {
         OTR_LOG_FATAL("'Platform::MemoryClear' not supported for this platform")
@@ -225,6 +243,11 @@ namespace Otter
     void Platform::MemoryCopy(void* destination, const void* source, UInt64 size)
     {
         OTR_LOG_FATAL("'Platform::MemoryCopy' not supported for this platform")
+    }
+
+    void Platform::MemoryMove(void* destination, const void* source, UInt64 size)
+    {
+        OTR_LOG_FATAL("'Platform::MemoryMove' not supported for this platform")
     }
 
     void Platform::MemoryClear(void* block, UInt64 size)

@@ -168,22 +168,6 @@ namespace Otter
         }
 
         /**
-         * @brief Tries to remove an item from the list.
-         *
-         * @param item The item to remove.
-         *
-         * @return True if the item was removed, false otherwise.
-         */
-        bool TryRemove(T&& item) noexcept
-        {
-            for (UInt64 i = 0; i < base::m_Count; i++)
-                if (base::m_Data[i] == item)
-                    return TryRemoveAt(i);
-
-            return false;
-        }
-
-        /**
          * @brief Tries to remove an item from the list at the specified index.
          *
          * @param index The index at which to remove the item.

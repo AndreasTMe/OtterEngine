@@ -7,7 +7,7 @@
 namespace Otter
 {
     template<typename T, UInt64 Size>
-    struct Span;
+    class Span;
 
     /**
      * @brief A read-only span of a fixed size. All elements are stack allocated.
@@ -16,7 +16,7 @@ namespace Otter
      * @tparam Size The size of the span.
      */
     template<typename T, UInt64 Size>
-    struct ReadOnlySpan final
+    class ReadOnlySpan final
     {
         /// @brief Alias for a const iterator.
         using ConstIterator = LinearIterator<const T>;

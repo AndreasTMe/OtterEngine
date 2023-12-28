@@ -17,7 +17,7 @@ namespace Otter
      *
      * @note Under the hood, the bitset uses an array of 64-bit unsigned integers.
      */
-    class BitSet
+    class BitSet final
     {
     public:
         /**
@@ -342,8 +342,8 @@ namespace Otter
         {
             UInt64 hash = 0;
 
-            for (UInt64 i = 0; i < m_Size * UINT64_BITS; i++)
-                hash ^= std::hash<bool>{ }(m_Data[i]) << i;
+            for (UInt64 i = 0; i < m_Size; i++)
+                hash ^= std::hash<UInt64>{ }(m_Data[i]) << i;
 
             return hash;
         }
