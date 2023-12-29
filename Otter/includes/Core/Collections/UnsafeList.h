@@ -2,6 +2,7 @@
 #define OTTERENGINE_UNSAFELIST_H
 
 #include "Core/Memory.h"
+#include "Core/Collections/Collection.h"
 
 #if !OTR_RUNTIME
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
@@ -153,6 +154,7 @@ namespace Otter
         template<typename T>
         [[nodiscard]] T* operator[](const UInt64 index) const
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
             OTR_ASSERT_MSG(index < m_Count, "Index out of range")
 
             return reinterpret_cast<T*>(m_Data + (index * m_Offset));
@@ -211,6 +213,7 @@ namespace Otter
         template<typename T>
         [[nodiscard]] bool TryGet(const UInt64 index, T* outItem) const
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
             OTR_ASSERT_MSG(outItem, "Out item must not be null")
 
             if (index >= m_Count)
@@ -234,6 +237,8 @@ namespace Otter
         template<typename T>
         void Add(const T& item)
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
+
             if (m_Count >= m_Capacity)
                 Expand();
 
@@ -254,6 +259,8 @@ namespace Otter
         template<typename T>
         void Add(T&& item)
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
+
             if (m_Count >= m_Capacity)
                 Expand();
 
@@ -277,6 +284,8 @@ namespace Otter
         template<typename T>
         bool TryAddAt(const UInt64 index, const T& item)
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
+
             if (index >= m_Capacity - 1 || m_Count >= m_Capacity - 1)
                 return false;
 
@@ -306,6 +315,8 @@ namespace Otter
         template<typename T>
         bool TryAddAt(const UInt64 index, T&& item)
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
+
             if (index >= m_Capacity || m_Count >= m_Capacity)
                 return false;
 
@@ -317,6 +328,24 @@ namespace Otter
             m_Count++;
 
             return true;
+        }
+
+        /**
+         * @brief Tries to add an unsafe list to the buffer.
+         *
+         * @param list The list of items to add.
+         * @param allOrNothing Whether or not to add all items or none at all, if there is not enough space.
+         *
+         * @return True if the items were added, false otherwise.
+         *
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
+         */
+        bool TryAddRange(const UnsafeList& list, bool allOrNothing = false)
+        {
+            OTR_ASSERT_MSG(list.GetOffset() == m_Offset, "Size of type must be equal to the offset of the list")
+
+            return TryAddRangeInternal(list.GetData(), list.GetCount(), allOrNothing);
         }
 
         /**
@@ -335,23 +364,30 @@ namespace Otter
         template<typename T>
         bool TryAddRange(InitialiserList<T> items, bool allOrNothing = false)
         {
-            if (items.size() == 0)
-                return false;
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
 
-            const auto listSize = items.size();
+            return TryAddRangeInternal(items.begin(), items.size(), allOrNothing);
+        }
 
-            if (listSize > m_Capacity - m_Count)
-            {
-                if (allOrNothing)
-                    return false;
+        /**
+         * @brief Tries to add a collection of items to the buffer.
+         *
+         * @tparam T The type of the item.
+         *
+         * @param collection The collection to add.
+         * @param allOrNothing Whether or not to add all items or none at all, if there is not enough space.
+         *
+         * @return True if the items were added, false otherwise.
+         *
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
+         */
+        template<typename T>
+        bool TryAddRange(const Collection<T>& collection, bool allOrNothing = false)
+        {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
 
-                Expand(listSize - (m_Capacity - m_Count));
-            }
-
-            MemorySystem::MemoryCopy(m_Data + (m_Count * m_Offset), items.begin(), listSize * m_Offset);
-            m_Count += listSize;
-
-            return true;
+            return TryAddRangeInternal(collection.GetData(), collection.GetCount(), allOrNothing);
         }
 
         /**
@@ -369,6 +405,8 @@ namespace Otter
         template<typename T>
         bool TryRemove(const T& item)
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
+
             for (UInt64 i = 0; i < m_Count; i++)
                 if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
                     return TryRemoveAt(i);
@@ -413,6 +451,8 @@ namespace Otter
         template<typename T>
         [[nodiscard]] bool Contains(const T& item) const
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
+
             for (UInt64 i = 0; i < m_Count; i++)
                 if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
                     return true;
@@ -434,6 +474,7 @@ namespace Otter
         template<typename T>
         [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64* outIndex) const
         {
+            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
             OTR_ASSERT_MSG(outIndex, "Out index must not be null")
 
             for (UInt64 i = 0; i < m_Count; i++)
@@ -575,7 +616,10 @@ namespace Otter
             if constexpr (IsVoid<T>)
                 return (void*) m_Data;
             else
+            {
+                OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
                 return reinterpret_cast<const T*>(m_Data);
+            }
         }
 
         /**
@@ -630,6 +674,37 @@ namespace Otter
         UInt64 m_Count    = 0;
         UInt64 m_Capacity = 0;
         UInt64 m_Offset   = 0;
+
+        /**
+         * @brief Tries to add data to the buffer.
+         *
+         * @param data The data to add.
+         * @param size The size of the data to add.
+         * @param allOrNothing Whether or not to add all data or none at all, if there is not enough space.
+         *
+         * @return True if the data were added, false otherwise.
+         *
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
+         */
+        bool TryAddRangeInternal(const void* const data, const UInt64 size, bool allOrNothing = false)
+        {
+            if (!data || size == 0)
+                return false;
+
+            if (size > m_Capacity - m_Count)
+            {
+                if (allOrNothing)
+                    return false;
+
+                Expand(size - (m_Capacity - m_Count));
+            }
+
+            MemorySystem::MemoryCopy(m_Data + (m_Count * m_Offset), data, size * m_Offset);
+            m_Count += size;
+
+            return true;
+        }
 
         /**
          * @brief Recreates the list with a given capacity. Deletes any existing data.

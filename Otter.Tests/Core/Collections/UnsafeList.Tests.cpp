@@ -125,6 +125,10 @@ TEST_F(UnsafeList_Fixture, TryGet)
 
     EXPECT_FALSE(list.TryGet(5, &value));
     EXPECT_FALSE(list.TryGet(-1, &value));
+
+    double invalid;
+
+    EXPECT_DEATH(auto result = list.TryGet(0, &invalid), "");
 }
 
 TEST_F(UnsafeList_Fixture, Add)
@@ -237,6 +241,12 @@ TEST_F(UnsafeList_Fixture, TryAddRange)
 
     list.TryAddRange<int>({ 1, 2, 3, 4, 5 });
     EXPECT_EQ(list.GetCount(), 5);
+
+    list.TryAddRange(List<int>{ 1, 2, 3, 4, 5 });
+    EXPECT_EQ(list.GetCount(), 10);
+
+    list.TryAddRange(UnsafeList::Of<int>({ 1, 2, 3, 4, 5 }));
+    EXPECT_EQ(list.GetCount(), 15);
 }
 
 TEST_F(UnsafeList_Fixture, TryRemove)

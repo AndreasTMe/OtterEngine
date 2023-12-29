@@ -319,6 +319,21 @@ namespace Otter
         [[nodiscard]] OTR_INLINE UInt64 GetBitsSize() const { return m_Size * UINT64_BITS; }
 
         /**
+         * @brief Gets the amount of bits set to true.
+         *
+         * @return The amount of bits set to true.
+         */
+        [[nodiscard]] UInt64 GetTrueCount() const
+        {
+            UInt64 count = 0;
+
+            for (UInt64 i = 0; i < m_Size; i++)
+                count += __builtin_popcountll(m_Data[i]);
+
+            return count;
+        }
+
+        /**
          * @brief Checks whether the bitset has been created. A bitset is created when it has been initialised
          * with a valid size and has not been destroyed.
          *

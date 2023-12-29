@@ -226,6 +226,13 @@ TEST_F(BitSet_Fixture, ClearDestructive)
     EXPECT_FALSE(bitset.IsCreated());
 }
 
+TEST_F(BitSet_Fixture, GetTrueCount)
+{
+    BitSet<int> bitset = { true, false, true, false, true, false, true, false };
+
+    EXPECT_EQ(bitset.GetTrueCount(), 4);
+}
+
 TEST_F(BitSet_Fixture, GetMemoryFootprint)
 {
     BitSet<int> bitset = { true, false, true, false, true, false, true, false };
