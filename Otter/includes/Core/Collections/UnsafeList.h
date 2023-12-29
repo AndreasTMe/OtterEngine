@@ -1,7 +1,5 @@
-#ifndef OTTERENGINE_UNSAFEBUFFER_H
-#define OTTERENGINE_UNSAFEBUFFER_H
-
-#include <typeindex>
+#ifndef OTTERENGINE_UNSAFELIST_H
+#define OTTERENGINE_UNSAFELIST_H
 
 #include "Core/Memory.h"
 
@@ -12,9 +10,9 @@
 namespace Otter
 {
     /**
-     * @brief Unsafe buffer class that is used to store data in a contiguous memory block.
+     * @brief An unsafe list of items. The items are stored in a contiguous memory block on the heap.
      */
-    class UnsafeBuffer final
+    class UnsafeList final
     {
     public:
         /**
@@ -22,30 +20,33 @@ namespace Otter
          *
          * @param offset The offset of each item in the buffer.
          */
-        explicit UnsafeBuffer(const UInt64 offset)
+        explicit UnsafeList(const UInt64 offset)
             : k_Offset(OTR_ALIGNED_OFFSET(offset, OTR_PLATFORM_MEMORY_ALIGNMENT))
         {
-            OTR_ASSERT_MSG(offset > 0, "The offset of the buffer must be greater than 0.")
+            OTR_ASSERT_MSG(offset > 0, "The offset of the list items must be greater than 0.")
         }
 
         /**
          * @brief Destructor.
          */
-        ~UnsafeBuffer()
+        ~UnsafeList()
         {
-            ClearDestructive();
+            if (IsCreated())
+                Unsafe::Delete({ m_Data, m_Capacity * k_Offset });
+
+            m_Data = nullptr;
         }
 
         /**
-         * @brief Creates a buffer from an initialiser list.
+         * @brief Creates an unsafe list from an initialiser list.
          *
          * @tparam T The type of an item in the initialiser list.
          *
          * @param list The initialiser list.
          */
         template<typename T>
-        UnsafeBuffer(InitialiserList<T> list)
-            : UnsafeBuffer(sizeof(T))
+        UnsafeList(InitialiserList<T> list)
+            : UnsafeList(sizeof(T))
         {
             m_Capacity = list.size();
             m_Count    = list.size();
@@ -62,9 +63,9 @@ namespace Otter
         /**
          * @brief Copy constructor.
          *
-         * @param other The buffer to copy.
+         * @param other The unsafe list to copy.
          */
-        UnsafeBuffer(const UnsafeBuffer& other)
+        UnsafeList(const UnsafeList& other)
             : k_Offset(other.k_Offset)
         {
             m_Capacity = other.m_Capacity;
@@ -80,9 +81,9 @@ namespace Otter
         /**
          * @brief Move constructor.
          *
-         * @param other The buffer to move.
+         * @param other The unsafe list to move.
          */
-        UnsafeBuffer(UnsafeBuffer&& other) noexcept
+        UnsafeList(UnsafeList&& other) noexcept
             : k_Offset(other.k_Offset)
         {
             m_Capacity = other.m_Capacity;
@@ -97,21 +98,21 @@ namespace Otter
         /**
          * @brief Deleted copy assignment operator.
          */
-        UnsafeBuffer& operator=(const UnsafeBuffer& other) = delete;
+        UnsafeList& operator=(const UnsafeList& other) = delete;
 
         /**
          * @brief Deleted move assignment operator.
          */
-        UnsafeBuffer& operator=(UnsafeBuffer&& other) noexcept = delete;
+        UnsafeList& operator=(UnsafeList&& other) noexcept = delete;
 
         /**
          * @brief Equality operator.
          *
-         * @param other The buffer to compare to.
+         * @param other The unsafe list to compare to.
          *
          * @return True if the buffers are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const UnsafeBuffer& other) const
+        [[nodiscard]] bool operator==(const UnsafeList& other) const
         {
             return k_Offset == other.k_Offset
                    && m_Data == other.m_Data
@@ -122,11 +123,11 @@ namespace Otter
         /**
          * @brief Inequality operator.
          *
-         * @param other The buffer to compare to.
+         * @param other The unsafe list to compare to.
          *
          * @return True if the buffers are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const UnsafeBuffer& other) const { return !(*this == other); }
+        [[nodiscard]] bool operator!=(const UnsafeList& other) const { return !(*this == other); }
 
         /**
          * @brief Gets the item at the specified index.
@@ -138,14 +139,14 @@ namespace Otter
          *
          * @return True if the item was retrieved, false otherwise.
          *
-         * @note The T type is checked against the offset of the buffer to ensure that the type is correct. However,
+         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
          * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
          * used with caution.
          */
         template<typename T>
         [[nodiscard]] bool TryGet(const UInt64 index, T* outItem) const
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type of the buffer does not match the offset of the buffer.")
+            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
             OTR_ASSERT_MSG(outItem, "Out item must not be null")
 
             if (index >= m_Count)
@@ -163,14 +164,14 @@ namespace Otter
          *
          * @param item The item to add.
          *
-         * @note The T type is checked against the offset of the buffer to ensure that the type is correct. However,
+         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
          * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
          * used with caution.
          */
         template<typename T>
         void Add(const T& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type of the buffer does not match the offset of the buffer.")
+            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
 
             if (m_Count >= m_Capacity)
                 Expand();
@@ -186,14 +187,14 @@ namespace Otter
          *
          * @param item The item to add.
          *
-         * @note The T type is checked against the offset of the buffer to ensure that the type is correct. However,
+         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
          * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
          * used with caution.
          */
         template<typename T>
         void Add(T&& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type of the buffer does not match the offset of the buffer.")
+            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
 
             if (m_Count >= m_Capacity)
                 Expand();
@@ -203,7 +204,7 @@ namespace Otter
         }
 
         /**
-         * @brief Tries to add an item to the buffer at the specified index.
+         * @brief Tries to add an item to the list at the specified index.
          *
          * @tparam T The type of the item.
          *
@@ -212,14 +213,14 @@ namespace Otter
          *
          * @return True if the item was added, false otherwise.
          *
-         * @note The T type is checked against the offset of the buffer to ensure that the type is correct. However,
+         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
          * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
          * used with caution.
          */
         template<typename T>
         bool TryAddAt(const UInt64 index, const T& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type of the buffer does not match the offset of the buffer.")
+            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
 
             if (index >= m_Capacity || m_Count >= m_Capacity)
                 return false;
@@ -235,7 +236,7 @@ namespace Otter
         }
 
         /**
-         * @brief Tries to add an item to the buffer at the specified index.
+         * @brief Tries to add an item to the list at the specified index.
          *
          * @tparam T The type of the item.
          *
@@ -244,14 +245,14 @@ namespace Otter
          *
          * @return True if the item was added, false otherwise.
          *
-         * @note The T type is checked against the offset of the buffer to ensure that the type is correct. However,
+         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
          * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
          * used with caution.
          */
         template<typename T>
         bool TryAddAt(const UInt64 index, T&& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type of the buffer does not match the offset of the buffer.")
+            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
 
             if (index >= m_Capacity || m_Count >= m_Capacity)
                 return false;
@@ -276,7 +277,7 @@ namespace Otter
          *
          * @return True if the items were added, false otherwise.
          *
-         * @note The T type is checked against the offset of the buffer to ensure that the type is correct. However,
+         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
          * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
          * used with caution.
          */
@@ -286,7 +287,7 @@ namespace Otter
             if (items.size() == 0)
                 return false;
 
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type of the buffer does not match the offset of the buffer.")
+            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
 
             const auto listSize = items.size();
 
@@ -313,7 +314,7 @@ namespace Otter
          *
          * @return True if the item was removed, false otherwise.
          *
-         * @note The T type is checked against the offset of the buffer to ensure that the type is correct. However,
+         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
          * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
          * used with caution.
          */
@@ -328,7 +329,7 @@ namespace Otter
         }
 
         /**
-         * @brief Tries to remove an item from the buffer at the specified index.
+         * @brief Tries to remove an item from the list at the specified index.
          *
          * @param index The index at which to remove the item.
          *
@@ -362,9 +363,9 @@ namespace Otter
         }
 
         /**
-         * @brief Used to expand the size of the buffer by a given amount.
+         * @brief Used to expand the size of the list by a given amount.
          *
-         * @param amount The amount to expand the buffer by.
+         * @param amount The amount to expand the list by.
          */
         void Expand(const UInt64 amount = 0)
         {
@@ -385,9 +386,9 @@ namespace Otter
         }
 
         /**
-         * @brief Used to shrink the size of the buffer by a given amount.
+         * @brief Used to shrink the size of the list by a given amount.
          *
-         * @param amount The amount to shrink the buffer by.
+         * @param amount The amount to shrink the list by.
          * @param isDestructive Whether or not the shrink is destructive. If true, some data may be lost.
          */
         void Shrink(const UInt64 amount = 0, const bool isDestructive = false)
@@ -425,7 +426,7 @@ namespace Otter
         OTR_INLINE void Clear() { m_Count = 0; }
 
         /**
-         * @brief Clears the buffer and deletes the data.
+         * @brief Clears the list and deletes the data.
          */
         void ClearDestructive()
         {
@@ -441,7 +442,7 @@ namespace Otter
         /**
          * @brief Gets the memory footprint of the buffer.
          *
-         * @param debugName The name of the buffer for debugging purposes.
+         * @param debugName The name of the list for debugging purposes.
          *
          * @return The memory footprint of the buffer.
          */
@@ -467,16 +468,16 @@ namespace Otter
          *
          * @tparam T The type of the data.
          *
-         * @return A pointer to the data of the buffer cast to the specified type.
+         * @return A pointer to the data of the list cast to the specified type.
          *
-         * @note The T type is checked against the offset of the buffer to ensure that the type is correct. However,
+         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
          * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
          * used with caution.
          */
         template<typename T>
         [[nodiscard]] OTR_INLINE const T* GetData() const noexcept
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type of the buffer does not match the offset of the buffer.")
+            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
 
             return m_Data;
         }
@@ -503,17 +504,17 @@ namespace Otter
         [[nodiscard]] OTR_INLINE UInt64 GetOffset() const noexcept { return k_Offset; }
 
         /**
-         * @brief Checks whether the buffer has been created. A buffer is created when it has been initialised
+         * @brief Checks whether the list has been created. A list is created when it has been initialised
          * with a valid capacity and has not been destroyed.
          *
-         * @return True if the buffer has been created, false otherwise.
+         * @return True if the list has been created, false otherwise.
          */
         [[nodiscard]] OTR_INLINE bool IsCreated() const noexcept { return m_Data && m_Capacity > 0; }
 
         /**
-         * @brief Checks whether the buffer is empty.
+         * @brief Checks whether the list is empty.
          *
-         * @return True if the buffer is empty, false otherwise.
+         * @return True if the list is empty, false otherwise.
          */
         [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
 
@@ -525,9 +526,9 @@ namespace Otter
         UInt64 m_Capacity = 0;
 
         /**
-         * @brief Recreates the buffer with a given capacity. Deletes any existing data.
+         * @brief Recreates the list with a given capacity. Deletes any existing data.
          *
-         * @param capacity The capacity to recreate the buffer with.
+         * @param capacity The capacity to recreate the list with.
          */
         void RecreateEmpty(const UInt64 capacity)
         {
@@ -547,7 +548,7 @@ namespace Otter
         /**
          * @brief Calculates the new capacity when expanding the buffer.
          *
-         * @param expandAmount The amount to expand the buffer by.
+         * @param expandAmount The amount to expand the list by.
          *
          * @return The new capacity.
          */
@@ -566,7 +567,7 @@ namespace Otter
         /**
          * @brief Calculates the new capacity when shrinking the buffer.
          *
-         * @param shrinkAmount The amount to shrink the buffer by.
+         * @param shrinkAmount The amount to shrink the list by.
          * @param isDestructive Whether or not the shrink is destructive. If true, some data may be lost.
          *
          * @return The new capacity.
@@ -595,4 +596,4 @@ namespace Otter
     };
 }
 
-#endif //OTTERENGINE_UNSAFEBUFFER_H
+#endif //OTTERENGINE_UNSAFELIST_H

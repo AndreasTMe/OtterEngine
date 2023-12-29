@@ -161,6 +161,32 @@ namespace Otter
         }
 
         /**
+         * @brief Equality operator.
+         *
+         * @param other The other hashset.
+         *
+         * @return True if the hashsets are equal, false otherwise.
+         */
+        bool operator==(const HashSet<T>& other) const noexcept
+        {
+            return m_Slots == other.m_Slots
+                   && m_Capacity == other.m_Capacity
+                   && m_Count == other.m_Count
+                   && m_CurrentMaxCollisions == other.m_CurrentMaxCollisions
+                   && m_SlotsInUse == other.m_SlotsInUse
+                   && m_Collisions == other.m_Collisions;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The other hashset.
+         *
+         * @return True if the hashsets are not equal, false otherwise.
+         */
+        bool operator!=(const HashSet<T>& other) const noexcept { return !(*this == other); }
+
+        /**
          * @brief Tries to add an item to the hashset.
          *
          * @param item The item to add.

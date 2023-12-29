@@ -166,6 +166,32 @@ namespace Otter
         }
 
         /**
+         * @brief Equality operator.
+         *
+         * @param other The other dictionary.
+         *
+         * @return True if the hashsets are equal, false otherwise.
+         */
+        bool operator==(const Dictionary<TKey, TValue>& other) const noexcept
+        {
+            return m_Slots == other.m_Slots
+                   && m_Capacity == other.m_Capacity
+                   && m_Count == other.m_Count
+                   && m_CurrentMaxCollisions == other.m_CurrentMaxCollisions
+                   && m_SlotsInUse == other.m_SlotsInUse
+                   && m_Collisions == other.m_Collisions;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The other dictionary.
+         *
+         * @return True if the hashsets are not equal, false otherwise.
+         */
+        bool operator!=(const Dictionary<TKey, TValue>& other) const noexcept { return !(*this == other); }
+
+        /**
          * @brief Tries to add a key/value pair to the dictionary.
          *
          * @param key The key of the pair.

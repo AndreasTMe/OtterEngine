@@ -13,35 +13,9 @@ namespace Otter
 {
     class EntityManager final
     {
+        class EntityBuilder;
+
     public:
-        class EntityBuilder final
-        {
-        public:
-            EntityBuilder(EntityManager* entityManager, Entity entity)
-                : m_EntityManager(entityManager), m_Entity(entity)
-            {
-            }
-            ~EntityBuilder() = default;
-
-            template<typename TComponent, typename... TArgs>
-            requires IsComponent<TComponent>
-            EntityBuilder& With(TArgs&& ... args)
-            {
-                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
-
-                // TODO: Create component and store it in an archetype.
-                // auto component = TComponent(std::forward<TArgs>(args)...);
-
-                return *this;
-            }
-
-            Entity Build() { return m_Entity; }
-
-        private:
-            EntityManager* m_EntityManager;
-            Entity m_Entity;
-        };
-
         /**
          * @brief Constructor.
          */
@@ -107,6 +81,50 @@ namespace Otter
         }
 
     private:
+        class EntityBuilder final
+        {
+        public:
+            EntityBuilder(EntityManager* entityManager, Entity entity)
+                : m_EntityManager(entityManager), m_Entity(entity), m_ComponentMask()
+            {
+                m_ComponentMask.Reserve(m_EntityManager->m_ComponentToMaskIndex.GetCount());
+            }
+            ~EntityBuilder() = default;
+
+            template<typename TComponent, typename... TArgs>
+            requires IsComponent<TComponent>
+            EntityBuilder& With(TArgs&& ... args)
+            {
+                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
+
+                UInt64 index;
+                if (!m_EntityManager->m_ComponentToMaskIndex.TryGet(TComponent::Id, &index))
+                    return *this;
+
+                m_ComponentMask.Set(index, true);
+
+                // TODO: Create component and store it in an archetype.
+                // auto component = TComponent(std::forward<TArgs>(args)...);
+
+                return *this;
+            }
+
+            Entity Build()
+            {
+                auto archetype = Archetype(std::move(m_ComponentMask));
+
+                if (!m_EntityManager->m_MaskToArchetype.Contains(m_ComponentMask))
+                    m_EntityManager->m_MaskToArchetype.TryAdd(m_ComponentMask, archetype);
+
+                return m_Entity;
+            }
+
+        private:
+            EntityManager* m_EntityManager;
+            Entity m_Entity;
+            BitSet m_ComponentMask;
+        };
+
         // Entity Registry
         List<Entity>               m_Entities;
         Dictionary<Entity, UInt64> m_EntityToIndex;
@@ -115,6 +133,9 @@ namespace Otter
         // Component Registry
         Dictionary<ComponentId, UInt64> m_ComponentToMaskIndex;
         bool                            m_ComponentMaskLock = false;
+
+        // Archetype Registry
+        Dictionary<BitSet, Archetype> m_MaskToArchetype;
 
         void PopulateEntitiesToAdd();
         void CleanUpEntities();
@@ -131,7 +152,7 @@ namespace Otter
             UInt64 index = m_ComponentToMaskIndex.GetCount();
             m_ComponentToMaskIndex.TryAdd(TComponent::Id, index);
 
-            if constexpr (sizeof...(TComponents) > 0 && (IsComponent<TComponents> && ...))
+            if constexpr (VariadicArgs<TComponents...>::GetSize() > 0 && (IsComponent<TComponents> && ...))
                 RegisterComponentsRecursive<TComponents...>();
         }
     };
