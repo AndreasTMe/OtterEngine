@@ -35,7 +35,7 @@ namespace Otter
          *
          * @return The element at the specified index.
          */
-        [[nodiscard]] T& operator[](UInt64 index)
+        [[nodiscard]] T& operator[](const UInt64 index)
         {
             OTR_ASSERT_MSG(index < base::m_Count, "List index out of bounds")
             return base::m_Data[index];
@@ -48,7 +48,7 @@ namespace Otter
          *
          * @return The element at the specified index.
          */
-        [[nodiscard]] const T& operator[](UInt64 index) const
+        [[nodiscard]] const T& operator[](const UInt64 index) const
         {
             OTR_ASSERT_MSG(index < base::m_Count, "List index out of bounds")
             return base::m_Data[index];

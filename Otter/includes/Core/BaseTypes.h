@@ -92,6 +92,14 @@ template<typename TLeft, typename TRight>
 concept IsSame = std::is_same_v<TLeft, TRight>;
 
 /**
+ * @brief Concept for checking if a type is void.
+ *
+ * @tparam T The type to check.
+ */
+template<typename T>
+concept IsVoid = std::is_void_v<T>;
+
+/**
  * @brief Alias for the `std::underlying_type_t` type.
  *
  * @tparam T The type to get the underlying type of.

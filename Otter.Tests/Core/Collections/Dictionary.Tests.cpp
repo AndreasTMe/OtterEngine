@@ -192,6 +192,11 @@ TEST_F(Dictionary_Fixture, TryGet)
     EXPECT_TRUE(dictionary.TryGet(5, &value));
     EXPECT_EQ(value, 5);
 
+    *dictionary[5] = 6;
+
+    EXPECT_TRUE(dictionary.TryGet(5, &value));
+    EXPECT_EQ(value, 6);
+
     EXPECT_FALSE(dictionary.TryGet(6, &value));
     EXPECT_FALSE(dictionary.TryGet(7, &value));
     EXPECT_FALSE(dictionary.TryGet(8, &value));
@@ -323,10 +328,16 @@ TEST_F(Dictionary_Fixture, TryForKey)
     EXPECT_EQ(count, list.GetCount());
 
     list.Add(0);
-    EXPECT_EQ(list.GetCount(), 3);
+    EXPECT_EQ(list.GetCount(), count + 1);
 
     EXPECT_TRUE(dictionary.TryGet(1, &list));
     EXPECT_EQ(list.GetCount(), 2);
+
+    (*dictionary[1]).Add(3);
+    EXPECT_EQ((*dictionary[1]).GetCount(), 3);
+
+    EXPECT_TRUE(dictionary.TryGet(1, &list));
+    EXPECT_EQ(list.GetCount(), 3);
 
     EXPECT_TRUE(dictionary.TryForKey(1, [](Otter::List<int>& value)
     {
@@ -334,7 +345,7 @@ TEST_F(Dictionary_Fixture, TryForKey)
     }));
 
     EXPECT_TRUE(dictionary.TryGet(1, &list));
-    EXPECT_EQ(list.GetCount(), 3);
+    EXPECT_EQ(list.GetCount(), 4);
 }
 
 TEST_F(Dictionary_Fixture, ForEachKey)

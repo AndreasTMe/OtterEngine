@@ -10,21 +10,16 @@
 namespace Otter
 {
     /**
-     * @brief An unsafe list of items. The items are stored in a contiguous memory block on the heap.
+     * @brief An unsafe list of items. The items are stored in a contiguous memory block on the heap. Use only when
+     * the type of the items is known beforehand but the use of a templated list is not wanted.
      */
     class UnsafeList final
     {
     public:
         /**
          * @brief Constructor.
-         *
-         * @param offset The offset of each item in the buffer.
          */
-        explicit UnsafeList(const UInt64 offset)
-            : k_Offset(OTR_ALIGNED_OFFSET(offset, OTR_PLATFORM_MEMORY_ALIGNMENT))
-        {
-            OTR_ASSERT_MSG(offset > 0, "The offset of the list items must be greater than 0.")
-        }
+        UnsafeList() = default;
 
         /**
          * @brief Destructor.
@@ -32,32 +27,9 @@ namespace Otter
         ~UnsafeList()
         {
             if (IsCreated())
-                Unsafe::Delete({ m_Data, m_Capacity * k_Offset });
+                Unsafe::Delete({ m_Data, m_Capacity * m_Offset });
 
             m_Data = nullptr;
-        }
-
-        /**
-         * @brief Creates an unsafe list from an initialiser list.
-         *
-         * @tparam T The type of an item in the initialiser list.
-         *
-         * @param list The initialiser list.
-         */
-        template<typename T>
-        UnsafeList(InitialiserList<T> list)
-            : UnsafeList(sizeof(T))
-        {
-            m_Capacity = list.size();
-            m_Count    = list.size();
-
-            if (m_Capacity == 0)
-                return;
-
-            auto handle = Unsafe::New(m_Capacity * k_Offset);
-            m_Data = handle.Pointer;
-
-            MemorySystem::MemoryCopy(m_Data, list.begin(), m_Count * k_Offset);
         }
 
         /**
@@ -66,16 +38,16 @@ namespace Otter
          * @param other The unsafe list to copy.
          */
         UnsafeList(const UnsafeList& other)
-            : k_Offset(other.k_Offset)
         {
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
+            m_Offset   = other.m_Offset;
 
-            auto handle = Unsafe::New(m_Capacity * k_Offset);
-            m_Data = handle.Pointer;
+            auto handle = Unsafe::New(m_Capacity * m_Offset);
+            m_Data = (Byte*) handle.Pointer;
 
             if (other.IsCreated() && !other.IsEmpty())
-                MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * k_Offset);
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * m_Offset);
         }
 
         /**
@@ -84,26 +56,65 @@ namespace Otter
          * @param other The unsafe list to move.
          */
         UnsafeList(UnsafeList&& other) noexcept
-            : k_Offset(other.k_Offset)
         {
+            m_Data     = other.m_Data;
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
-            m_Data     = other.m_Data;
+            m_Offset   = other.m_Offset;
 
+            other.m_Data     = nullptr;
             other.m_Capacity = 0;
             other.m_Count    = 0;
-            other.m_Data     = nullptr;
+            other.m_Offset   = 0;
         }
 
         /**
-         * @brief Deleted copy assignment operator.
+         * @brief Copy assignment operator.
          */
-        UnsafeList& operator=(const UnsafeList& other) = delete;
+        UnsafeList& operator=(const UnsafeList& other)
+        {
+            if (this == &other)
+                return *this;
+
+            if (IsCreated())
+                Unsafe::Delete({ m_Data, m_Capacity * m_Offset });
+
+            m_Capacity = other.m_Capacity;
+            m_Count    = other.m_Count;
+            m_Offset   = other.m_Offset;
+
+            auto handle = Unsafe::New(m_Capacity * m_Offset);
+            m_Data = (Byte*) handle.Pointer;
+
+            if (other.IsCreated() && !other.IsEmpty())
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * m_Offset);
+
+            return *this;
+        }
 
         /**
-         * @brief Deleted move assignment operator.
+         * @brief Move assignment operator.
          */
-        UnsafeList& operator=(UnsafeList&& other) noexcept = delete;
+        UnsafeList& operator=(UnsafeList&& other) noexcept
+        {
+            if (this == &other)
+                return *this;
+
+            if (IsCreated())
+                Unsafe::Delete({ m_Data, m_Capacity * m_Offset });
+
+            m_Data     = other.m_Data;
+            m_Capacity = other.m_Capacity;
+            m_Count    = other.m_Count;
+            m_Offset   = other.m_Offset;
+
+            other.m_Data     = nullptr;
+            other.m_Capacity = 0;
+            other.m_Count    = 0;
+            other.m_Offset   = 0;
+
+            return *this;
+        }
 
         /**
          * @brief Equality operator.
@@ -114,7 +125,7 @@ namespace Otter
          */
         [[nodiscard]] bool operator==(const UnsafeList& other) const
         {
-            return k_Offset == other.k_Offset
+            return m_Offset == other.m_Offset
                    && m_Data == other.m_Data
                    && m_Capacity == other.m_Capacity
                    && m_Count == other.m_Count;
@@ -132,6 +143,61 @@ namespace Otter
         /**
          * @brief Gets the item at the specified index.
          *
+         * @param index The index.
+         *
+         * @return The address of the item at the specified index.
+         *
+         * @note This operator is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
+         */
+        template<typename T>
+        [[nodiscard]] T* operator[](const UInt64 index) const
+        {
+            OTR_ASSERT_MSG(index < m_Count, "Index out of range")
+
+            return reinterpret_cast<T*>(m_Data + (index * m_Offset));
+        }
+
+        /**
+         * @brief Creates an empty unsafe list.
+         *
+         * @tparam T The type of an item in the list.
+         *
+         * @return The unsafe list.
+         */
+        template<typename T>
+        static UnsafeList Empty() { return UnsafeList(sizeof(T)); }
+
+        /**
+         * @brief Creates an unsafe list from an initialiser list.
+         *
+         * @tparam T The type of an item in the initialiser list.
+         *
+         * @param list The initialiser list.
+         *
+         * @return The unsafe list.
+         */
+        template<typename T>
+        static UnsafeList Of(InitialiserList<T> list)
+        {
+            auto unsafeList = UnsafeList(sizeof(T));
+            unsafeList.m_Capacity = list.size();
+            unsafeList.m_Count    = list.size();
+
+            if (unsafeList.m_Capacity == 0)
+                return unsafeList;
+
+            auto handle = Unsafe::New(unsafeList.m_Capacity * unsafeList.m_Offset);
+            unsafeList.m_Data = (Byte*) handle.Pointer;
+
+            MemorySystem::MemoryCopy(unsafeList.m_Data, list.begin(), unsafeList.m_Count * unsafeList.m_Offset);
+
+            return unsafeList;
+        }
+
+        /**
+         * @brief Gets the item at the specified index.
+         *
          * @tparam T The type of the item.
          *
          * @param index The index.
@@ -139,20 +205,18 @@ namespace Otter
          *
          * @return True if the item was retrieved, false otherwise.
          *
-         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
-         * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
-         * used with caution.
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
          */
         template<typename T>
         [[nodiscard]] bool TryGet(const UInt64 index, T* outItem) const
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
             OTR_ASSERT_MSG(outItem, "Out item must not be null")
 
             if (index >= m_Count)
                 return false;
 
-            *outItem = *reinterpret_cast<const T*>((Byte*) m_Data + (index * k_Offset));
+            *outItem = *reinterpret_cast<const T*>(m_Data + (index * m_Offset));
 
             return true;
         }
@@ -164,19 +228,16 @@ namespace Otter
          *
          * @param item The item to add.
          *
-         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
-         * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
-         * used with caution.
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
          */
         template<typename T>
         void Add(const T& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
-
             if (m_Count >= m_Capacity)
                 Expand();
 
-            MemorySystem::MemoryCopy((Byte*) m_Data + (m_Count * k_Offset), &item, k_Offset);
+            MemorySystem::MemoryCopy((void*) (m_Data + (m_Count * m_Offset)), (void*) &item, m_Offset);
             m_Count++;
         }
 
@@ -187,19 +248,16 @@ namespace Otter
          *
          * @param item The item to add.
          *
-         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
-         * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
-         * used with caution.
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
          */
         template<typename T>
         void Add(T&& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
-
             if (m_Count >= m_Capacity)
                 Expand();
 
-            MemorySystem::MemoryCopy((Byte*) m_Data + (m_Count * k_Offset), &std::forward<T>(item), k_Offset);
+            MemorySystem::MemoryCopy((void*) (m_Data + (m_Count * m_Offset)), (void*) &item, m_Offset);
             m_Count++;
         }
 
@@ -213,23 +271,20 @@ namespace Otter
          *
          * @return True if the item was added, false otherwise.
          *
-         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
-         * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
-         * used with caution.
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
          */
         template<typename T>
         bool TryAddAt(const UInt64 index, const T& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
-
-            if (index >= m_Capacity || m_Count >= m_Capacity)
+            if (index >= m_Capacity - 1 || m_Count >= m_Capacity - 1)
                 return false;
 
-            MemorySystem::MemoryMove((Byte*) m_Data + ((index + 1) * k_Offset),
-                                     (Byte*) m_Data + (index * k_Offset),
-                                     (m_Count - index) * k_Offset);
+            MemorySystem::MemoryMove(m_Data + ((index + 1) * m_Offset),
+                                     m_Data + (index * m_Offset),
+                                     (m_Count - index) * m_Offset);
 
-            MemorySystem::MemoryCopy((Byte*) m_Data + (index * k_Offset), &item, k_Offset);
+            MemorySystem::MemoryCopy(m_Data + (index * m_Offset), &item, m_Offset);
             m_Count++;
 
             return true;
@@ -245,23 +300,20 @@ namespace Otter
          *
          * @return True if the item was added, false otherwise.
          *
-         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
-         * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
-         * used with caution.
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
          */
         template<typename T>
         bool TryAddAt(const UInt64 index, T&& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
-
             if (index >= m_Capacity || m_Count >= m_Capacity)
                 return false;
 
-            MemorySystem::MemoryMove((Byte*) m_Data + ((index + 1) * k_Offset),
-                                     (Byte*) m_Data + (index * k_Offset),
-                                     (m_Count - index) * k_Offset);
+            MemorySystem::MemoryMove(m_Data + ((index + 1) * m_Offset),
+                                     m_Data + (index * m_Offset),
+                                     (m_Count - index) * m_Offset);
 
-            MemorySystem::MemoryCopy((Byte*) m_Data + (index * k_Offset), &std::forward<T>(item), k_Offset);
+            MemorySystem::MemoryCopy(m_Data + (index * m_Offset), &item, m_Offset);
             m_Count++;
 
             return true;
@@ -277,17 +329,14 @@ namespace Otter
          *
          * @return True if the items were added, false otherwise.
          *
-         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
-         * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
-         * used with caution.
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
          */
         template<typename T>
         bool TryAddRange(InitialiserList<T> items, bool allOrNothing = false)
         {
             if (items.size() == 0)
                 return false;
-
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
 
             const auto listSize = items.size();
 
@@ -299,7 +348,7 @@ namespace Otter
                 Expand(listSize - (m_Capacity - m_Count));
             }
 
-            MemorySystem::MemoryCopy((Byte*) m_Data + (m_Count * k_Offset), items.begin(), listSize * k_Offset);
+            MemorySystem::MemoryCopy(m_Data + (m_Count * m_Offset), items.begin(), listSize * m_Offset);
             m_Count += listSize;
 
             return true;
@@ -314,15 +363,14 @@ namespace Otter
          *
          * @return True if the item was removed, false otherwise.
          *
-         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
-         * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
-         * used with caution.
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
          */
         template<typename T>
         bool TryRemove(const T& item)
         {
             for (UInt64 i = 0; i < m_Count; i++)
-                if (*reinterpret_cast<T*>((Byte*) m_Data + (i * k_Offset)) == item)
+                if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
                     return TryRemoveAt(i);
 
             return false;
@@ -341,13 +389,61 @@ namespace Otter
                 return false;
 
             if (index != m_Count - 1)
-                MemorySystem::MemoryMove((Byte*) m_Data + (index * k_Offset),
-                                         (Byte*) m_Data + ((index + 1) * k_Offset),
-                                         (m_Count - index - 1) * k_Offset);
+                MemorySystem::MemoryMove(m_Data + (index * m_Offset),
+                                         m_Data + ((index + 1) * m_Offset),
+                                         (m_Count - index - 1) * m_Offset);
 
             m_Count--;
 
             return true;
+        }
+
+        /**
+         * @brief Checks if the list contains a given item.
+         *
+         * @tparam T The type of the item.
+         *
+         * @param item The item to check for.
+         *
+         * @return True if the list contains the item, false otherwise.
+         *
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
+         */
+        template<typename T>
+        [[nodiscard]] bool Contains(const T& item) const
+        {
+            for (UInt64 i = 0; i < m_Count; i++)
+                if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
+                    return true;
+
+            return false;
+        }
+
+        /**
+         * @brief Tries to get the index of a given item.
+         *
+         * @param item The item to get the index of.
+         * @param outIndex The index of the item.
+         *
+         * @return True if the item was found, false otherwise.
+         *
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
+         */
+        template<typename T>
+        [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64* outIndex) const
+        {
+            OTR_ASSERT_MSG(outIndex, "Out index must not be null")
+
+            for (UInt64 i = 0; i < m_Count; i++)
+                if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
+                {
+                    *outIndex = i;
+                    return true;
+                }
+
+            return false;
         }
 
         /**
@@ -371,17 +467,17 @@ namespace Otter
         {
             UInt64 newCapacity = CalculateExpandCapacity(amount);
 
-            auto handle = Unsafe::New(newCapacity * k_Offset);
+            auto handle = Unsafe::New(newCapacity * m_Offset);
 
             if (IsCreated())
             {
                 if (!IsEmpty())
-                    MemorySystem::MemoryCopy(handle.Pointer, m_Data, m_Count * k_Offset);
+                    MemorySystem::MemoryCopy(handle.Pointer, m_Data, m_Count * m_Offset);
 
-                Unsafe::Delete({ m_Data, m_Capacity * k_Offset });
+                Unsafe::Delete({ m_Data, m_Capacity * m_Offset });
             }
 
-            m_Data     = handle.Pointer;
+            m_Data     = (Byte*) handle.Pointer;
             m_Capacity = newCapacity;
         }
 
@@ -401,7 +497,7 @@ namespace Otter
                 return;
             }
 
-            auto handle = Unsafe::New(newCapacity * k_Offset);
+            auto handle = Unsafe::New(newCapacity * m_Offset);
 
             if (IsCreated())
             {
@@ -409,11 +505,11 @@ namespace Otter
                                 ? m_Count
                                 : newCapacity;
 
-                MemorySystem::MemoryCopy(handle.Pointer, m_Data, minCount * k_Offset);
-                Unsafe::Delete({ m_Data, m_Capacity * k_Offset });
+                MemorySystem::MemoryCopy(handle.Pointer, m_Data, minCount * m_Offset);
+                Unsafe::Delete({ m_Data, m_Capacity * m_Offset });
             }
 
-            m_Data     = handle.Pointer;
+            m_Data     = (Byte*) handle.Pointer;
             m_Capacity = newCapacity;
 
             if (m_Count >= newCapacity)
@@ -431,7 +527,7 @@ namespace Otter
         void ClearDestructive()
         {
             if (IsCreated())
-                Unsafe::Delete({ m_Data, m_Capacity * k_Offset });
+                Unsafe::Delete({ m_Data, m_Capacity * m_Offset });
 
             m_Data     = nullptr;
             m_Capacity = 0;
@@ -470,16 +566,16 @@ namespace Otter
          *
          * @return A pointer to the data of the list cast to the specified type.
          *
-         * @note The T type is checked against the offset of the list to ensure that the type is correct. However,
-         * this check does not guarantee that the type is correct. Ultimately, this function is unsafe and should be
-         * used with caution.
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
          */
-        template<typename T>
+        template<typename T = void>
         [[nodiscard]] OTR_INLINE const T* GetData() const noexcept
         {
-            OTR_ASSERT_MSG(sizeof(T) == k_Offset, "The type passed does not match the offset of the buffer.")
-
-            return m_Data;
+            if constexpr (IsVoid<T>)
+                return (void*) m_Data;
+            else
+                return reinterpret_cast<const T*>(m_Data);
         }
 
         /**
@@ -501,7 +597,7 @@ namespace Otter
          *
          * @return The offset of elements in the buffer.
          */
-        [[nodiscard]] OTR_INLINE UInt64 GetOffset() const noexcept { return k_Offset; }
+        [[nodiscard]] OTR_INLINE UInt64 GetOffset() const noexcept { return m_Offset; }
 
         /**
          * @brief Checks whether the list has been created. A list is created when it has been initialised
@@ -519,11 +615,21 @@ namespace Otter
         [[nodiscard]] OTR_INLINE bool IsEmpty() const noexcept { return m_Count == 0; }
 
     private:
-        const UInt64 k_Offset;
+        /**
+         * @brief Constructor.
+         *
+         * @param offset The offset of each item in the buffer.
+         */
+        explicit UnsafeList(const UInt64 offset)
+            : m_Offset(offset)
+        {
+            OTR_ASSERT_MSG(offset > 0, "The offset of the list items must be greater than 0.")
+        }
 
-        void* m_Data = nullptr;
+        Byte* m_Data = nullptr;
         UInt64 m_Count    = 0;
         UInt64 m_Capacity = 0;
+        UInt64 m_Offset   = 0;
 
         /**
          * @brief Recreates the list with a given capacity. Deletes any existing data.
@@ -533,7 +639,7 @@ namespace Otter
         void RecreateEmpty(const UInt64 capacity)
         {
             if (IsCreated())
-                Unsafe::Delete({ m_Data, m_Capacity * k_Offset });
+                Unsafe::Delete({ m_Data, m_Capacity * m_Offset });
 
             m_Capacity = capacity;
             m_Count    = 0;
@@ -541,8 +647,8 @@ namespace Otter
             if (m_Capacity == 0)
                 return;
 
-            auto handle = Unsafe::New(m_Capacity * k_Offset);
-            m_Data = handle.Pointer;
+            auto handle = Unsafe::New(m_Capacity * m_Offset);
+            m_Data = (Byte*) handle.Pointer;
         }
 
         /**

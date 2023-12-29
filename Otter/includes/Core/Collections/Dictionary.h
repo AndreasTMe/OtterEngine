@@ -192,6 +192,25 @@ namespace Otter
         bool operator!=(const Dictionary<TKey, TValue>& other) const noexcept { return !(*this == other); }
 
         /**
+         * @brief Gets the element for the specified key.
+         *
+         * @param key The key.
+         *
+         * @return The address of the element for the specified key.
+         */
+        [[nodiscard]] TValue* operator[](const TKey key) const
+        {
+            if (IsEmpty())
+                return nullptr;
+
+            UInt64 index;
+            if (!Exists(key, &index))
+                return nullptr;
+
+            return &m_Slots[index].Data.Value;
+        }
+
+        /**
          * @brief Tries to add a key/value pair to the dictionary.
          *
          * @param key The key of the pair.
