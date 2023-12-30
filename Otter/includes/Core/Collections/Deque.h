@@ -65,7 +65,11 @@ namespace Otter
         {
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
-            m_Data     = Buffer::New<T>(m_Capacity);
+
+            if (m_Capacity == 0)
+                return;
+
+            m_Data = Buffer::New<T>(m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * sizeof(T));
@@ -104,7 +108,11 @@ namespace Otter
 
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
-            m_Data     = Buffer::New<T>(m_Capacity);
+
+            if (m_Capacity == 0)
+                return *this;
+
+            m_Data = Buffer::New<T>(m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * sizeof(T));

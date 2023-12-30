@@ -4,6 +4,8 @@ namespace Otter
 {
     void* FreeListAllocator::Allocate(const UInt64 size, const UInt16 alignment)
     {
+        OTR_INTERNAL_ASSERT_MSG(GetMemoryUsed() <= GetMemorySize(), "Memory used is greater than the allocator size")
+
         if (size < sizeof(Node))
         {
             OTR_LOG_WARNING("Allocation size is less than or equal to the size of a Free List node ({0} < {1})."
@@ -94,6 +96,8 @@ namespace Otter
         m_MemoryUsed -= nodeToInsert->Size;
 
         Merge(nodeToInsert, iteratorPrevious);
+
+        OTR_INTERNAL_ASSERT_MSG(GetMemoryUsed() <= GetMemorySize(), "Memory used is greater than the allocator size")
     }
 
     void FreeListAllocator::Clear()

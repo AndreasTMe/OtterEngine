@@ -241,12 +241,22 @@ TEST_F(Deque_Fixture, Clear)
 
 TEST_F(Deque_Fixture, ClearDestructive)
 {
-    Deque<int> deque = { 1, 2, 3, 4, 5 };
-    deque.ClearDestructive();
+    Deque<int> deque1 = { 1, 2, 3, 4, 5 };
+    deque1.ClearDestructive();
 
-    EXPECT_EQ(deque.GetData(), nullptr);
-    EXPECT_EQ(deque.GetCapacity(), 0);
-    EXPECT_EQ(deque.GetCount(), 0);
+    EXPECT_EQ(deque1.GetData(), nullptr);
+    EXPECT_EQ(deque1.GetCapacity(), 0);
+    EXPECT_EQ(deque1.GetCount(), 0);
+
+    Deque<Deque<int>> deque2 = {{ 1, 2, 3, 4, 5 },
+                                { 6, 7, 8, 9, 10 }};
+    deque2.ClearDestructive();
+
+    EXPECT_FALSE(deque2.IsCreated());
+    EXPECT_TRUE(deque2.IsEmpty());
+    EXPECT_EQ(deque2.GetCount(), 0);
+
+    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(Deque_Fixture, GetMemoryFootprint)

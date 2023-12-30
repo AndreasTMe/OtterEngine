@@ -44,6 +44,9 @@ namespace Otter
             m_Count    = other.m_Count;
             m_Offset   = other.m_Offset;
 
+            if (m_Capacity == 0)
+                return;
+
             auto handle = Unsafe::New(m_Capacity * m_Offset);
             m_Data = (Byte*) handle.Pointer;
 
@@ -83,6 +86,9 @@ namespace Otter
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
             m_Offset   = other.m_Offset;
+
+            if (m_Capacity == 0)
+                return *this;
 
             auto handle = Unsafe::New(m_Capacity * m_Offset);
             m_Data = (Byte*) handle.Pointer;
@@ -152,9 +158,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         [[nodiscard]] T* operator[](const UInt64 index) const
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
             OTR_ASSERT_MSG(index < m_Count, "Index out of range")
 
             return reinterpret_cast<T*>(m_Data + (index * m_Offset));
@@ -168,7 +174,8 @@ namespace Otter
          * @return The unsafe list.
          */
         template<typename T>
-        static UnsafeList Empty() { return UnsafeList(sizeof(T)); }
+        requires std::is_trivially_destructible_v<T>
+        [[nodiscard]] OTR_INLINE static UnsafeList Empty() { return UnsafeList(sizeof(T)); }
 
         /**
          * @brief Creates an unsafe list from an initialiser list.
@@ -180,7 +187,8 @@ namespace Otter
          * @return The unsafe list.
          */
         template<typename T>
-        static UnsafeList Of(InitialiserList<T> list)
+        requires std::is_trivially_destructible_v<T>
+        [[nodiscard]] static UnsafeList Of(InitialiserList<T> list)
         {
             auto unsafeList = UnsafeList(sizeof(T));
             unsafeList.m_Capacity = list.size();
@@ -211,9 +219,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         [[nodiscard]] bool TryGet(const UInt64 index, T* outItem) const
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
             OTR_ASSERT_MSG(outItem, "Out item must not be null")
 
             if (index >= m_Count)
@@ -235,10 +243,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         void Add(const T& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
-
             if (m_Count >= m_Capacity)
                 Expand();
 
@@ -257,10 +264,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         void Add(T&& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
-
             if (m_Count >= m_Capacity)
                 Expand();
 
@@ -282,10 +288,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         bool TryAddAt(const UInt64 index, const T& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
-
             if (index >= m_Capacity - 1 || m_Count >= m_Capacity - 1)
                 return false;
 
@@ -313,10 +318,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         bool TryAddAt(const UInt64 index, T&& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
-
             if (index >= m_Capacity || m_Count >= m_Capacity)
                 return false;
 
@@ -362,10 +366,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         bool TryAddRange(InitialiserList<T> items, bool allOrNothing = false)
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
-
             return TryAddRangeInternal(items.begin(), items.size(), allOrNothing);
         }
 
@@ -383,10 +386,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         bool TryAddRange(const Collection<T>& collection, bool allOrNothing = false)
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
-
             return TryAddRangeInternal(collection.GetData(), collection.GetCount(), allOrNothing);
         }
 
@@ -403,10 +405,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         bool TryRemove(const T& item)
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
-
             for (UInt64 i = 0; i < m_Count; i++)
                 if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
                     return TryRemoveAt(i);
@@ -449,10 +450,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         [[nodiscard]] bool Contains(const T& item) const
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
-
             for (UInt64 i = 0; i < m_Count; i++)
                 if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
                     return true;
@@ -472,9 +472,9 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T>
+        requires std::is_trivially_destructible_v<T>
         [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64* outIndex) const
         {
-            OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
             OTR_ASSERT_MSG(outIndex, "Out index must not be null")
 
             for (UInt64 i = 0; i < m_Count; i++)
@@ -616,10 +616,7 @@ namespace Otter
             if constexpr (IsVoid<T>)
                 return (void*) m_Data;
             else
-            {
-                OTR_ASSERT_MSG(sizeof(T) == m_Offset, "Size of type must be equal to the offset of the list")
                 return reinterpret_cast<const T*>(m_Data);
-            }
         }
 
         /**

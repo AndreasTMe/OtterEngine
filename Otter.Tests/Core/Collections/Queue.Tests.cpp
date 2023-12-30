@@ -295,16 +295,26 @@ TEST_F(Queue_Fixture, Clear)
 
 TEST_F(Queue_Fixture, ClearDestructive)
 {
-    Queue<int> queue = { 1, 2, 3, 4, 5 };
-    queue.ClearDestructive();
+    Queue<int> queue1 = { 1, 2, 3, 4, 5 };
+    queue1.ClearDestructive();
 
-    EXPECT_FALSE(queue.IsCreated());
-    EXPECT_TRUE(queue.IsEmpty());
-    EXPECT_EQ(queue.GetCount(), 0);
+    EXPECT_FALSE(queue1.IsCreated());
+    EXPECT_TRUE(queue1.IsEmpty());
+    EXPECT_EQ(queue1.GetCount(), 0);
 
     int value = 0;
-    EXPECT_FALSE(queue.TryPeek(&value));
-    EXPECT_FALSE(queue.TryDequeue(&value));
+    EXPECT_FALSE(queue1.TryPeek(&value));
+    EXPECT_FALSE(queue1.TryDequeue(&value));
+
+    Queue<Queue<int>> queue2 = {{ 1, 2, 3, 4, 5 },
+                                { 6, 7, 8, 9, 10 }};
+    queue2.ClearDestructive();
+
+    EXPECT_FALSE(queue2.IsCreated());
+    EXPECT_TRUE(queue2.IsEmpty());
+    EXPECT_EQ(queue2.GetCount(), 0);
+
+    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(Queue_Fixture, GetMemoryFootprint)

@@ -76,7 +76,11 @@ namespace Otter
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
             m_Collisions           = other.m_Collisions;
-            m_Slots                = Buffer::New<Slot>(m_Capacity);
+
+            if (m_Capacity == 0)
+                return;
+
+            m_Slots = Buffer::New<Slot>(m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
@@ -122,7 +126,11 @@ namespace Otter
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
             m_Collisions           = other.m_Collisions;
-            m_Slots                = Buffer::New<Slot>(m_Capacity);
+
+            if (m_Capacity == 0)
+                return *this;
+
+            m_Slots = Buffer::New<Slot>(m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));

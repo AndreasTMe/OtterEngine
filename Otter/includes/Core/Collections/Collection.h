@@ -432,7 +432,11 @@ namespace Otter
     {                                                                                       \
         base::m_Capacity = other.m_Capacity;                                                \
         base::m_Count    = other.m_Count;                                                   \
-        base::m_Data     = Buffer::New<T>(base::m_Capacity);                                \
+                                                                                            \
+        if (base::m_Capacity == 0)                                                          \
+            return;                                                                         \
+                                                                                            \
+        base::m_Data = Buffer::New<T>(base::m_Capacity);                                    \
                                                                                             \
         if (base::m_Count > 0)                                                              \
             MemorySystem::MemoryCopy(base::m_Data, other.m_Data, base::m_Count * sizeof(T));\
@@ -448,7 +452,11 @@ namespace Otter
                                                                                             \
         base::m_Capacity = other.m_Capacity;                                                \
         base::m_Count    = other.m_Count;                                                   \
-        base::m_Data     = Buffer::New<T>(base::m_Capacity);                                \
+                                                                                            \
+        if (base::m_Capacity == 0)                                                          \
+            return *this;                                                                   \
+                                                                                            \
+        base::m_Data = Buffer::New<T>(base::m_Capacity);                                    \
                                                                                             \
         if (base::m_Count > 0)                                                              \
             MemorySystem::MemoryCopy(base::m_Data, other.m_Data, base::m_Count * sizeof(T));\

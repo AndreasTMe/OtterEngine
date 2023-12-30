@@ -1,11 +1,15 @@
 #include <gtest/gtest.h>
 
 #include "Core/Collections/Collection.h"
+#include "Core/Collections/List.h"
 
 template<typename T>
 using Collection = Otter::Collection<T>;
 
 using Collections = Otter::Collections;
+
+template<typename T>
+using List = Otter::List<T>;
 
 class Collection_Fixture : public ::testing::Test
 {
@@ -158,10 +162,19 @@ TEST_F(Collection_Fixture, Clear)
 
 TEST_F(Collection_Fixture, ClearDestructive)
 {
-    Collection<int> collection = Collections::New<int>({ 1, 2, 3 });
-    collection.ClearDestructive();
+    Collection<int> collection1 = Collections::New<int>({ 1, 2, 3 });
+    collection1.ClearDestructive();
 
-    EXPECT_EQ(collection.GetCount(), 0);
-    EXPECT_EQ(collection.GetCapacity(), 0);
-    EXPECT_EQ(collection.GetData(), nullptr);
+    EXPECT_EQ(collection1.GetCount(), 0);
+    EXPECT_EQ(collection1.GetCapacity(), 0);
+    EXPECT_EQ(collection1.GetData(), nullptr);
+
+    Collection<List<int>> collection2 = Collections::New<List<int>>({ List<int>({ 1, 2, 3 }) });
+    collection2.ClearDestructive();
+
+    EXPECT_EQ(collection2.GetCount(), 0);
+    EXPECT_EQ(collection2.GetCapacity(), 0);
+    EXPECT_EQ(collection2.GetData(), nullptr);
+
+    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }

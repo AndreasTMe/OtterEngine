@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 
 #include "Core/Collections/HashSet.h"
+#include "Core/Collections/BitSet.h"
 
 template<typename T>
 using HashSet = Otter::HashSet<T>;
 
 using HashUtils = Otter::Internal::HashUtils;
+
+using BitSet = Otter::BitSet;
 
 class HashSet_Fixture : public ::testing::Test
 {
@@ -245,16 +248,29 @@ TEST_F(HashSet_Fixture, Clear)
 
 TEST_F(HashSet_Fixture, ClearDestructive)
 {
-    HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
+    HashSet<int> hashSet1 = { 1, 2, 3, 4, 5 };
 
-    EXPECT_EQ(hashSet.GetCount(), 5);
-    EXPECT_FALSE(hashSet.IsEmpty());
+    EXPECT_EQ(hashSet1.GetCount(), 5);
+    EXPECT_FALSE(hashSet1.IsEmpty());
 
-    hashSet.ClearDestructive();
+    hashSet1.ClearDestructive();
 
-    EXPECT_EQ(hashSet.GetCount(), 0);
-    EXPECT_TRUE(hashSet.IsEmpty());
-    EXPECT_FALSE(hashSet.IsCreated());
+    EXPECT_EQ(hashSet1.GetCount(), 0);
+    EXPECT_TRUE(hashSet1.IsEmpty());
+    EXPECT_FALSE(hashSet1.IsCreated());
+
+    HashSet<BitSet> hashSet2 = { BitSet(), BitSet(), BitSet(), BitSet(), BitSet() };
+
+    EXPECT_EQ(hashSet2.GetCount(), 1);
+    EXPECT_FALSE(hashSet2.IsEmpty());
+
+    hashSet2.ClearDestructive();
+
+    EXPECT_EQ(hashSet2.GetCount(), 0);
+    EXPECT_TRUE(hashSet2.IsEmpty());
+    EXPECT_FALSE(hashSet2.IsCreated());
+
+    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(HashSet_Fixture, GetMemoryFootprint)

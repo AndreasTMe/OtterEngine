@@ -125,10 +125,6 @@ TEST_F(UnsafeList_Fixture, TryGet)
 
     EXPECT_FALSE(list.TryGet(5, &value));
     EXPECT_FALSE(list.TryGet(-1, &value));
-
-    double invalid;
-
-    EXPECT_DEATH(auto result = list.TryGet(0, &invalid), "");
 }
 
 TEST_F(UnsafeList_Fixture, Add)
@@ -161,37 +157,6 @@ TEST_F(UnsafeList_Fixture, Add)
     *list.operator[]<int>(0) = 321;
     EXPECT_TRUE(list.TryGet(0, &value));
     EXPECT_EQ(value, 321);
-}
-
-TEST_F(UnsafeList_Fixture, Add_Collection)
-{
-    UnsafeList list = UnsafeList::Empty<List<int>>();
-
-    EXPECT_EQ(list.GetCount(), 0);
-    EXPECT_EQ(list.GetCapacity(), 0);
-
-    auto innerList = List<int>();
-    innerList.Add(1);
-    innerList.Add(2);
-    EXPECT_EQ(innerList.GetCount(), 2);
-
-    list.Add(innerList);
-    EXPECT_EQ(list.GetCount(), 1);
-
-    List<int> value;
-    EXPECT_TRUE(list.TryGet(0, &value));
-
-    EXPECT_EQ(value.GetCount(), 2);
-    EXPECT_EQ(value[0], 1);
-    EXPECT_EQ(value[1], 2);
-
-    (*list.operator[]<List<int>>(0)).Add(3);
-    EXPECT_TRUE(list.TryGet(0, &value));
-
-    EXPECT_EQ(value.GetCount(), 3);
-    EXPECT_EQ(value[0], 1);
-    EXPECT_EQ(value[1], 2);
-    EXPECT_EQ(value[2], 3);
 }
 
 TEST_F(UnsafeList_Fixture, TryAddAt)

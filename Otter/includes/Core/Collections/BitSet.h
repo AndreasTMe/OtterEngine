@@ -59,6 +59,13 @@ namespace Otter
         BitSet(const BitSet& other)
         {
             m_Size = other.m_Size;
+
+            if (m_Size == 0)
+            {
+                m_Data = nullptr;
+                return;
+            }
+
             m_Data = Buffer::New<UInt64>(m_Size);
 
             for (UInt64 i = 0; i < m_Size; i++)
@@ -95,6 +102,13 @@ namespace Otter
                 Buffer::Delete<UInt64>(m_Data, m_Size);
 
             m_Size = other.m_Size;
+
+            if (m_Size == 0)
+            {
+                m_Data = nullptr;
+                return *this;
+            }
+
             m_Data = Buffer::New<UInt64>(m_Size);
 
             for (UInt64 i = 0; i < m_Size; i++)

@@ -66,8 +66,13 @@ namespace Otter
          */
         Span(const Span<T, Size>& other)
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = other.m_Data[i];
+            if constexpr (Size == 0)
+                return;
+            else
+            {
+                for (UInt64 i = 0; i < Size; i++)
+                    m_Data[i] = other.m_Data[i];
+            }
         }
 
         /**
@@ -79,8 +84,10 @@ namespace Otter
         {
             for (UInt64 i = 0; i < Size; i++)
             {
-                m_Data[i]       = std::move(other.m_Data[i]);
-                other.m_Data[i] = T();
+                m_Data[i] = std::move(other.m_Data[i]);
+
+                if constexpr (std::is_default_constructible<T>::value)
+                    other.m_Data[i] = T();
             }
         }
 
@@ -96,8 +103,13 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = other.m_Data[i];
+            if constexpr (Size == 0)
+                m_Data = nullptr;
+            else
+            {
+                for (UInt64 i = 0; i < Size; i++)
+                    m_Data[i] = other.m_Data[i];
+            }
 
             return *this;
         }
@@ -116,8 +128,10 @@ namespace Otter
 
             for (UInt64 i = 0; i < Size; i++)
             {
-                m_Data[i]       = std::move(other.m_Data[i]);
-                other.m_Data[i] = T();
+                m_Data[i] = std::move(other.m_Data[i]);
+
+                if constexpr (std::is_default_constructible<T>::value)
+                    other.m_Data[i] = T();
             }
 
             return *this;

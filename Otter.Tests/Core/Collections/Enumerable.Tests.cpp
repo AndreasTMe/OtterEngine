@@ -1,9 +1,13 @@
 #include <gtest/gtest.h>
 
 #include "Core/Collections/Enumerable.h"
+#include "Core/Collections/List.h"
 
 template<typename T>
 using Enumerable = Otter::Enumerable<T>;
+
+template<typename T>
+using List = Otter::List<T>;
 
 class Enumerable_Fixture : public ::testing::Test
 {
@@ -41,11 +45,21 @@ TEST_F(Enumerable_Fixture, Initialisation_Empty)
 
 TEST_F(Enumerable_Fixture, ClearDestructive)
 {
-    Enumerable<int> enumerable = Enumerable<int>::Of({ 1, 2, 3, 4, 5 });
-    enumerable.ClearDestructive();
+    Enumerable<int> enumerable1 = Enumerable<int>::Of({ 1, 2, 3, 4, 5 });
+    enumerable1.ClearDestructive();
 
-    EXPECT_EQ(enumerable.GetCount(), 0);
-    EXPECT_EQ(enumerable.GetData(), nullptr);
+    EXPECT_EQ(enumerable1.GetCount(), 0);
+    EXPECT_EQ(enumerable1.GetData(), nullptr);
+
+    Enumerable<List<int>> enumerable2 = Enumerable<List<int>>::Of({{ 1, 2, 3, 4, 5 },
+                                                                   { 1, 2, 3, 4, 5 }});
+
+    enumerable2.ClearDestructive();
+
+    EXPECT_EQ(enumerable1.GetCount(), 0);
+    EXPECT_EQ(enumerable1.GetData(), nullptr);
+
+    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(Enumerable_Fixture, Iterator)
