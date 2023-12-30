@@ -10,7 +10,7 @@ namespace Otter
         id++;
 
         auto entity = Entity{ id };
-        while (m_EntityToIndex.Contains(entity))
+        while (m_EntityToIndex.ContainsKey(entity))
             entity.m_Id = ++id;
 
         m_EntitiesToAdd.Push(entity);

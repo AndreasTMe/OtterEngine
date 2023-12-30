@@ -60,6 +60,8 @@ namespace Otter
     private:
         static EntityManager s_EntityManager;
     };
+
+    EntityManager World::s_EntityManager{ };
 }
 
 #endif //OTTERENGINE_WORLD_H
