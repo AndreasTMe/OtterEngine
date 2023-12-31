@@ -182,12 +182,14 @@ namespace Otter
          */
         bool operator==(const Dictionary<TKey, TValue>& other) const noexcept
         {
-            return m_Slots == other.m_Slots
-                   && m_Capacity == other.m_Capacity
-                   && m_Count == other.m_Count
-                   && m_CurrentMaxCollisions == other.m_CurrentMaxCollisions
-                   && m_SlotsInUse == other.m_SlotsInUse
-                   && m_Collisions == other.m_Collisions;
+            if (m_Count != other.m_Count)
+                return false;
+
+            for (UInt64 i = 0; i < m_Capacity; ++i)
+                if (m_Slots[i] != other.m_Slots[i])
+                    return false;
+
+            return true;
         }
 
         /**
@@ -223,11 +225,10 @@ namespace Otter
          *
          * @param key The key of the pair.
          * @param value The value of the pair.
-         * @param replaceIfKeyExists Whether to replace the value if the key already exists.
          *
          * @return True if the pair was added, false otherwise.
          */
-        bool TryAdd(const TKey& key, const TValue& value, const bool replaceIfKeyExists = false)
+        bool TryAdd(const TKey& key, const TValue& value)
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
@@ -240,10 +241,8 @@ namespace Otter
 
             if (m_Slots[index].MatchesKey(key, hash))
             {
-                if (replaceIfKeyExists)
-                    m_Slots[index].Data.Value = value;
-
-                return replaceIfKeyExists;
+                m_Slots[index].Data.Value = value;
+                return true;
             }
 
             if (HasCollisionStoredAt(index))
@@ -257,11 +256,10 @@ namespace Otter
          *
          * @param key The key of the pair.
          * @param value The value of the pair.
-         * @param replaceIfKeyExists Whether to replace the value if the key already exists.
          *
          * @return True if the pair was added, false otherwise.
          */
-        bool TryAdd(TKey&& key, TValue&& value, const bool replaceIfKeyExists = false) noexcept
+        bool TryAdd(TKey&& key, TValue&& value) noexcept
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
@@ -270,20 +268,18 @@ namespace Otter
             UInt64 index = hash % m_Capacity;
 
             if (!HasItemStoredAt(index))
-                return TryAddToEmptySlot({ key, value }, hash, index);
+                return TryAddToEmptySlot(Pair(std::move(key), std::move(value)), hash, index);
 
             if (m_Slots[index].MatchesKey(key, hash))
             {
-                if (replaceIfKeyExists)
-                    m_Slots[index].Data.Value = std::move(value);
-
-                return replaceIfKeyExists;
+                m_Slots[index].Data.Value = std::move(value);
+                return true;
             }
 
             if (HasCollisionStoredAt(index))
-                return TryAddToCollisionSlot({ key, value }, hash, index);
+                return TryAddToCollisionSlot(Pair(std::move(key), std::move(value)), hash, index);
 
-            return TryAddNewCollision({ key, value }, index, hash);
+            return TryAddNewCollision(Pair(std::move(key), std::move(value)), index, hash);
         }
 
         /**

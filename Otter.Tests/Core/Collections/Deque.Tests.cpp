@@ -59,6 +59,18 @@ TEST_F(Deque_Fixture, Initialisation_Move)
     EXPECT_EQ(move.GetCount(), 5);
 }
 
+TEST_F(Deque_Fixture, Equality)
+{
+    Deque<int> deque1 = { 1, 2, 3, 4, 5 };
+    Deque<int> deque2 = { 1, 2, 3, 4, 5 };
+    Deque<int> deque3 = { 1, 2, 3, 4, 6 };
+
+    EXPECT_TRUE(deque1 == deque2);
+    EXPECT_FALSE(deque1 == deque3);
+    EXPECT_TRUE(deque1 != deque3);
+    EXPECT_FALSE(deque1 != deque2);
+}
+
 TEST_F(Deque_Fixture, PushFront)
 {
     Deque<int> deque;

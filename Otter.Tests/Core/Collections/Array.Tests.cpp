@@ -96,6 +96,16 @@ TEST_F(Array_Fixture, Assignment_MoveArray)
     EXPECT_EQ(array.GetData(), nullptr);
 }
 
+TEST_F(Array_Fixture, Equality)
+{
+    Array<int, 5> array1 = { 1, 2, 3, 4, 5 };
+    Array<int, 5> array2 = { 1, 2, 3, 4, 5 };
+    Array<int, 5> array3 = { 5, 4, 3, 2, 1 };
+
+    EXPECT_TRUE(array1 == array2);
+    EXPECT_FALSE(array1 == array3);
+}
+
 TEST_F(Array_Fixture, AsReadOnly)
 {
     Array<int, 5> array    = { 1, 2, 3, 4, 5 };

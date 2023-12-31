@@ -100,6 +100,16 @@ TEST_F(List_Fixture, Assignment_Move)
     EXPECT_EQ(list.GetData(), nullptr);
 }
 
+TEST_F(List_Fixture, Equality)
+{
+    List<int> list1 = { 1, 2, 3, 4, 5 };
+    List<int> list2 = { 1, 2, 3, 4, 5 };
+    List<int> list3 = { 1, 2, 3, 4, 6 };
+
+    EXPECT_TRUE(list1 == list2);
+    EXPECT_FALSE(list1 == list3);
+}
+
 TEST_F(List_Fixture, Add)
 {
     List<int> list;

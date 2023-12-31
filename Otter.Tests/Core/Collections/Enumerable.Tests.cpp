@@ -43,6 +43,16 @@ TEST_F(Enumerable_Fixture, Initialisation_Empty)
     EXPECT_TRUE(enumerable.IsEmpty());
 }
 
+TEST_F(Enumerable_Fixture, Equality)
+{
+    Enumerable<int> enumerable1 = Enumerable<int>::Of({ 1, 2, 3, 4, 5 });
+    Enumerable<int> enumerable2 = Enumerable<int>::Of({ 1, 2, 3, 4, 5 });
+    Enumerable<int> enumerable3 = Enumerable<int>::Of({ 1, 2, 3, 4, 5, 6 });
+
+    EXPECT_TRUE(enumerable1 == enumerable2);
+    EXPECT_FALSE(enumerable1 == enumerable3);
+}
+
 TEST_F(Enumerable_Fixture, ClearDestructive)
 {
     Enumerable<int> enumerable1 = Enumerable<int>::Of({ 1, 2, 3, 4, 5 });

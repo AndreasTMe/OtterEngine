@@ -114,18 +114,41 @@ TEST_F(Dictionary_Fixture, Assignment_Move)
     EXPECT_FALSE(dictionary.IsCreated());
 }
 
+TEST_F(Dictionary_Fixture, Equality)
+{
+    Dictionary<int, int> dictionary1 = {{ 1, 1 },
+                                        { 2, 2 },
+                                        { 3, 3 },
+                                        { 4, 4 }};
+
+    Dictionary<int, int> dictionary2 = {{ 1, 1 },
+                                        { 2, 2 },
+                                        { 3, 3 },
+                                        { 4, 4 }};
+
+    Dictionary<int, int> dictionary3 = {{ 1, 1 },
+                                        { 2, 2 },
+                                        { 3, 3 },
+                                        { 4, 4 },
+                                        { 5, 5 }};
+
+    EXPECT_TRUE(dictionary1 == dictionary2);
+    EXPECT_FALSE(dictionary1 == dictionary3);
+}
+
 TEST_F(Dictionary_Fixture, TryAdd_SimpleCases)
 {
     Dictionary<int, int> dictionary;
 
     EXPECT_TRUE(dictionary.TryAdd(1, 1));
-    EXPECT_FALSE(dictionary.TryAdd(1, 2));
-    EXPECT_TRUE(dictionary.TryAdd(1, 2, true));
+    EXPECT_TRUE(dictionary.TryAdd(1, 2));
+
+    EXPECT_EQ(dictionary.GetCount(), 1);
 
     int value = 2;
     EXPECT_TRUE(dictionary.TryAdd(value, value));
-    EXPECT_FALSE(dictionary.TryAdd(value, value)) << "Value already exists";
-    EXPECT_FALSE(dictionary.TryAdd(value, value + 1)) << "Value already exists";
+    EXPECT_TRUE(dictionary.TryAdd(value, value));
+    EXPECT_TRUE(dictionary.TryAdd(value, value + 1));
     EXPECT_TRUE(dictionary.TryAdd(3, 3));
 
     UInt64 capacity = Dictionary<int, int>::GetDefaultInitialCapacity();

@@ -55,6 +55,16 @@ TEST(ReadOnlySpan, Initialisation_MoveSpan)
     }
 }
 
+TEST(ReadOnlySpan, Equality)
+{
+    ReadOnlySpan<int, 5> span1 = { 1, 2, 3, 4, 5 };
+    ReadOnlySpan<int, 5> span2 = { 1, 2, 3, 4, 5 };
+    ReadOnlySpan<int, 5> span3 = { 5, 4, 3, 2, 1 };
+
+    EXPECT_TRUE(span1 == span2);
+    EXPECT_FALSE(span1 == span3);
+}
+
 TEST(ReadOnlySpan, Iterator)
 {
     ReadOnlySpan<int, 5> span = { 1, 2, 3, 4, 5 };

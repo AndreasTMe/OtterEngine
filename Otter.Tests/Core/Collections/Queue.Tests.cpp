@@ -87,6 +87,18 @@ TEST_F(Queue_Fixture, Assignment_Move)
     EXPECT_FALSE(move.IsEmpty());
 }
 
+TEST_F(Queue_Fixture, Equality)
+{
+    Queue<int> queue1 = { 1, 2, 3, 4, 5 };
+    Queue<int> queue2 = { 0, 1, 2, 3, 4 };
+    queue2.TryDequeue();
+    queue2.TryEnqueue(5);
+    Queue<int> queue3 = { 1, 2, 3, 4, 5, 6 };
+
+    EXPECT_TRUE(queue1 == queue2);
+    EXPECT_FALSE(queue1 == queue3);
+}
+
 TEST_F(Queue_Fixture, TryEnqueue)
 {
     Queue<int> queue       = { 1, 2, 3, 4, 5 };

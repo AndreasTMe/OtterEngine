@@ -156,12 +156,26 @@ namespace Otter
          *
          * @return True if the queues are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const Queue<T>& other) const
+        bool operator==(const Queue<T>& other) const
         {
-            return m_Data == other.m_Data
-                   && m_Capacity == other.m_Capacity
-                   && m_Count == other.m_Count
-                   && m_StartIndex == other.m_StartIndex;
+            if (m_Count != other.m_Count)
+                return false;
+
+            if (m_StartIndex + m_Count < m_Capacity)
+            {
+                for (UInt64 i = 0; i < m_Count; i++)
+                    if (m_Data[i + m_StartIndex] != other.m_Data[i + other.m_StartIndex])
+                        return false;
+            }
+            else
+            {
+                for (UInt64 i = 0; i < m_Count; i++)
+                    if (m_Data[(i + m_StartIndex) % m_Capacity] !=
+                        other.m_Data[(i + other.m_StartIndex) % other.m_Capacity])
+                        return false;
+            }
+
+            return true;
         }
 
         /**
@@ -171,7 +185,7 @@ namespace Otter
          *
          * @return True if the queues are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const Queue<T>& other) const { return !(*this == other); }
+        bool operator!=(const Queue<T>& other) const { return !(*this == other); }
 
         /**
          * @brief Tries to enqueue an item into the queue.

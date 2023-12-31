@@ -130,7 +130,7 @@ namespace Otter
          *
          * @return True if the buffers are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const UnsafeList& other) const
+        bool operator==(const UnsafeList& other) const
         {
             return m_Offset == other.m_Offset
                    && m_Data == other.m_Data
@@ -145,7 +145,7 @@ namespace Otter
          *
          * @return True if the buffers are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const UnsafeList& other) const { return !(*this == other); }
+        bool operator!=(const UnsafeList& other) const { return !(*this == other); }
 
         /**
          * @brief Gets the item at the specified index.
@@ -230,6 +230,27 @@ namespace Otter
             *outItem = *reinterpret_cast<const T*>(m_Data + (index * m_Offset));
 
             return true;
+        }
+
+        /**
+         * @brief Adds raw bytes to the buffer.
+         *
+         * @param data The data to add.
+         * @param size The size of the data to add.
+         *
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
+         */
+        void Add(const Byte* const data, const UInt64 size)
+        {
+            OTR_ASSERT_MSG(data, "Data must not be null")
+            OTR_ASSERT_MSG(size == m_Offset, "Size of type must be equal to the offset of the list")
+
+            if (m_Count >= m_Capacity)
+                Expand();
+
+            MemorySystem::MemoryCopy(m_Data + (m_Count * m_Offset), data, m_Offset);
+            m_Count++;
         }
 
         /**

@@ -89,6 +89,16 @@ TEST_F(HashSet_Fixture, Assignment_Move)
     EXPECT_FALSE(move.IsEmpty());
 }
 
+TEST_F(HashSet_Fixture, Equality)
+{
+    HashSet<int> hashSet1 = { 1, 2, 3, 4, 5 };
+    HashSet<int> hashSet2 = { 1, 2, 3, 4, 5 };
+    HashSet<int> hashSet3 = { 1, 2, 3, 4, 5, 6 };
+
+    EXPECT_TRUE(hashSet1 == hashSet2);
+    EXPECT_FALSE(hashSet1 == hashSet3);
+}
+
 TEST_F(HashSet_Fixture, TryAdd_SimpleCases)
 {
     HashSet<int> hashSet;

@@ -41,9 +41,16 @@ namespace Otter
          *
          * @return True if the enumerables are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const Enumerable<T>& other) const
+        bool operator==(const Enumerable<T>& other) const
         {
-            return m_Data == other.m_Data && m_Count == other.m_Count;
+            if (m_Count != other.m_Count)
+                return false;
+
+            for (UInt64 i = 0; i < m_Count; ++i)
+                if (m_Data[i] != other.m_Data[i])
+                    return false;
+
+            return true;
         }
 
         /**
@@ -53,7 +60,7 @@ namespace Otter
          *
          * @return True if the enumerables are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const Enumerable<T>& other) const { return !(*this == other); }
+        bool operator!=(const Enumerable<T>& other) const { return !(*this == other); }
 
         /**
          * @brief Factory method for creating an enumerable from a list of items.
@@ -65,7 +72,7 @@ namespace Otter
         [[nodiscard]] static Enumerable Of(InitialiserList<T> list)
         {
             Enumerable enumerable;
-            enumerable.m_Data = Buffer::New < T > (list.size());
+            enumerable.m_Data = Buffer::New<T>(list.size());
 
             enumerable.m_Count = 0;
             for (const T& item: list)

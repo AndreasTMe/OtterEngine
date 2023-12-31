@@ -128,9 +128,16 @@ namespace Otter
          *
          * @return True if the collections are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const Collection<T>& other) const
+        bool operator==(const Collection<T>& other) const
         {
-            return m_Data == other.m_Data && m_Capacity == other.m_Capacity && m_Count == other.m_Count;
+            if (m_Count != other.m_Count)
+                return false;
+
+            for (UInt64 i = 0; i < m_Count; ++i)
+                if (m_Data[i] != other.m_Data[i])
+                    return false;
+
+            return true;
         }
 
         /**
@@ -140,7 +147,7 @@ namespace Otter
          *
          * @return True if the collections are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const Collection<T>& other) const { return !(*this == other); }
+        bool operator!=(const Collection<T>& other) const { return !(*this == other); }
 
         /**
          * @brief Used to reserve space for the collection.

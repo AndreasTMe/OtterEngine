@@ -85,6 +85,16 @@ TEST_F(Stack_Fixture, Assignment_Move)
     EXPECT_EQ(stack.GetData(), nullptr);
 }
 
+TEST_F(Stack_Fixture, Equality)
+{
+    Stack<int> stack1 = { 1, 2, 3, 4, 5 };
+    Stack<int> stack2 = { 1, 2, 3, 4, 5 };
+    Stack<int> stack3 = { 1, 2, 3, 4, 5, 6 };
+
+    EXPECT_TRUE(stack1 == stack2);
+    EXPECT_FALSE(stack1 == stack3);
+}
+
 TEST_F(Stack_Fixture, Push)
 {
     Stack<int> stack;

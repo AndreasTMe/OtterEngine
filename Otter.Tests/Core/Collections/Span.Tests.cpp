@@ -79,6 +79,16 @@ TEST(Span, Initialisation_MoveAssign)
         EXPECT_EQ(move[i], i + 1);
 }
 
+TEST(Span, Equality)
+{
+    Span<int, 5> span1 = { 1, 2, 3, 4, 5 };
+    Span<int, 5> span2 = { 1, 2, 3, 4, 5 };
+    Span<int, 5> span3 = { 5, 4, 3, 2, 1 };
+
+    EXPECT_TRUE(span1 == span2);
+    EXPECT_FALSE(span1 == span3);
+}
+
 TEST(Span, AsReadOnly)
 {
     Span<int, 5> span     = { 1, 2, 3, 4, 5 };

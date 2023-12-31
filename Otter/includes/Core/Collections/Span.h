@@ -144,7 +144,19 @@ namespace Otter
          *
          * @return True if the spans are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const Span<T, Size>& other) const { return m_Data == other.m_Data; }
+        bool operator==(const Span<T, Size>& other) const
+        {
+            if constexpr (Size == 0)
+                return true;
+            else
+            {
+                for (UInt64 i = 0; i < Size; ++i)
+                    if (m_Data[i] != other.m_Data[i])
+                        return false;
+
+                return true;
+            }
+        }
 
         /**
          * @brief Inequality operator.
@@ -153,7 +165,7 @@ namespace Otter
          *
          * @return True if the spans are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const Span<T, Size>& other) const { return !(*this == other); }
+        bool operator!=(const Span<T, Size>& other) const { return !(*this == other); }
 
         /**
          * @brief Gets the element at the specified index.

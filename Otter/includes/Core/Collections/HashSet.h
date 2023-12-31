@@ -177,12 +177,14 @@ namespace Otter
          */
         bool operator==(const HashSet<T>& other) const noexcept
         {
-            return m_Slots == other.m_Slots
-                   && m_Capacity == other.m_Capacity
-                   && m_Count == other.m_Count
-                   && m_CurrentMaxCollisions == other.m_CurrentMaxCollisions
-                   && m_SlotsInUse == other.m_SlotsInUse
-                   && m_Collisions == other.m_Collisions;
+            if (m_Count != other.m_Count)
+                return false;
+
+            for (UInt64 i = 0; i < m_Capacity; ++i)
+                if (m_Slots[i] != other.m_Slots[i])
+                    return false;
+
+            return true;
         }
 
         /**

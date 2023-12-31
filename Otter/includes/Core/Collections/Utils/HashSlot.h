@@ -102,6 +102,27 @@ namespace Otter
         }
 
         /**
+         * @brief Equality operator.
+         *
+         * @param other The other slot.
+         *
+         * @return True if the slots are equal, false otherwise.
+         */
+        bool operator==(const Slot<T>& other) const noexcept
+        {
+            return Data == other.Data && Hash == other.Hash && Next == other.Next;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The other slot.
+         *
+         * @return True if the slots are not equal, false otherwise.
+         */
+        bool operator!=(const Slot<T>& other) const noexcept { return !(*this == other); }
+
+        /**
          * @brief Sets the data of the slot.
          *
          * @param data The data to set.

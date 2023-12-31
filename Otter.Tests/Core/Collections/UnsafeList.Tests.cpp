@@ -159,6 +159,41 @@ TEST_F(UnsafeList_Fixture, Add)
     EXPECT_EQ(value, 321);
 }
 
+struct TestStruct
+{
+    int A;
+    int B;
+    int C;
+};
+
+TEST_F(UnsafeList_Fixture, Add_Item)
+{
+    UnsafeList list = UnsafeList::Empty<TestStruct>();
+
+    EXPECT_EQ(list.GetCount(), 0);
+    EXPECT_EQ(list.GetCapacity(), 0);
+
+    TestStruct item1 = { 1, 2, 3 };
+    list.Add(item1);
+    EXPECT_EQ(list.GetCount(), 1);
+
+    TestStruct item2 = { 4, 5, 6 };
+    Byte* data = reinterpret_cast<Byte*>(&item2);
+
+    list.Add(data, sizeof(TestStruct));
+    EXPECT_EQ(list.GetCount(), 2);
+
+    TestStruct  value{ };
+    for (UInt64 i = 0; i < list.GetCount(); ++i)
+    {
+        EXPECT_TRUE(list.TryGet(i, &value));
+
+        EXPECT_EQ(value.A, i * 3 + 1);
+        EXPECT_EQ(value.B, i * 3 + 2);
+        EXPECT_EQ(value.C, i * 3 + 3);
+    }
+}
+
 TEST_F(UnsafeList_Fixture, TryAddAt)
 {
     UnsafeList list = UnsafeList::Empty<int>();

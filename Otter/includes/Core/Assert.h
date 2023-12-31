@@ -41,9 +41,9 @@
             }                                                           \
         }
 
-    #define OTR_INTERNAL_STATIC_ASSERT(assertion) static_assert(assertion, #assertion)
+    #define OTR_INTERNAL_STATIC_ASSERT(assertion) static_assert(assertion, #assertion);
 
-    #define OTR_INTERNAL_STATIC_ASSERT_MSG(assertion, message) static_assert(assertion, message)
+    #define OTR_INTERNAL_STATIC_ASSERT_MSG(assertion, message) static_assert(assertion, message);
 
 #else
     #define OTR_INTERNAL_ASSERT(assertion)
@@ -79,9 +79,9 @@
             }                                                           \
         }
 
-    #define OTR_STATIC_ASSERT(assertion) static_assert(assertion, #assertion)
+    #define OTR_STATIC_ASSERT(assertion) static_assert(assertion, #assertion);
 
-    #define OTR_STATIC_ASSERT_MSG(assertion, message) static_assert(assertion, message)
+    #define OTR_STATIC_ASSERT_MSG(assertion, message) static_assert(assertion, message);
 
 #else
     #define OTR_ASSERT(assertion)
