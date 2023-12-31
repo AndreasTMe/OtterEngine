@@ -62,7 +62,7 @@ namespace Otter
                 m_Entities.TryRemoveAt(index);
 
                 m_EntityToIndex.TryRemove(entity);
-                m_EntityToIndex.TryAdd(m_Entities[index], index, true);
+                m_EntityToIndex.TryAdd(m_Entities[index], index);
             }
         }
     }

@@ -9,6 +9,22 @@ namespace Otter
     using ComponentId = UInt16;
 
     /**
+     * @brief Structure for storing component data.
+     */
+    struct ComponentData final
+    {
+    public:
+        /// @brief The component id.
+        ComponentId Id;
+
+        /// @brief The component data.
+        Byte* Data;
+
+        /// @brief The component size.
+        UInt64 Size;
+    };
+
+    /**
      * @brief Marker interface for all components to inherit from.
      *
      * @note IComponent has a protected constructor, deleted copy/move constructors and assignment operators, and no

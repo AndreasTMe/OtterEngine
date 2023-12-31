@@ -5,7 +5,7 @@
 
 namespace Otter
 {
-    class World
+    class World final
     {
     public:
         /**

@@ -14,6 +14,8 @@ namespace Otter
 {
     class EntityManager final
     {
+        class ArchetypeBuilder;
+
         class EntityBuilder;
 
     public:
@@ -25,7 +27,17 @@ namespace Otter
         /**
          * @brief Destructor.
          */
-        ~EntityManager() = default;
+        ~EntityManager()
+        {
+            m_Entities.ClearDestructive();
+            m_EntityToIndex.ClearDestructive();
+            m_EntitiesToAdd.ClearDestructive();
+
+            m_ComponentToMaskIndex.ClearDestructive();
+            m_ComponentToMask.ClearDestructive();
+
+            m_MaskToArchetype.ClearDestructive();
+        }
 
         /**
          * @brief Deleted copy constructor.
@@ -49,15 +61,24 @@ namespace Otter
 
         template<typename TComponent, typename... TComponents>
         requires IsComponent<TComponent>
-        void RegisterComponents()
+        EntityManager& RegisterComponents()
         {
             if (m_ComponentMaskLock)
-                return;
+                return *this;
 
             RegisterComponentsRecursive<TComponent, TComponents...>();
+
+            return *this;
         }
 
         OTR_INLINE void LockComponentMask() { m_ComponentMaskLock = true; }
+
+        /**
+         * @brief Creates a new archetype by calling a builder.
+         *
+         * @return The archetype builder.
+         */
+        [[nodiscard]] ArchetypeBuilder CreateArchetype() noexcept { return ArchetypeBuilder(this); }
 
         [[nodiscard]] EntityBuilder CreateEntity();
         void DestroyEntity(Entity entity);
@@ -67,7 +88,7 @@ namespace Otter
         requires IsComponent<TComponent>
         bool TryAddComponent(Entity entity)
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
+            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
 
             return false;
         }
@@ -76,86 +97,73 @@ namespace Otter
         requires IsComponent<TComponent>
         bool TryRemoveComponent(Entity entity)
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
+            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
 
             return false;
         }
 
     private:
-        class EntityBuilder final
+        class ArchetypeBuilder final
         {
         public:
-            EntityBuilder(EntityManager* entityManager, Entity entity)
-                : m_EntityManager(entityManager), m_Entity(entity),
-                  m_ComponentMask(), m_ComponentIds(), m_ComponentData()
+            explicit ArchetypeBuilder(EntityManager* entityManager)
+                : m_EntityManager(entityManager), m_ComponentMask()
             {
-                m_ComponentMask.Reserve(m_EntityManager->m_ComponentToMaskIndex.GetCount());
             }
-            ~EntityBuilder()
+
+            ~ArchetypeBuilder()
             {
                 m_EntityManager = nullptr;
                 m_ComponentMask.ClearDestructive();
                 m_ComponentIds.ClearDestructive();
-                m_ComponentData.ClearDestructive();
             }
 
             template<typename TComponent, typename... TArgs>
             requires IsComponent<TComponent>
-            EntityBuilder& With(TArgs&& ... args)
+            ArchetypeBuilder& With()
             {
-                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
+                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
+                OTR_ASSERT_MSG(m_EntityManager->m_ComponentMaskLock, "Component mask must be locked.")
+                OTR_ASSERT_MSG(m_EntityManager->m_ComponentToMaskIndex.ContainsKey(TComponent::Id),
+                               "Component must be registered.")
 
-                UInt64 index;
-                if (!m_EntityManager->m_ComponentToMaskIndex.TryGet(TComponent::Id, &index))
-                    return *this;
+                UInt64 index = 0;
+                m_EntityManager->m_ComponentToMaskIndex.TryGet(TComponent::Id, &index);
 
                 m_ComponentMask.Set(index, true);
                 m_ComponentIds.Add(TComponent::Id);
-                m_ComponentData.Add(UnsafeList::Empty<TComponent>());
-                m_ComponentData[m_ComponentData.GetCount() - 1].Add(TComponent(std::forward<TArgs>(args)...));
 
                 return *this;
             }
 
-            Entity Build()
+            Archetype Build()
             {
-                if (!m_EntityManager->m_MaskToArchetype.ContainsKey(m_ComponentMask))
-                {
-                    auto archetype = Archetype();
+                Archetype archetype(m_ComponentMask, m_ComponentIds);
+                m_EntityManager->m_MaskToArchetype.TryAdd(m_ComponentMask, archetype);
 
-                    for (UInt64 i = 0; i < m_ComponentIds.GetCount(); ++i)
-                        archetype.PushComponentData(m_Entity, m_ComponentIds, m_ComponentData);
-
-                    if (!m_EntityManager->m_MaskToArchetype.TryAdd(std::move(m_ComponentMask), std::move(archetype)))
-                    {
-                        OTR_LOG_WARNING("Failed to add archetype to registry.")
-                    }
-                }
-                else
-                {
-                    m_EntityManager->m_MaskToArchetype[m_ComponentMask]->
-                        PushComponentData(m_Entity, m_ComponentIds, m_ComponentData);
-                }
-
-                for (UInt64 i = 0; i < m_ComponentIds.GetCount(); ++i)
-                {
-                    const auto& componentId = m_ComponentIds[i];
-
-                    if (!m_EntityManager->m_ComponentToMask.ContainsKey(componentId))
-                        m_EntityManager->m_ComponentToMask.TryAdd(componentId, { std::move(m_ComponentMask) });
-                    else
-                        m_EntityManager->m_ComponentToMask[componentId]->Add(std::move(m_ComponentMask));
-                }
-
-                return m_Entity;
+                return archetype;
             }
 
         private:
             EntityManager* m_EntityManager;
-            Entity            m_Entity;
             BitSet            m_ComponentMask;
             List<ComponentId> m_ComponentIds;
-            List<UnsafeList>  m_ComponentData;
+        };
+
+        class EntityBuilder final
+        {
+        public:
+            EntityBuilder(EntityManager* entityManager, Entity entity)
+                : m_EntityManager(entityManager), m_Entity(entity)
+            {
+                OTR_ASSERT_MSG(m_Entity.IsValid(), "Entity must be valid.")
+            }
+
+            ~EntityBuilder() = default;
+
+        private:
+            EntityManager* m_EntityManager;
+            Entity m_Entity;
         };
 
         // Entity Registry
@@ -178,7 +186,7 @@ namespace Otter
         requires IsComponent<TComponent>
         void RegisterComponentsRecursive()
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.");
+            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
 
             if (m_ComponentToMaskIndex.ContainsKey(TComponent::Id))
                 return;
