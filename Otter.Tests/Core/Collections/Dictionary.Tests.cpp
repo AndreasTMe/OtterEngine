@@ -21,6 +21,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -491,8 +492,6 @@ TEST_F(Dictionary_Fixture, ClearDestructive)
     EXPECT_EQ(dictionary2.GetCount(), 0);
     EXPECT_TRUE(dictionary2.IsEmpty());
     EXPECT_FALSE(dictionary2.IsCreated());
-
-    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(Dictionary_Fixture, GetMemoryFootprint)

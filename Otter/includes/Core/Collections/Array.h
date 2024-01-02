@@ -111,6 +111,9 @@ namespace Otter
                 m_Data = nullptr;
             else
             {
+                if (IsCreated())
+                    Buffer::Delete<T>(m_Data, Size);
+
                 m_Data = Buffer::New<T>(Size);
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
             }
@@ -133,7 +136,12 @@ namespace Otter
             if constexpr (Size == 0)
                 m_Data = nullptr;
             else
+            {
+                if (IsCreated())
+                    Buffer::Delete<T>(m_Data, Size);
+                
                 m_Data = std::move(other.m_Data);
+            }
 
             other.m_Data = nullptr;
 

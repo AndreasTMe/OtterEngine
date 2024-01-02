@@ -11,7 +11,7 @@ namespace Otter
     using EntityId = UInt64;
 
     /**
-     * @brief Entity class that is used to identify an entity in the ECS.
+     * @brief Entity class that is used to identify an entity in the entity-component system.
      */
     struct Entity final
     {
@@ -31,14 +31,22 @@ namespace Otter
          *
          * @param other Entity to copy from.
          */
-        Entity(const Entity& other) = default;
+        Entity(const Entity& other)
+        {
+            m_Id = other.m_Id;
+        }
 
         /**
          * @brief Move constructor.
          *
          * @param other Entity to move from.
          */
-        Entity(Entity&& other) noexcept = default;
+        Entity(Entity&& other) noexcept
+        {
+            m_Id = other.m_Id;
+
+            other.m_Id = 0;
+        }
 
         /**
          * @brief Copy assignment operator.
@@ -56,7 +64,14 @@ namespace Otter
          *
          * @return Reference to this entity.
          */
-        Entity& operator=(Entity&& other) noexcept = default;
+        Entity& operator=(Entity&& other) noexcept
+        {
+            m_Id = other.m_Id;
+
+            other.m_Id = 0;
+
+            return *this;
+        }
 
         /**
          * @brief Equality operator.

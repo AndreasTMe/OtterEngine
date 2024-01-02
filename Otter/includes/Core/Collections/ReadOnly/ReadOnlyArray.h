@@ -134,10 +134,8 @@ namespace Otter
          * @param other The normal array.
          */
         explicit ReadOnlyArray(Array<T, Size>&& other) noexcept
-            : ReadOnlyArray()
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = std::move(other.m_Data[i]);
+            m_Data = std::move(other.m_Data);
 
             other.m_Data = nullptr;
         }

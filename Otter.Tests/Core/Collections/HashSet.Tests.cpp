@@ -20,6 +20,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -279,8 +280,6 @@ TEST_F(HashSet_Fixture, ClearDestructive)
     EXPECT_EQ(hashSet2.GetCount(), 0);
     EXPECT_TRUE(hashSet2.IsEmpty());
     EXPECT_FALSE(hashSet2.IsCreated());
-
-    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(HashSet_Fixture, GetMemoryFootprint)

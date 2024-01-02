@@ -4,23 +4,21 @@ namespace Otter
 {
     EntityManager::EntityBuilder EntityManager::CreateEntity()
     {
-        OTR_ASSERT_MSG(m_ComponentMaskLock, "Component mask must be locked before creating entities.")
+        OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before creating entities.")
 
-        static EntityId id = 0;
-        id++;
-
-        auto entity = Entity{ id };
-        while (m_EntityToIndex.ContainsKey(entity))
-            entity.m_Id = ++id;
-
-        m_EntitiesToAdd.Push(entity);
-
-        return { this, entity };
+        return { this, CreateEntityInternal() };
     }
 
-    void EntityManager::DestroyEntity(Entity entity)
+    EntityManager::EntityBuilder EntityManager::CreateEntityFromArchetype(const Archetype& archetype)
     {
-        OTR_ASSERT_MSG(m_ComponentMaskLock, "Component mask must be locked before destroying entities.")
+        OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before creating entities.")
+
+        return { this, CreateEntityInternal(), archetype };
+    }
+
+    void EntityManager::DestroyEntity(const Entity& entity)
+    {
+        OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before destroying entities.")
 
         UInt64 index;
         if (!m_EntityToIndex.TryGetIndex(entity, &index))
@@ -31,10 +29,24 @@ namespace Otter
 
     void EntityManager::RefreshEntities()
     {
-        OTR_ASSERT_MSG(m_ComponentMaskLock, "Component mask must be locked before refreshing entities.")
+        OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before refreshing entities.")
 
         PopulateEntitiesToAdd();
         CleanUpEntities();
+    }
+
+    Entity EntityManager::CreateEntityInternal()
+    {
+        static EntityId id = 0;
+        id++;
+
+        auto entity = Entity{ id };
+        while (m_EntityToIndex.ContainsKey(entity))
+            entity.m_Id = ++id;
+
+        m_EntitiesToAdd.Push(entity);
+
+        return entity;
     }
 
     void EntityManager::PopulateEntitiesToAdd()

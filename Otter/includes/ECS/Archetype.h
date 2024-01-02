@@ -11,6 +11,14 @@ namespace Otter
 {
     class EntityManager;
 
+    /**
+     * @brief Alias for the archetype's fingerprint.
+     */
+    using ArchetypeFingerprint = BitSet;
+
+    /**
+     * @brief The archetype class for the entity-component system.
+     */
     class Archetype final
     {
     public:
@@ -22,15 +30,15 @@ namespace Otter
         /**
          * @brief Constructor.
          *
-         * @param componentMask The component mask.
+         * @param fingerprint The component mask.
          * @param componentIds The component ids.
          */
-        Archetype(const BitSet& componentMask, const List<ComponentId>& componentIds)
+        Archetype(const ArchetypeFingerprint& fingerprint, const List<ComponentId>& componentIds)
         {
-            OTR_ASSERT_MSG(componentMask.GetTrueCount() == componentIds.GetCount(),
-                           "Component mask and component ids must have the same count.")
+            OTR_ASSERT_MSG(fingerprint.GetTrueCount() == componentIds.GetCount(),
+                           "Archetype fingerprint must have the same amount of true bits as component ids.")
 
-            m_ComponentMask = componentMask;
+            m_Fingerprint = fingerprint;
 
             for (UInt64 i = 0; i < componentIds.GetCount(); ++i)
                 m_ComponentIdToData.TryAdd(componentIds[i], UnsafeList());
@@ -41,6 +49,7 @@ namespace Otter
          */
         ~Archetype()
         {
+            m_Fingerprint.ClearDestructive();
             m_EntityIds.ClearDestructive();
             m_ComponentIdToData.ClearDestructive();
             m_EntityIdToBufferPosition.ClearDestructive();
@@ -51,6 +60,7 @@ namespace Otter
          */
         Archetype(const Archetype& other)
         {
+            m_Fingerprint = other.m_Fingerprint;
             m_EntityIds                = other.m_EntityIds;
             m_ComponentIdToData        = other.m_ComponentIdToData;
             m_EntityIdToBufferPosition = other.m_EntityIdToBufferPosition;
@@ -61,10 +71,12 @@ namespace Otter
          */
         Archetype(Archetype&& other) noexcept
         {
+            m_Fingerprint = std::move(other.m_Fingerprint);
             m_EntityIds                = std::move(other.m_EntityIds);
             m_ComponentIdToData        = std::move(other.m_ComponentIdToData);
             m_EntityIdToBufferPosition = std::move(other.m_EntityIdToBufferPosition);
 
+            other.m_Fingerprint.ClearDestructive();
             other.m_EntityIds.ClearDestructive();
             other.m_ComponentIdToData.ClearDestructive();
             other.m_EntityIdToBufferPosition.ClearDestructive();
@@ -78,6 +90,7 @@ namespace Otter
             if (this == &other)
                 return *this;
 
+            m_Fingerprint = other.m_Fingerprint;
             m_EntityIds                = other.m_EntityIds;
             m_ComponentIdToData        = other.m_ComponentIdToData;
             m_EntityIdToBufferPosition = other.m_EntityIdToBufferPosition;
@@ -93,10 +106,12 @@ namespace Otter
             if (this == &other)
                 return *this;
 
+            m_Fingerprint = std::move(other.m_Fingerprint);
             m_EntityIds                = std::move(other.m_EntityIds);
             m_ComponentIdToData        = std::move(other.m_ComponentIdToData);
             m_EntityIdToBufferPosition = std::move(other.m_EntityIdToBufferPosition);
 
+            other.m_Fingerprint.ClearDestructive();
             other.m_EntityIds.ClearDestructive();
             other.m_ComponentIdToData.ClearDestructive();
             other.m_EntityIdToBufferPosition.ClearDestructive();
@@ -113,7 +128,8 @@ namespace Otter
          */
         bool operator==(const Archetype& other) const noexcept
         {
-            return m_EntityIds == other.m_EntityIds
+            return m_Fingerprint == other.m_Fingerprint
+                   && m_EntityIds == other.m_EntityIds
                    && m_ComponentIdToData == other.m_ComponentIdToData
                    && m_EntityIdToBufferPosition == other.m_EntityIdToBufferPosition;
         }
@@ -126,64 +142,6 @@ namespace Otter
          * @return True if the archetypes are not equal, false otherwise.
          */
         bool operator!=(const Archetype& other) const noexcept { return !(*this == other); }
-
-        /**
-         * @brief Adds component data to the archetype.
-         *
-         * @param entityId The entity id.
-         * @param componentData The component data.
-         *
-         * @return True if the component data was added, false otherwise.
-         */
-        bool TryAddComponentData(const EntityId entityId, const List<ComponentData>& componentData)
-        {
-            OTR_ASSERT_MSG(componentData.GetCount() == m_ComponentIdToData.GetCount(),
-                           "Passed component data count must be equal to archetype's component count.")
-            OTR_DEBUG_BLOCK(
-                for (UInt64 i = 0; i < componentData.GetCount(); ++i)
-                {
-                    OTR_ASSERT_MSG(m_ComponentIdToData.ContainsKey(componentData[i].Id),
-                                   "Archetype does not contain component id.")
-                }
-            )
-
-            if (m_EntityIdToBufferPosition.ContainsKey(entityId))
-                return false;
-
-            OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(entityId, m_EntityIds.GetCount()))
-
-            m_EntityIds.Add(entityId);
-
-            for (UInt64 i = 0; i < componentData.GetCount(); ++i)
-                m_ComponentIdToData[componentData[i].Id]->Add(componentData[i].Data, componentData[i].Size);
-
-            return true;
-        }
-
-        /**
-         * @brief Removes component data from the archetype.
-         *
-         * @param entityId The entity id.
-         *
-         * @return True if the component data was removed, false otherwise.
-         */
-        bool TryRemoveComponentData(const EntityId entityId)
-        {
-            UInt64 index;
-            if (!m_EntityIdToBufferPosition.TryGet(entityId, &index))
-                return false;
-
-            OTR_VALIDATE(m_EntityIds.TryRemoveAt(index))
-
-            for (auto& [componentId, componentData]: m_ComponentIdToData)
-            {
-                OTR_VALIDATE(m_ComponentIdToData[componentId]->TryRemoveAt(index))
-            }
-
-            OTR_VALIDATE(m_EntityIdToBufferPosition.TryRemove(entityId))
-
-            return true;
-        }
 
         /**
          * @brief Gets the requested components of the archetype.
@@ -255,6 +213,51 @@ namespace Otter
         }
 
         /**
+         * @brief Adds component data to the archetype.
+         *
+         * @param entityId The entity id.
+         * @param componentData The component data.
+         *
+         * @return True if the component data was added, false otherwise.
+         */
+        bool TryAddComponentData(const EntityId entityId, const List<ComponentData>& componentData)
+        {
+            OTR_ASSERT_MSG(componentData.GetCount() == m_ComponentIdToData.GetCount(),
+                           "Passed component data count must be equal to archetype's component count.")
+            OTR_DEBUG_BLOCK(
+                for (UInt64 i = 0; i < componentData.GetCount(); ++i)
+                {
+                    OTR_ASSERT_MSG(m_ComponentIdToData.ContainsKey(componentData[i].Id),
+                                   "Archetype does not contain component id.")
+                }
+            )
+
+            if (m_EntityIdToBufferPosition.ContainsKey(entityId))
+                return false;
+
+            OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(entityId, m_EntityIds.GetCount()))
+
+            m_EntityIds.Add(entityId);
+
+            for (UInt64 i = 0; i < componentData.GetCount(); ++i)
+                m_ComponentIdToData[componentData[i].Id]->Add(componentData[i].Data, componentData[i].Size);
+
+            return true;
+        }
+
+        void Merge(const Archetype& other)
+        {
+            if (this == &other)
+                return;
+
+            OTR_ASSERT_MSG(m_Fingerprint == other.m_Fingerprint, "Archetypes must have the same fingerprint.")
+            OTR_ASSERT_MSG(m_ComponentIdToData.GetCount() == other.m_ComponentIdToData.GetCount(),
+                           "Archetypes must have the same component count.")
+
+            // TODO: Implement this.
+        }
+
+        /**
          * @brief Checks if the archetype has a component.
          *
          * @tparam TComponent The type of the component.
@@ -264,6 +267,13 @@ namespace Otter
         template<typename TComponent>
         requires IsComponent<TComponent>
         [[nodiscard]] OTR_INLINE bool HasComponent() const { return m_ComponentIdToData.ContainsKey(TComponent::Id); }
+
+        /**
+         * @brief Gets the archetype's fingerprint.
+         *
+         * @return The archetype's fingerprint.
+         */
+        [[nodiscard]] OTR_INLINE const ArchetypeFingerprint& GetFingerprint() const { return m_Fingerprint; }
 
         /**
          * @brief Gets the entity count of the archetype.
@@ -280,7 +290,7 @@ namespace Otter
         [[nodiscard]] OTR_INLINE UInt64 GetComponentCount() const { return m_ComponentIdToData.GetCount(); }
 
     private:
-        BitSet                              m_ComponentMask;
+        ArchetypeFingerprint         m_Fingerprint;
         List<EntityId>               m_EntityIds;
         Dictionary<ComponentId, UnsafeList> m_ComponentIdToData;
         Dictionary<EntityId, UInt64> m_EntityIdToBufferPosition;

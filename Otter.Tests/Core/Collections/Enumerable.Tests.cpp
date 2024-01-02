@@ -19,6 +19,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -31,6 +32,58 @@ TEST_F(Enumerable_Fixture, Initialisation_Default)
     EXPECT_EQ(enumerable.GetCount(), 5);
 
     EXPECT_FALSE(enumerable.IsEmpty());
+}
+
+TEST_F(Enumerable_Fixture, Initialisation_Copy)
+{
+    List<int>       list       = { 1, 2, 3, 4, 5 };
+    Enumerable<int> enumerable = Enumerable<int>::Copy(list.GetData(), 5);
+
+    EXPECT_NE(enumerable.GetData(), nullptr);
+    EXPECT_EQ(enumerable.GetCount(), 5);
+
+    EXPECT_FALSE(enumerable.IsEmpty());
+
+    int i = 0;
+
+    for (auto& item: enumerable)
+    {
+        EXPECT_EQ(item, list[i++]);
+        item = 0;
+    }
+
+    i = 0;
+    for (auto& item: enumerable)
+    {
+        EXPECT_EQ(item, 0);
+        EXPECT_NE(list[i++], 0);
+    }
+}
+
+TEST_F(Enumerable_Fixture, Initialisation_Wrap)
+{
+    List<int>       list       = { 1, 2, 3, 4, 5 };
+    Enumerable<int> enumerable = Enumerable<int>::Wrap(const_cast<int*>(list.GetData()), 5);
+
+    EXPECT_NE(enumerable.GetData(), nullptr);
+    EXPECT_EQ(enumerable.GetCount(), 5);
+
+    EXPECT_FALSE(enumerable.IsEmpty());
+
+    int i = 0;
+
+    for (auto& item: enumerable)
+    {
+        EXPECT_EQ(item, list[i++]);
+        item = 0;
+    }
+
+    i = 0;
+    for (auto& item: enumerable)
+    {
+        EXPECT_EQ(item, 0);
+        EXPECT_EQ(list[i++], 0);
+    }
 }
 
 TEST_F(Enumerable_Fixture, Initialisation_Empty)
@@ -68,8 +121,6 @@ TEST_F(Enumerable_Fixture, ClearDestructive)
 
     EXPECT_EQ(enumerable1.GetCount(), 0);
     EXPECT_EQ(enumerable1.GetData(), nullptr);
-
-    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(Enumerable_Fixture, Iterator)

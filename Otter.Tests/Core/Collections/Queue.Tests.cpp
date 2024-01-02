@@ -15,6 +15,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -325,8 +326,6 @@ TEST_F(Queue_Fixture, ClearDestructive)
     EXPECT_FALSE(queue2.IsCreated());
     EXPECT_TRUE(queue2.IsEmpty());
     EXPECT_EQ(queue2.GetCount(), 0);
-
-    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(Queue_Fixture, GetMemoryFootprint)

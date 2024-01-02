@@ -15,6 +15,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -267,8 +268,6 @@ TEST_F(Deque_Fixture, ClearDestructive)
     EXPECT_FALSE(deque2.IsCreated());
     EXPECT_TRUE(deque2.IsEmpty());
     EXPECT_EQ(deque2.GetCount(), 0);
-
-    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
 
 TEST_F(Deque_Fixture, GetMemoryFootprint)

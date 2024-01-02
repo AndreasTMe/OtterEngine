@@ -21,6 +21,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -175,6 +176,4 @@ TEST_F(Collection_Fixture, ClearDestructive)
     EXPECT_EQ(collection2.GetCount(), 0);
     EXPECT_EQ(collection2.GetCapacity(), 0);
     EXPECT_EQ(collection2.GetData(), nullptr);
-
-    EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
 }
