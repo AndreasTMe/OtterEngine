@@ -137,11 +137,49 @@ struct VariadicArgs
     /**
      * @brief Static constexpr member function to retrieve the number of arguments in the variadic list.
      *
-     * @tparam TArgs The types of the arguments in the variadic list.
-     *
      * @return The number of arguments in the variadic list.
      */
     OTR_INLINE static constexpr UInt64 GetSize() { return sizeof...(TArgs); }
+
+    /**
+     * @brief Static constexpr member function to check if the variadic list are all the same as the given types.
+     *
+     * @tparam TOtherArgs The types to check.
+     *
+     * @return True if all the types in the variadic list are the same as the given types, false otherwise.
+     */
+    template<typename... TOtherArgs>
+    OTR_INLINE static constexpr bool AllSame() { return (IsSame<TArgs, TOtherArgs> && ...); }
+
+    /**
+     * @brief Static constexpr member function to check if the variadic list are all the same type.
+     *
+     * @tparam T The type to check.
+     *
+     * @return True if all the types in the variadic list are the same as the given type, false otherwise.
+     */
+    template<typename T>
+    OTR_INLINE static constexpr bool AllSameAs() { return (IsSame<TArgs, T> && ...); }
+
+    /**
+     * @brief Static constexpr member function to check if the variadic list are all the base of the given type.
+     *
+     * @tparam T The type to check.
+     *
+     * @return True if all the types in the variadic list are the base of the given type, false otherwise.
+     */
+    template<typename T>
+    OTR_INLINE static constexpr bool AllBaseOf() { return (IsBaseOf<TArgs, T> && ...); }
+
+    /**
+     * @brief Static constexpr member function to check if the variadic list are all derived from the given type.
+     *
+     * @tparam T The type to check.
+     *
+     * @return True if all the types in the variadic list are derived from the given type, false otherwise.
+     */
+    template<typename T>
+    OTR_INLINE static constexpr bool AllDerivedFrom() { return (IsDerivedFrom<TArgs, T> && ...); }
 };
 
 /**

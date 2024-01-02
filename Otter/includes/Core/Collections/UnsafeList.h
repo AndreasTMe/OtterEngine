@@ -244,7 +244,17 @@ namespace Otter
         void Add(const Byte* const data, const UInt64 size)
         {
             OTR_ASSERT_MSG(data, "Data must not be null")
-            OTR_ASSERT_MSG(size == m_Offset, "Size of type must be equal to the offset of the list")
+            OTR_ASSERT_MSG(size > 0, "Size must be greater than 0")
+
+            if (m_Offset == 0)
+                m_Offset = size;
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != size)
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
 
             if (m_Count >= m_Capacity)
                 Expand();
@@ -267,6 +277,16 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         void Add(const T& item)
         {
+            if (m_Offset == 0)
+                m_Offset = sizeof(T);
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
+
             if (m_Count >= m_Capacity)
                 Expand();
 
@@ -288,6 +308,16 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         void Add(T&& item)
         {
+            if (m_Offset == 0)
+                m_Offset = sizeof(T);
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
+
             if (m_Count >= m_Capacity)
                 Expand();
 
@@ -312,6 +342,16 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         bool TryAddAt(const UInt64 index, const T& item)
         {
+            if (m_Offset == 0)
+                m_Offset = sizeof(T);
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
+
             if (index >= m_Capacity - 1 || m_Count >= m_Capacity - 1)
                 return false;
 
@@ -342,6 +382,16 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         bool TryAddAt(const UInt64 index, T&& item)
         {
+            if (m_Offset == 0)
+                m_Offset = sizeof(T);
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
+
             if (index >= m_Capacity || m_Count >= m_Capacity)
                 return false;
 
@@ -368,7 +418,15 @@ namespace Otter
          */
         bool TryAddRange(const UnsafeList& list, bool allOrNothing = false)
         {
-            OTR_ASSERT_MSG(list.GetOffset() == m_Offset, "Size of type must be equal to the offset of the list")
+            if (m_Offset == 0)
+                m_Offset = list.GetOffset();
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != list.GetOffset())
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
 
             return TryAddRangeInternal(list.GetData(), list.GetCount(), allOrNothing);
         }
@@ -390,6 +448,16 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         bool TryAddRange(InitialiserList<T> items, bool allOrNothing = false)
         {
+            if (m_Offset == 0)
+                m_Offset = sizeof(T);
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
+
             return TryAddRangeInternal(items.begin(), items.size(), allOrNothing);
         }
 
@@ -410,6 +478,16 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         bool TryAddRange(const Collection<T>& collection, bool allOrNothing = false)
         {
+            if (m_Offset == 0)
+                m_Offset = sizeof(T);
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
+
             return TryAddRangeInternal(collection.GetData(), collection.GetCount(), allOrNothing);
         }
 
@@ -429,6 +507,16 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         bool TryRemove(const T& item)
         {
+            if (m_Offset == 0)
+                return false;
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
+
             for (UInt64 i = 0; i < m_Count; i++)
                 if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
                     return TryRemoveAt(i);
@@ -445,7 +533,7 @@ namespace Otter
          */
         bool TryRemoveAt(const UInt64 index)
         {
-            if (index >= m_Count)
+            if (m_Offset == 0 || index >= m_Count)
                 return false;
 
             if (index != m_Count - 1)
@@ -474,6 +562,16 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         [[nodiscard]] bool Contains(const T& item) const
         {
+            if (m_Offset == 0)
+                return false;
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
+
             for (UInt64 i = 0; i < m_Count; i++)
                 if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
                     return true;
@@ -497,6 +595,16 @@ namespace Otter
         [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64* outIndex) const
         {
             OTR_ASSERT_MSG(outIndex, "Out index must not be null")
+
+            if (m_Offset == 0)
+                return false;
+
+            OTR_DEBUG_BLOCK(
+                if (m_Offset != sizeof(T))
+                {
+                    OTR_LOG_WARNING("Size of data must be equal to the offset of the list.")
+                }
+            )
 
             for (UInt64 i = 0; i < m_Count; i++)
                 if (*reinterpret_cast<T*>(m_Data + (i * m_Offset)) == item)
@@ -632,12 +740,12 @@ namespace Otter
          * knows the type beforehand.
          */
         template<typename T = void>
-        [[nodiscard]] OTR_INLINE const T* GetData() const noexcept
+        [[nodiscard]] OTR_INLINE T* GetData() const noexcept
         {
             if constexpr (IsVoid<T>)
                 return (void*) m_Data;
             else
-                return reinterpret_cast<const T*>(m_Data);
+                return reinterpret_cast<T*>(m_Data);
         }
 
         /**
@@ -705,7 +813,7 @@ namespace Otter
          * @note This function is unsafe and should be used with caution. It is assumed that the developer already
          * knows the type beforehand.
          */
-        bool TryAddRangeInternal(const void* const data, const UInt64 size, bool allOrNothing = false)
+        bool TryAddRangeInternal(const void* data, const UInt64 size, bool allOrNothing = false)
         {
             if (!data || size == 0)
                 return false;

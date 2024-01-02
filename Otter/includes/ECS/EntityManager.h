@@ -60,7 +60,7 @@ namespace Otter
         EntityManager& operator=(EntityManager&& other) noexcept = delete;
 
         template<typename TComponent, typename... TComponents>
-        requires IsComponent<TComponent>
+        requires IsComponent<TComponent> && AreComponents<TComponents...>
         EntityManager& RegisterComponents()
         {
             if (m_ComponentMaskLock)
@@ -118,7 +118,7 @@ namespace Otter
                 m_ComponentIds.ClearDestructive();
             }
 
-            template<typename TComponent, typename... TArgs>
+            template<typename TComponent>
             requires IsComponent<TComponent>
             ArchetypeBuilder& With()
             {
@@ -183,7 +183,7 @@ namespace Otter
         void CleanUpEntities();
 
         template<typename TComponent, typename... TComponents>
-        requires IsComponent<TComponent>
+        requires IsComponent<TComponent> && AreComponents<TComponents...>
         void RegisterComponentsRecursive()
         {
             OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
@@ -194,7 +194,7 @@ namespace Otter
             UInt64 index = m_ComponentToMaskIndex.GetCount();
             m_ComponentToMaskIndex.TryAdd(TComponent::Id, index);
 
-            if constexpr (VariadicArgs<TComponents...>::GetSize() > 0 && (IsComponent<TComponents> && ...))
+            if constexpr (VariadicArgs<TComponents...>::GetSize() > 0)
                 RegisterComponentsRecursive<TComponents...>();
         }
     };

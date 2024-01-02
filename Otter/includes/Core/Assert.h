@@ -83,11 +83,18 @@
 
     #define OTR_STATIC_ASSERT_MSG(assertion, message) static_assert(assertion, message);
 
+    #define OTR_VALIDATE(callback)                                                      \
+        {                                                                               \
+            auto result = callback;                                                     \
+            OTR_ASSERT_MSG(result, "'{0}' failed with result: {1}", #callback, result)  \
+        }
+
 #else
     #define OTR_ASSERT(assertion)
     #define OTR_ASSERT_MSG(assertion, ...)
     #define OTR_STATIC_ASSERT(assertion)
     #define OTR_STATIC_ASSERT_MSG(assertion, message)
+    #define OTR_VALIDATE(callback) callback;
 #endif
 
 #endif //OTTERENGINE_ASSERT_H

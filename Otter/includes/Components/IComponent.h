@@ -73,6 +73,15 @@ namespace Otter
      */
     template<typename T>
     concept IsComponent = IsDerivedFrom<T, IComponent> && requires { T::Id; };
+
+    /**
+     * @brief Concept for checking if some types are all derived from IComponent and have a static Id.
+     *
+     * @tparam TArgs Types to check.
+     */
+    template<typename... TArgs>
+    concept AreComponents = (VariadicArgs<TArgs...>::template AllDerivedFrom<IComponent>())
+                            && (requires { TArgs::Id; } && ...);
 }
 
 #endif //OTTERENGINE_ICOMPONENT_H
