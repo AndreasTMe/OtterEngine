@@ -4,7 +4,6 @@
 #include "Core/Collections/List.h"
 #include "Core/Collections/Stack.h"
 #include "Core/Collections/Dictionary.h"
-
 #include "ECS/Entity.h"
 #include "ECS/Archetype.h"
 #include "Components/IComponent.h"
@@ -20,6 +19,8 @@ namespace Otter
         class ArchetypeBuilder;
 
         class EntityBuilder;
+
+        class EntityBuilderFromArchetype;
 
     public:
         /**
@@ -107,13 +108,13 @@ namespace Otter
         [[nodiscard]] EntityBuilder CreateEntity();
 
         /**
-         * @brief Creates a new entity by calling a builder.
+         * @brief Creates a new entity by calling a builder and using an archetype.
          *
          * @param archetype The archetype to create the entity from.
          *
          * @return The entity builder.
          */
-        [[nodiscard]] EntityBuilder CreateEntityFromArchetype(const Archetype& archetype);
+        [[nodiscard]] EntityBuilderFromArchetype CreateEntityFromArchetype(const Archetype& archetype);
 
         /**
          * @brief Destroys an entity.
@@ -168,7 +169,7 @@ namespace Otter
 
     private:
         /**
-         * @brief The archetype builder is responsible for creating archetypes.
+         * @brief A class responsible for creating archetypes.
          */
         class ArchetypeBuilder final
         {
@@ -226,8 +227,9 @@ namespace Otter
             [[nodiscard]] Archetype Build()
             {
                 Archetype archetype(m_Fingerprint, m_ComponentIds);
-                // TODO: Merge if archetype exists, currently just overwrites.
-                m_EntityManager->m_FingerprintToArchetype.TryAdd(m_Fingerprint, archetype);
+
+                if (!m_EntityManager->m_FingerprintToArchetype.ContainsKey(m_Fingerprint))
+                    m_EntityManager->m_ArchetypesToAdd.Push(archetype);
 
                 return archetype;
             }
@@ -238,27 +240,46 @@ namespace Otter
             List<ComponentId>    m_ComponentIds;
         };
 
+        /**
+         * @brief A class responsible for creating entities.
+         */
         class EntityBuilder final
         {
         public:
+            /**
+             * @brief Constructor.
+             *
+             * @param entityManager The entity manager.
+             * @param entity The entity.
+             */
             EntityBuilder(EntityManager* entityManager, Entity entity)
-                : m_EntityManager(entityManager), m_Entity(std::move(entity))
+                : m_EntityManager(entityManager), m_Entity(std::move(entity)), m_Fingerprint(), m_ComponentData()
             {
                 OTR_ASSERT_MSG(m_Entity.IsValid(), "Entity must be valid.")
             }
 
-            EntityBuilder(EntityManager* entityManager, Entity entity, const Archetype& archetype)
-                : m_EntityManager(entityManager), m_Entity(std::move(entity)), m_Archetype(archetype)
+            /**
+             * @brief Destructor.
+             */
+            ~EntityBuilder()
             {
-                OTR_ASSERT_MSG(m_Entity.IsValid(), "Entity must be valid.")
-                OTR_ASSERT_MSG(m_Archetype.GetComponentCount() > 0, "Archetype must have components.")
+                m_EntityManager = nullptr;
+                m_ComponentData.ClearDestructive();
             }
 
-            ~EntityBuilder() = default;
-
+            /**
+             * @brief Sets the component data.
+             *
+             * @tparam TComponent The component type.
+             * @tparam TArgs The component arguments.
+             *
+             * @param args The component arguments.
+             *
+             * @return A reference to the entity builder.
+             */
             template<typename TComponent, typename... TArgs>
             requires IsComponent<TComponent>
-            EntityBuilder& SetComponent(TArgs&& ... args)
+            EntityBuilder& SetComponentData(TArgs&& ... args)
             {
                 OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
                 OTR_ASSERT_MSG(m_EntityManager->m_ComponentsLock, "Component registration must be locked.")
@@ -266,22 +287,136 @@ namespace Otter
                                "Component must be registered.")
 
                 UInt64 index = 0;
-                m_EntityManager->m_ComponentToFingerprintIndex.TryGet(TComponent::Id, &index);
+                OTR_VALIDATE(m_EntityManager->m_ComponentToFingerprintIndex.TryGet(TComponent::Id, &index))
 
-                // TODO: Implement this.
+                OTR_ASSERT_MSG(!m_Fingerprint.Get(index), "Component already set.")
+
+                m_Fingerprint.Set(index, true);
+
+                auto component = TComponent(std::forward<TArgs>(args)...);
+                m_ComponentData.Add(ComponentData{ TComponent::Id, &component, sizeof(TComponent) });
 
                 return *this;
             }
 
+            /**
+             * @brief Builds the entity.
+             *
+             * @return The entity.
+             */
             [[nodiscard]] Entity Build()
             {
+                m_EntityManager->m_EntitiesToAdd.Push(m_Entity);
+
+                if (!m_EntityManager->m_FingerprintToComponentDataToAdd.ContainsKey(m_Fingerprint))
+                    m_EntityManager->m_FingerprintToComponentDataToAdd.TryAdd(std::move(m_Fingerprint),
+                                                                              std::move(m_ComponentData));
+                else
+                    for (auto& componentData: m_ComponentData)
+                        m_EntityManager->m_FingerprintToComponentDataToAdd[m_Fingerprint]->Add(componentData);
+
                 return m_Entity;
             }
 
         private:
             EntityManager* m_EntityManager;
-            Entity    m_Entity;
-            Archetype m_Archetype;
+            Entity               m_Entity;
+            ArchetypeFingerprint m_Fingerprint;
+            List<ComponentData>  m_ComponentData;
+        };
+
+        /**
+         * @brief A class responsible for creating entities from archetypes.
+         */
+        class EntityBuilderFromArchetype final
+        {
+        public:
+            /**
+             * @brief Constructor.
+             *
+             * @param entityManager The entity manager.
+             * @param entity The entity.
+             * @param archetype The archetype.
+             */
+            EntityBuilderFromArchetype(EntityManager* entityManager, Entity entity, Archetype archetype)
+                : m_EntityManager(entityManager), m_Entity(std::move(entity)),
+                  m_ComponentData(), m_Archetype(std::move(archetype))
+            {
+                OTR_ASSERT_MSG(m_Entity.IsValid(), "Entity must be valid.")
+                OTR_ASSERT_MSG(m_Archetype.GetComponentCount() > 0, "Archetype must have components.")
+
+                m_FingerprintTrack = m_Archetype.GetFingerprint();
+            }
+
+            /**
+             * @brief Destructor.
+             */
+            ~EntityBuilderFromArchetype()
+            {
+                m_EntityManager = nullptr;
+                m_ComponentData.ClearDestructive();
+                m_FingerprintTrack.ClearDestructive();
+            }
+
+            /**
+             * @brief Sets the component data.
+             *
+             * @tparam TComponent The component type.
+             * @tparam TArgs The component arguments.
+             *
+             * @param args The component arguments.
+             *
+             * @return A reference to the entity builder.
+             */
+            template<typename TComponent, typename... TArgs>
+            requires IsComponent<TComponent>
+            EntityBuilderFromArchetype& SetComponentData(TArgs&& ... args)
+            {
+                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
+                OTR_ASSERT_MSG(m_EntityManager->m_ComponentsLock, "Component registration must be locked.")
+                OTR_ASSERT_MSG(m_EntityManager->m_ComponentToFingerprintIndex.ContainsKey(TComponent::Id),
+                               "Component must be registered.")
+
+                UInt64 index = 0;
+                OTR_VALIDATE(m_EntityManager->m_ComponentToFingerprintIndex.TryGet(TComponent::Id, &index))
+
+                OTR_ASSERT_MSG(!m_Archetype.GetFingerprint().Get(index), "Component does not belong to archetype.")
+
+                m_FingerprintTrack.Set(index, false);
+
+                auto component = TComponent(std::forward<TArgs>(args)...);
+                m_ComponentData.Add(ComponentData{ TComponent::Id, &component, sizeof(TComponent) });
+
+                return *this;
+            }
+
+            /**
+             * @brief Builds the entity.
+             *
+             * @return The entity.
+             */
+            [[nodiscard]] Entity Build()
+            {
+                OTR_ASSERT_MSG(m_FingerprintTrack.GetTrueCount() == 0, "Not all components were set.")
+
+                m_EntityManager->m_EntitiesToAdd.Push(m_Entity);
+
+                const auto fingerprint = m_Archetype.GetFingerprint();
+                if (!m_EntityManager->m_FingerprintToComponentDataToAdd.ContainsKey(fingerprint))
+                    m_EntityManager->m_FingerprintToComponentDataToAdd.TryAdd(fingerprint, m_ComponentData);
+                else
+                    for (auto& componentData: m_ComponentData)
+                        m_EntityManager->m_FingerprintToComponentDataToAdd[fingerprint]->Add(componentData);
+
+                return m_Entity;
+            }
+
+        private:
+            EntityManager* m_EntityManager;
+            Entity               m_Entity;
+            List<ComponentData>  m_ComponentData;
+            Archetype            m_Archetype;
+            ArchetypeFingerprint m_FingerprintTrack;
         };
 
         // Entity Registry
@@ -296,10 +431,12 @@ namespace Otter
 
         // Archetype Registry
         Dictionary<ArchetypeFingerprint, Archetype>           m_FingerprintToArchetype;
+        Stack<Archetype>                                      m_ArchetypesToAdd;
         Dictionary<ArchetypeFingerprint, List<ComponentData>> m_FingerprintToComponentDataToAdd;
 
         Entity CreateEntityInternal();
-        void PopulateEntitiesToAdd();
+        void PopulateNewArchetypes();
+        void PopulateNewEntities();
         void CleanUpEntities();
 
         template<typename TComponent, typename... TComponents>

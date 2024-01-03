@@ -65,7 +65,7 @@ TEST_F(EntityManager_Fixture, CreateArchetype_Success)
         .With<TestComponent2>()
         .Build();
 
-    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 0) << "Archetype is added on manager refresh";
     EXPECT_EQ(manager.GetEntityCount(), 0);
     EXPECT_EQ(manager.GetComponentCount(), 2);
 

@@ -22,6 +22,69 @@ namespace Otter
 
         /// @brief The component size.
         UInt64 Size;
+
+        /**
+         * @brief Constructor.
+         */
+        ComponentData() = default;
+
+        /**
+         * @brief Constructor.
+         *
+         * @param id The component id.
+         * @param data The component data.
+         * @param size The component size.
+         */
+        ComponentData(ComponentId id, Byte* data, UInt64 size)
+            : Id(id), Data(data), Size(size)
+        {
+        }
+
+        /**
+         * @brief Destructor.
+         */
+        ~ComponentData() = default;
+
+        /**
+         * @brief Copy constructor.
+         */
+        ComponentData(const ComponentData& other) = default;
+
+        /**
+         * @brief Move constructor.
+         */
+        ComponentData(ComponentData&& other) noexcept = default;
+
+        /**
+         * @brief Copy assignment operator.
+         */
+        ComponentData& operator=(const ComponentData& other) = default;
+
+        /**
+         * @brief Move assignment operator.
+         */
+        ComponentData& operator=(ComponentData&& other) noexcept = default;
+
+        /**
+         * @brief Equality operator.
+         *
+         * @param other The other data.
+         *
+         * @return True if the data are equal, false otherwise.
+         */
+        bool operator==(const ComponentData& other) const noexcept
+        {
+            return Id == other.Id && Data == other.Data && Size == other.Size;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The other data.
+         *
+         * @return True if the data are not equal, false otherwise.
+         */
+        bool operator!=(const ComponentData& other) const noexcept { return !(*this == other); }
     };
 
     /**

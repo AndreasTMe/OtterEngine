@@ -9,7 +9,7 @@ namespace Otter
         return { this, CreateEntityInternal() };
     }
 
-    EntityManager::EntityBuilder EntityManager::CreateEntityFromArchetype(const Archetype& archetype)
+    EntityManager::EntityBuilderFromArchetype EntityManager::CreateEntityFromArchetype(const Archetype& archetype)
     {
         OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before creating entities.")
 
@@ -31,7 +31,8 @@ namespace Otter
     {
         OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before refreshing entities.")
 
-        PopulateEntitiesToAdd();
+        PopulateNewArchetypes();
+        PopulateNewEntities();
         CleanUpEntities();
     }
 
@@ -49,8 +50,23 @@ namespace Otter
         return entity;
     }
 
-    void EntityManager::PopulateEntitiesToAdd()
+    void EntityManager::PopulateNewArchetypes()
     {
+        if (m_ArchetypesToAdd.IsEmpty())
+            return;
+
+        Archetype archetype;
+        while (m_ArchetypesToAdd.TryPop(&archetype))
+            m_FingerprintToArchetype.TryAdd(archetype.GetFingerprint(), archetype);
+
+        m_ArchetypesToAdd.Clear();
+    }
+
+    void EntityManager::PopulateNewEntities()
+    {
+        if (m_EntitiesToAdd.IsEmpty())
+            return;
+
         Entity e;
         while (m_EntitiesToAdd.TryPop(&e))
         {
