@@ -2,6 +2,18 @@
 
 namespace Otter
 {
+    EntityManager::~EntityManager()
+    {
+        m_Entities.ClearDestructive();
+        m_EntityToIndex.ClearDestructive();
+        m_EntitiesToAdd.ClearDestructive();
+
+        m_ComponentToFingerprintIndex.ClearDestructive();
+        m_ComponentToFingerprints.ClearDestructive();
+
+        m_FingerprintToArchetype.ClearDestructive();
+    }
+
     EntityManager::EntityBuilder EntityManager::CreateEntity()
     {
         OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before creating entities.")
@@ -27,7 +39,7 @@ namespace Otter
         m_Entities[index].m_Id = 0;
     }
 
-    void EntityManager::RefreshEntities()
+    void EntityManager::RefreshManagedData()
     {
         OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before refreshing entities.")
 
@@ -93,5 +105,133 @@ namespace Otter
                 m_EntityToIndex.TryAdd(m_Entities[index], index);
             }
         }
+    }
+
+    EntityManager::ArchetypeBuilder::ArchetypeBuilder(EntityManager* entityManager)
+        : m_EntityManager(entityManager), m_Fingerprint()
+    {
+    }
+
+    EntityManager::ArchetypeBuilder::~ArchetypeBuilder()
+    {
+        m_EntityManager = nullptr;
+        m_Fingerprint.ClearDestructive();
+        m_ComponentIds.ClearDestructive();
+    }
+
+    Archetype EntityManager::ArchetypeBuilder::Build()
+    {
+        Archetype archetype(m_Fingerprint, m_ComponentIds);
+
+        if (!m_EntityManager->m_FingerprintToArchetype.ContainsKey(m_Fingerprint))
+            m_EntityManager->m_ArchetypesToAdd.Push(archetype);
+
+        return archetype;
+    }
+
+    void EntityManager::ArchetypeBuilder::WithInternal(const UInt64 componentId)
+    {
+        OTR_ASSERT_MSG(m_EntityManager->m_ComponentsLock, "Component registration must be locked.")
+        OTR_ASSERT_MSG(m_EntityManager->m_ComponentToFingerprintIndex.ContainsKey(componentId),
+                       "Component must be registered.")
+
+        UInt64 index = 0;
+        m_EntityManager->m_ComponentToFingerprintIndex.TryGet(componentId, &index);
+
+        m_Fingerprint.Set(index, true);
+        m_ComponentIds.Add(componentId);
+    }
+
+    EntityManager::EntityBuilder::EntityBuilder(EntityManager* entityManager, Entity entity)
+        : m_EntityManager(entityManager), m_Entity(std::move(entity)), m_Fingerprint(), m_ComponentData()
+    {
+        OTR_ASSERT_MSG(m_Entity.IsValid(), "Entity must be valid.")
+    }
+
+    EntityManager::EntityBuilder::~EntityBuilder()
+    {
+        m_EntityManager = nullptr;
+        m_ComponentData.ClearDestructive();
+    }
+
+    Entity EntityManager::EntityBuilder::Build()
+    {
+        m_EntityManager->m_EntitiesToAdd.Push(m_Entity);
+
+        if (!m_EntityManager->m_FingerprintToComponentDataToAdd.ContainsKey(m_Fingerprint))
+            m_EntityManager->m_FingerprintToComponentDataToAdd.TryAdd(std::move(m_Fingerprint),
+                                                                      std::move(m_ComponentData));
+        else
+            for (auto& componentData: m_ComponentData)
+                m_EntityManager->m_FingerprintToComponentDataToAdd[m_Fingerprint]->Add(componentData);
+
+        return m_Entity;
+    }
+
+    void EntityManager::EntityBuilder::SetComponentDataInternal(UInt64 componentId,
+                                                                ComponentData&& componentData)
+    {
+        OTR_ASSERT_MSG(m_EntityManager->m_ComponentsLock, "Component registration must be locked.")
+        OTR_ASSERT_MSG(m_EntityManager->m_ComponentToFingerprintIndex.ContainsKey(componentId),
+                       "Component must be registered.")
+
+        UInt64 index = 0;
+        OTR_VALIDATE(m_EntityManager->m_ComponentToFingerprintIndex.TryGet(componentId, &index))
+
+        OTR_ASSERT_MSG(!m_Fingerprint.Get(index), "Component already set.")
+
+        m_Fingerprint.Set(index, true);
+        m_ComponentData.Add(componentData);
+    }
+
+    EntityManager::EntityBuilderFromArchetype::EntityBuilderFromArchetype(EntityManager* entityManager,
+                                                                          Entity entity,
+                                                                          Archetype archetype)
+        : m_EntityManager(entityManager), m_Entity(std::move(entity)),
+          m_ComponentData(), m_Archetype(std::move(archetype))
+    {
+        OTR_ASSERT_MSG(m_Entity.IsValid(), "Entity must be valid.")
+        OTR_ASSERT_MSG(m_Archetype.GetComponentCount() > 0, "Archetype must have components.")
+
+        m_FingerprintTrack = m_Archetype.GetFingerprint();
+    }
+
+    EntityManager::EntityBuilderFromArchetype::~EntityBuilderFromArchetype()
+    {
+        m_EntityManager = nullptr;
+        m_ComponentData.ClearDestructive();
+        m_FingerprintTrack.ClearDestructive();
+    }
+
+    Entity EntityManager::EntityBuilderFromArchetype::Build()
+    {
+        OTR_ASSERT_MSG(m_FingerprintTrack.GetTrueCount() == 0, "Not all components were set.")
+
+        m_EntityManager->m_EntitiesToAdd.Push(m_Entity);
+
+        const auto fingerprint = m_Archetype.GetFingerprint();
+        if (!m_EntityManager->m_FingerprintToComponentDataToAdd.ContainsKey(fingerprint))
+            m_EntityManager->m_FingerprintToComponentDataToAdd.TryAdd(fingerprint, m_ComponentData);
+        else
+            for (auto& componentData: m_ComponentData)
+                m_EntityManager->m_FingerprintToComponentDataToAdd[fingerprint]->Add(componentData);
+
+        return m_Entity;
+    }
+
+    void EntityManager::EntityBuilderFromArchetype::SetComponentDataInternal(UInt64 componentId,
+                                                                             ComponentData&& componentData)
+    {
+        OTR_ASSERT_MSG(m_EntityManager->m_ComponentsLock, "Component registration must be locked.")
+        OTR_ASSERT_MSG(m_EntityManager->m_ComponentToFingerprintIndex.ContainsKey(componentId),
+                       "Component must be registered.")
+
+        UInt64 index = 0;
+        OTR_VALIDATE(m_EntityManager->m_ComponentToFingerprintIndex.TryGet(componentId, &index))
+
+        OTR_ASSERT_MSG(!m_Archetype.GetFingerprint().Get(index), "Component does not belong to archetype.")
+
+        m_FingerprintTrack.Set(index, false);
+        m_ComponentData.Add(componentData);
     }
 }

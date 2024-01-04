@@ -9,7 +9,7 @@ class EntityManager_Fixture : public ::testing::Test
 protected:
     void SetUp() override
     {
-        Otter::MemorySystem::Initialise(2_KiB);
+        Otter::MemorySystem::Initialise(4_KiB);
     }
 
     void TearDown() override
@@ -66,6 +66,10 @@ TEST_F(EntityManager_Fixture, CreateArchetype_Success)
         .Build();
 
     EXPECT_EQ(manager.GetArchetypeCount(), 0) << "Archetype is added on manager refresh";
+    manager.RefreshManagedData();
+
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+
     EXPECT_EQ(manager.GetEntityCount(), 0);
     EXPECT_EQ(manager.GetComponentCount(), 2);
 

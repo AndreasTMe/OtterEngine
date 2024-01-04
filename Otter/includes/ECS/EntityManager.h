@@ -31,17 +31,7 @@ namespace Otter
         /**
          * @brief Destructor.
          */
-        ~EntityManager()
-        {
-            m_Entities.ClearDestructive();
-            m_EntityToIndex.ClearDestructive();
-            m_EntitiesToAdd.ClearDestructive();
-
-            m_ComponentToFingerprintIndex.ClearDestructive();
-            m_ComponentToFingerprints.ClearDestructive();
-
-            m_FingerprintToArchetype.ClearDestructive();
-        }
+        ~EntityManager();
 
         /**
          * @brief Deleted copy constructor.
@@ -124,9 +114,9 @@ namespace Otter
         void DestroyEntity(const Entity& entity);
 
         /**
-         * @brief Refreshes the entities.
+         * @brief Refreshes the entity manager's managed data (entities, archetypes, etc.).
          */
-        void RefreshEntities();
+        void RefreshManagedData();
 
         template<typename TComponent>
         requires IsComponent<TComponent>
@@ -179,20 +169,12 @@ namespace Otter
              *
              * @param entityManager The entity manager.
              */
-            explicit ArchetypeBuilder(EntityManager* entityManager)
-                : m_EntityManager(entityManager), m_Fingerprint()
-            {
-            }
+            explicit ArchetypeBuilder(EntityManager* entityManager);
 
             /**
              * @brief Destructor.
              */
-            ~ArchetypeBuilder()
-            {
-                m_EntityManager = nullptr;
-                m_Fingerprint.ClearDestructive();
-                m_ComponentIds.ClearDestructive();
-            }
+            ~ArchetypeBuilder();
 
             /**
              * @brief Adds a component to the archetype.
@@ -206,15 +188,8 @@ namespace Otter
             ArchetypeBuilder& With()
             {
                 OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
-                OTR_ASSERT_MSG(m_EntityManager->m_ComponentsLock, "Component registration must be locked.")
-                OTR_ASSERT_MSG(m_EntityManager->m_ComponentToFingerprintIndex.ContainsKey(TComponent::Id),
-                               "Component must be registered.")
 
-                UInt64 index = 0;
-                m_EntityManager->m_ComponentToFingerprintIndex.TryGet(TComponent::Id, &index);
-
-                m_Fingerprint.Set(index, true);
-                m_ComponentIds.Add(TComponent::Id);
+                WithInternal(TComponent::Id);
 
                 return *this;
             }
@@ -224,20 +199,19 @@ namespace Otter
              *
              * @return The archetype.
              */
-            [[nodiscard]] Archetype Build()
-            {
-                Archetype archetype(m_Fingerprint, m_ComponentIds);
-
-                if (!m_EntityManager->m_FingerprintToArchetype.ContainsKey(m_Fingerprint))
-                    m_EntityManager->m_ArchetypesToAdd.Push(archetype);
-
-                return archetype;
-            }
+            [[nodiscard]] Archetype Build();
 
         private:
             EntityManager* m_EntityManager;
             ArchetypeFingerprint m_Fingerprint;
             List<ComponentId>    m_ComponentIds;
+
+            /**
+             * @brief Adds a component to the archetype. Used internally.
+             *
+             * @param componentId The component id.
+             */
+            void WithInternal(UInt64 componentId);
         };
 
         /**
@@ -252,20 +226,12 @@ namespace Otter
              * @param entityManager The entity manager.
              * @param entity The entity.
              */
-            EntityBuilder(EntityManager* entityManager, Entity entity)
-                : m_EntityManager(entityManager), m_Entity(std::move(entity)), m_Fingerprint(), m_ComponentData()
-            {
-                OTR_ASSERT_MSG(m_Entity.IsValid(), "Entity must be valid.")
-            }
+            EntityBuilder(EntityManager* entityManager, Entity entity);
 
             /**
              * @brief Destructor.
              */
-            ~EntityBuilder()
-            {
-                m_EntityManager = nullptr;
-                m_ComponentData.ClearDestructive();
-            }
+            ~EntityBuilder();
 
             /**
              * @brief Sets the component data.
@@ -282,19 +248,10 @@ namespace Otter
             EntityBuilder& SetComponentData(TArgs&& ... args)
             {
                 OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
-                OTR_ASSERT_MSG(m_EntityManager->m_ComponentsLock, "Component registration must be locked.")
-                OTR_ASSERT_MSG(m_EntityManager->m_ComponentToFingerprintIndex.ContainsKey(TComponent::Id),
-                               "Component must be registered.")
-
-                UInt64 index = 0;
-                OTR_VALIDATE(m_EntityManager->m_ComponentToFingerprintIndex.TryGet(TComponent::Id, &index))
-
-                OTR_ASSERT_MSG(!m_Fingerprint.Get(index), "Component already set.")
-
-                m_Fingerprint.Set(index, true);
 
                 auto component = TComponent(std::forward<TArgs>(args)...);
-                m_ComponentData.Add(ComponentData{ TComponent::Id, &component, sizeof(TComponent) });
+                SetComponentDataInternal(TComponent::Id,
+                                         ComponentData{ TComponent::Id, &component, sizeof(TComponent) });
 
                 return *this;
             }
@@ -304,25 +261,18 @@ namespace Otter
              *
              * @return The entity.
              */
-            [[nodiscard]] Entity Build()
-            {
-                m_EntityManager->m_EntitiesToAdd.Push(m_Entity);
-
-                if (!m_EntityManager->m_FingerprintToComponentDataToAdd.ContainsKey(m_Fingerprint))
-                    m_EntityManager->m_FingerprintToComponentDataToAdd.TryAdd(std::move(m_Fingerprint),
-                                                                              std::move(m_ComponentData));
-                else
-                    for (auto& componentData: m_ComponentData)
-                        m_EntityManager->m_FingerprintToComponentDataToAdd[m_Fingerprint]->Add(componentData);
-
-                return m_Entity;
-            }
+            [[nodiscard]] Entity Build();
 
         private:
             EntityManager* m_EntityManager;
             Entity               m_Entity;
             ArchetypeFingerprint m_Fingerprint;
             List<ComponentData>  m_ComponentData;
+
+            /**
+             * @brief Sets the component data. Used internally.
+             */
+            void SetComponentDataInternal(UInt64 componentId, ComponentData&& componentData);
         };
 
         /**
@@ -338,25 +288,12 @@ namespace Otter
              * @param entity The entity.
              * @param archetype The archetype.
              */
-            EntityBuilderFromArchetype(EntityManager* entityManager, Entity entity, Archetype archetype)
-                : m_EntityManager(entityManager), m_Entity(std::move(entity)),
-                  m_ComponentData(), m_Archetype(std::move(archetype))
-            {
-                OTR_ASSERT_MSG(m_Entity.IsValid(), "Entity must be valid.")
-                OTR_ASSERT_MSG(m_Archetype.GetComponentCount() > 0, "Archetype must have components.")
-
-                m_FingerprintTrack = m_Archetype.GetFingerprint();
-            }
+            EntityBuilderFromArchetype(EntityManager* entityManager, Entity entity, Archetype archetype);
 
             /**
              * @brief Destructor.
              */
-            ~EntityBuilderFromArchetype()
-            {
-                m_EntityManager = nullptr;
-                m_ComponentData.ClearDestructive();
-                m_FingerprintTrack.ClearDestructive();
-            }
+            ~EntityBuilderFromArchetype();
 
             /**
              * @brief Sets the component data.
@@ -373,19 +310,10 @@ namespace Otter
             EntityBuilderFromArchetype& SetComponentData(TArgs&& ... args)
             {
                 OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
-                OTR_ASSERT_MSG(m_EntityManager->m_ComponentsLock, "Component registration must be locked.")
-                OTR_ASSERT_MSG(m_EntityManager->m_ComponentToFingerprintIndex.ContainsKey(TComponent::Id),
-                               "Component must be registered.")
-
-                UInt64 index = 0;
-                OTR_VALIDATE(m_EntityManager->m_ComponentToFingerprintIndex.TryGet(TComponent::Id, &index))
-
-                OTR_ASSERT_MSG(!m_Archetype.GetFingerprint().Get(index), "Component does not belong to archetype.")
-
-                m_FingerprintTrack.Set(index, false);
 
                 auto component = TComponent(std::forward<TArgs>(args)...);
-                m_ComponentData.Add(ComponentData{ TComponent::Id, &component, sizeof(TComponent) });
+                SetComponentDataInternal(TComponent::Id,
+                                         ComponentData{ TComponent::Id, &component, sizeof(TComponent) });
 
                 return *this;
             }
@@ -395,21 +323,7 @@ namespace Otter
              *
              * @return The entity.
              */
-            [[nodiscard]] Entity Build()
-            {
-                OTR_ASSERT_MSG(m_FingerprintTrack.GetTrueCount() == 0, "Not all components were set.")
-
-                m_EntityManager->m_EntitiesToAdd.Push(m_Entity);
-
-                const auto fingerprint = m_Archetype.GetFingerprint();
-                if (!m_EntityManager->m_FingerprintToComponentDataToAdd.ContainsKey(fingerprint))
-                    m_EntityManager->m_FingerprintToComponentDataToAdd.TryAdd(fingerprint, m_ComponentData);
-                else
-                    for (auto& componentData: m_ComponentData)
-                        m_EntityManager->m_FingerprintToComponentDataToAdd[fingerprint]->Add(componentData);
-
-                return m_Entity;
-            }
+            [[nodiscard]] Entity Build();
 
         private:
             EntityManager* m_EntityManager;
@@ -417,6 +331,11 @@ namespace Otter
             List<ComponentData>  m_ComponentData;
             Archetype            m_Archetype;
             ArchetypeFingerprint m_FingerprintTrack;
+
+            /**
+             * @brief Sets the component data. Used internally.
+             */
+            void SetComponentDataInternal(UInt64 componentId, ComponentData&& componentData);
         };
 
         // Entity Registry
@@ -434,11 +353,34 @@ namespace Otter
         Stack<Archetype>                                      m_ArchetypesToAdd;
         Dictionary<ArchetypeFingerprint, List<ComponentData>> m_FingerprintToComponentDataToAdd;
 
+        /**
+         * @brief Creates an entity.
+         *
+         * @return The entity.
+         */
         Entity CreateEntityInternal();
+
+        /**
+         * @brief Populates the list of archetypes to be added in the next refresh.
+         */
         void PopulateNewArchetypes();
+
+        /**
+         * @brief Populates the list of entities to be added in the next refresh.
+         */
         void PopulateNewEntities();
+
+        /**
+         * @brief Removes any entities that are not valid.
+         */
         void CleanUpEntities();
 
+        /**
+         * @brief Registers a component or a list of components recursively.
+         *
+         * @tparam TComponent The component type.
+         * @tparam TComponents The rest of the components.
+         */
         template<typename TComponent, typename... TComponents>
         requires IsComponent<TComponent> && AreComponents<TComponents...>
         void RegisterComponentsInternal()
