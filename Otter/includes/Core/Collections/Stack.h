@@ -29,6 +29,32 @@ namespace Otter
         OTR_COLLECTION_MOVE(Stack)
 
         /**
+         * @brief Gets the element at the specified index.
+         *
+         * @param index The index.
+         *
+         * @return The element at the specified index.
+         */
+        [[nodiscard]] T& operator[](const UInt64 index)
+        {
+            OTR_ASSERT_MSG(index < base::m_Count, "Stack index out of bounds")
+            return base::m_Data[index];
+        }
+
+        /**
+         * @brief Gets the element at the specified index.
+         *
+         * @param index The index.
+         *
+         * @return The element at the specified index.
+         */
+        [[nodiscard]] const T& operator[](const UInt64 index) const
+        {
+            OTR_ASSERT_MSG(index < base::m_Count, "index index out of bounds")
+            return base::m_Data[index];
+        }
+
+        /**
          * @brief Pushes an item onto the stack.
          *
          * @param item The item to push onto the stack.

@@ -26,6 +26,8 @@ struct TestComponent1 final : public Otter::IComponent
     int A;
     int B;
 
+    TestComponent1() = default;
+
     TestComponent1(int a, int b)
         : A(a), B(b)
     {
@@ -38,6 +40,8 @@ struct TestComponent2 final : public Otter::IComponent
 
     int C;
     int D;
+
+    TestComponent2() = default;
 
     TestComponent2(int c, int d)
         : C(c), D(d)
@@ -81,12 +85,121 @@ TEST_F(EntityManager_Fixture, CreateArchetype_InvalidComponentRegistration)
 {
     EntityManager manager;
 
-    EXPECT_DEATH(auto builder = manager.CreateArchetype(), "");
+    EXPECT_DEATH(auto _ = manager.CreateArchetype(), "");
 
     manager.RegisterComponents<TestComponent1>()
         .LockComponents();
 
-    EXPECT_DEATH(auto archetype = manager.CreateArchetype()
+    EXPECT_DEATH(auto _ = manager.CreateArchetype()
         .With<TestComponent2>()
         .Build(), "");
+}
+
+TEST_F(EntityManager_Fixture, CreateEntity_Success)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2>()
+        .LockComponents();
+
+    auto entity = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .Build();
+
+    EXPECT_TRUE(entity.IsValid());
+
+    EXPECT_EQ(manager.GetEntityCount(), 0) << "Entity is added on manager refresh";
+    manager.RefreshManagedData();
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 2);
+}
+
+TEST_F(EntityManager_Fixture, CreateEntity_InvalidComponentRegistration)
+{
+    EntityManager manager;
+
+    EXPECT_DEATH(auto _ = manager.CreateEntity(), "");
+
+    manager.RegisterComponents<TestComponent1>()
+        .LockComponents();
+
+    EXPECT_DEATH(auto _ = manager.CreateEntity()
+        .SetComponentData<TestComponent2>()
+        .Build(), "");
+}
+
+TEST_F(EntityManager_Fixture, CreateEntityFromEntity_Success)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2>()
+        .LockComponents();
+
+    auto archetype = manager.CreateArchetype()
+        .With<TestComponent1>()
+        .With<TestComponent2>()
+        .Build();
+
+    auto entity = manager.CreateEntityFromArchetype(archetype)
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .Build();
+
+    EXPECT_TRUE(entity.IsValid());
+
+    EXPECT_EQ(manager.GetEntityCount(), 0) << "Entity is added on manager refresh";
+    manager.RefreshManagedData();
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 2);
+}
+
+TEST_F(EntityManager_Fixture, CreateEntityFromEntity_InvalidComponentRegistration)
+{
+    EntityManager manager;
+
+    EXPECT_DEATH(auto _ = manager.CreateEntity(), "");
+
+    manager.RegisterComponents<TestComponent1>()
+        .LockComponents();
+
+    auto archetype = manager.CreateArchetype()
+        .With<TestComponent1>()
+        .Build();
+
+    EXPECT_DEATH(auto _ = manager.CreateEntityFromArchetype(archetype)
+        .SetComponentData<TestComponent2>()
+        .Build(), "");
+}
+
+TEST_F(EntityManager_Fixture, DestroyEntity)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2>()
+        .LockComponents();
+
+    auto entity = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .Build();
+
+    EXPECT_TRUE(entity.IsValid());
+
+    manager.RefreshManagedData();
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 2);
+
+    manager.DestroyEntity(entity);
+
+    EXPECT_EQ(manager.GetEntityCount(), 1) << "Entity is removed on manager refresh";
+
+    manager.RefreshManagedData();
+
+    EXPECT_EQ(manager.GetEntityCount(), 0);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 2);
 }

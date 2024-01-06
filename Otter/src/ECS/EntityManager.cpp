@@ -33,10 +33,10 @@ namespace Otter
         OTR_ASSERT_MSG(m_ComponentsLock, "Component mask must be locked before destroying entities.")
 
         UInt64 index;
-        if (!m_EntityToIndex.TryGetIndex(entity, &index))
+        if (!m_EntityToIndex.TryGet(entity, &index))
             return;
 
-        m_Entities[index].m_Id = 0;
+        m_Entities[index].m_IsValid = false;
     }
 
     void EntityManager::RefreshManagedData()
@@ -57,21 +57,45 @@ namespace Otter
         while (m_EntityToIndex.ContainsKey(entity))
             entity.m_Id = ++id;
 
-        m_EntitiesToAdd.Push(entity);
-
         return entity;
     }
 
     void EntityManager::PopulateNewArchetypes()
     {
-        if (m_ArchetypesToAdd.IsEmpty())
+        if (!m_ArchetypesToAdd.IsEmpty())
+        {
+            Archetype archetype;
+            while (m_ArchetypesToAdd.TryPop(&archetype))
+                m_FingerprintToArchetype.TryAdd(archetype.GetFingerprint(), archetype);
+
+            m_ArchetypesToAdd.Clear();
+        }
+
+        OTR_ASSERT_MSG(m_EntitiesToAdd.GetCount() == m_FingerprintToComponentDataToAdd.GetCount(),
+                       "Entity count must match component data count.")
+
+        if (m_FingerprintToComponentDataToAdd.IsEmpty())
             return;
 
-        Archetype archetype;
-        while (m_ArchetypesToAdd.TryPop(&archetype))
-            m_FingerprintToArchetype.TryAdd(archetype.GetFingerprint(), archetype);
+        UInt64 index = 0;
+        m_FingerprintToComponentDataToAdd.ForEach(
+            [&](auto& fingerprint, auto& componentData)
+            {
+                if (!m_FingerprintToArchetype.ContainsKey(fingerprint))
+                {
+                    List<ComponentId> componentIds;
+                    for (UInt64       i = 0; i < componentData.GetCount(); i++)
+                        componentIds.Add(componentData[i].Id);
 
-        m_ArchetypesToAdd.Clear();
+                    m_FingerprintToArchetype.TryAdd(fingerprint, Archetype(fingerprint, componentIds));
+                }
+
+                m_FingerprintToArchetype[fingerprint]
+                    ->TryAddComponentData(m_EntitiesToAdd[index].GetId(), componentData);
+                index++;
+            });
+
+        m_FingerprintToComponentDataToAdd.Clear();
     }
 
     void EntityManager::PopulateNewEntities()
@@ -83,7 +107,9 @@ namespace Otter
         while (m_EntitiesToAdd.TryPop(&e))
         {
             m_Entities.Add(e);
-            m_EntityToIndex.TryAdd(e, m_Entities.GetCount() - 1);
+
+            auto index = m_Entities.GetCount() - 1;
+            m_EntityToIndex.TryAdd(e, index);
         }
 
         m_EntitiesToAdd.Clear();
@@ -91,19 +117,26 @@ namespace Otter
 
     void EntityManager::CleanUpEntities()
     {
+        List<UInt64> indicesToRemove;
+
         for (auto& entity: m_Entities)
         {
             if (entity.IsValid())
                 continue;
 
             UInt64 index;
-            if (m_EntityToIndex.TryGetIndex(entity, &index))
+            if (m_EntityToIndex.TryGet(entity, &index))
             {
-                m_Entities.TryRemoveAt(index);
+                indicesToRemove.Add(index);
 
-                m_EntityToIndex.TryRemove(entity);
-                m_EntityToIndex.TryAdd(m_Entities[index], index);
+                OTR_VALIDATE(m_EntityToIndex.TryRemove(entity))
+                OTR_VALIDATE(m_EntityToIndex.TryAdd(m_Entities[index], index))
             }
+        }
+
+        for (auto& index: indicesToRemove)
+        {
+            OTR_VALIDATE(m_Entities.TryRemoveAt(index))
         }
     }
 
@@ -228,8 +261,6 @@ namespace Otter
 
         UInt64 index = 0;
         OTR_VALIDATE(m_EntityManager->m_ComponentToFingerprintIndex.TryGet(componentId, &index))
-
-        OTR_ASSERT_MSG(!m_Archetype.GetFingerprint().Get(index), "Component does not belong to archetype.")
 
         m_FingerprintTrack.Set(index, false);
         m_ComponentData.Add(componentData);

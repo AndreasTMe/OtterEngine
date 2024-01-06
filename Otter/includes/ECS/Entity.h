@@ -33,7 +33,8 @@ namespace Otter
          */
         Entity(const Entity& other)
         {
-            m_Id = other.m_Id;
+            m_Id      = other.m_Id;
+            m_IsValid = other.m_IsValid;
         }
 
         /**
@@ -43,9 +44,11 @@ namespace Otter
          */
         Entity(Entity&& other) noexcept
         {
-            m_Id = other.m_Id;
+            m_Id      = other.m_Id;
+            m_IsValid = other.m_IsValid;
 
-            other.m_Id = 0;
+            other.m_Id      = 0;
+            other.m_IsValid = false;
         }
 
         /**
@@ -66,9 +69,11 @@ namespace Otter
          */
         Entity& operator=(Entity&& other) noexcept
         {
-            m_Id = other.m_Id;
+            m_Id      = other.m_Id;
+            m_IsValid = other.m_IsValid;
 
-            other.m_Id = 0;
+            other.m_Id      = 0;
+            other.m_IsValid = false;
 
             return *this;
         }
@@ -103,7 +108,7 @@ namespace Otter
          *
          * @return True if the entity is valid, false otherwise.
          */
-        [[nodiscard]] OTR_INLINE bool IsValid() const noexcept { return m_Id > 0; }
+        [[nodiscard]] OTR_INLINE bool IsValid() const noexcept { return m_Id > 0 && m_IsValid; }
 
         /**
          * @brief Gets the hash code of the entity.
@@ -122,11 +127,12 @@ namespace Otter
          * @param id Id of the entity.
          */
         explicit Entity(EntityId id) noexcept
-            : m_Id(id)
+            : m_Id(id), m_IsValid(true)
         {
         }
 
-        EntityId m_Id = 0;
+        EntityId m_Id      = 0;
+        bool     m_IsValid = false;
 
         friend class EntityManager;
     };

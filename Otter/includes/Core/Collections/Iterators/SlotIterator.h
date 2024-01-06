@@ -30,6 +30,12 @@ namespace Otter
                      const BitSet& slotsInUse) // NOLINT(*-pass-by-value)
             : k_Head(head), k_Capacity(capacity), k_SlotsInUse(slotsInUse), m_Ptr(ptr)
         {
+            if (k_Capacity == 0)
+            {
+                m_Ptr = nullptr;
+                return;
+            }
+
             if (k_Head == m_Ptr)
             {
                 auto index = 0;

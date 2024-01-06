@@ -118,9 +118,9 @@ namespace Otter
          */
         void RefreshManagedData();
 
-        template<typename TComponent>
+        template<typename TComponent, typename... TArgs>
         requires IsComponent<TComponent>
-        bool TryAddComponent(Entity entity)
+        bool TryAddComponent(const Entity& entity, TArgs&& ... args)
         {
             OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
 
@@ -129,7 +129,7 @@ namespace Otter
 
         template<typename TComponent>
         requires IsComponent<TComponent>
-        bool TryRemoveComponent(Entity entity)
+        bool TryRemoveComponent(const Entity& entity)
         {
             OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
 
@@ -251,7 +251,7 @@ namespace Otter
 
                 auto component = TComponent(std::forward<TArgs>(args)...);
                 SetComponentDataInternal(TComponent::Id,
-                                         ComponentData{ TComponent::Id, &component, sizeof(TComponent) });
+                                         ComponentData{ TComponent::Id, (Byte*) &component, sizeof(TComponent) });
 
                 return *this;
             }
@@ -313,7 +313,7 @@ namespace Otter
 
                 auto component = TComponent(std::forward<TArgs>(args)...);
                 SetComponentDataInternal(TComponent::Id,
-                                         ComponentData{ TComponent::Id, &component, sizeof(TComponent) });
+                                         ComponentData{ TComponent::Id, (Byte*) &component, sizeof(TComponent) });
 
                 return *this;
             }
