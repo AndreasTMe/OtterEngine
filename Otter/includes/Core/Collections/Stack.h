@@ -120,28 +120,28 @@ namespace Otter
          *
          * @return An iterator to the first element of the stack.
          */
-        OTR_INLINE Iterator begin() noexcept { return Iterator(base::m_Data); }
+        OTR_INLINE Iterator begin() const noexcept { return Iterator(base::m_Data); }
 
         /**
          * @brief Gets an iterator to the last element of the stack.
          *
          * @return An iterator to the last element of the stack.
          */
-        OTR_INLINE Iterator end() noexcept { return Iterator(base::m_Data + base::m_Count); }
+        OTR_INLINE Iterator end() const noexcept { return Iterator(base::m_Data + base::m_Count); }
 
         /**
          * @brief Gets a reverse iterator to the last element of the stack.
          *
          * @return A reverse iterator to the last element of the stack.
          */
-        OTR_INLINE Iterator rbegin() noexcept { return Iterator(base::m_Data + base::m_Count - 1); }
+        OTR_INLINE Iterator rbegin() const noexcept { return Iterator(base::m_Data + base::m_Count - 1); }
 
         /**
          * @brief Gets a reverse iterator to the first element of the stack.
          *
          * @return A reverse iterator to the first element of the stack.
          */
-        OTR_INLINE Iterator rend() noexcept { return Iterator(base::m_Data - 1); }
+        OTR_INLINE Iterator rend() const noexcept { return Iterator(base::m_Data - 1); }
 
         /**
          * @brief Gets a const iterator to the first element of the stack.

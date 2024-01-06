@@ -35,7 +35,7 @@ namespace Otter
         Array()
         {
             if constexpr (Size > 0)
-                m_Data = Buffer::New<T>(Size);
+                m_Data = Buffer::New < T > (Size);
         }
 
         /**
@@ -75,7 +75,7 @@ namespace Otter
                 return;
             else
             {
-                m_Data = Buffer::New<T>(Size);
+                m_Data = Buffer::New < T > (Size);
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
             }
         }
@@ -114,7 +114,7 @@ namespace Otter
                 if (IsCreated())
                     Buffer::Delete<T>(m_Data, Size);
 
-                m_Data = Buffer::New<T>(Size);
+                m_Data = Buffer::New < T > (Size);
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
             }
 
@@ -139,7 +139,7 @@ namespace Otter
             {
                 if (IsCreated())
                     Buffer::Delete<T>(m_Data, Size);
-                
+
                 m_Data = std::move(other.m_Data);
             }
 
@@ -268,28 +268,28 @@ namespace Otter
          *
          * @return An iterator to the first element of the array.
          */
-        OTR_INLINE Iterator begin() noexcept { return Iterator(m_Data); }
+        OTR_INLINE Iterator begin() const noexcept { return Iterator(m_Data); }
 
         /**
          * @brief Gets an iterator to the last element of the array.
          *
          * @return An iterator to the last element of the array.
          */
-        OTR_INLINE Iterator end() noexcept { return Iterator(m_Data + Size); }
+        OTR_INLINE Iterator end() const noexcept { return Iterator(m_Data + Size); }
 
         /**
          * @brief Gets a reverse iterator to the last element of the array.
          *
          * @return A reverse iterator to the last element of the array.
          */
-        OTR_INLINE Iterator rbegin() noexcept { return Iterator(m_Data + Size - 1); }
+        OTR_INLINE Iterator rbegin() const noexcept { return Iterator(m_Data + Size - 1); }
 
         /**
          * @brief Gets a reverse iterator to the first element of the array.
          *
          * @return A reverse iterator to the first element of the array.
          */
-        OTR_INLINE Iterator rend() noexcept { return Iterator(m_Data - 1); }
+        OTR_INLINE Iterator rend() const noexcept { return Iterator(m_Data - 1); }
 
         /**
          * @brief Gets a const iterator to the first element of the array.

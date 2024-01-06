@@ -49,7 +49,7 @@ namespace Otter
             : Deque()
         {
             m_Capacity = list.size();
-            m_Data     = Buffer::New<T>(m_Capacity);
+            m_Data     = Buffer::New < T > (m_Capacity);
 
             m_Count = 0;
             for (const T& item: list)
@@ -69,7 +69,7 @@ namespace Otter
             if (m_Capacity == 0)
                 return;
 
-            m_Data = Buffer::New<T>(m_Capacity);
+            m_Data = Buffer::New < T > (m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * sizeof(T));
@@ -112,7 +112,7 @@ namespace Otter
             if (m_Capacity == 0)
                 return *this;
 
-            m_Data = Buffer::New<T>(m_Capacity);
+            m_Data = Buffer::New < T > (m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * sizeof(T));
@@ -405,7 +405,7 @@ namespace Otter
             if (capacity <= m_Capacity)
                 return;
 
-            T* newData = Buffer::New<T>(capacity);
+            T* newData = Buffer::New < T > (capacity);
 
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
@@ -432,7 +432,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New<T>(newCapacity);
+            T* newData = Buffer::New < T > (newCapacity);
 
             for (UInt64 i = 0; i < m_Count; i++)
                 newData[i] = m_Data[i];
@@ -460,7 +460,7 @@ namespace Otter
                 return;
             }
 
-            T* newData = Buffer::New<T>(newCapacity);
+            T* newData = Buffer::New < T > (newCapacity);
 
             for (UInt64 i = 0; i < m_Count && i < newCapacity; i++)
                 newData[i] = m_Data[i];
@@ -557,28 +557,28 @@ namespace Otter
          *
          * @return An iterator to the first element of the deque.
          */
-        OTR_INLINE Iterator begin() noexcept { return Iterator(m_Data); }
+        OTR_INLINE Iterator begin() const noexcept { return Iterator(m_Data); }
 
         /**
          * @brief Gets an iterator to the last element of the deque.
          *
          * @return An iterator to the last element of the deque.
          */
-        OTR_INLINE Iterator end() noexcept { return Iterator(m_Data + m_Count); }
+        OTR_INLINE Iterator end() const noexcept { return Iterator(m_Data + m_Count); }
 
         /**
          * @brief Gets a reverse iterator to the last element of the deque.
          *
          * @return A reverse iterator to the last element of the deque.
          */
-        OTR_INLINE Iterator rbegin() noexcept { return Iterator(m_Data + m_Count - 1); }
+        OTR_INLINE Iterator rbegin() const noexcept { return Iterator(m_Data + m_Count - 1); }
 
         /**
          * @brief Gets a reverse iterator to the first element of the deque.
          *
          * @return A reverse iterator to the first element of the deque.
          */
-        OTR_INLINE Iterator rend() noexcept { return Iterator(m_Data - 1); }
+        OTR_INLINE Iterator rend() const noexcept { return Iterator(m_Data - 1); }
 
         /**
          * @brief Gets a const iterator to the first element of the deque.
@@ -623,7 +623,7 @@ namespace Otter
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Capacity);
 
-            m_Data     = capacity > 0 ? Buffer::New<T>(capacity) : nullptr;
+            m_Data     = capacity > 0 ? Buffer::New < T > (capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
         }

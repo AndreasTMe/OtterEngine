@@ -354,9 +354,13 @@ TEST_F(HashSet_Fixture, Iterator)
         ++i;
     }
 
+    EXPECT_EQ(i, hashSet.GetCount());
+
     for (auto it = hashSet.rbegin(); it != hashSet.rend(); --it)
     {
-        EXPECT_EQ(*it, temp[i]);
+        EXPECT_EQ(*it, temp[i - 1]);
         --i;
     }
+
+    EXPECT_EQ(i, 0);
 }

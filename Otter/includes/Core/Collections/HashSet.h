@@ -5,7 +5,6 @@
 #include "Core/Collections/BitSet.h"
 #include "Core/Collections/Utils/HashSlot.h"
 #include "Core/Collections/Utils/HashUtils.h"
-#include "Core/Collections/Iterators/SlotIterator.h"
 
 #if !OTR_RUNTIME
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
@@ -29,8 +28,8 @@ namespace Otter
         /// @brief Alias for a slot.
         using Slot = Slot<T>;
 
-        /// @brief Alias for a hashset iterator.
-        using Iterator = SlotIterator<T>;
+        /// @brief Iterator for a collection of Slots.
+        class SlotIterator;
 
     public:
         /**
@@ -56,7 +55,7 @@ namespace Otter
             : HashSet()
         {
             m_Capacity             = k_InitialCapacity;
-            m_Slots                = Buffer::New<Slot>(m_Capacity);
+            m_Slots                = Buffer::New < Slot > (m_Capacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
@@ -80,7 +79,7 @@ namespace Otter
             if (m_Capacity == 0)
                 return;
 
-            m_Slots = Buffer::New<Slot>(m_Capacity);
+            m_Slots = Buffer::New < Slot > (m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
@@ -130,7 +129,7 @@ namespace Otter
             if (m_Capacity == 0)
                 return *this;
 
-            m_Slots = Buffer::New<Slot>(m_Capacity);
+            m_Slots = Buffer::New < Slot > (m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
@@ -462,9 +461,17 @@ namespace Otter
          *
          * @return A const iterator to the first element of the hash set.
          */
-        OTR_INLINE Iterator begin() const noexcept
+        SlotIterator begin() const noexcept
         {
-            return Iterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!HasItemStoredAt(i))
+                    continue;
+
+                return SlotIterator(m_Slots, m_Slots + i, m_Capacity, m_SlotsInUse);
+            }
+
+            return SlotIterator(m_Slots, m_Slots + m_Capacity, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -472,9 +479,9 @@ namespace Otter
          *
          * @return A const iterator to the last element of the hash set.
          */
-        OTR_INLINE Iterator end() const noexcept
+        OTR_INLINE SlotIterator end() const noexcept
         {
-            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
+            return SlotIterator(m_Slots, m_Slots + m_Capacity, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -482,9 +489,17 @@ namespace Otter
          *
          * @return A reverse const iterator to the last element of the hash set.
          */
-        OTR_INLINE Iterator rbegin() const noexcept
+        SlotIterator rbegin() const noexcept
         {
-            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
+            for (UInt64 i = m_Capacity - 1; i > 0; i--)
+            {
+                if (!HasItemStoredAt(i))
+                    continue;
+
+                return SlotIterator(m_Slots, m_Slots + i, m_Capacity, m_SlotsInUse);
+            }
+
+            return SlotIterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -492,9 +507,9 @@ namespace Otter
          *
          * @return A reverse const iterator to the first element of the hash set.
          */
-        OTR_INLINE Iterator rend() const noexcept
+        OTR_INLINE SlotIterator rend() const noexcept
         {
-            return Iterator(m_Slots, m_Slots - 1, m_Capacity, m_SlotsInUse);
+            return SlotIterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
         }
 
     private:
@@ -510,6 +525,119 @@ namespace Otter
 
         BitSet m_SlotsInUse{ };
         BitSet m_Collisions{ };
+
+        /**
+         * @brief Iterator for a collection of Slots.
+         */
+        struct SlotIterator final
+        {
+        public:
+            /**
+             * @brief Constructor.
+             *
+             * @param head The head of the Slot array.
+             * @param ptr The current Slot.
+             * @param capacity The capacity of the Slot array.
+             * @param slotsInUse The BitSet of the Slots in use.
+             */
+            SlotIterator(Slot* head,
+                         Slot* ptr,
+                         const UInt64 capacity,
+                         const BitSet& slotsInUse) // NOLINT(*-pass-by-value)
+                : k_Head(head), k_Capacity(capacity), k_SlotsInUse(slotsInUse), m_Ptr(ptr)
+            {
+            }
+
+            /**
+             * @brief Increments the iterator.
+             *
+             * @return The incremented iterator.
+             */
+            OTR_INLINE SlotIterator& operator++()
+            {
+                m_Ptr++;
+
+                auto index = m_Ptr - k_Head;
+
+                if (!k_SlotsInUse.Get(m_Ptr - k_Head))
+                    while (m_Ptr - k_Head < k_Capacity && !k_SlotsInUse.Get(m_Ptr - k_Head))
+                        m_Ptr++;
+
+                return *this;
+            }
+
+            /**
+             * @brief Increments the iterator.
+             *
+             * @return The iterator before incrementation.
+             */
+            OTR_INLINE const SlotIterator operator++(int)
+            {
+                SlotIterator iterator = *this;
+                ++(*this);
+                return iterator;
+            }
+
+            /**
+             * @brief Decrements the iterator.
+             *
+             * @return The decremented iterator.
+             */
+            OTR_INLINE SlotIterator& operator--()
+            {
+                m_Ptr--;
+
+                if (!k_SlotsInUse.Get(m_Ptr - k_Head))
+                    while (m_Ptr != k_Head && !k_SlotsInUse.Get(m_Ptr - k_Head))
+                        m_Ptr--;
+
+                return *this;
+            }
+
+            /**
+             * @brief Decrements the iterator.
+             *
+             * @return The iterator before decrementation.
+             */
+            OTR_INLINE const SlotIterator operator--(int)
+            {
+                SlotIterator iterator = *this;
+                --(*this);
+                return iterator;
+            }
+
+            /**
+             * @brief Dereferences the iterator.
+             *
+             * @return The dereferenced object.
+             */
+            OTR_INLINE const T& operator*() const { return m_Ptr->Data; }
+
+            /**
+             * @brief Equality operator.
+             *
+             * @param other The other iterator to compare to.
+             *
+             * @return True if the iterators are equal, false otherwise.
+             */
+            OTR_INLINE bool operator==(const SlotIterator& other) const { return m_Ptr == other.m_Ptr; }
+
+            /**
+             * @brief Inequality operator.
+             *
+             * @param other The other iterator to compare to.
+             *
+             * @return True if the iterators are not equal, false otherwise.
+             */
+            OTR_INLINE bool operator!=(const SlotIterator& other) const { return !(*this == other); }
+
+        private:
+            const Slot* const k_Head;
+            const UInt64 k_Capacity;
+            const BitSet k_SlotsInUse;
+
+            Slot* m_Ptr;
+        };
 
         /**
          * @brief Tries to add an item to an empty slot in the hashset.
@@ -696,7 +824,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots = Buffer::New<Slot>(newCapacity);
+            m_Slots = Buffer::New < Slot > (newCapacity);
 
             for (UInt64 i = 0; i < newCapacity; i++)
                 if (newHashSet.HasItemStoredAt(i))
@@ -719,7 +847,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots    = capacity > 0 ? Buffer::New<Slot>(capacity) : nullptr;
+            m_Slots    = capacity > 0 ? Buffer::New < Slot > (capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
 

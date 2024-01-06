@@ -568,17 +568,24 @@ TEST_F(Dictionary_Fixture, Iterator)
                                        { 6, 6 }};
 
     UInt64 i = 0;
-    for (const auto& [key, value]: dictionary)
+    for (auto& [key, value]: dictionary)
     {
         EXPECT_EQ(key, temp[i]);
         EXPECT_EQ(value, temp[i]);
+
+        value++;
+
         ++i;
     }
 
+    EXPECT_EQ(i, dictionary.GetCount());
+
     for (auto it = dictionary.rbegin(); it != dictionary.rend(); --it)
     {
-        EXPECT_EQ((*it).Key, temp[i]);
-        EXPECT_EQ((*it).Value, temp[i]);
+        EXPECT_EQ((*it).Key, temp[i - 1]);
+        EXPECT_EQ((*it).Value, temp[i - 1] + 1);
         --i;
     }
+
+    EXPECT_EQ(i, 0);
 }
