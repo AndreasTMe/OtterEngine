@@ -11,7 +11,7 @@ class Archetype_Fixture : public ::testing::Test
 protected:
     void SetUp() override
     {
-        Otter::MemorySystem::Initialise(1_KiB);
+        Otter::MemorySystem::Initialise(4_KiB);
     }
 
     void TearDown() override
@@ -29,15 +29,43 @@ TEST_F(Archetype_Fixture, DefaultConstructor)
     EXPECT_EQ(archetype.GetComponentCount(), 0);
 }
 
+struct TestComponent1 final : public Otter::IComponent
+{
+    static constexpr Otter::ComponentId Id = 1;
+
+    int A;
+    int B;
+
+    TestComponent1() = default;
+
+    TestComponent1(int a, int b)
+        : A(a), B(b)
+    {
+    }
+};
+
+struct TestComponent2 final : public Otter::IComponent
+{
+    static constexpr Otter::ComponentId Id = 2;
+
+    int A;
+    int B;
+
+    TestComponent2() = default;
+
+    TestComponent2(int a, int b)
+        : A(a), B(b)
+    {
+    }
+};
+
 TEST_F(Archetype_Fixture, Constructor)
 {
     ArchetypeFingerprint fingerprint;
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(0);
-    componentIds.Add(1);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
 
     Archetype archetype(fingerprint, componentIds);
 
@@ -51,9 +79,7 @@ TEST_F(Archetype_Fixture, CopyConstructor)
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(0);
-    componentIds.Add(1);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
 
     Archetype archetype1(fingerprint, componentIds);
     Archetype archetype2(archetype1);
@@ -71,9 +97,7 @@ TEST_F(Archetype_Fixture, MoveConstructor)
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(0);
-    componentIds.Add(1);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
 
     Archetype archetype1(fingerprint, componentIds);
     Archetype archetype2(std::move(archetype1));
@@ -91,9 +115,7 @@ TEST_F(Archetype_Fixture, Assignment_Copy)
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(0);
-    componentIds.Add(1);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
 
     Archetype archetype1(fingerprint, componentIds);
     Archetype archetype2;
@@ -113,9 +135,7 @@ TEST_F(Archetype_Fixture, Assignment_Move)
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(0);
-    componentIds.Add(1);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
 
     Archetype archetype1(fingerprint, componentIds);
     Archetype archetype2;
@@ -135,9 +155,7 @@ TEST_F(Archetype_Fixture, Equality)
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(0);
-    componentIds.Add(1);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
 
     Archetype archetype1(fingerprint, componentIds);
     Archetype archetype2(fingerprint, componentIds);
@@ -147,39 +165,12 @@ TEST_F(Archetype_Fixture, Equality)
     EXPECT_FALSE(archetype1 == archetype3);
 }
 
-struct TestComponent1 final : public Otter::IComponent
-{
-    static constexpr Otter::ComponentId Id = 1;
-
-    int A;
-    int B;
-
-    TestComponent1(int a, int b)
-        : A(a), B(b)
-    {
-    }
-};
-
-struct TestComponent2 final : public Otter::IComponent
-{
-    static constexpr Otter::ComponentId Id = 2;
-
-    int A;
-    int B;
-
-    TestComponent2(int a, int b)
-        : A(a), B(b)
-    {
-    }
-};
-
 TEST_F(Archetype_Fixture, Adding_ComponentData)
 {
     ArchetypeFingerprint fingerprint;
     fingerprint.Set(0, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(TestComponent1::Id);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
 
     Archetype archetype(fingerprint, componentIds);
 
@@ -199,9 +190,7 @@ TEST_F(Archetype_Fixture, HasComponent)
     ArchetypeFingerprint fingerprint;
     fingerprint.Set(0, true);
 
-    Otter::ComponentId              id = 1;
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(id);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
 
     Archetype archetype(fingerprint, componentIds);
 
@@ -213,8 +202,7 @@ TEST_F(Archetype_Fixture, GetComponents_Single)
     ArchetypeFingerprint fingerprint;
     fingerprint.Set(0, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(TestComponent1::Id);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
 
     Archetype archetype(fingerprint, componentIds);
 
@@ -248,8 +236,7 @@ TEST_F(Archetype_Fixture, GetComponents_Multiple)
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(TestComponent1::Id);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
 
     EXPECT_DEATH(Archetype(fingerprint, componentIds), "");
 
@@ -296,8 +283,7 @@ TEST_F(Archetype_Fixture, GetComponentsForEntity_Single)
     ArchetypeFingerprint fingerprint;
     fingerprint.Set(0, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(TestComponent1::Id);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
 
     Archetype archetype(fingerprint, componentIds);
 
@@ -345,9 +331,7 @@ TEST_F(Archetype_Fixture, GetComponentsForEntity_Multiple)
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
 
-    Otter::List<Otter::ComponentId> componentIds;
-    componentIds.Add(TestComponent1::Id);
-    componentIds.Add(TestComponent2::Id);
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
 
     Archetype archetype(fingerprint, componentIds);
 

@@ -71,29 +71,25 @@ namespace Otter
             m_ArchetypesToAdd.Clear();
         }
 
-        OTR_ASSERT_MSG(m_EntitiesToAdd.GetCount() == m_FingerprintToComponentDataToAdd.GetCount(),
-                       "Entity count must match component data count.")
-
         if (m_FingerprintToComponentDataToAdd.IsEmpty())
             return;
 
-        UInt64 index = 0;
-        m_FingerprintToComponentDataToAdd.ForEach(
-            [&](auto& fingerprint, auto& componentData)
+        for (const auto& [fingerprint, entityComponentData]: m_FingerprintToComponentDataToAdd)
+        {
+            if (!m_FingerprintToArchetype.ContainsKey(fingerprint))
             {
-                if (!m_FingerprintToArchetype.ContainsKey(fingerprint))
-                {
-                    List<ComponentId> componentIds;
-                    for (UInt64       i = 0; i < componentData.GetCount(); i++)
-                        componentIds.Add(componentData[i].Id);
+                List<ComponentId> componentIds;
 
-                    m_FingerprintToArchetype.TryAdd(fingerprint, Archetype(fingerprint, componentIds));
-                }
+                for (const auto& [entity, componentData]: entityComponentData)
+                    for (const auto& data: componentData)
+                        componentIds.Add(data.Id);
 
-                m_FingerprintToArchetype[fingerprint]
-                    ->TryAddComponentData(m_EntitiesToAdd[index].GetId(), componentData);
-                index++;
-            });
+                m_FingerprintToArchetype.TryAdd(fingerprint, Archetype(fingerprint, componentIds));
+            }
+
+            for (const auto& [entity, componentData]: entityComponentData)
+                m_FingerprintToArchetype[fingerprint]->TryAddComponentData(entity, componentData);
+        }
 
         m_FingerprintToComponentDataToAdd.Clear();
     }
@@ -192,11 +188,15 @@ namespace Otter
         m_EntityManager->m_EntitiesToAdd.Push(m_Entity);
 
         if (!m_EntityManager->m_FingerprintToComponentDataToAdd.ContainsKey(m_Fingerprint))
-            m_EntityManager->m_FingerprintToComponentDataToAdd.TryAdd(std::move(m_Fingerprint),
-                                                                      std::move(m_ComponentData));
-        else
-            for (auto& componentData: m_ComponentData)
-                m_EntityManager->m_FingerprintToComponentDataToAdd[m_Fingerprint]->Add(componentData);
+            m_EntityManager->m_FingerprintToComponentDataToAdd
+                .TryAdd(m_Fingerprint, Dictionary<EntityId, List<ComponentData>>());
+
+        if (!m_EntityManager->m_FingerprintToComponentDataToAdd[m_Fingerprint]->ContainsKey(m_Entity.GetId()))
+            m_EntityManager->m_FingerprintToComponentDataToAdd[m_Fingerprint]
+                ->TryAdd(m_Entity.GetId(), List<ComponentData>());
+
+        for (auto& componentData: m_ComponentData)
+            (*m_EntityManager->m_FingerprintToComponentDataToAdd[m_Fingerprint])[m_Entity.GetId()]->Add(componentData);
 
         return m_Entity;
     }
@@ -243,11 +243,17 @@ namespace Otter
         m_EntityManager->m_EntitiesToAdd.Push(m_Entity);
 
         const auto fingerprint = m_Archetype.GetFingerprint();
+
         if (!m_EntityManager->m_FingerprintToComponentDataToAdd.ContainsKey(fingerprint))
-            m_EntityManager->m_FingerprintToComponentDataToAdd.TryAdd(fingerprint, m_ComponentData);
-        else
-            for (auto& componentData: m_ComponentData)
-                m_EntityManager->m_FingerprintToComponentDataToAdd[fingerprint]->Add(componentData);
+            m_EntityManager->m_FingerprintToComponentDataToAdd
+                .TryAdd(fingerprint, Dictionary<EntityId, List<ComponentData>>());
+
+        if (!m_EntityManager->m_FingerprintToComponentDataToAdd[fingerprint]->ContainsKey(m_Entity.GetId()))
+            m_EntityManager->m_FingerprintToComponentDataToAdd[fingerprint]
+                ->TryAdd(m_Entity.GetId(), List<ComponentData>());
+
+        for (auto& componentData: m_ComponentData)
+            (*m_EntityManager->m_FingerprintToComponentDataToAdd[fingerprint])[m_Entity.GetId()]->Add(componentData);
 
         return m_Entity;
     }

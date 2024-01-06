@@ -35,13 +35,13 @@ namespace Otter
          */
         Archetype(const ArchetypeFingerprint& fingerprint, const List<ComponentId>& componentIds)
         {
-            OTR_ASSERT_MSG(fingerprint.GetTrueCount() == componentIds.GetCount(),
-                           "Archetype fingerprint must have the same amount of true bits as component ids.")
-
             m_Fingerprint = fingerprint;
 
             for (UInt64 i = 0; i < componentIds.GetCount(); ++i)
                 m_ComponentIdToData.TryAdd(componentIds[i], UnsafeList());
+
+            OTR_ASSERT_MSG(m_Fingerprint.GetTrueCount() == m_ComponentIdToData.GetCount(),
+                           "Archetype fingerprint must have the same amount of true bits as component ids.")
         }
 
         /**

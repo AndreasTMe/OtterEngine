@@ -130,7 +130,7 @@ TEST_F(EntityManager_Fixture, CreateEntity_InvalidComponentRegistration)
         .Build(), "");
 }
 
-TEST_F(EntityManager_Fixture, CreateEntityFromEntity_Success)
+TEST_F(EntityManager_Fixture, CreateEntityFromArchetype_Success)
 {
     EntityManager manager;
     manager.RegisterComponents<TestComponent1, TestComponent2>()
@@ -156,7 +156,7 @@ TEST_F(EntityManager_Fixture, CreateEntityFromEntity_Success)
     EXPECT_EQ(manager.GetComponentCount(), 2);
 }
 
-TEST_F(EntityManager_Fixture, CreateEntityFromEntity_InvalidComponentRegistration)
+TEST_F(EntityManager_Fixture, CreateEntityFromArchetype_InvalidComponentRegistration)
 {
     EntityManager manager;
 

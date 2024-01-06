@@ -349,9 +349,9 @@ namespace Otter
         bool                                                m_ComponentsLock = false;
 
         // Archetype Registry
-        Dictionary<ArchetypeFingerprint, Archetype>           m_FingerprintToArchetype;
-        Stack<Archetype>                                      m_ArchetypesToAdd;
-        Dictionary<ArchetypeFingerprint, List<ComponentData>> m_FingerprintToComponentDataToAdd;
+        Dictionary<ArchetypeFingerprint, Archetype>                                 m_FingerprintToArchetype;
+        Stack<Archetype>                                                            m_ArchetypesToAdd;
+        Dictionary<ArchetypeFingerprint, Dictionary<EntityId, List<ComponentData>>> m_FingerprintToComponentDataToAdd;
 
         /**
          * @brief Creates an entity.
