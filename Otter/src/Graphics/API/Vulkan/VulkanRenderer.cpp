@@ -535,17 +535,17 @@ namespace Otter::Graphics::Vulkan
             outDevicePair->PresentationQueueFamily.Index
         };
 
-        float queuePriority = 1.0f;
+        const float queuePriority = 1.0f;
 
-        uniqueQueueFamilies.ForEach([&](UInt32 queueFamily)
-                                    {
-                                        VkDeviceQueueCreateInfo queueCreateInfo{ };
-                                        queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-                                        queueCreateInfo.queueFamilyIndex = queueFamily;
-                                        queueCreateInfo.queueCount       = 1;
-                                        queueCreateInfo.pQueuePriorities = &queuePriority;
-                                        queueCreateInfos.Add(queueCreateInfo);
-                                    });
+        for (const auto& queueFamily: uniqueQueueFamilies)
+        {
+            VkDeviceQueueCreateInfo queueCreateInfo{ };
+            queueCreateInfo.sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueCount       = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+            queueCreateInfos.Add(queueCreateInfo);
+        }
 
         // TODO: Should be configuration driven, all features are disabled by default for now
         VkPhysicalDeviceFeatures deviceFeatures{ };
