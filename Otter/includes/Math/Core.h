@@ -283,7 +283,7 @@ namespace Otter::Math
     template<AnyNumber TNumber>
     OTR_INLINE constexpr auto SquareRoot(TNumber x)
     {
-        OTR_ASSERT_MSG(x >= 0, "Cannot take the square root of a negative number")
+        OTR_ASSERT(x >= 0, "Cannot take the square root of a negative number")
         return std::sqrt(x);
     }
 

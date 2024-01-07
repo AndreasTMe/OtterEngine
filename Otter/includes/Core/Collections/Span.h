@@ -52,7 +52,7 @@ namespace Otter
          */
         Span(InitialiserList<T> list)
         {
-            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+            OTR_ASSERT(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -176,7 +176,7 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE T& operator[](UInt64 index)
         {
-            OTR_ASSERT_MSG(index < Size, "Span index out of bounds")
+            OTR_ASSERT(index < Size, "Span index out of bounds")
             return m_Data[index];
         }
 
@@ -189,7 +189,7 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
-            OTR_ASSERT_MSG(index < Size, "Span index out of bounds")
+            OTR_ASSERT(index < Size, "Span index out of bounds")
             return m_Data[index];
         }
 

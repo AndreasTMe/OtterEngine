@@ -35,7 +35,7 @@ namespace Otter
         Array()
         {
             if constexpr (Size > 0)
-                m_Data = Buffer::New < T > (Size);
+                m_Data = Buffer::New<T>(Size);
         }
 
         /**
@@ -57,7 +57,7 @@ namespace Otter
         Array(InitialiserList<T> list)
             : Array()
         {
-            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+            OTR_ASSERT(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -75,7 +75,7 @@ namespace Otter
                 return;
             else
             {
-                m_Data = Buffer::New < T > (Size);
+                m_Data = Buffer::New<T>(Size);
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
             }
         }
@@ -114,7 +114,7 @@ namespace Otter
                 if (IsCreated())
                     Buffer::Delete<T>(m_Data, Size);
 
-                m_Data = Buffer::New < T > (Size);
+                m_Data = Buffer::New<T>(Size);
                 MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
             }
 
@@ -187,8 +187,8 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE T& operator[](UInt64 index)
         {
-            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
-            OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
+            OTR_ASSERT(IsCreated(), "Array has either not been created or has been destroyed")
+            OTR_ASSERT(index < Size, "Array index out of bounds")
             return m_Data[index];
         }
 
@@ -201,8 +201,8 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
-            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
-            OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
+            OTR_ASSERT(IsCreated(), "Array has either not been created or has been destroyed")
+            OTR_ASSERT(index < Size, "Array index out of bounds")
             return m_Data[index];
         }
 

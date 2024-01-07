@@ -37,7 +37,7 @@ namespace Otter
          */
         [[nodiscard]] T& operator[](const UInt64 index)
         {
-            OTR_ASSERT_MSG(index < base::m_Count, "Stack index out of bounds")
+            OTR_ASSERT(index < base::m_Count, "Stack index out of bounds")
             return base::m_Data[index];
         }
 
@@ -50,7 +50,7 @@ namespace Otter
          */
         [[nodiscard]] const T& operator[](const UInt64 index) const
         {
-            OTR_ASSERT_MSG(index < base::m_Count, "index index out of bounds")
+            OTR_ASSERT(index < base::m_Count, "index index out of bounds")
             return base::m_Data[index];
         }
 

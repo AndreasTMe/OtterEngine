@@ -37,7 +37,7 @@ namespace Otter
          */
         [[nodiscard]] T& operator[](const UInt64 index)
         {
-            OTR_ASSERT_MSG(index < base::m_Count, "List index out of bounds")
+            OTR_ASSERT(index < base::m_Count, "List index out of bounds")
             return base::m_Data[index];
         }
 
@@ -50,7 +50,7 @@ namespace Otter
          */
         [[nodiscard]] const T& operator[](const UInt64 index) const
         {
-            OTR_ASSERT_MSG(index < base::m_Count, "List index out of bounds")
+            OTR_ASSERT(index < base::m_Count, "List index out of bounds")
             return base::m_Data[index];
         }
 
@@ -147,6 +147,34 @@ namespace Otter
 
             for (const T& item: items)
                 Add(item);
+
+            return true;
+        }
+
+        /**
+         * @brief Tries to add a collection of items to the list.
+         *
+         * @param collection The items to add.
+         * @param allOrNothing Whether or not to add all items or none at all, if there is not enough space.
+         *
+         * @return True if the items were added, false otherwise.
+         */
+        bool TryAddRange(Collection<T> collection, bool allOrNothing = false)
+        {
+            if (collection.GetCount() == 0)
+                return false;
+
+            if (collection.GetCount() > base::m_Capacity - base::m_Count)
+            {
+                if (allOrNothing)
+                    return false;
+
+                base::Expand(collection.GetCount() - (base::m_Capacity - base::m_Count));
+            }
+
+            const auto* collectionData = collection.GetData();
+            for (UInt64 i = 0; i < collection.GetCount(); i++)
+                Add(collectionData[i]);
 
             return true;
         }

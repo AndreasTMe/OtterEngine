@@ -109,7 +109,7 @@ namespace Otter
         ReadOnlyArray(InitialiserList<T> list)
             : ReadOnlyArray()
         {
-            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+            OTR_ASSERT(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -149,8 +149,8 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
-            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
-            OTR_ASSERT_MSG(index < Size, "ReadOnlyArray index out of bounds")
+            OTR_ASSERT(IsCreated(), "Array has either not been created or has been destroyed")
+            OTR_ASSERT(index < Size, "ReadOnlyArray index out of bounds")
             return m_Data[index];
         }
 

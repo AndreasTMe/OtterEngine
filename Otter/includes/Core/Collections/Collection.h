@@ -239,7 +239,7 @@ namespace Otter
          */
         [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64* outIndex) const
         {
-            OTR_ASSERT_MSG(outIndex, "Out index must not be null")
+            OTR_ASSERT(outIndex, "Out index must not be null")
 
             for (UInt64 i = 0; i < m_Count; i++)
                 if (m_Data[i] == item)

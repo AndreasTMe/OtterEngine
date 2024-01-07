@@ -161,7 +161,7 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         [[nodiscard]] T* operator[](const UInt64 index) const
         {
-            OTR_ASSERT_MSG(index < m_Count, "Index out of range")
+            OTR_ASSERT(index < m_Count, "Index out of range")
 
             return reinterpret_cast<T*>(m_Data + (index * m_Offset));
         }
@@ -222,7 +222,7 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         [[nodiscard]] bool TryGet(const UInt64 index, T* outItem) const
         {
-            OTR_ASSERT_MSG(outItem, "Out item must not be null")
+            OTR_ASSERT(outItem, "Out item must not be null")
 
             if (index >= m_Count)
                 return false;
@@ -243,8 +243,8 @@ namespace Otter
          */
         void Add(const Byte* const data, const UInt64 size)
         {
-            OTR_ASSERT_MSG(data, "Data must not be null")
-            OTR_ASSERT_MSG(size > 0, "Size must be greater than 0")
+            OTR_ASSERT(data, "Data must not be null")
+            OTR_ASSERT(size > 0, "Size must be greater than 0")
 
             if (m_Offset == 0)
                 m_Offset = size;
@@ -594,7 +594,7 @@ namespace Otter
         requires std::is_trivially_destructible_v<T>
         [[nodiscard]] bool TryGetIndexOf(const T& item, UInt64* outIndex) const
         {
-            OTR_ASSERT_MSG(outIndex, "Out index must not be null")
+            OTR_ASSERT(outIndex, "Out index must not be null")
 
             if (m_Offset == 0)
                 return false;
@@ -793,7 +793,7 @@ namespace Otter
         explicit UnsafeList(const UInt64 offset)
             : m_Offset(offset)
         {
-            OTR_ASSERT_MSG(offset > 0, "The offset of the list items must be greater than 0.")
+            OTR_ASSERT(offset > 0, "The offset of the list items must be greater than 0.")
         }
 
         Byte* m_Data = nullptr;

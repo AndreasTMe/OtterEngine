@@ -109,7 +109,7 @@ namespace Otter::Math
          */
         constexpr Vector(InitialiserList<TNumber> list)
         {
-            OTR_ASSERT_MSG(list.size() == TDimension, "Initialiser list size does not match Vector size")
+            OTR_ASSERT(list.size() == TDimension, "Initialiser list size does not match Vector size")
 
             UInt64 i = 0;
             for (const TNumber& value: list)
@@ -197,7 +197,7 @@ namespace Otter::Math
          */
         TNumber& operator[](UInt8 index)
         {
-            OTR_ASSERT_MSG(index < TDimension, "Index {0} is out of range", index)
+            OTR_ASSERT(index < TDimension, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
@@ -212,7 +212,7 @@ namespace Otter::Math
          */
         const TNumber& operator[](UInt8 index) const
         {
-            OTR_ASSERT_MSG(index < TDimension, "Index {0} is out of range", index)
+            OTR_ASSERT(index < TDimension, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
@@ -345,7 +345,7 @@ namespace Otter::Math
         template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator/=(TOtherNumber scalar) noexcept
         {
-            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
+            OTR_ASSERT(scalar != 0, "Division by zero")
 
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] /= scalar;
@@ -427,7 +427,7 @@ namespace Otter::Math
         template<AnyNumber TOtherNumber>
         friend decltype(auto) operator/(Vector<TDimension, TNumber> lhs, TOtherNumber rhs)
         {
-            OTR_ASSERT_MSG(rhs != 0, "Division by zero")
+            OTR_ASSERT(rhs != 0, "Division by zero")
 
             lhs /= rhs;
             return lhs;

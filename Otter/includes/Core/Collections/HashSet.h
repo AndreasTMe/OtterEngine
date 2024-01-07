@@ -55,7 +55,7 @@ namespace Otter
             : HashSet()
         {
             m_Capacity             = k_InitialCapacity;
-            m_Slots                = Buffer::New < Slot > (m_Capacity);
+            m_Slots                = Buffer::New<Slot>(m_Capacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
@@ -79,7 +79,7 @@ namespace Otter
             if (m_Capacity == 0)
                 return;
 
-            m_Slots = Buffer::New < Slot > (m_Capacity);
+            m_Slots = Buffer::New<Slot>(m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
@@ -129,7 +129,7 @@ namespace Otter
             if (m_Capacity == 0)
                 return *this;
 
-            m_Slots = Buffer::New < Slot > (m_Capacity);
+            m_Slots = Buffer::New<Slot>(m_Capacity);
 
             if (m_Count > 0)
                 MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
@@ -309,7 +309,7 @@ namespace Otter
          */
         [[nodiscard]] bool TryGetIndex(const T& item, UInt64* outIndex) const
         {
-            OTR_ASSERT_MSG(outIndex, "outIndex cannot be null.")
+            OTR_ASSERT(outIndex, "outIndex cannot be null.")
 
             if (IsEmpty())
                 return false;
@@ -824,7 +824,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots = Buffer::New < Slot > (newCapacity);
+            m_Slots = Buffer::New<Slot>(newCapacity);
 
             for (UInt64 i = 0; i < newCapacity; i++)
                 if (newHashSet.HasItemStoredAt(i))
@@ -847,7 +847,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots    = capacity > 0 ? Buffer::New < Slot > (capacity) : nullptr;
+            m_Slots    = capacity > 0 ? Buffer::New<Slot>(capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
 
