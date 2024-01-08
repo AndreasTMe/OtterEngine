@@ -537,9 +537,9 @@ namespace Otter
                 return false;
 
             if (index != m_Count - 1)
-                MemorySystem::MemoryMove(m_Data + (index * m_Offset),
-                                         m_Data + ((index + 1) * m_Offset),
-                                         (m_Count - index - 1) * m_Offset);
+                MemorySystem::MemoryCopy(m_Data + (index * m_Offset),
+                                         m_Data + ((m_Count - 1) * m_Offset),
+                                         m_Offset);
 
             m_Count--;
 

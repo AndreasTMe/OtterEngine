@@ -264,8 +264,22 @@ TEST_F(UnsafeList_Fixture, TryRemove)
     EXPECT_TRUE(list.TryRemove(3));
     EXPECT_EQ(list.GetCount(), 4);
 
+    for (UInt64 i = 0; i < list.GetCount(); ++i)
+    {
+        int value = 0;
+        EXPECT_TRUE(list.TryGet(i, &value));
+        EXPECT_NE(value, 3);
+    }
+
     EXPECT_TRUE(list.TryRemove(1));
     EXPECT_EQ(list.GetCount(), 3);
+
+    for (UInt64 i = 0; i < list.GetCount(); ++i)
+    {
+        int value = 0;
+        EXPECT_TRUE(list.TryGet(i, &value));
+        EXPECT_NE(value, 1);
+    }
 
     EXPECT_FALSE(list.TryRemove(123));
 }
