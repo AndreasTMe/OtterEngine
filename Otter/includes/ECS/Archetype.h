@@ -40,8 +40,8 @@ namespace Otter
             for (UInt64 i = 0; i < componentIds.GetCount(); ++i)
                 m_ComponentIdToData.TryAdd(componentIds[i], UnsafeList());
 
-            OTR_ASSERT_MSG(m_Fingerprint.GetTrueCount() == m_ComponentIdToData.GetCount(),
-                           "Archetype fingerprint must have the same amount of true bits as component ids.")
+            OTR_ASSERT(m_Fingerprint.GetTrueCount() == m_ComponentIdToData.GetCount(),
+                       "Archetype fingerprint must have the same amount of true bits as component ids.")
         }
 
         /**
@@ -156,8 +156,8 @@ namespace Otter
         requires IsComponent<TComponent> && AreComponents<TComponents...>
         [[nodiscard]] decltype(auto) GetComponents() const
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
-            OTR_ASSERT_MSG(HasComponent<TComponent>(), "Archetype must have component.")
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_ASSERT(HasComponent<TComponent>(), "Archetype must have component.")
 
             if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
                 return m_ComponentIdToData[TComponent::Id]->template GetData<TComponent>();
@@ -190,9 +190,9 @@ namespace Otter
         requires IsComponent<TComponent> && AreComponents<TComponents...>
         [[nodiscard]] decltype(auto) GetComponentsForEntity(const EntityId entityId) const
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
-            OTR_ASSERT_MSG(HasComponent<TComponent>(), "Archetype must have component.")
-            OTR_ASSERT_MSG(m_EntityIdToBufferPosition.ContainsKey(entityId), "Entity id must belong to the archetype.")
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_ASSERT(HasComponent<TComponent>(), "Archetype must have component.")
+            OTR_ASSERT(m_EntityIdToBufferPosition.ContainsKey(entityId), "Entity id must belong to the archetype.")
 
             if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
                 return &m_ComponentIdToData[TComponent::Id]
@@ -213,6 +213,39 @@ namespace Otter
         }
 
         /**
+         * @brief Gets a copy of all component data belonging to an entity from the archetype.
+         *
+         * @param entityId The entity id.
+         * @param componentData The component data.
+         *
+         * @return True if the data was retrieved, false otherwise.
+         */
+        bool TryGetAllComponentData(const EntityId entityId, List<ComponentData>& componentData)
+        {
+            if (!m_EntityIdToBufferPosition.ContainsKey(entityId))
+                return false;
+
+            UInt64 index = *m_EntityIdToBufferPosition[entityId];
+            componentData.Reserve(m_ComponentIdToData.GetCount());
+
+            for (auto& [componentId, storedComponentData]: m_ComponentIdToData)
+            {
+                componentData.Add(ComponentData(componentId, nullptr, 0));
+
+                UInt64 size = storedComponentData.GetOffset();
+                Byte   data[size];
+                OTR_VALIDATE(storedComponentData.TryGetUnsafe(index, data), "Failed to get component data.")
+
+                componentData[componentData.GetCount() - 1].OwnCopy(data, size);
+            }
+
+            OTR_ASSERT(componentData.GetCount() == m_ComponentIdToData.GetCount(),
+                       "Component data count must be equal to archetype's component count.")
+
+            return true;
+        }
+
+        /**
          * @brief Adds component data to the archetype.
          *
          * @param entityId The entity id.
@@ -222,20 +255,21 @@ namespace Otter
          */
         bool TryAddComponentData(const EntityId entityId, const List<ComponentData>& componentData)
         {
-            OTR_ASSERT_MSG(componentData.GetCount() == m_ComponentIdToData.GetCount(),
-                           "Passed component data count must be equal to archetype's component count.")
+            OTR_ASSERT(componentData.GetCount() == m_ComponentIdToData.GetCount(),
+                       "Passed component data count must be equal to archetype's component count.")
             OTR_DEBUG_BLOCK(
                 for (UInt64 i = 0; i < componentData.GetCount(); ++i)
                 {
-                    OTR_ASSERT_MSG(m_ComponentIdToData.ContainsKey(componentData[i].Id),
-                                   "Archetype does not contain component id.")
+                    OTR_ASSERT(m_ComponentIdToData.ContainsKey(componentData[i].Id),
+                               "Archetype does not contain component id.")
                 }
             )
 
             if (m_EntityIdToBufferPosition.ContainsKey(entityId))
                 return false;
 
-            OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(entityId, m_EntityIds.GetCount()))
+            OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(entityId, m_EntityIds.GetCount()),
+                         "Failed to add entity with id '{0}' to buffer position dictionary.", entityId)
 
             m_EntityIds.Add(entityId);
 
@@ -245,16 +279,38 @@ namespace Otter
             return true;
         }
 
-        void Merge(const Archetype& other)
+        /**
+         * @brief Removes an entity and all its component data from the archetype.
+         *
+         * @param entityId The entity id.
+         *
+         * @return True if the entity-component data were removed, false otherwise.
+         */
+        bool TryRemoveComponentData(const EntityId entityId)
         {
-            if (this == &other)
-                return;
+            if (!m_EntityIdToBufferPosition.ContainsKey(entityId))
+                return false;
 
-            OTR_ASSERT_MSG(m_Fingerprint == other.m_Fingerprint, "Archetypes must have the same fingerprint.")
-            OTR_ASSERT_MSG(m_ComponentIdToData.GetCount() == other.m_ComponentIdToData.GetCount(),
-                           "Archetypes must have the same component count.")
+            UInt64 index     = *m_EntityIdToBufferPosition[entityId];
+            UInt64 lastIndex = m_EntityIds.GetCount() - 1;
 
-            // TODO: Implement this.
+            OTR_VALIDATE(m_EntityIds.TryRemoveAt(index), "Failed to remove entity with id '{0}'.", entityId)
+            OTR_VALIDATE(m_EntityIdToBufferPosition.TryRemove(entityId),
+                         "Failed to remove entity with id '{0}' from buffer position dictionary.", entityId)
+
+            if (index != lastIndex)
+            {
+                OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(m_EntityIds[index], index),
+                             "Failed to move entity with id '{0}' to buffer position dictionary.", m_EntityIds[index])
+            }
+
+            for (auto& [componentId, storedComponentData]: m_ComponentIdToData)
+            {
+                OTR_VALIDATE(storedComponentData.TryRemoveAt(index),
+                             "Failed to remove component data for entity with id '{0}'.", entityId)
+            }
+
+            return true;
         }
 
         /**

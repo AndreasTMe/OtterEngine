@@ -14,14 +14,14 @@ namespace Otter
     struct ComponentData final
     {
     public:
-        /// @brief The component id.
-        ComponentId Id;
-
         /// @brief The component data.
-        Byte* Data;
+        Byte* Data = nullptr;
 
         /// @brief The component size.
-        UInt64 Size;
+        UInt64 Size = 0;
+
+        /// @brief The component id.
+        ComponentId Id = 0;
 
         /**
          * @brief Constructor.
@@ -36,14 +36,18 @@ namespace Otter
          * @param size The component size.
          */
         ComponentData(ComponentId id, Byte* data, UInt64 size)
-            : Id(id), Data(data), Size(size)
+            : Id(id), Data(data), Size(size), m_OwnsData(false)
         {
         }
 
         /**
          * @brief Destructor.
          */
-        ~ComponentData() = default;
+        ~ComponentData()
+        {
+            if (m_OwnsData)
+                Unsafe::Delete({ Data, Size });
+        }
 
         /**
          * @brief Copy constructor.
@@ -85,6 +89,31 @@ namespace Otter
          * @return True if the data are not equal, false otherwise.
          */
         bool operator!=(const ComponentData& other) const noexcept { return !(*this == other); }
+
+        /**
+         * @brief Copies data to the component and allocates memory for it.
+         *
+         * @param data The data to bind.
+         * @param size The size of the data.
+         */
+        void OwnCopy(Byte* data, UInt64 size)
+        {
+            OTR_ASSERT(data, "Data cannot be null.")
+            OTR_ASSERT(size > 0, "Size must be greater than 0.")
+            OTR_ASSERT(!m_OwnsData, "Already contains owned data.")
+
+            auto handle = Unsafe::New(size);
+            Data = (Byte * )
+            handle.Pointer;
+            Size = size;
+
+            MemorySystem::MemoryCopy(Data, data, size);
+
+            m_OwnsData = true;
+        }
+
+    private:
+        bool m_OwnsData = false;
     };
 
     /**

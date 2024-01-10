@@ -312,7 +312,7 @@ namespace Otter
             OTR_INTERNAL_ASSERT_MSG(handle.Pointer != nullptr, "Handle pointer must not be null")
             OTR_INTERNAL_ASSERT_MSG(handle.Size > 0, "Handle size must be greater than 0")
 
-            MemorySystem::MemoryClear(handle.Pointer, handle.Size);
+            MemorySystem::MemoryClear(handle.Pointer, OTR_ALIGNED_OFFSET(handle.Size, OTR_PLATFORM_MEMORY_ALIGNMENT));
             MemorySystem::Free(handle.Pointer);
         }
     };

@@ -126,6 +126,10 @@ TEST_F(UnsafeList_Fixture, TryGet)
 
     EXPECT_FALSE(list.TryGet(5, &value));
     EXPECT_FALSE(list.TryGet(-1, &value));
+
+    Byte data[list.GetOffset()];
+    EXPECT_TRUE(list.TryGetUnsafe(0, data));
+    EXPECT_EQ(*(int*) data, 1);
 }
 
 TEST_F(UnsafeList_Fixture, Add)

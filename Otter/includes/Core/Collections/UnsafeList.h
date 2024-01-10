@@ -233,6 +233,29 @@ namespace Otter
         }
 
         /**
+         * @brief Gets the item at the specified index.
+         *
+         * @param index The index.
+         * @param outItem The item at the specified index.
+         *
+         * @return True if the item was retrieved, false otherwise.
+         *
+         * @note This function is unsafe and should be used with caution. It is assumed that the developer already
+         * knows the type beforehand.
+         */
+        [[nodiscard]] bool TryGetUnsafe(const UInt64 index, Byte* outItem) const
+        {
+            OTR_ASSERT(outItem, "Out item must not be null")
+
+            if (index >= m_Count)
+                return false;
+
+            MemorySystem::MemoryCopy(outItem, m_Data + (index * m_Offset), m_Offset);
+
+            return true;
+        }
+
+        /**
          * @brief Adds raw bytes to the buffer.
          *
          * @param data The data to add.
