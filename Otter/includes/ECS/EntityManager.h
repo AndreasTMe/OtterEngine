@@ -85,7 +85,7 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE ArchetypeBuilder CreateArchetype() noexcept
         {
-            OTR_ASSERT_MSG(m_ComponentsLock, "Component registration must be locked.")
+            OTR_ASSERT(m_ComponentsLock, "Component registration must be locked.")
 
             return ArchetypeBuilder(this);
         }
@@ -114,26 +114,70 @@ namespace Otter
         void DestroyEntity(const Entity& entity);
 
         /**
-         * @brief Refreshes the entity manager's managed data (entities, archetypes, etc.).
+         * @brief Refreshes the entity manager's data (entities, archetypes, etc.).
          */
-        void RefreshManagedData();
+        void RefreshManagerData();
 
+        /**
+         * @brief Adds a component to an entity.
+         *
+         * @tparam TComponent The component type.
+         * @tparam TArgs The component arguments.
+         *
+         * @param entity The entity.
+         * @param args The component arguments.
+         *
+         * @return True if the component was added, false otherwise.
+         */
         template<typename TComponent, typename... TArgs>
         requires IsComponent<TComponent>
         bool TryAddComponent(const Entity& entity, TArgs&& ... args)
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_ASSERT(entity.IsValid(), "Entity must be valid.")
 
-            return false;
+            return TryAddComponent(entity.GetId(),
+                                   ComponentData{ TComponent::Id,
+                                                  (Byte*) &TComponent(std::forward<TArgs>(args)...),
+                                                  sizeof(TComponent) });
         }
 
+        /**
+         * @brief Removes a component from an entity.
+         *
+         * @tparam TComponent The component type.
+         *
+         * @param entity The entity.
+         *
+         * @return True if the component was removed, false otherwise.
+         */
         template<typename TComponent>
         requires IsComponent<TComponent>
         bool TryRemoveComponent(const Entity& entity)
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_ASSERT(entity.IsValid(), "Entity must be valid.")
 
-            return false;
+            return TryRemoveComponent(entity.GetId(), TComponent::Id);
+        }
+
+        /**
+         * @brief Checks if an entity has a component.
+         *
+         * @tparam TComponent The component type.
+         *
+         * @param entity The entity.
+         *
+         * @return True if the entity has the component, false otherwise.
+         */
+        template<typename TComponent>
+        requires IsComponent<TComponent>
+        [[nodiscard]] OTR_INLINE bool HasComponent(const Entity& entity) const
+        {
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_ASSERT(entity.IsValid(), "Entity must be valid.")
+
+            return HasComponent(entity.GetId(), TComponent::Id);
         }
 
         /**
@@ -187,7 +231,7 @@ namespace Otter
             requires IsComponent<TComponent>
             ArchetypeBuilder& With()
             {
-                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
+                OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
 
                 WithInternal(TComponent::Id);
 
@@ -247,7 +291,7 @@ namespace Otter
             requires IsComponent<TComponent>
             EntityBuilder& SetComponentData(TArgs&& ... args)
             {
-                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
+                OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
 
                 auto component = TComponent(std::forward<TArgs>(args)...);
                 SetComponentDataInternal(TComponent::Id,
@@ -309,7 +353,7 @@ namespace Otter
             requires IsComponent<TComponent>
             EntityBuilderFromArchetype& SetComponentData(TArgs&& ... args)
             {
-                OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
+                OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
 
                 auto component = TComponent(std::forward<TArgs>(args)...);
                 SetComponentDataInternal(TComponent::Id,
@@ -339,9 +383,10 @@ namespace Otter
         };
 
         // Entity Registry
-        List<Entity>               m_Entities;
-        Dictionary<Entity, UInt64> m_EntityToIndex;
-        Stack<Entity>              m_EntitiesToAdd;
+        List<Entity>                               m_Entities;
+        Dictionary<Entity, UInt64>                 m_EntityToIndex;
+        Stack<Entity>                              m_EntitiesToAdd;
+        Dictionary<EntityId, ArchetypeFingerprint> m_EntityToFingerprint;
 
         // Component Registry
         Dictionary<ComponentId, UInt64>                     m_ComponentToFingerprintIndex;
@@ -352,6 +397,7 @@ namespace Otter
         Dictionary<ArchetypeFingerprint, Archetype>                                 m_FingerprintToArchetype;
         Stack<Archetype>                                                            m_ArchetypesToAdd;
         Dictionary<ArchetypeFingerprint, Dictionary<EntityId, List<ComponentData>>> m_FingerprintToComponentDataToAdd;
+        Dictionary<ArchetypeFingerprint, List<EntityId>>                            m_FingerprintToEntitiesToRemove;
 
         /**
          * @brief Creates an entity.
@@ -385,7 +431,7 @@ namespace Otter
         requires IsComponent<TComponent> && AreComponents<TComponents...>
         void RegisterComponentsInternal()
         {
-            OTR_STATIC_ASSERT_MSG(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
 
             if (m_ComponentToFingerprintIndex.ContainsKey(TComponent::Id))
                 return;
@@ -396,6 +442,36 @@ namespace Otter
             if constexpr (VariadicArgs<TComponents...>::GetSize() > 0)
                 RegisterComponentsInternal<TComponents...>();
         }
+
+        /**
+         * @brief Adds a component to an entity.
+         *
+         * @param entityId The entity id.
+         * @param componentData The component data.
+         *
+         * @return True if the component was added, false otherwise.
+         */
+        bool TryAddComponent(EntityId entityId, const ComponentData& componentData);
+
+        /**
+         * @brief Removes a component from an entity.
+         *
+         * @param entityId The entity id.
+         * @param componentId The component id.
+         *
+         * @return True if the component was removed, false otherwise.
+         */
+        bool TryRemoveComponent(EntityId entityId, ComponentId componentId);
+
+        /**
+         * @brief Checks if an entity has a component.
+         *
+         * @param entityId The entity id.
+         * @param componentId The component id.
+         *
+         * @return True if the entity has the component, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool HasComponent(EntityId entityId, ComponentId componentId) const;
     };
 }
 

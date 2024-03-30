@@ -70,7 +70,7 @@ TEST_F(EntityManager_Fixture, CreateArchetype_Success)
         .Build();
 
     EXPECT_EQ(manager.GetArchetypeCount(), 0) << "Archetype is added on manager refresh";
-    manager.RefreshManagedData();
+    manager.RefreshManagerData();
 
     EXPECT_EQ(manager.GetArchetypeCount(), 1);
 
@@ -109,7 +109,7 @@ TEST_F(EntityManager_Fixture, CreateEntity_Success)
     EXPECT_TRUE(entity.IsValid());
 
     EXPECT_EQ(manager.GetEntityCount(), 0) << "Entity is added on manager refresh";
-    manager.RefreshManagedData();
+    manager.RefreshManagerData();
 
     EXPECT_EQ(manager.GetEntityCount(), 1);
     EXPECT_EQ(manager.GetArchetypeCount(), 1);
@@ -149,7 +149,7 @@ TEST_F(EntityManager_Fixture, CreateEntityFromArchetype_Success)
     EXPECT_TRUE(entity.IsValid());
 
     EXPECT_EQ(manager.GetEntityCount(), 0) << "Entity is added on manager refresh";
-    manager.RefreshManagedData();
+    manager.RefreshManagerData();
 
     EXPECT_EQ(manager.GetEntityCount(), 1);
     EXPECT_EQ(manager.GetArchetypeCount(), 1);
@@ -187,7 +187,7 @@ TEST_F(EntityManager_Fixture, DestroyEntity)
 
     EXPECT_TRUE(entity.IsValid());
 
-    manager.RefreshManagedData();
+    manager.RefreshManagerData();
 
     EXPECT_EQ(manager.GetEntityCount(), 1);
     EXPECT_EQ(manager.GetArchetypeCount(), 1);
@@ -197,7 +197,7 @@ TEST_F(EntityManager_Fixture, DestroyEntity)
 
     EXPECT_EQ(manager.GetEntityCount(), 1) << "Entity is removed on manager refresh";
 
-    manager.RefreshManagedData();
+    manager.RefreshManagerData();
 
     EXPECT_EQ(manager.GetEntityCount(), 0);
     EXPECT_EQ(manager.GetArchetypeCount(), 1);
