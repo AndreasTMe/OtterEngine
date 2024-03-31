@@ -136,9 +136,11 @@ namespace Otter
             OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
             OTR_ASSERT(entity.IsValid(), "Entity must be valid.")
 
+            auto component = TComponent(std::forward<TArgs>(args)...);
+
             return TryAddComponent(entity.GetId(),
                                    ComponentData{ TComponent::Id,
-                                                  (Byte*) &TComponent(std::forward<TArgs>(args)...),
+                                                  (Byte*) &component,
                                                   sizeof(TComponent) });
         }
 
@@ -408,6 +410,11 @@ namespace Otter
 
         /**
          * @brief Populates the list of archetypes to be added in the next refresh.
+         *
+         * @note This method:
+         * <br>- Adds new archetypes.
+         * <br>- Adds components to archetypes.
+         * <br>- Removes entities from archetypes.
          */
         void PopulateNewArchetypes();
 

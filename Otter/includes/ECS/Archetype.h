@@ -213,39 +213,6 @@ namespace Otter
         }
 
         /**
-         * @brief Gets a copy of all component data belonging to an entity from the archetype.
-         *
-         * @param entityId The entity id.
-         * @param componentData The component data.
-         *
-         * @return True if the data was retrieved, false otherwise.
-         */
-        bool TryGetAllComponentData(const EntityId entityId, List<ComponentData>& componentData)
-        {
-            if (!m_EntityIdToBufferPosition.ContainsKey(entityId))
-                return false;
-
-            UInt64 index = *m_EntityIdToBufferPosition[entityId];
-            componentData.Reserve(m_ComponentIdToData.GetCount());
-
-            for (auto& [componentId, storedComponentData]: m_ComponentIdToData)
-            {
-                componentData.Add(ComponentData(componentId, nullptr, 0));
-
-                UInt64 size = storedComponentData.GetOffset();
-                Byte   data[size];
-                OTR_VALIDATE(storedComponentData.TryGetUnsafe(index, data), "Failed to get component data.")
-
-                componentData[componentData.GetCount() - 1].OwnCopy(data, size);
-            }
-
-            OTR_ASSERT(componentData.GetCount() == m_ComponentIdToData.GetCount(),
-                       "Component data count must be equal to archetype's component count.")
-
-            return true;
-        }
-
-        /**
          * @brief Adds component data to the archetype.
          *
          * @param entityId The entity id.

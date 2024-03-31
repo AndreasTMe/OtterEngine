@@ -134,21 +134,7 @@ namespace Otter
          */
         bool TryAddRange(InitialiserList<T> items, bool allOrNothing = false)
         {
-            if (items.size() == 0)
-                return false;
-
-            if (items.size() > base::m_Capacity - base::m_Count)
-            {
-                if (allOrNothing)
-                    return false;
-
-                base::Expand(items.size() - (base::m_Capacity - base::m_Count));
-            }
-
-            for (const T& item: items)
-                Add(item);
-
-            return true;
+            return TryAddRangeInternal(items.begin(), items.size(), allOrNothing);
         }
 
         /**
@@ -159,24 +145,9 @@ namespace Otter
          *
          * @return True if the items were added, false otherwise.
          */
-        bool TryAddRange(Collection<T> collection, bool allOrNothing = false)
+        bool TryAddRange(const Collection<T>& collection, bool allOrNothing = false)
         {
-            if (collection.GetCount() == 0)
-                return false;
-
-            if (collection.GetCount() > base::m_Capacity - base::m_Count)
-            {
-                if (allOrNothing)
-                    return false;
-
-                base::Expand(collection.GetCount() - (base::m_Capacity - base::m_Count));
-            }
-
-            const auto* collectionData = collection.GetData();
-            for (UInt64 i = 0; i < collection.GetCount(); i++)
-                Add(collectionData[i]);
-
-            return true;
+            return TryAddRangeInternal(collection.GetData(), collection.GetCount(), allOrNothing);
         }
 
         /**
@@ -270,6 +241,36 @@ namespace Otter
          * @return A reverse const iterator to the first element of the list.
          */
         OTR_INLINE ConstIterator crend() const noexcept { return ConstIterator(base::m_Data - 1); }
+
+    private:
+        /**
+         * @brief Tries to add data to the list.
+         *
+         * @param data The data to add.
+         * @param size The size of the data to add.
+         * @param allOrNothing Whether or not to add all data or none at all, if there is not enough space.
+         *
+         * @return True if the data were added, false otherwise.
+         */
+        bool TryAddRangeInternal(const void* data, const UInt64 size, bool allOrNothing = false)
+        {
+            if (!data || size == 0)
+                return false;
+
+            if (size > base::m_Capacity - base::m_Count)
+            {
+                if (allOrNothing)
+                    return false;
+
+                base::Expand(size - (base::m_Capacity - base::m_Count));
+            }
+
+            const UInt64 offset = sizeof(T);
+            MemorySystem::MemoryCopy(base::m_Data + (base::m_Count * offset), data, (size * offset));
+            base::m_Count += size;
+
+            return true;
+        }
     };
 }
 

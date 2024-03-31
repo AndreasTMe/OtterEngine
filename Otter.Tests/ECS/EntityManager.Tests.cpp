@@ -9,7 +9,7 @@ class EntityManager_Fixture : public ::testing::Test
 protected:
     void SetUp() override
     {
-        Otter::MemorySystem::Initialise(4_KiB);
+        Otter::MemorySystem::Initialise(8_KiB);
     }
 
     void TearDown() override

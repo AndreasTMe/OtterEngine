@@ -165,55 +165,6 @@ TEST_F(Archetype_Fixture, Equality)
     EXPECT_FALSE(archetype1 == archetype3);
 }
 
-TEST_F(Archetype_Fixture, AddingGettingAndRemoving_ComponentData)
-{
-    ArchetypeFingerprint fingerprint;
-    fingerprint.Set(0, true);
-
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
-
-    Archetype archetype(fingerprint, componentIds);
-
-    TestComponent1                    component(1, 2);
-    Otter::List<Otter::ComponentData> componentData;
-    componentData.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component, sizeof(TestComponent1) });
-
-    Otter::EntityId entityId = 1;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId, componentData));
-
-    EXPECT_EQ(archetype.GetEntityCount(), 1);
-    EXPECT_EQ(archetype.GetComponentCount(), 1);
-
-    Otter::List<Otter::ComponentData> storedComponentData;
-    EXPECT_TRUE(archetype.TryGetAllComponentData(entityId, storedComponentData));
-
-    EXPECT_EQ(storedComponentData.GetCount(), 1);
-    for (auto& data: storedComponentData)
-    {
-        EXPECT_EQ(data.Id, TestComponent1::Id);
-        EXPECT_EQ((*(TestComponent1*) data.Data).A, component.A);
-        EXPECT_EQ((*(TestComponent1*) data.Data).B, component.B);
-        EXPECT_EQ(data.Size, sizeof(TestComponent1));
-    }
-
-    EXPECT_TRUE(archetype.TryRemoveComponentData(entityId));
-
-    EXPECT_EQ(archetype.GetEntityCount(), 0);
-    EXPECT_EQ(archetype.GetComponentCount(), 1);
-}
-
-TEST_F(Archetype_Fixture, HasComponent)
-{
-    ArchetypeFingerprint fingerprint;
-    fingerprint.Set(0, true);
-
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
-
-    Archetype archetype(fingerprint, componentIds);
-
-    EXPECT_TRUE(archetype.HasComponent<TestComponent1>());
-}
-
 TEST_F(Archetype_Fixture, GetComponents_Single)
 {
     ArchetypeFingerprint fingerprint;
@@ -398,4 +349,48 @@ TEST_F(Archetype_Fixture, GetComponentsForEntity_Multiple)
     EXPECT_EQ(comp1->B, 10);
     EXPECT_EQ(comp2->A, 11);
     EXPECT_EQ(comp2->B, 12);
+}
+
+TEST_F(Archetype_Fixture, AddingGettingAndRemoving_ComponentData)
+{
+    ArchetypeFingerprint fingerprint;
+    fingerprint.Set(0, true);
+
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
+
+    Archetype archetype(fingerprint, componentIds);
+
+    TestComponent1                    component(1, 2);
+    Otter::List<Otter::ComponentData> componentData;
+    componentData.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component, sizeof(TestComponent1) });
+
+    Otter::EntityId entityId = 1;
+    EXPECT_TRUE(archetype.TryAddComponentData(entityId, componentData));
+
+    EXPECT_EQ(archetype.GetEntityCount(), 1);
+    EXPECT_EQ(archetype.GetComponentCount(), 1);
+
+    auto* found = archetype.GetComponentsForEntity<TestComponent1>(entityId);
+
+    EXPECT_EQ(found->A, 1);
+    EXPECT_EQ(found->B, 2);
+
+    EXPECT_TRUE(archetype.TryRemoveComponentData(entityId));
+
+    EXPECT_EQ(archetype.GetEntityCount(), 0);
+    EXPECT_EQ(archetype.GetComponentCount(), 1);
+
+    EXPECT_DEATH(found = archetype.GetComponentsForEntity<TestComponent1>(entityId), "");
+}
+
+TEST_F(Archetype_Fixture, HasComponent)
+{
+    ArchetypeFingerprint fingerprint;
+    fingerprint.Set(0, true);
+
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
+
+    Archetype archetype(fingerprint, componentIds);
+
+    EXPECT_TRUE(archetype.HasComponent<TestComponent1>());
 }
