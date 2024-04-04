@@ -21,6 +21,8 @@ namespace Otter
      */
     class Archetype final
     {
+        friend class EntityManager;
+
     public:
         /**
          * @brief Constructor.
@@ -213,55 +215,6 @@ namespace Otter
         }
 
         /**
-         * @brief Gets the component data for an entity.
-         *
-         * @param entityId The entity id.
-         * @param componentIds An array of the component ids of the archetype.
-         * @param componentSizes An array of each of the archetype's components' sizes.
-         * @param componentData The archetype's component data of the entity in a continuous buffer.
-         *
-         * @note The `componentIds` and `componentSizes` arrays must be pre-allocated and their sizes must be equal to
-         * the archetype's component count.
-         * @note The `componentData` buffer must be pre-allocated and its size must be equal to the sum of the
-         * archetype's component sizes.
-         */
-        void GetComponentDataForEntityUnsafe(const EntityId entityId,
-                                             ComponentId* componentIds,
-                                             UInt64* componentSizes,
-                                             Byte* componentData) const
-        {
-            OTR_ASSERT(m_EntityIdToBufferPosition.ContainsKey(entityId), "Entity id must belong to the archetype.")
-            OTR_ASSERT(componentIds && componentSizes, "Component ids and sizes must not be null.")
-
-            if (!componentData)
-            {
-                UInt64 index = 0;
-                for (const auto& [componentId, storedComponentData]: m_ComponentIdToData)
-                {
-                    componentIds[index]   = componentId;
-                    componentSizes[index] = storedComponentData.GetOffset();
-
-                    ++index;
-                }
-
-                return;
-            }
-
-            UInt64 dataIndex = 0;
-            UInt64 sizeIndex = 0;
-
-            for (const auto& [_, storedComponentData]: m_ComponentIdToData)
-            {
-                MemorySystem::MemoryCopy(&componentData[dataIndex],
-                                         storedComponentData.GetData(),
-                                         componentSizes[sizeIndex]);
-
-                dataIndex += componentSizes[sizeIndex];
-                ++sizeIndex;
-            }
-        }
-
-        /**
          * @brief Adds component data to the archetype.
          *
          * @param entityId The entity id.
@@ -367,7 +320,54 @@ namespace Otter
         Dictionary<ComponentId, UnsafeList> m_ComponentIdToData;
         Dictionary<EntityId, UInt64> m_EntityIdToBufferPosition;
 
-        friend class EntityManager;
+        /**
+         * @brief Gets the component data for an entity.
+         *
+         * @param entityId The entity id.
+         * @param componentIds An array of the component ids of the archetype.
+         * @param componentSizes An array of each of the archetype's components' sizes.
+         * @param componentData The archetype's component data of the entity in a continuous buffer.
+         *
+         * @note The `componentIds` and `componentSizes` arrays must be pre-allocated and their sizes must be equal to
+         * the archetype's component count.
+         * @note The `componentData` buffer must be pre-allocated and its size must be equal to the sum of the
+         * archetype's component sizes.
+         */
+        void GetComponentDataForEntityUnsafe(const EntityId entityId,
+                                             ComponentId* componentIds,
+                                             UInt64* componentSizes,
+                                             Byte* componentData) const
+        {
+            OTR_ASSERT(m_EntityIdToBufferPosition.ContainsKey(entityId), "Entity id must belong to the archetype.")
+            OTR_ASSERT(componentIds && componentSizes, "Component ids and sizes must not be null.")
+
+            if (!componentData)
+            {
+                UInt64 index = 0;
+                for (const auto& [componentId, storedComponentData]: m_ComponentIdToData)
+                {
+                    componentIds[index]   = componentId;
+                    componentSizes[index] = storedComponentData.GetOffset();
+
+                    ++index;
+                }
+
+                return;
+            }
+
+            UInt64 dataIndex = 0;
+            UInt64 sizeIndex = 0;
+
+            for (const auto& [_, storedComponentData]: m_ComponentIdToData)
+            {
+                MemorySystem::MemoryCopy(&componentData[dataIndex],
+                                         storedComponentData.GetData(),
+                                         componentSizes[sizeIndex]);
+
+                dataIndex += componentSizes[sizeIndex];
+                ++sizeIndex;
+            }
+        }
     };
 }
 

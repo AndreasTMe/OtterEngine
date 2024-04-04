@@ -102,7 +102,14 @@ namespace Otter
                 }
 
                 for (const auto& [entity, componentData]: entityComponentData)
+                {
                     m_FingerprintToArchetype[fingerprint]->TryAddComponentData(entity, componentData);
+
+                    if (!m_EntityToFingerprint.ContainsKey(entity))
+                        m_EntityToFingerprint.TryAdd(entity, fingerprint);
+                    else
+                        *m_EntityToFingerprint[entity] = fingerprint;
+                }
             }
 
             m_FingerprintToComponentDataToAdd.Clear();
@@ -169,32 +176,36 @@ namespace Otter
 
     bool EntityManager::TryAddComponent(const EntityId entityId, const ComponentData& componentData)
     {
-        ArchetypeFingerprint fingerprint;
-        if (!m_EntityToFingerprint.TryGet(entityId, &fingerprint))
+        ArchetypeFingerprint oldFingerprint;
+        if (!m_EntityToFingerprint.TryGet(entityId, &oldFingerprint))
             return false;
+
+        OTR_ASSERT(m_FingerprintToArchetype.ContainsKey(oldFingerprint), "Fingerprint must be mapped to an archetype.")
 
         UInt64 fingerprintIndex;
         if (!m_ComponentToFingerprintIndex.TryGet(componentData.Id, &fingerprintIndex))
             return false;
 
-        OTR_ASSERT(!fingerprint.Get(fingerprintIndex), "Entity already has component with id {0}.", componentData.Id)
-        fingerprint.Set(fingerprintIndex, true);
+        OTR_ASSERT(!oldFingerprint.Get(fingerprintIndex), "Entity already has component with id {0}.", componentData.Id)
 
-        if (!m_FingerprintToComponentDataToAdd.ContainsKey(fingerprint))
-            m_FingerprintToComponentDataToAdd.TryAdd(fingerprint, Dictionary<EntityId, List<ComponentData>>());
+        ArchetypeFingerprint newFingerprint = oldFingerprint;
+        newFingerprint.Set(fingerprintIndex, true);
 
-        if (!m_FingerprintToComponentDataToAdd[fingerprint]->ContainsKey(entityId))
+        if (!m_FingerprintToComponentDataToAdd.ContainsKey(newFingerprint))
+            m_FingerprintToComponentDataToAdd.TryAdd(newFingerprint, Dictionary<EntityId, List<ComponentData>>());
+
+        if (!m_FingerprintToComponentDataToAdd[newFingerprint]->ContainsKey(entityId))
         {
-            m_FingerprintToComponentDataToAdd[fingerprint]->TryAdd(entityId, List<ComponentData>());
+            m_FingerprintToComponentDataToAdd[newFingerprint]->TryAdd(entityId, List<ComponentData>());
 
-            UInt64      totalComponentsInArchetype = fingerprint.GetTrueCount();
+            UInt64      totalComponentsInArchetype = oldFingerprint.GetTrueCount();
             ComponentId componentIds[totalComponentsInArchetype];
             UInt64      componentSizes[totalComponentsInArchetype];
 
-            m_FingerprintToArchetype[fingerprint]->GetComponentDataForEntityUnsafe(entityId,
-                                                                                   componentIds,
-                                                                                   componentSizes,
-                                                                                   nullptr);
+            m_FingerprintToArchetype[oldFingerprint]->GetComponentDataForEntityUnsafe(entityId,
+                                                                                      componentIds,
+                                                                                      componentSizes,
+                                                                                      nullptr);
 
             UInt64 allComponentsDataBufferSize = 0;
 
@@ -203,10 +214,10 @@ namespace Otter
 
             Byte allComponentsDataBuffer[allComponentsDataBufferSize];
 
-            m_FingerprintToArchetype[fingerprint]->GetComponentDataForEntityUnsafe(entityId,
-                                                                                   componentIds,
-                                                                                   componentSizes,
-                                                                                   allComponentsDataBuffer);
+            m_FingerprintToArchetype[oldFingerprint]->GetComponentDataForEntityUnsafe(entityId,
+                                                                                      componentIds,
+                                                                                      componentSizes,
+                                                                                      allComponentsDataBuffer);
 
             UInt64 dataIndex = 0;
             UInt64 sizeIndex = 0;
@@ -218,39 +229,102 @@ namespace Otter
                                          &allComponentsDataBuffer[dataIndex],
                                          componentSizes[sizeIndex]);
 
-                (*m_FingerprintToComponentDataToAdd[fingerprint])[entityId]->Add({
-                                                                                     componentIds[sizeIndex],
-                                                                                     currentComponentData,
-                                                                                     componentSizes[sizeIndex]
-                                                                                 });
+                (*m_FingerprintToComponentDataToAdd[newFingerprint])[entityId]->Add({
+                                                                                        componentIds[sizeIndex],
+                                                                                        currentComponentData,
+                                                                                        componentSizes[sizeIndex]
+                                                                                    });
 
                 dataIndex += componentSizes[sizeIndex];
                 ++sizeIndex;
             }
         }
 
-        (*m_FingerprintToComponentDataToAdd[fingerprint])[entityId]->Add(componentData);
+        (*m_FingerprintToComponentDataToAdd[newFingerprint])[entityId]->Add(componentData);
 
-        fingerprint.Set(fingerprintIndex, false);
-        if (!m_FingerprintToEntitiesToRemove.ContainsKey(fingerprint))
-            m_FingerprintToEntitiesToRemove.TryAdd(fingerprint, List<EntityId>());
+        if (!m_FingerprintToEntitiesToRemove.ContainsKey(oldFingerprint))
+            m_FingerprintToEntitiesToRemove.TryAdd(oldFingerprint, List<EntityId>());
 
-        m_FingerprintToEntitiesToRemove[fingerprint]->Add(entityId);
+        m_FingerprintToEntitiesToRemove[oldFingerprint]->Add(entityId);
 
         return true;
     }
 
     bool EntityManager::TryRemoveComponent(const EntityId entityId, const ComponentId componentId)
     {
-        // TODO: Implement TryRemoveComponent
+        ArchetypeFingerprint oldFingerprint;
+        if (!m_EntityToFingerprint.TryGet(entityId, &oldFingerprint))
+            return false;
 
-        // Get the entity's fingerprint (m_EntityToFingerprint)
-        // Get the component's fingerprint index (m_ComponentToFingerprintIndex)
-        // Set the fingerprint index to false
-        // Add the component data to m_FingerprintToComponentDataToAdd
-        // Add the entity to m_FingerprintToEntitiesToRemove
+        OTR_ASSERT(m_FingerprintToArchetype.ContainsKey(oldFingerprint), "Fingerprint must be mapped to an archetype.")
 
-        return false;
+        UInt64 fingerprintIndex;
+        if (!m_ComponentToFingerprintIndex.TryGet(componentId, &fingerprintIndex))
+            return false;
+
+        OTR_ASSERT(oldFingerprint.Get(fingerprintIndex), "Entity does not have component with id {0}.", componentId)
+
+        ArchetypeFingerprint newFingerprint = oldFingerprint;
+        newFingerprint.Set(fingerprintIndex, false);
+
+        if (!m_FingerprintToComponentDataToAdd.ContainsKey(newFingerprint))
+            m_FingerprintToComponentDataToAdd.TryAdd(newFingerprint, Dictionary<EntityId, List<ComponentData>>());
+
+        if (!m_FingerprintToComponentDataToAdd[newFingerprint]->ContainsKey(entityId))
+        {
+            m_FingerprintToComponentDataToAdd[newFingerprint]->TryAdd(entityId, List<ComponentData>());
+
+            UInt64      totalComponentsInArchetype = oldFingerprint.GetTrueCount();
+            ComponentId componentIds[totalComponentsInArchetype];
+            UInt64      componentSizes[totalComponentsInArchetype];
+
+            m_FingerprintToArchetype[oldFingerprint]->GetComponentDataForEntityUnsafe(entityId,
+                                                                                      componentIds,
+                                                                                      componentSizes,
+                                                                                      nullptr);
+
+            UInt64 allComponentsDataBufferSize = 0;
+
+            for (UInt64 i = 0; i < totalComponentsInArchetype; ++i)
+                allComponentsDataBufferSize += componentSizes[i];
+
+            Byte allComponentsDataBuffer[allComponentsDataBufferSize];
+
+            m_FingerprintToArchetype[oldFingerprint]->GetComponentDataForEntityUnsafe(entityId,
+                                                                                      componentIds,
+                                                                                      componentSizes,
+                                                                                      allComponentsDataBuffer);
+
+            UInt64 dataIndex = 0;
+            UInt64 sizeIndex = 0;
+
+            while (sizeIndex < totalComponentsInArchetype)
+            {
+                if (componentIds[sizeIndex] != componentId)
+                {
+                    Byte currentComponentData[componentSizes[sizeIndex]];
+                    MemorySystem::MemoryCopy(currentComponentData,
+                                             &allComponentsDataBuffer[dataIndex],
+                                             componentSizes[sizeIndex]);
+
+                    (*m_FingerprintToComponentDataToAdd[newFingerprint])[entityId]->Add({
+                                                                                            componentIds[sizeIndex],
+                                                                                            currentComponentData,
+                                                                                            componentSizes[sizeIndex]
+                                                                                        });
+                }
+
+                dataIndex += componentSizes[sizeIndex];
+                ++sizeIndex;
+            }
+        }
+
+        if (!m_FingerprintToEntitiesToRemove.ContainsKey(oldFingerprint))
+            m_FingerprintToEntitiesToRemove.TryAdd(oldFingerprint, List<EntityId>());
+
+        m_FingerprintToEntitiesToRemove[oldFingerprint]->Add(entityId);
+
+        return true;
     }
 
     bool EntityManager::HasComponent(const EntityId entityId, const ComponentId componentId) const

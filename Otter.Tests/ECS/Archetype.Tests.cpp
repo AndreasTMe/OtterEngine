@@ -351,61 +351,6 @@ TEST_F(Archetype_Fixture, GetComponentsForEntity_Multiple)
     EXPECT_EQ(comp2->B, 12);
 }
 
-TEST_F(Archetype_Fixture, GetComponentDataForEntityUnsafe)
-{
-    ArchetypeFingerprint fingerprint;
-    fingerprint.Set(0, true);
-    fingerprint.Set(1, true);
-
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
-
-    Archetype archetype(fingerprint, componentIds);
-
-    TestComponent1                    component1(1, 2);
-    TestComponent2                    component2(3, 4);
-    Otter::List<Otter::ComponentData> componentData;
-    componentData.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component1, sizeof(TestComponent1) });
-    componentData.Add(Otter::ComponentData{ TestComponent2::Id, (Byte*) &component2, sizeof(TestComponent2) });
-
-    Otter::EntityId entityId = 1;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId, componentData));
-
-    EXPECT_EQ(archetype.GetEntityCount(), 1);
-    EXPECT_EQ(archetype.GetComponentCount(), 2);
-
-    UInt64 componentDataCount = archetype.GetComponentCount();
-
-    Otter::ComponentId componentIdsOut[componentDataCount];
-    UInt64             componentSizesOut[componentDataCount];
-
-    archetype.GetComponentDataForEntityUnsafe(entityId, componentIdsOut, componentSizesOut, nullptr);
-
-    EXPECT_EQ(componentIdsOut[0], TestComponent1::Id);
-    EXPECT_EQ(componentIdsOut[1], TestComponent2::Id);
-
-    EXPECT_EQ(componentSizesOut[0], sizeof(TestComponent1));
-    EXPECT_EQ(componentSizesOut[1], sizeof(TestComponent2));
-
-    UInt64 allComponentsDataBufferSize = 0;
-
-    for (UInt64 i = 0; i < componentDataCount; ++i)
-    {
-        allComponentsDataBufferSize += componentSizesOut[i];
-    }
-
-    Byte allComponentsDataBuffer[allComponentsDataBufferSize];
-
-    archetype.GetComponentDataForEntityUnsafe(entityId, componentIdsOut, componentSizesOut, allComponentsDataBuffer);
-
-    auto* found1 = (TestComponent1*) allComponentsDataBuffer;
-    EXPECT_EQ(found1->A, 1);
-    EXPECT_EQ(found1->B, 2);
-
-    auto* found2 = (TestComponent2*) (allComponentsDataBuffer + sizeof(TestComponent1));
-    EXPECT_EQ(found2->A, 3);
-    EXPECT_EQ(found2->B, 4);
-}
-
 TEST_F(Archetype_Fixture, AddingGettingAndRemoving_ComponentData)
 {
     ArchetypeFingerprint fingerprint;

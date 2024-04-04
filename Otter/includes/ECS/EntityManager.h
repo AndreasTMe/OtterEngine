@@ -478,7 +478,7 @@ namespace Otter
          *
          * @return True if the entity has the component, false otherwise.
          */
-        [[nodiscard]] OTR_INLINE bool HasComponent(EntityId entityId, ComponentId componentId) const;
+        [[nodiscard]] bool HasComponent(EntityId entityId, ComponentId componentId) const;
     };
 }
 
