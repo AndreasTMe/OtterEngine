@@ -99,6 +99,15 @@ namespace Otter
                             componentIds.Add(data.Id);
 
                     m_FingerprintToArchetype.TryAdd(fingerprint, Archetype(fingerprint, componentIds));
+
+                    for (const auto& componentId: componentIds)
+                    {
+                        OTR_ASSERT(m_ComponentToFingerprints.ContainsKey(componentId),
+                                   "Component must be registered.")
+
+                        if (!m_ComponentToFingerprints[componentId]->Contains(fingerprint))
+                            m_ComponentToFingerprints[componentId]->Add(fingerprint);
+                    }
                 }
 
                 for (const auto& [entity, componentData]: entityComponentData)
@@ -358,6 +367,15 @@ namespace Otter
 
         if (!m_EntityManager->m_FingerprintToArchetype.ContainsKey(m_Fingerprint))
             m_EntityManager->m_ArchetypesToAdd.Push(archetype);
+
+        for (const auto& componentId: m_ComponentIds)
+        {
+            OTR_ASSERT(m_EntityManager->m_ComponentToFingerprints.ContainsKey(componentId),
+                       "Component must be registered.")
+
+            if (!m_EntityManager->m_ComponentToFingerprints[componentId]->Contains(m_Fingerprint))
+                m_EntityManager->m_ComponentToFingerprints[componentId]->Add(m_Fingerprint);
+        }
 
         return archetype;
     }

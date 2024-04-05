@@ -49,6 +49,21 @@ struct TestComponent2 final : public Otter::IComponent
     }
 };
 
+struct TestComponent3 final : public Otter::IComponent
+{
+    static constexpr Otter::ComponentId Id = 3;
+
+    int E;
+    int F;
+
+    TestComponent3() = default;
+
+    TestComponent3(int e, int f)
+        : E(e), F(f)
+    {
+    }
+};
+
 TEST_F(EntityManager_Fixture, RegisterComponents)
 {
     EntityManager manager;
@@ -246,4 +261,63 @@ TEST_F(EntityManager_Fixture, TryAddTryRemoveComponent)
     EXPECT_EQ(manager.GetEntityCount(), 1);
     EXPECT_EQ(manager.GetArchetypeCount(), 2);
     EXPECT_EQ(manager.GetComponentCount(), 2);
+}
+
+TEST_F(EntityManager_Fixture, ForEach_SingleEntity)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
+        .LockComponents();
+
+    auto entity = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .SetComponentData<TestComponent3>(5, 6)
+        .Build();
+
+    EXPECT_TRUE(entity.IsValid());
+
+    manager.RefreshManagerData();
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    UInt64 runCount = 0;
+
+    manager.ForEach<TestComponent1>(
+        {
+            [&](TestComponent1* c1)
+            {
+                EXPECT_EQ(c1->A, 1);
+                EXPECT_EQ(c1->B, 2);
+
+                c1->A = 10;
+                c1->B = 20;
+
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 1);
+    runCount = 0;
+
+    manager.ForEach<TestComponent1, TestComponent2, TestComponent3>(
+        {
+            [&](TestComponent1* c1, TestComponent2* c2, TestComponent3* c3)
+            {
+                EXPECT_EQ(c1->A, 10);
+                EXPECT_EQ(c1->B, 20);
+
+                EXPECT_EQ(c2->C, 3);
+                EXPECT_EQ(c2->D, 4);
+
+                EXPECT_EQ(c3->E, 5);
+                EXPECT_EQ(c3->F, 6);
+
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 1);
 }
