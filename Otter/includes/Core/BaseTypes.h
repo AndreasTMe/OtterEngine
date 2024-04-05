@@ -126,6 +126,32 @@ template<bool Condition, typename T = void>
 using EnableIf = std::enable_if_t<Condition, T>;
 
 /**
+ * @brief Helper struct for checking if all the types in a variadic list are unique.
+ *
+ * @tparam TArgs The types to check.
+ */
+template<typename... TArgs>
+struct AreUnique;
+
+/**
+ * @brief Specialization of the `AreUnique` struct for when there are no types.
+ */
+template<>
+struct AreUnique<> : std::true_type { };
+
+/**
+ * @brief Implementation of the `AreUnique` struct for when there are types.
+ *
+ * @tparam T The first type.
+ * @tparam TArgs The rest of the types.
+ */
+template<typename T, typename... TArgs>
+struct AreUnique<T, TArgs...> : std::bool_constant<
+    (!IsSame<T, TArgs> && ...) && AreUnique<TArgs...>::value>
+{
+};
+
+/**
  * @brief A template class for working with a variadic list of arguments. Provides a static constexpr member function
  * to retrieve the number of arguments in the variadic list.
  *

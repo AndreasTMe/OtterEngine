@@ -321,6 +321,55 @@ namespace Otter
         Dictionary<EntityId, UInt64> m_EntityIdToBufferPosition;
 
         /**
+         * @brief Iterates over all entities of the archetype.
+         *
+         * @tparam TComponent The component type.
+         * @tparam TComponents The rest of the components.
+         *
+         * @param callback The function to call for entity.
+         */
+        template<typename TComponent, typename... TComponents>
+        requires IsComponent<TComponent> && AreComponents<TComponents...>
+        void ForEach(const Function<void(TComponent * , TComponents * ...)>& callback) const
+        {
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_DEBUG_BLOCK(
+                if (VariadicArgs<TComponents...>::GetSize() > 0)
+                {
+                    OTR_STATIC_ASSERT((AreUnique<TComponent, TComponents...>::value), "Components must be unique.");
+
+                    ([&]
+                    {
+                        OTR_STATIC_ASSERT(TComponents::Id > 0, "Component Id must be greater than 0.")
+                    }(), ...);
+                }
+            )
+
+            auto* component = m_ComponentIdToData[TComponent::Id]->template GetData<TComponent>();
+
+            if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
+            {
+                for (UInt64 i = 0; i < m_EntityIds.GetCount(); ++i)
+                    callback(&component[i]);
+            }
+            else
+            {
+                std::tuple<TComponents* ...> components;
+                ([&]
+                {
+                    std::get<TComponents*>(components) = m_ComponentIdToData[TComponents::Id]
+                        ->template GetData<TComponents>();
+                }(), ...);
+
+                std::apply([&](TComponents* ... rest)
+                           {
+                               for (UInt64 i = 0; i < m_EntityIds.GetCount(); ++i)
+                                   callback(&component[i], &rest[i]...);
+                           }, components);
+            }
+        }
+
+        /**
          * @brief Gets the component data for an entity.
          *
          * @param entityId The entity id.
