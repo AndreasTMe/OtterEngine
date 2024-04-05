@@ -130,4 +130,10 @@
     #define OTR_DEBUG_BLOCK(code)
 #endif
 
+#if OTR_INTERNALS_TEST_VISIBLE
+    #define OTR_TEST_VISIBLE public
+#else
+    #define OTR_TEST_VISIBLE private
+#endif
+
 #endif //OTTERENGINE_DEFINES_H

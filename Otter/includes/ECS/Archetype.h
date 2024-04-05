@@ -320,6 +320,7 @@ namespace Otter
         Dictionary<ComponentId, UnsafeList> m_ComponentIdToData;
         Dictionary<EntityId, UInt64> m_EntityIdToBufferPosition;
 
+    OTR_TEST_VISIBLE:
         /**
          * @brief Iterates over all entities of the archetype.
          *

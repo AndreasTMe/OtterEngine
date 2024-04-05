@@ -59,6 +59,21 @@ struct TestComponent2 final : public Otter::IComponent
     }
 };
 
+struct TestComponent3 final : public Otter::IComponent
+{
+    static constexpr Otter::ComponentId Id = 3;
+
+    int A;
+    int B;
+
+    TestComponent3() = default;
+
+    TestComponent3(int a, int b)
+        : A(a), B(b)
+    {
+    }
+};
+
 TEST_F(Archetype_Fixture, Constructor)
 {
     ArchetypeFingerprint fingerprint;
@@ -393,4 +408,66 @@ TEST_F(Archetype_Fixture, HasComponent)
     Archetype archetype(fingerprint, componentIds);
 
     EXPECT_TRUE(archetype.HasComponent<TestComponent1>());
+}
+
+TEST_F(Archetype_Fixture, ForEach_SingleEntity)
+{
+    ArchetypeFingerprint fingerprint;
+    fingerprint.Set(0, true);
+    fingerprint.Set(1, true);
+    fingerprint.Set(2, true);
+
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+
+    Archetype archetype(fingerprint, componentIds);
+
+    TestComponent1                    component1(1, 2);
+    TestComponent2                    component2(3, 4);
+    TestComponent3                    component3(5, 6);
+    Otter::List<Otter::ComponentData> componentData;
+    componentData.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component1, sizeof(TestComponent1) });
+    componentData.Add(Otter::ComponentData{ TestComponent2::Id, (Byte*) &component2, sizeof(TestComponent2) });
+    componentData.Add(Otter::ComponentData{ TestComponent3::Id, (Byte*) &component3, sizeof(TestComponent3) });
+
+    Otter::EntityId entityId = 1;
+    EXPECT_TRUE(archetype.TryAddComponentData(entityId, componentData));
+
+    EXPECT_EQ(archetype.GetEntityCount(), 1);
+    EXPECT_EQ(archetype.GetComponentCount(), 3);
+
+    UInt64 runCount = 0;
+
+    archetype.ForEach<TestComponent1>(
+        {
+            [&](auto* t1)
+            {
+                EXPECT_EQ(t1->A, 1);
+                EXPECT_EQ(t1->B, 2);
+
+                t1->A = 10;
+                t1->B = 20;
+
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 1);
+    runCount = 0;
+
+    archetype.ForEach<TestComponent1, TestComponent2, TestComponent3>(
+        {
+            [&](auto* t1, auto* t2, auto* t3)
+            {
+                EXPECT_EQ(t1->A, 10);
+                EXPECT_EQ(t1->B, 20);
+                EXPECT_EQ(t2->A, 3);
+                EXPECT_EQ(t2->B, 4);
+                EXPECT_EQ(t3->A, 5);
+                EXPECT_EQ(t3->B, 6);
+
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 1);
 }
