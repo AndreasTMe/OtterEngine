@@ -88,13 +88,13 @@ namespace Otter
 
         if (!m_FingerprintToComponentDataToAdd.IsEmpty())
         {
-            for (const auto& [fingerprint, entityComponentData]: m_FingerprintToComponentDataToAdd)
+            for (const auto& [fingerprint, entityIdToComponentData]: m_FingerprintToComponentDataToAdd)
             {
                 if (!m_FingerprintToArchetype.ContainsKey(fingerprint))
                 {
                     List<ComponentId> componentIds;
 
-                    for (const auto& [entity, componentData]: entityComponentData)
+                    for (const auto& [_, componentData]: entityIdToComponentData)
                         for (const auto& data: componentData)
                             componentIds.Add(data.Id);
 
@@ -110,14 +110,38 @@ namespace Otter
                     }
                 }
 
-                for (const auto& [entity, componentData]: entityComponentData)
+                for (const auto& [id, data]: entityIdToComponentData)
                 {
-                    m_FingerprintToArchetype[fingerprint]->TryAddComponentData(entity, componentData);
+                    ComponentId componentIds[data.GetCount()];
+                    UInt64      componentSizes[data.GetCount()];
 
-                    if (!m_EntityToFingerprint.ContainsKey(entity))
-                        m_EntityToFingerprint.TryAdd(entity, fingerprint);
+                    UInt64 dataSize = 0;
+
+                    for (UInt64 i = 0; i < data.GetCount(); ++i)
+                    {
+                        componentIds[i]   = data[i].Id;
+                        componentSizes[i] = data[i].Size;
+
+                        dataSize += data[i].Size;
+                    }
+
+                    Byte componentData[dataSize];
+
+                    for (UInt64 i = 0, j = 0; i < data.GetCount(); ++i)
+                    {
+                        MemorySystem::MemoryCopy(&componentData[j], data[i].Data, data[i].Size);
+                        j += data[i].Size;
+                    }
+
+                    m_FingerprintToArchetype[fingerprint]->TryAddComponentDataUnsafe(id,
+                                                                                     componentIds,
+                                                                                     componentSizes,
+                                                                                     componentData);
+
+                    if (!m_EntityToFingerprint.ContainsKey(id))
+                        m_EntityToFingerprint.TryAdd(id, fingerprint);
                     else
-                        *m_EntityToFingerprint[entity] = fingerprint;
+                        *m_EntityToFingerprint[id] = fingerprint;
                 }
             }
 

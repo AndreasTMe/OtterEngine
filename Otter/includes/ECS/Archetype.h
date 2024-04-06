@@ -62,7 +62,7 @@ namespace Otter
          */
         Archetype(const Archetype& other)
         {
-            m_Fingerprint = other.m_Fingerprint;
+            m_Fingerprint              = other.m_Fingerprint;
             m_EntityIds                = other.m_EntityIds;
             m_ComponentIdToData        = other.m_ComponentIdToData;
             m_EntityIdToBufferPosition = other.m_EntityIdToBufferPosition;
@@ -73,7 +73,7 @@ namespace Otter
          */
         Archetype(Archetype&& other) noexcept
         {
-            m_Fingerprint = std::move(other.m_Fingerprint);
+            m_Fingerprint              = std::move(other.m_Fingerprint);
             m_EntityIds                = std::move(other.m_EntityIds);
             m_ComponentIdToData        = std::move(other.m_ComponentIdToData);
             m_EntityIdToBufferPosition = std::move(other.m_EntityIdToBufferPosition);
@@ -92,7 +92,7 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            m_Fingerprint = other.m_Fingerprint;
+            m_Fingerprint              = other.m_Fingerprint;
             m_EntityIds                = other.m_EntityIds;
             m_ComponentIdToData        = other.m_ComponentIdToData;
             m_EntityIdToBufferPosition = other.m_EntityIdToBufferPosition;
@@ -108,7 +108,7 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            m_Fingerprint = std::move(other.m_Fingerprint);
+            m_Fingerprint              = std::move(other.m_Fingerprint);
             m_EntityIds                = std::move(other.m_EntityIds);
             m_ComponentIdToData        = std::move(other.m_ComponentIdToData);
             m_EntityIdToBufferPosition = std::move(other.m_EntityIdToBufferPosition);
@@ -146,143 +146,6 @@ namespace Otter
         bool operator!=(const Archetype& other) const noexcept { return !(*this == other); }
 
         /**
-         * @brief Gets the requested components of the archetype.
-         *
-         * @tparam TComponent The type of the component.
-         * @tparam TComponents The types of the rest of the components.
-         *
-         * @return The requested components as a single pointer or a tuple of pointers, depending on the amount of
-         * components requested.
-         */
-        template<typename TComponent, typename... TComponents>
-        requires IsComponent<TComponent> && AreComponents<TComponents...>
-        [[nodiscard]] decltype(auto) GetComponents() const
-        {
-            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
-            OTR_ASSERT(HasComponent<TComponent>(), "Archetype must have component.")
-
-            if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
-                return m_ComponentIdToData[TComponent::Id]->template GetData<TComponent>();
-            else
-            {
-                std::tuple<TComponent*, TComponents* ...> componentData;
-                std::get<0>(componentData) = m_ComponentIdToData[TComponent::Id]->template GetData<TComponent>();
-
-                if constexpr (VariadicArgs<TComponents...>::GetSize() == 1)
-                    std::get<1>(componentData) = GetComponents<TComponents...>();
-                else
-                    componentData = std::tuple_cat(componentData, GetComponents<TComponents...>());
-
-                return componentData;
-            }
-        }
-
-        /**
-         * @brief Gets the requested components of the archetype for an entity.
-         *
-         * @tparam TComponent The type of the component.
-         * @tparam TComponents The types of the rest of the components.
-         *
-         * @param entityId The entity id.
-         *
-         * @return The requested components as a single pointer or a tuple of pointers, depending on the amount of
-         * components requested.
-         */
-        template<typename TComponent, typename... TComponents>
-        requires IsComponent<TComponent> && AreComponents<TComponents...>
-        [[nodiscard]] decltype(auto) GetComponentsForEntity(const EntityId entityId) const
-        {
-            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
-            OTR_ASSERT(HasComponent<TComponent>(), "Archetype must have component.")
-            OTR_ASSERT(m_EntityIdToBufferPosition.ContainsKey(entityId), "Entity id must belong to the archetype.")
-
-            if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
-                return &m_ComponentIdToData[TComponent::Id]
-                    ->template GetData<TComponent>()[*m_EntityIdToBufferPosition[entityId]];
-            else
-            {
-                std::tuple<TComponent*, TComponents * ...> componentData;
-                std::get<0>(componentData) = &m_ComponentIdToData[TComponent::Id]
-                    ->template GetData<TComponent>()[*m_EntityIdToBufferPosition[entityId]];
-
-                if constexpr (VariadicArgs<TComponents...>::GetSize() == 1)
-                    std::get<1>(componentData) = GetComponentsForEntity<TComponents...>(entityId);
-                else
-                    componentData = std::tuple_cat(componentData, GetComponentsForEntity<TComponents...>(entityId));
-
-                return componentData;
-            }
-        }
-
-        /**
-         * @brief Adds component data to the archetype.
-         *
-         * @param entityId The entity id.
-         * @param componentData The component data.
-         *
-         * @return True if the component data was added, false otherwise.
-         */
-        bool TryAddComponentData(const EntityId entityId, const List<ComponentData>& componentData)
-        {
-            OTR_ASSERT(componentData.GetCount() == m_ComponentIdToData.GetCount(),
-                       "Passed component data count must be equal to archetype's component count.")
-            OTR_DEBUG_BLOCK(
-                for (UInt64 i = 0; i < componentData.GetCount(); ++i)
-                {
-                    OTR_ASSERT(m_ComponentIdToData.ContainsKey(componentData[i].Id),
-                               "Archetype does not contain component id.")
-                }
-            )
-
-            if (m_EntityIdToBufferPosition.ContainsKey(entityId))
-                return false;
-
-            OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(entityId, m_EntityIds.GetCount()),
-                         "Failed to add entity with id '{0}' to buffer position dictionary.", entityId)
-
-            m_EntityIds.Add(entityId);
-
-            for (UInt64 i = 0; i < componentData.GetCount(); ++i)
-                m_ComponentIdToData[componentData[i].Id]->Add(componentData[i].Data, componentData[i].Size);
-
-            return true;
-        }
-
-        /**
-         * @brief Removes an entity and all its component data from the archetype.
-         *
-         * @param entityId The entity id.
-         *
-         * @return True if the entity-component data were removed, false otherwise.
-         */
-        bool TryRemoveComponentData(const EntityId entityId)
-        {
-            if (!m_EntityIdToBufferPosition.ContainsKey(entityId))
-                return false;
-
-            UInt64 index     = *m_EntityIdToBufferPosition[entityId];
-            UInt64 lastIndex = m_EntityIds.GetCount() - 1;
-
-            OTR_VALIDATE(m_EntityIds.TryRemoveAt(index), "Failed to remove entity with id '{0}'.", entityId)
-            OTR_VALIDATE(m_EntityIdToBufferPosition.TryRemove(entityId),
-                         "Failed to remove entity with id '{0}' from buffer position dictionary.", entityId)
-
-            if (index != lastIndex)
-            {
-                OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(m_EntityIds[index], index),
-                             "Failed to move entity with id '{0}' to buffer position dictionary.", m_EntityIds[index])
-            }
-
-            for (auto& [componentId, storedComponentData]: m_ComponentIdToData)
-            {
-                OTR_VALIDATE(storedComponentData.TryRemoveAt(index),
-                             "Failed to remove component data for entity with id '{0}'.", entityId)
-            }
-
-            return true;
-        }
-
-        /**
          * @brief Checks if the archetype has a component.
          *
          * @tparam TComponent The type of the component.
@@ -315,59 +178,52 @@ namespace Otter
         [[nodiscard]] OTR_INLINE UInt64 GetComponentCount() const { return m_ComponentIdToData.GetCount(); }
 
     private:
-        ArchetypeFingerprint         m_Fingerprint;
-        List<EntityId>               m_EntityIds;
+        ArchetypeFingerprint                m_Fingerprint;
+        List<EntityId>                      m_EntityIds;
         Dictionary<ComponentId, UnsafeList> m_ComponentIdToData;
-        Dictionary<EntityId, UInt64> m_EntityIdToBufferPosition;
+        Dictionary<EntityId, UInt64>        m_EntityIdToBufferPosition;
 
     OTR_TEST_VISIBLE:
         /**
-         * @brief Iterates over all entities of the archetype.
+         * @brief Adds component data to the archetype.
          *
-         * @tparam TComponent The component type.
-         * @tparam TComponents The rest of the components.
+         * @param entityId The entity id.
+         * @param componentIds An array of the component ids of the archetype.
+         * @param componentSizes An array of each of the archetype's components' sizes.
+         * @param componentData The archetype's component data of the entity in a continuous buffer.
          *
-         * @param callback The function to call for entity.
+         * @return True if the component data was added, false otherwise.
+         *
+         * @note The `componentIds` and `componentSizes` arrays must be pre-allocated and their sizes must be equal to
+         * the archetype's component count.
+         * @note The `componentData` buffer must be pre-allocated and its size must be equal to the sum of the
+         * archetype's component sizes.
          */
-        template<typename TComponent, typename... TComponents>
-        requires IsComponent<TComponent> && AreComponents<TComponents...>
-        void ForEach(const Function<void(TComponent * , TComponents * ...)>& callback) const
+        bool TryAddComponentDataUnsafe(const EntityId entityId,
+                                       const ComponentId* const componentIds,
+                                       const UInt64* const componentSizes,
+                                       const Byte* const componentData)
         {
-            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
-            OTR_DEBUG_BLOCK(
-                if (VariadicArgs<TComponents...>::GetSize() > 0)
-                {
-                    OTR_STATIC_ASSERT((AreUnique<TComponent, TComponents...>::value), "Components must be unique.");
+            OTR_ASSERT(componentIds && componentSizes && componentData,
+                       "Component ids, sizes and data must not be null.")
 
-                    ([&]
-                    {
-                        OTR_STATIC_ASSERT(TComponents::Id > 0, "Component Id must be greater than 0.")
-                    }(), ...);
-                }
-            )
+            if (m_EntityIdToBufferPosition.ContainsKey(entityId))
+                return false;
 
-            auto* component = m_ComponentIdToData[TComponent::Id]->template GetData<TComponent>();
+            OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(entityId, m_EntityIds.GetCount()),
+                         "Failed to add entity with id '{0}' to buffer position dictionary.", entityId)
 
-            if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
+            m_EntityIds.Add(entityId);
+
+            for (UInt64 i = 0, j = 0; i < m_ComponentIdToData.GetCount(); ++i)
             {
-                for (UInt64 i = 0; i < m_EntityIds.GetCount(); ++i)
-                    callback(&component[i]);
-            }
-            else
-            {
-                std::tuple<TComponents* ...> components;
-                ([&]
-                {
-                    std::get<TComponents*>(components) = m_ComponentIdToData[TComponents::Id]
-                        ->template GetData<TComponents>();
-                }(), ...);
+                OTR_ASSERT(m_ComponentIdToData.ContainsKey(componentIds[i]), "Archetype does not contain component id.")
 
-                std::apply([&](TComponents* ... rest)
-                           {
-                               for (UInt64 i = 0; i < m_EntityIds.GetCount(); ++i)
-                                   callback(&component[i], &rest[i]...);
-                           }, components);
+                m_ComponentIdToData[componentIds[i]]->Add(&componentData[j], componentSizes[i]);
+                j += componentSizes[i];
             }
+
+            return true;
         }
 
         /**
@@ -405,6 +261,14 @@ namespace Otter
                 return;
             }
 
+            OTR_DEBUG_BLOCK(
+                for (UInt64 i = 0; i < m_ComponentIdToData.GetCount(); i++)
+                {
+                    OTR_ASSERT(m_ComponentIdToData.ContainsKey(componentIds[i]),
+                               "Archetype does not contain component id.")
+                }
+            )
+
             UInt64 dataIndex = 0;
             UInt64 sizeIndex = 0;
 
@@ -416,6 +280,129 @@ namespace Otter
 
                 dataIndex += componentSizes[sizeIndex];
                 ++sizeIndex;
+            }
+        }
+
+        /**
+         * @brief Gets the requested components of the archetype for an entity.
+         *
+         * @tparam TComponent The type of the component.
+         * @tparam TComponents The types of the rest of the components.
+         *
+         * @param entityId The entity id.
+         *
+         * @return The requested components as a single pointer or a tuple of pointers, depending on the amount of
+         * components requested.
+         */
+        template<typename TComponent, typename... TComponents>
+        requires IsComponent<TComponent> && AreComponents<TComponents...>
+        [[nodiscard]] decltype(auto) GetComponentsForEntityUnsafe(const EntityId entityId) const
+        {
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_ASSERT(HasComponent<TComponent>(), "Archetype must have component.")
+            OTR_ASSERT(m_EntityIdToBufferPosition.ContainsKey(entityId), "Entity id must belong to the archetype.")
+
+            if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
+                return &m_ComponentIdToData[TComponent::Id]
+                    ->template GetData<TComponent>()[*m_EntityIdToBufferPosition[entityId]];
+            else
+            {
+                auto entityIndex = *m_EntityIdToBufferPosition[entityId];
+
+                std::tuple<TComponent*, TComponents* ...> components;
+                std::get<TComponent*>(components) = &m_ComponentIdToData[TComponent::Id]
+                    ->template GetData<TComponent>()[entityIndex];
+
+                ([&]
+                {
+                    std::get<TComponents*>(components) = &m_ComponentIdToData[TComponents::Id]
+                        ->template GetData<TComponents>()[entityIndex];
+                }(), ...);
+
+                return components;
+            }
+        }
+
+        /**
+         * @brief Removes an entity and all its component data from the archetype.
+         *
+         * @param entityId The entity id.
+         *
+         * @return True if the entity-component data were removed, false otherwise.
+         */
+        bool TryRemoveComponentData(const EntityId entityId)
+        {
+            if (!m_EntityIdToBufferPosition.ContainsKey(entityId))
+                return false;
+
+            UInt64 index     = *m_EntityIdToBufferPosition[entityId];
+            UInt64 lastIndex = m_EntityIds.GetCount() - 1;
+
+            OTR_VALIDATE(m_EntityIds.TryRemoveAt(index), "Failed to remove entity with id '{0}'.", entityId)
+            OTR_VALIDATE(m_EntityIdToBufferPosition.TryRemove(entityId),
+                         "Failed to remove entity with id '{0}' from buffer position dictionary.", entityId)
+
+            if (index != lastIndex)
+            {
+                OTR_VALIDATE(m_EntityIdToBufferPosition.TryAdd(m_EntityIds[index], index),
+                             "Failed to move entity with id '{0}' to buffer position dictionary.", m_EntityIds[index])
+            }
+
+            for (auto& [componentId, storedComponentData]: m_ComponentIdToData)
+            {
+                OTR_VALIDATE(storedComponentData.TryRemoveAt(index),
+                             "Failed to remove component data for entity with id '{0}'.", entityId)
+            }
+
+            return true;
+        }
+
+        /**
+         * @brief Iterates over all entities of the archetype.
+         *
+         * @tparam TComponent The component type.
+         * @tparam TComponents The rest of the components.
+         *
+         * @param callback The function to call for entity.
+         */
+        template<typename TComponent, typename... TComponents>
+        requires IsComponent<TComponent> && AreComponents<TComponents...>
+        void ForEach(const Function<void(TComponent*, TComponents* ...)>& callback) const
+        {
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_DEBUG_BLOCK(
+                if (VariadicArgs<TComponents...>::GetSize() > 0)
+                {
+                    OTR_STATIC_ASSERT((AreUnique<TComponent, TComponents...>::value), "Components must be unique.");
+
+                    ([&]
+                    {
+                        OTR_STATIC_ASSERT(TComponents::Id > 0, "Component Id must be greater than 0.")
+                    }(), ...);
+                }
+            )
+
+            auto* component = m_ComponentIdToData[TComponent::Id]->template GetData<TComponent>();
+
+            if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
+            {
+                for (UInt64 i = 0; i < m_EntityIds.GetCount(); ++i)
+                    callback(&component[i]);
+            }
+            else
+            {
+                std::tuple<TComponents* ...> components;
+                ([&]
+                {
+                    std::get<TComponents*>(components) = m_ComponentIdToData[TComponents::Id]
+                        ->template GetData<TComponents>();
+                }(), ...);
+
+                std::apply([&](TComponents* ... rest)
+                           {
+                               for (UInt64 i = 0; i < m_EntityIds.GetCount(); ++i)
+                                   callback(&component[i], &rest[i]...);
+                           }, components);
             }
         }
     };

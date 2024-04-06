@@ -180,116 +180,33 @@ TEST_F(Archetype_Fixture, Equality)
     EXPECT_FALSE(archetype1 == archetype3);
 }
 
-TEST_F(Archetype_Fixture, GetComponents_Single)
+TEST_F(Archetype_Fixture, AddGetComponentsForEntity_Single)
 {
     ArchetypeFingerprint fingerprint;
     fingerprint.Set(0, true);
 
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
+    Archetype archetype(fingerprint, { TestComponent1::Id });
 
-    Archetype archetype(fingerprint, componentIds);
+    Otter::EntityId    entityId1          = 1;
+    Otter::ComponentId componentIds1[1]   = { TestComponent1::Id };
+    TestComponent1     component1(1, 2);
+    UInt64             componentSizes1[1] = { sizeof(TestComponent1) };
 
-    TestComponent1                    component(1, 2);
-    Otter::List<Otter::ComponentData> componentData;
-    componentData.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component, sizeof(TestComponent1) });
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId1, componentIds1, componentSizes1, (Byte*) &component1));
 
-    Otter::EntityId entityId = 1;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId, componentData));
+    Otter::EntityId    entityId2          = 2;
+    Otter::ComponentId componentIds2[1]   = { TestComponent1::Id };
+    TestComponent1     component2(3, 4);
+    UInt64             componentSizes2[1] = { sizeof(TestComponent1) };
 
-    EXPECT_EQ(archetype.GetEntityCount(), 1);
-    EXPECT_EQ(archetype.GetComponentCount(), 1);
-
-    auto comp = archetype.GetComponents<TestComponent1>();
-
-    EXPECT_EQ(comp->A, 1);
-    EXPECT_EQ(comp->B, 2);
-
-    comp->A = 3;
-    comp->B = 4;
-
-    comp = archetype.GetComponents<TestComponent1>();
-
-    EXPECT_EQ(comp->A, 3);
-    EXPECT_EQ(comp->B, 4);
-}
-
-TEST_F(Archetype_Fixture, GetComponents_Multiple)
-{
-    ArchetypeFingerprint fingerprint;
-    fingerprint.Set(0, true);
-    fingerprint.Set(1, true);
-
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
-
-    EXPECT_DEATH(Archetype(fingerprint, componentIds), "");
-
-    componentIds.Add(TestComponent2::Id);
-
-    Archetype archetype(fingerprint, componentIds);
-
-    TestComponent1                    component1(1, 2);
-    Otter::List<Otter::ComponentData> componentData;
-    componentData.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component1, sizeof(TestComponent1) });
-
-    Otter::EntityId entityId = 1;
-    EXPECT_DEATH(archetype.TryAddComponentData(entityId, componentData), "");
-
-    TestComponent2 component2(3, 4);
-    componentData.Add(Otter::ComponentData{ TestComponent2::Id, (Byte*) &component2, sizeof(TestComponent2) });
-
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId, componentData));
-
-    EXPECT_EQ(archetype.GetEntityCount(), 1);
-    EXPECT_EQ(archetype.GetComponentCount(), 2);
-
-    auto [comp1, comp2] = archetype.GetComponents<TestComponent1, TestComponent2>();
-    EXPECT_EQ(comp1->A, 1);
-    EXPECT_EQ(comp1->B, 2);
-    EXPECT_EQ(comp2->A, 3);
-    EXPECT_EQ(comp2->B, 4);
-
-    comp1->A = 5;
-    comp1->B = 6;
-    comp2->A = 7;
-    comp2->B = 8;
-
-    std::tie(comp1, comp2) = archetype.GetComponents<TestComponent1, TestComponent2>();
-
-    EXPECT_EQ(comp1->A, 5);
-    EXPECT_EQ(comp1->B, 6);
-    EXPECT_EQ(comp2->A, 7);
-    EXPECT_EQ(comp2->B, 8);
-}
-
-TEST_F(Archetype_Fixture, GetComponentsForEntity_Single)
-{
-    ArchetypeFingerprint fingerprint;
-    fingerprint.Set(0, true);
-
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
-
-    Archetype archetype(fingerprint, componentIds);
-
-    TestComponent1                    component1(1, 2);
-    Otter::List<Otter::ComponentData> componentData1;
-    componentData1.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component1, sizeof(TestComponent1) });
-
-    Otter::EntityId entityId1 = 1;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId1, componentData1));
-
-    TestComponent1                    component2(3, 4);
-    Otter::List<Otter::ComponentData> componentData2;
-    componentData2.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component2, sizeof(TestComponent1) });
-
-    Otter::EntityId entityId2 = 2;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId2, componentData2));
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId2, componentIds2, componentSizes2, (Byte*) &component2));
 
     EXPECT_EQ(archetype.GetEntityCount(), 2);
     EXPECT_EQ(archetype.GetComponentCount(), 1);
 
-    EXPECT_DEATH(auto result = archetype.GetComponentsForEntity<TestComponent1>(123), "");
+    EXPECT_DEATH(auto result = archetype.GetComponentsForEntityUnsafe<TestComponent1>(123), "");
 
-    auto* found = archetype.GetComponentsForEntity<TestComponent1>(entityId2);
+    auto* found = archetype.GetComponentsForEntityUnsafe<TestComponent1>(entityId2);
 
     EXPECT_EQ(found->A, 3);
     EXPECT_EQ(found->B, 4);
@@ -297,95 +214,121 @@ TEST_F(Archetype_Fixture, GetComponentsForEntity_Single)
     found->A = 5;
     found->B = 6;
 
-    found = archetype.GetComponentsForEntity<TestComponent1>(entityId1);
+    found = archetype.GetComponentsForEntityUnsafe<TestComponent1>(entityId1);
 
     EXPECT_EQ(found->A, 1);
     EXPECT_EQ(found->B, 2);
 
-    found = archetype.GetComponentsForEntity<TestComponent1>(entityId2);
+    found = archetype.GetComponentsForEntityUnsafe<TestComponent1>(entityId2);
 
     EXPECT_EQ(found->A, 5);
     EXPECT_EQ(found->B, 6);
 }
 
-TEST_F(Archetype_Fixture, GetComponentsForEntity_Multiple)
+TEST_F(Archetype_Fixture, AddGetComponentsForEntity_Multiple)
 {
     ArchetypeFingerprint fingerprint;
     fingerprint.Set(0, true);
     fingerprint.Set(1, true);
+    fingerprint.Set(2, true);
 
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id };
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
 
     Archetype archetype(fingerprint, componentIds);
 
-    TestComponent1                    component1a(1, 2);
-    TestComponent2                    component1b(3, 4);
-    Otter::List<Otter::ComponentData> componentData1;
-    componentData1.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component1a, sizeof(TestComponent1) });
-    componentData1.Add(Otter::ComponentData{ TestComponent2::Id, (Byte*) &component1b, sizeof(TestComponent2) });
+    Otter::EntityId    entityId1        = 1;
+    Otter::ComponentId componentIds1[3] = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+    TestComponent1     component1a(1, 2);
+    TestComponent2     component2a(3, 4);
+    TestComponent3     component3a(5, 6);
+    Byte               componentData1[sizeof(TestComponent1) + sizeof(TestComponent2) + sizeof(TestComponent3)];
+    Otter::MemorySystem::MemoryCopy(&componentData1[0], (Byte*) &component1a, sizeof(TestComponent1));
+    Otter::MemorySystem::MemoryCopy(&componentData1[sizeof(TestComponent1)],
+                                    (Byte*) &component2a,
+                                    sizeof(TestComponent2));
+    Otter::MemorySystem::MemoryCopy(&componentData1[sizeof(TestComponent1) + sizeof(TestComponent2)],
+                                    (Byte*) &component3a,
+                                    sizeof(TestComponent3));
+    UInt64 componentSizes1[3] = { sizeof(TestComponent1), sizeof(TestComponent2), sizeof(TestComponent3) };
 
-    Otter::EntityId entityId1 = 1;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId1, componentData1));
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId1, componentIds1, componentSizes1, componentData1));
 
-    TestComponent1                    component2a(5, 6);
-    TestComponent2                    component2b(7, 8);
-    Otter::List<Otter::ComponentData> componentData2;
-    componentData2.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component2a, sizeof(TestComponent1) });
-    componentData2.Add(Otter::ComponentData{ TestComponent2::Id, (Byte*) &component2b, sizeof(TestComponent2) });
+    Otter::EntityId    entityId2        = 2;
+    Otter::ComponentId componentIds2[3] = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+    TestComponent1     component1b(7, 8);
+    TestComponent2     component2b(9, 10);
+    TestComponent3     component3b(11, 12);
+    Byte               componentData2[sizeof(TestComponent1) + sizeof(TestComponent2) + sizeof(TestComponent3)];
+    Otter::MemorySystem::MemoryCopy(&componentData2[0], (Byte*) &component1b, sizeof(TestComponent1));
+    Otter::MemorySystem::MemoryCopy(&componentData2[sizeof(TestComponent1)],
+                                    (Byte*) &component2b,
+                                    sizeof(TestComponent2));
+    Otter::MemorySystem::MemoryCopy(&componentData2[sizeof(TestComponent1) + sizeof(TestComponent2)],
+                                    (Byte*) &component3b,
+                                    sizeof(TestComponent3));
+    UInt64 componentSizes2[3] = { sizeof(TestComponent1), sizeof(TestComponent2), sizeof(TestComponent3) };
 
-    Otter::EntityId entityId2 = 2;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId2, componentData2));
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId2, componentIds2, componentSizes2, componentData2));
 
     EXPECT_EQ(archetype.GetEntityCount(), 2);
-    EXPECT_EQ(archetype.GetComponentCount(), 2);
+    EXPECT_EQ(archetype.GetComponentCount(), 3);
 
-    auto [comp1, comp2] = archetype.GetComponentsForEntity<TestComponent1, TestComponent2>(entityId2);
+    auto [comp1, comp2, comp3] = archetype
+        .GetComponentsForEntityUnsafe<TestComponent1, TestComponent2, TestComponent3>(entityId2);
 
-    EXPECT_EQ(comp1->A, 5);
-    EXPECT_EQ(comp1->B, 6);
-    EXPECT_EQ(comp2->A, 7);
-    EXPECT_EQ(comp2->B, 8);
+    EXPECT_EQ(comp1->A, 7);
+    EXPECT_EQ(comp1->B, 8);
+    EXPECT_EQ(comp2->A, 9);
+    EXPECT_EQ(comp2->B, 10);
+    EXPECT_EQ(comp3->A, 11);
+    EXPECT_EQ(comp3->B, 12);
 
-    comp1->A = 9;
-    comp1->B = 10;
-    comp2->A = 11;
-    comp2->B = 12;
+    comp1->A = 70;
+    comp1->B = 80;
+    comp2->A = 90;
+    comp2->B = 100;
+    comp3->A = 110;
+    comp3->B = 120;
 
-    std::tie(comp1, comp2) = archetype.GetComponentsForEntity<TestComponent1, TestComponent2>(entityId1);
+    std::tie(comp1, comp2, comp3) = archetype
+        .GetComponentsForEntityUnsafe<TestComponent1, TestComponent2, TestComponent3>(entityId1);
 
     EXPECT_EQ(comp1->A, 1);
     EXPECT_EQ(comp1->B, 2);
     EXPECT_EQ(comp2->A, 3);
     EXPECT_EQ(comp2->B, 4);
+    EXPECT_EQ(comp3->A, 5);
+    EXPECT_EQ(comp3->B, 6);
 
-    std::tie(comp1, comp2) = archetype.GetComponentsForEntity<TestComponent1, TestComponent2>(entityId2);
+    std::tie(comp1, comp2, comp3) = archetype
+        .GetComponentsForEntityUnsafe<TestComponent1, TestComponent2, TestComponent3>(entityId2);
 
-    EXPECT_EQ(comp1->A, 9);
-    EXPECT_EQ(comp1->B, 10);
-    EXPECT_EQ(comp2->A, 11);
-    EXPECT_EQ(comp2->B, 12);
+    EXPECT_EQ(comp1->A, 70);
+    EXPECT_EQ(comp1->B, 80);
+    EXPECT_EQ(comp2->A, 90);
+    EXPECT_EQ(comp2->B, 100);
+    EXPECT_EQ(comp3->A, 110);
+    EXPECT_EQ(comp3->B, 120);
 }
 
-TEST_F(Archetype_Fixture, AddingGettingAndRemoving_ComponentData)
+TEST_F(Archetype_Fixture, Removing_ComponentData)
 {
     ArchetypeFingerprint fingerprint;
     fingerprint.Set(0, true);
 
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id };
+    Archetype archetype(fingerprint, { TestComponent1::Id });
 
-    Archetype archetype(fingerprint, componentIds);
+    Otter::EntityId    entityId          = 1;
+    Otter::ComponentId componentIds[1]   = { TestComponent1::Id };
+    TestComponent1     component(1, 2);
+    UInt64             componentSizes[1] = { sizeof(TestComponent1) };
 
-    TestComponent1                    component(1, 2);
-    Otter::List<Otter::ComponentData> componentData;
-    componentData.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component, sizeof(TestComponent1) });
-
-    Otter::EntityId entityId = 1;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId, componentData));
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId, componentIds, componentSizes, (Byte*) &component));
 
     EXPECT_EQ(archetype.GetEntityCount(), 1);
     EXPECT_EQ(archetype.GetComponentCount(), 1);
 
-    auto* found = archetype.GetComponentsForEntity<TestComponent1>(entityId);
+    auto* found = archetype.GetComponentsForEntityUnsafe<TestComponent1>(entityId);
 
     EXPECT_EQ(found->A, 1);
     EXPECT_EQ(found->B, 2);
@@ -395,7 +338,7 @@ TEST_F(Archetype_Fixture, AddingGettingAndRemoving_ComponentData)
     EXPECT_EQ(archetype.GetEntityCount(), 0);
     EXPECT_EQ(archetype.GetComponentCount(), 1);
 
-    EXPECT_DEATH(found = archetype.GetComponentsForEntity<TestComponent1>(entityId), "");
+    EXPECT_DEATH(found = archetype.GetComponentsForEntityUnsafe<TestComponent1>(entityId), "");
 }
 
 TEST_F(Archetype_Fixture, HasComponent)
@@ -417,20 +360,24 @@ TEST_F(Archetype_Fixture, ForEach_SingleEntity)
     fingerprint.Set(1, true);
     fingerprint.Set(2, true);
 
-    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+    Archetype archetype(fingerprint, { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id });
 
-    Archetype archetype(fingerprint, componentIds);
+    Otter::EntityId    entityId        = 1;
+    Otter::ComponentId componentIds[3] = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+    TestComponent1     component1(1, 2);
+    TestComponent2     component2(3, 4);
+    TestComponent3     component3(5, 6);
+    Byte               componentData[sizeof(TestComponent1) + sizeof(TestComponent2) + sizeof(TestComponent3)];
+    Otter::MemorySystem::MemoryCopy(&componentData[0], (Byte*) &component1, sizeof(TestComponent1));
+    Otter::MemorySystem::MemoryCopy(&componentData[sizeof(TestComponent1)],
+                                    (Byte*) &component2,
+                                    sizeof(TestComponent2));
+    Otter::MemorySystem::MemoryCopy(&componentData[sizeof(TestComponent1) + sizeof(TestComponent2)],
+                                    (Byte*) &component3,
+                                    sizeof(TestComponent3));
+    UInt64 componentSizes1[3] = { sizeof(TestComponent1), sizeof(TestComponent2), sizeof(TestComponent3) };
 
-    TestComponent1                    component1(1, 2);
-    TestComponent2                    component2(3, 4);
-    TestComponent3                    component3(5, 6);
-    Otter::List<Otter::ComponentData> componentData;
-    componentData.Add(Otter::ComponentData{ TestComponent1::Id, (Byte*) &component1, sizeof(TestComponent1) });
-    componentData.Add(Otter::ComponentData{ TestComponent2::Id, (Byte*) &component2, sizeof(TestComponent2) });
-    componentData.Add(Otter::ComponentData{ TestComponent3::Id, (Byte*) &component3, sizeof(TestComponent3) });
-
-    Otter::EntityId entityId = 1;
-    EXPECT_TRUE(archetype.TryAddComponentData(entityId, componentData));
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId, componentIds, componentSizes1, componentData));
 
     EXPECT_EQ(archetype.GetEntityCount(), 1);
     EXPECT_EQ(archetype.GetComponentCount(), 3);

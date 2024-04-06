@@ -119,72 +119,6 @@ namespace Otter
         void RefreshManagerData();
 
         /**
-         * @brief Iterates over all entities with a set of components.
-         *
-         * @tparam TComponent The component type.
-         * @tparam TComponents The rest of the components.
-         *
-         * @param callback The function to call for each set of components.
-         */
-        template<typename TComponent, typename... TComponents>
-        requires IsComponent<TComponent> && AreComponents<TComponents...>
-        void ForEach(const Function<void(TComponent * , TComponents * ...)>& callback) const
-        {
-            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
-            OTR_DEBUG_BLOCK(
-                if (VariadicArgs<TComponents...>::GetSize() > 0)
-                {
-                    OTR_STATIC_ASSERT((AreUnique<TComponent, TComponents...>::value), "Components must be unique.");
-
-                    ([&]
-                    {
-                        OTR_STATIC_ASSERT(TComponents::Id > 0, "Component Id must be greater than 0.")
-                    }(), ...);
-                }
-            )
-
-            OTR_ASSERT(m_FingerprintToArchetype.GetCount() > 0, "No archetypes registered for fingerprint.")
-            OTR_ASSERT(m_ComponentToFingerprints.ContainsKey(TComponent::Id),
-                       "Component with id {0} not registered.",
-                       TComponent::Id)
-
-            // BUG: ForEach looks like not working correctly but due to an underlying issue with the component data stored.
-
-            if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
-            {
-                for (const auto& fingerprint: *m_ComponentToFingerprints[TComponent::Id])
-                    m_FingerprintToArchetype[fingerprint]->ForEach(callback);
-            }
-            else
-            {
-                List<ArchetypeFingerprint> fingerprints;
-
-                for (const auto& fingerprint: *m_ComponentToFingerprints[TComponent::Id])
-                    fingerprints.Add(fingerprint);
-
-                ([&]
-                {
-                    while (fingerprints.GetCount() < m_FingerprintToArchetype.GetCount())
-                    {
-                        if (!m_ComponentToFingerprints.ContainsKey(TComponents::Id))
-                            return;
-
-                        for (const auto& fingerprint: *m_ComponentToFingerprints[TComponents::Id])
-                        {
-                            if (fingerprints.Contains(fingerprint))
-                                continue;
-
-                            fingerprints.Add(fingerprint);
-                        }
-                    }
-                }(), ...);
-
-                for (const auto& fingerprint: fingerprints)
-                    m_FingerprintToArchetype[fingerprint]->ForEach(callback);
-            }
-        }
-
-        /**
          * @brief Adds a component to an entity.
          *
          * @tparam TComponent The component type.
@@ -208,6 +142,22 @@ namespace Otter
                                    ComponentData{ TComponent::Id,
                                                   (Byte*) &component,
                                                   sizeof(TComponent) });
+        }
+
+        template<typename TComponent>
+        requires IsComponent<TComponent>
+        TComponent* GetComponent(const Entity& entity)
+        {
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_ASSERT(entity.IsValid(), "Entity must be valid.")
+
+            ArchetypeFingerprint fingerprint;
+            if (!m_EntityToFingerprint.TryGet(entity.GetId(), &fingerprint))
+                return nullptr;
+
+            OTR_ASSERT(m_FingerprintToArchetype.ContainsKey(fingerprint), "Archetype not found.")
+
+            return m_FingerprintToArchetype[fingerprint]->GetComponentsForEntityUnsafe<TComponent>(entity.GetId());
         }
 
         /**
@@ -246,6 +196,70 @@ namespace Otter
             OTR_ASSERT(entity.IsValid(), "Entity must be valid.")
 
             return HasComponent(entity.GetId(), TComponent::Id);
+        }
+
+        /**
+         * @brief Iterates over all entities with a set of components.
+         *
+         * @tparam TComponent The component type.
+         * @tparam TComponents The rest of the components.
+         *
+         * @param callback The function to call for each set of components.
+         */
+        template<typename TComponent, typename... TComponents>
+        requires IsComponent<TComponent> && AreComponents<TComponents...>
+        void ForEach(const Function<void(TComponent*, TComponents* ...)>& callback) const
+        {
+            OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
+            OTR_DEBUG_BLOCK(
+                if (VariadicArgs<TComponents...>::GetSize() > 0)
+                {
+                    OTR_STATIC_ASSERT((AreUnique<TComponent, TComponents...>::value), "Components must be unique.");
+
+                    ([&]
+                    {
+                        OTR_STATIC_ASSERT(TComponents::Id > 0, "Component Id must be greater than 0.")
+                    }(), ...);
+                }
+            )
+
+            OTR_ASSERT(m_FingerprintToArchetype.GetCount() > 0, "No archetypes registered for fingerprint.")
+            OTR_ASSERT(m_ComponentToFingerprints.ContainsKey(TComponent::Id),
+                       "Component with id {0} not registered.",
+                       TComponent::Id)
+
+            if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
+            {
+                for (const auto& fingerprint: *m_ComponentToFingerprints[TComponent::Id])
+                    m_FingerprintToArchetype[fingerprint]->ForEach(callback);
+            }
+            else
+            {
+                List<ArchetypeFingerprint> fingerprints;
+
+                for (const auto& fingerprint: *m_ComponentToFingerprints[TComponent::Id])
+                    fingerprints.Add(fingerprint);
+
+                ([&]
+                {
+                    while (fingerprints.GetCount() < m_FingerprintToArchetype.GetCount())
+                    {
+                        if (!m_ComponentToFingerprints.ContainsKey(TComponents::Id))
+                            return;
+
+                        for (const auto& fingerprint: *m_ComponentToFingerprints[TComponents::Id])
+                        {
+                            if (fingerprints.Contains(fingerprint))
+                                continue;
+
+                            fingerprints.Add(fingerprint);
+                        }
+                    }
+                }(), ...);
+
+                for (const auto& fingerprint: fingerprints)
+                    m_FingerprintToArchetype[fingerprint]->ForEach(callback);
+            }
         }
 
         /**
@@ -464,8 +478,8 @@ namespace Otter
         // Archetype Registry
         Dictionary<ArchetypeFingerprint, Archetype>                                 m_FingerprintToArchetype;
         Stack<Archetype>                                                            m_ArchetypesToAdd;
-        Dictionary<ArchetypeFingerprint, Dictionary<EntityId, List<ComponentData>>> m_FingerprintToComponentDataToAdd;
         Dictionary<ArchetypeFingerprint, List<EntityId>>                            m_FingerprintToEntitiesToRemove;
+        Dictionary<ArchetypeFingerprint, Dictionary<EntityId, List<ComponentData>>> m_FingerprintToComponentDataToAdd;
 
         /**
          * @brief Creates an entity.
