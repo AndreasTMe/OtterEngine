@@ -82,7 +82,8 @@ namespace Otter
             m_Slots = Buffer::New<Slot>(m_Capacity);
 
             if (m_Count > 0)
-                MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
+                for (UInt64 i = 0; i < m_Capacity; i++)
+                    m_Slots[i] = other.m_Slots[i];
         }
 
         /**
@@ -132,7 +133,8 @@ namespace Otter
             m_Slots = Buffer::New<Slot>(m_Capacity);
 
             if (m_Count > 0)
-                MemorySystem::MemoryCopy(m_Slots, other.m_Slots, m_Capacity * sizeof(Slot));
+                for (UInt64 i = 0; i < m_Capacity; i++)
+                    m_Slots[i] = other.m_Slots[i];
 
             return *this;
         }

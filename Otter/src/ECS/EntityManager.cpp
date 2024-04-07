@@ -96,15 +96,13 @@ namespace Otter
                     for (const auto& [componentId, _a, _b]: componentDataContainer)
                         componentIds.Add(componentId);
 
-//                    Archetype archetype{ fingerprint, componentIds };
-//                    archetype.TryAddComponentDataUnsafe(entityId,
-//                                                        componentIds.GetData(),
-//                                                        componentDataContainer.GetComponentSizes(),
-//                                                        componentDataContainer.GetComponentData());
-//
-//                    m_ArchetypesToAdd.Push(std::move(archetype));
+                    Archetype archetype{ fingerprint, componentIds };
+                    archetype.TryAddComponentDataUnsafe(entityId,
+                                                        componentIds.GetData(),
+                                                        componentDataContainer.GetComponentSizes(),
+                                                        componentDataContainer.GetComponentData());
 
-                    m_ArchetypesToAdd.Push({ fingerprint, componentIds });
+                    m_ArchetypesToAdd.Push(std::move(archetype));
                 }
 
                 if (!m_EntityToFingerprint.ContainsKey(entityId))

@@ -225,53 +225,51 @@ TEST_F(EntityManager_Fixture, DestroyEntity)
     EXPECT_EQ(manager.GetComponentCount(), 2);
 }
 
-//TEST_F(EntityManager_Fixture, AddGetSingleComponent_SingleEntity)
-//{
-//    EntityManager manager;
-//    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
-//        .LockComponents();
-//
-//    auto entity = manager.CreateEntity()
-//        .SetComponentData<TestComponent1>(1, 2)
-//        .SetComponentData<TestComponent2>(3, 4)
-//        .Build();
-//
-//    EXPECT_TRUE(entity.IsValid());
-//
-//    manager.RefreshManagerData();
-//
-//    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
-//    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity));
-//    EXPECT_FALSE(manager.HasComponent<TestComponent3>(entity));
-//
-//    EXPECT_EQ(manager.GetEntityCount(), 1);
-//    EXPECT_EQ(manager.GetArchetypeCount(), 1);
-//    EXPECT_EQ(manager.GetComponentCount(), 3);
-//
-//    // BUG: This test is failing because the component data is not being set correctly.
-//    auto* comp1 = manager.GetComponent<TestComponent1>(entity);
-//
-//    EXPECT_EQ(comp1->A, 1);
-//    EXPECT_EQ(comp1->B, 2);
-//
-//    EXPECT_NO_FATAL_FAILURE(manager.AddComponent<TestComponent3>(entity, 5, 6));
-//
-//    manager.RefreshManagerData();
-//
-//    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
-//    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity));
-//    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
-//
-//    EXPECT_EQ(manager.GetEntityCount(), 1);
-//    EXPECT_EQ(manager.GetArchetypeCount(), 2);
-//    EXPECT_EQ(manager.GetComponentCount(), 3);
-//
-//    // BUG: This test is failing because the component data is not being set correctly.
-//    auto* comp3 = manager.GetComponent<TestComponent3>(entity);
-//
-//    EXPECT_EQ(comp3->E, 1);
-//    EXPECT_EQ(comp3->F, 2);
-//}
+TEST_F(EntityManager_Fixture, AddGetSingleComponent_SingleEntity)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
+        .LockComponents();
+
+    auto entity = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .Build();
+
+    EXPECT_TRUE(entity.IsValid());
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity));
+    EXPECT_FALSE(manager.HasComponent<TestComponent3>(entity));
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    auto* comp1 = manager.GetComponent<TestComponent1>(entity);
+
+    EXPECT_EQ(comp1->A, 1);
+    EXPECT_EQ(comp1->B, 2);
+
+    EXPECT_NO_FATAL_FAILURE(manager.AddComponent<TestComponent3>(entity, 5, 6));
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 2);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    auto* comp3 = manager.GetComponent<TestComponent3>(entity);
+
+    EXPECT_EQ(comp3->E, 5);
+    EXPECT_EQ(comp3->F, 6);
+}
 
 //TEST_F(EntityManager_Fixture, RemoveSingleComponent_SingleEntity)
 //{
