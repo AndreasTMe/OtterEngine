@@ -180,6 +180,108 @@ TEST_F(Archetype_Fixture, Equality)
     EXPECT_FALSE(archetype1 == archetype3);
 }
 
+TEST_F(Archetype_Fixture, GetComponentDataForEntityUnsafe)
+{
+    ArchetypeFingerprint fingerprint;
+    fingerprint.Set(0, true);
+    fingerprint.Set(1, true);
+    fingerprint.Set(2, true);
+
+    Otter::List<Otter::ComponentId> componentIds = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+
+    Archetype archetype(fingerprint, componentIds);
+
+    Otter::EntityId    entityId1        = 1;
+    Otter::ComponentId componentIds1[3] = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+    TestComponent1     component1a(1, 2);
+    TestComponent2     component2a(3, 4);
+    TestComponent3     component3a(5, 6);
+    Byte               componentData1[sizeof(TestComponent1) + sizeof(TestComponent2) + sizeof(TestComponent3)];
+    Otter::MemorySystem::MemoryCopy(&componentData1[0], (Byte*) &component1a, sizeof(TestComponent1));
+    Otter::MemorySystem::MemoryCopy(&componentData1[sizeof(TestComponent1)],
+                                    (Byte*) &component2a,
+                                    sizeof(TestComponent2));
+    Otter::MemorySystem::MemoryCopy(&componentData1[sizeof(TestComponent1) + sizeof(TestComponent2)],
+                                    (Byte*) &component3a,
+                                    sizeof(TestComponent3));
+    UInt64 componentSizes1[3] = { sizeof(TestComponent1), sizeof(TestComponent2), sizeof(TestComponent3) };
+
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId1, componentIds1, componentSizes1, componentData1));
+
+    Otter::EntityId    entityId2        = 2;
+    Otter::ComponentId componentIds2[3] = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+    TestComponent1     component1b(7, 8);
+    TestComponent2     component2b(9, 10);
+    TestComponent3     component3b(11, 12);
+    Byte               componentData2[sizeof(TestComponent1) + sizeof(TestComponent2) + sizeof(TestComponent3)];
+    Otter::MemorySystem::MemoryCopy(&componentData2[0], (Byte*) &component1b, sizeof(TestComponent1));
+    Otter::MemorySystem::MemoryCopy(&componentData2[sizeof(TestComponent1)],
+                                    (Byte*) &component2b,
+                                    sizeof(TestComponent2));
+    Otter::MemorySystem::MemoryCopy(&componentData2[sizeof(TestComponent1) + sizeof(TestComponent2)],
+                                    (Byte*) &component3b,
+                                    sizeof(TestComponent3));
+    UInt64 componentSizes2[3] = { sizeof(TestComponent1), sizeof(TestComponent2), sizeof(TestComponent3) };
+
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId2, componentIds2, componentSizes2, componentData2));
+
+    EXPECT_EQ(archetype.GetEntityCount(), 2);
+    EXPECT_EQ(archetype.GetComponentCount(), 3);
+
+    Otter::ComponentData componentData;
+    archetype.GetComponentDataForEntityUnsafe(entityId2, &componentData);
+
+    UInt64 loopCount = 0;
+
+    for (const auto& [id, size, data]: componentData)
+    {
+        switch (id)
+        {
+            case TestComponent1::Id:
+            {
+                EXPECT_EQ(size, sizeof(TestComponent1));
+
+                auto* found = (TestComponent1*) data;
+                EXPECT_EQ(found->A, 7);
+                EXPECT_EQ(found->B, 8);
+
+                loopCount++;
+
+                break;
+            }
+            case TestComponent2::Id:
+            {
+                EXPECT_EQ(size, sizeof(TestComponent1));
+
+                auto* found = (TestComponent2*) data;
+                EXPECT_EQ(found->A, 9);
+                EXPECT_EQ(found->B, 10);
+
+                loopCount++;
+
+                break;
+            }
+            case TestComponent3::Id:
+            {
+                EXPECT_EQ(size, sizeof(TestComponent1));
+
+                auto* found = (TestComponent3*) data;
+                EXPECT_EQ(found->A, 11);
+                EXPECT_EQ(found->B, 12);
+
+                loopCount++;
+
+                break;
+            }
+            default:
+                FAIL();
+                break;
+        }
+    }
+
+    EXPECT_EQ(loopCount, 3);
+}
+
 TEST_F(Archetype_Fixture, AddGetComponentsForEntity_Single)
 {
     ArchetypeFingerprint fingerprint;

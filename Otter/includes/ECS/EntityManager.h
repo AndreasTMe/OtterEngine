@@ -6,7 +6,7 @@
 #include "Core/Collections/Dictionary.h"
 #include "ECS/Entity.h"
 #include "ECS/Archetype.h"
-#include "Components/IComponent.h"
+#include "ECS/ComponentData.h"
 
 namespace Otter
 {
@@ -126,24 +126,28 @@ namespace Otter
          *
          * @param entity The entity.
          * @param args The component arguments.
-         *
-         * @return True if the component was added, false otherwise.
          */
         template<typename TComponent, typename... TArgs>
         requires IsComponent<TComponent>
-        bool TryAddComponent(const Entity& entity, TArgs&& ... args)
+        void AddComponent(const Entity& entity, TArgs&& ... args)
         {
             OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
             OTR_ASSERT(entity.IsValid(), "Entity must be valid.")
 
             auto component = TComponent(std::forward<TArgs>(args)...);
 
-            return TryAddComponent(entity.GetId(),
-                                   ComponentData{ TComponent::Id,
-                                                  (Byte*) &component,
-                                                  sizeof(TComponent) });
+            AddComponent(entity.GetId(), TComponent::Id, sizeof(TComponent), (Byte*) &component);
         }
 
+        /**
+         * @brief Retrieves a component of an entity.
+         *
+         * @tparam TComponent The component type.
+         *
+         * @param entity The entity.
+         *
+         * @return A pointer to the component.
+         */
         template<typename TComponent>
         requires IsComponent<TComponent>
         TComponent* GetComponent(const Entity& entity)
@@ -376,8 +380,7 @@ namespace Otter
                 OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
 
                 auto component = TComponent(std::forward<TArgs>(args)...);
-                SetComponentDataInternal(TComponent::Id,
-                                         ComponentData{ TComponent::Id, (Byte*) &component, sizeof(TComponent) });
+                SetComponentDataInternal(TComponent::Id, sizeof(TComponent), (Byte*) &component);
 
                 return *this;
             }
@@ -393,12 +396,12 @@ namespace Otter
             EntityManager* m_EntityManager;
             Entity               m_Entity;
             ArchetypeFingerprint m_Fingerprint;
-            List<ComponentData>  m_ComponentData;
+            ComponentData        m_ComponentData;
 
             /**
              * @brief Sets the component data. Used internally.
              */
-            void SetComponentDataInternal(UInt64 componentId, ComponentData&& componentData);
+            void SetComponentDataInternal(UInt64 componentId, UInt64 componentSize, const Byte* componentData);
         };
 
         /**
@@ -414,7 +417,7 @@ namespace Otter
              * @param entity The entity.
              * @param archetype The archetype.
              */
-            EntityBuilderFromArchetype(EntityManager* entityManager, Entity entity, Archetype archetype);
+            EntityBuilderFromArchetype(EntityManager* entityManager, Entity entity, const Archetype& archetype);
 
             /**
              * @brief Destructor.
@@ -438,8 +441,7 @@ namespace Otter
                 OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
 
                 auto component = TComponent(std::forward<TArgs>(args)...);
-                SetComponentDataInternal(TComponent::Id,
-                                         ComponentData{ TComponent::Id, (Byte*) &component, sizeof(TComponent) });
+                SetComponentDataInternal(TComponent::Id, sizeof(TComponent), (Byte*) &component);
 
                 return *this;
             }
@@ -454,21 +456,21 @@ namespace Otter
         private:
             EntityManager* m_EntityManager;
             Entity               m_Entity;
-            List<ComponentData>  m_ComponentData;
-            Archetype            m_Archetype;
             ArchetypeFingerprint m_FingerprintTrack;
+            ComponentData        m_ComponentData;
 
             /**
              * @brief Sets the component data. Used internally.
              */
-            void SetComponentDataInternal(UInt64 componentId, ComponentData&& componentData);
+            void SetComponentDataInternal(UInt64 componentId, UInt64 componentSize, const Byte* componentData);
         };
 
         // Entity Registry
         List<Entity>                               m_Entities;
         Dictionary<Entity, UInt64>                 m_EntityToIndex;
-        Stack<Entity>                              m_EntitiesToAdd;
         Dictionary<EntityId, ArchetypeFingerprint> m_EntityToFingerprint;
+        Stack<Entity>                              m_EntitiesToAdd;
+        Dictionary<EntityId, ComponentData>        m_EntityToComponentDataToAdd;
 
         // Component Registry
         Dictionary<ComponentId, UInt64>                     m_ComponentToFingerprintIndex;
@@ -476,10 +478,9 @@ namespace Otter
         bool                                                m_ComponentsLock = false;
 
         // Archetype Registry
-        Dictionary<ArchetypeFingerprint, Archetype>                                 m_FingerprintToArchetype;
-        Stack<Archetype>                                                            m_ArchetypesToAdd;
-        Dictionary<ArchetypeFingerprint, List<EntityId>>                            m_FingerprintToEntitiesToRemove;
-        Dictionary<ArchetypeFingerprint, Dictionary<EntityId, List<ComponentData>>> m_FingerprintToComponentDataToAdd;
+        Dictionary<ArchetypeFingerprint, Archetype>      m_FingerprintToArchetype;
+        Dictionary<ArchetypeFingerprint, List<EntityId>> m_FingerprintToEntitiesToRemove;
+        Stack<Archetype>                                 m_ArchetypesToAdd;
 
         /**
          * @brief Creates an entity.
@@ -489,24 +490,23 @@ namespace Otter
         Entity CreateEntityInternal();
 
         /**
-         * @brief Populates the list of archetypes to be added in the next refresh.
+         * @brief Refreshes the list of archetypes.
          *
          * @note This method:
-         * <br>- Adds new archetypes.
          * <br>- Adds components to archetypes.
+         * <br>- Adds new archetypes.
          * <br>- Removes entities from archetypes.
          */
-        void PopulateNewArchetypes();
+        void RefreshArchetypes();
 
         /**
-         * @brief Populates the list of entities to be added in the next refresh.
+         * @brief Refreshes the list of entities.
+         *
+         * @note This method:
+         * <br>- Adds new entities.
+         * <br>- Removes invalid entities.
          */
-        void PopulateNewEntities();
-
-        /**
-         * @brief Removes any entities that are not valid.
-         */
-        void CleanUpEntities();
+        void RefreshEntities();
 
         /**
          * @brief Registers a component or a list of components recursively.
@@ -536,11 +536,11 @@ namespace Otter
          * @brief Adds a component to an entity.
          *
          * @param entityId The entity id.
+         * @param componentId The component id.
+         * @param componentSize The component size.
          * @param componentData The component data.
-         *
-         * @return True if the component was added, false otherwise.
          */
-        bool TryAddComponent(EntityId entityId, const ComponentData& componentData);
+        void AddComponent(EntityId entityId, UInt64 componentId, UInt64 componentSize, const Byte* componentData);
 
         /**
          * @brief Removes a component from an entity.

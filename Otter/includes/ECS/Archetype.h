@@ -5,7 +5,7 @@
 #include "Core/Collections/UnsafeList.h"
 #include "Core/Collections/Dictionary.h"
 #include "ECS/Entity.h"
-#include "Components/IComponent.h"
+#include "ECS/ComponentData.h"
 
 namespace Otter
 {
@@ -230,57 +230,19 @@ namespace Otter
          * @brief Gets the component data for an entity.
          *
          * @param entityId The entity id.
-         * @param componentIds An array of the component ids of the archetype.
-         * @param componentSizes An array of each of the archetype's components' sizes.
-         * @param componentData The archetype's component data of the entity in a continuous buffer.
-         *
-         * @note The `componentIds` and `componentSizes` arrays must be pre-allocated and their sizes must be equal to
-         * the archetype's component count.
-         * @note The `componentData` buffer must be pre-allocated and its size must be equal to the sum of the
-         * archetype's component sizes.
+         * @param componentData The container to store the component data.
          */
-        void GetComponentDataForEntityUnsafe(const EntityId entityId,
-                                             ComponentId* componentIds,
-                                             UInt64* componentSizes,
-                                             Byte* componentData) const
+        void GetComponentDataForEntityUnsafe(const EntityId entityId, ComponentData* componentData) const
         {
             OTR_ASSERT(m_EntityIdToBufferPosition.ContainsKey(entityId), "Entity id must belong to the archetype.")
-            OTR_ASSERT(componentIds && componentSizes, "Component ids and sizes must not be null.")
+            OTR_ASSERT(componentData, "Component data container should not be null.")
 
-            if (!componentData)
-            {
-                UInt64 index = 0;
-                for (const auto& [componentId, storedComponentData]: m_ComponentIdToData)
-                {
-                    componentIds[index]   = componentId;
-                    componentSizes[index] = storedComponentData.GetOffset();
+            const auto bufferPosition = *m_EntityIdToBufferPosition[entityId];
 
-                    ++index;
-                }
-
-                return;
-            }
-
-            OTR_DEBUG_BLOCK(
-                for (UInt64 i = 0; i < m_ComponentIdToData.GetCount(); i++)
-                {
-                    OTR_ASSERT(m_ComponentIdToData.ContainsKey(componentIds[i]),
-                               "Archetype does not contain component id.")
-                }
-            )
-
-            UInt64 dataIndex = 0;
-            UInt64 sizeIndex = 0;
-
-            for (const auto& [_, storedComponentData]: m_ComponentIdToData)
-            {
-                MemorySystem::MemoryCopy(&componentData[dataIndex],
-                                         storedComponentData.GetData(),
-                                         componentSizes[sizeIndex]);
-
-                dataIndex += componentSizes[sizeIndex];
-                ++sizeIndex;
-            }
+            for (const auto& [componentId, storedComponentData]: m_ComponentIdToData)
+                componentData->Add(componentId,
+                                   storedComponentData.GetOffset(),
+                                   storedComponentData.operator[]<Byte>(bufferPosition));
         }
 
         /**
@@ -303,20 +265,20 @@ namespace Otter
             OTR_ASSERT(m_EntityIdToBufferPosition.ContainsKey(entityId), "Entity id must belong to the archetype.")
 
             if constexpr (VariadicArgs<TComponents...>::GetSize() == 0)
-                return &m_ComponentIdToData[TComponent::Id]
-                    ->template GetData<TComponent>()[*m_EntityIdToBufferPosition[entityId]];
+                return m_ComponentIdToData[TComponent::Id]
+                    ->template operator[]<TComponent>(*m_EntityIdToBufferPosition[entityId]);
             else
             {
                 auto entityIndex = *m_EntityIdToBufferPosition[entityId];
 
                 std::tuple<TComponent*, TComponents* ...> components;
-                std::get<TComponent*>(components) = &m_ComponentIdToData[TComponent::Id]
-                    ->template GetData<TComponent>()[entityIndex];
+                std::get<TComponent*>(components) = m_ComponentIdToData[TComponent::Id]
+                    ->template operator[]<TComponent>(entityIndex);
 
                 ([&]
                 {
-                    std::get<TComponents*>(components) = &m_ComponentIdToData[TComponents::Id]
-                        ->template GetData<TComponents>()[entityIndex];
+                    std::get<TComponents*>(components) = m_ComponentIdToData[TComponents::Id]
+                        ->template operator[]<TComponents>(entityIndex);
                 }(), ...);
 
                 return components;
