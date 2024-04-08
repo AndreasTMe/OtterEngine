@@ -34,20 +34,22 @@ The engine has:
 - Custom collections that use the memory system above (trying my best to allocate memory in contiguous blocks)
     - Span/ReadOnlySpan (fixed size, stack allocated data)
     - Array/ReadOnlyArray (fixed size, heap allocated data)
-    - List (dynamic size, heap allocated data)
-    - Stack (dynamic size, stack allocated data)
-    - Queue (circular, dynamic size, heap allocated data)
-    - Deque (dynamic size, heap allocated data)
-    - HashSet (dynamic size, prime number size, heap allocated data)
-    - Dictionary (dynamic size, prime number size, heap allocated data)
+    - BitSet (dynamic size, heap allocated data)
+        - List (dynamic size, heap allocated data)
+        - Stack (dynamic size, stack allocated data)
+        - Queue (circular, dynamic size, heap allocated data)
+        - Deque (dynamic size, heap allocated data)
+        - HashSet (dynamic size, prime number size, heap allocated data)
+        - Dictionary (dynamic size, prime number size, heap allocated data)
+    - UnsafeList (dynamic size, heap allocated data, ignores types)
 - Custom math classes
     - Vector2D, Vector3D, Vector4D
     - Quaternion
     - Matrix2x2, Matrix3x3, Matrix4x4
+- Custom Archetype-based Entity Component System
 
 ## Future plans
 
-- [ ] An entity-component-system architecture (a naive implementation for now)
 - [ ] Build a simple 2D game using the engine
 
 Honestly, this is it for now. This will probably be expanded as I go, with things like (in priority order):
