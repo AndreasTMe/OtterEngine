@@ -62,11 +62,17 @@ namespace Otter
          * @param other The deque to copy.
          */
         Deque(const Deque<T>& other)
-            : Deque()
         {
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
-            m_Data     = other.m_Data;
+
+            if (m_Capacity == 0)
+                return;
+
+            m_Data = Buffer::New < T > (m_Capacity);
+
+            if (m_Count > 0)
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * sizeof(T));
         }
 
         /**
@@ -75,7 +81,6 @@ namespace Otter
          * @param other The deque to move.
          */
         Deque(Deque<T>&& other) noexcept
-            : Deque()
         {
             m_Capacity = std::move(other.m_Capacity);
             m_Count    = std::move(other.m_Count);
@@ -103,7 +108,14 @@ namespace Otter
 
             m_Capacity = other.m_Capacity;
             m_Count    = other.m_Count;
-            m_Data     = other.m_Data;
+
+            if (m_Capacity == 0)
+                return *this;
+
+            m_Data = Buffer::New < T > (m_Capacity);
+
+            if (m_Count > 0)
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, m_Count * sizeof(T));
 
             return *this;
         }
@@ -141,9 +153,16 @@ namespace Otter
          *
          * @return True if the deques are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const Deque<T>& other) const
+        bool operator==(const Deque<T>& other) const
         {
-            return m_Data == other.m_Data && m_Capacity == other.m_Capacity && m_Count == other.m_Count;
+            if (m_Count != other.m_Count)
+                return false;
+
+            for (UInt64 i = 0; i < m_Count; ++i)
+                if (m_Data[i] != other.m_Data[i])
+                    return false;
+
+            return true;
         }
 
         /**
@@ -153,7 +172,7 @@ namespace Otter
          *
          * @return True if the deques are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const Deque<T>& other) const { return !(*this == other); }
+        bool operator!=(const Deque<T>& other) const { return !(*this == other); }
 
         /**
          * @brief Pushes an item to the front of the deque.
@@ -443,7 +462,7 @@ namespace Otter
 
             T* newData = Buffer::New < T > (newCapacity);
 
-            for (UInt64 i = 0; i < m_Count && i < amount; i++)
+            for (UInt64 i = 0; i < m_Count && i < newCapacity; i++)
                 newData[i] = m_Data[i];
 
             if (IsCreated())
@@ -538,28 +557,28 @@ namespace Otter
          *
          * @return An iterator to the first element of the deque.
          */
-        OTR_INLINE Iterator begin() noexcept { return Iterator(m_Data); }
+        OTR_INLINE Iterator begin() const noexcept { return Iterator(m_Data); }
 
         /**
          * @brief Gets an iterator to the last element of the deque.
          *
          * @return An iterator to the last element of the deque.
          */
-        OTR_INLINE Iterator end() noexcept { return Iterator(m_Data + m_Count); }
+        OTR_INLINE Iterator end() const noexcept { return Iterator(m_Data + m_Count); }
 
         /**
          * @brief Gets a reverse iterator to the last element of the deque.
          *
          * @return A reverse iterator to the last element of the deque.
          */
-        OTR_INLINE Iterator rbegin() noexcept { return Iterator(m_Data + m_Count - 1); }
+        OTR_INLINE Iterator rbegin() const noexcept { return Iterator(m_Data + m_Count - 1); }
 
         /**
          * @brief Gets a reverse iterator to the first element of the deque.
          *
          * @return A reverse iterator to the first element of the deque.
          */
-        OTR_INLINE Iterator rend() noexcept { return Iterator(m_Data - 1); }
+        OTR_INLINE Iterator rend() const noexcept { return Iterator(m_Data - 1); }
 
         /**
          * @brief Gets a const iterator to the first element of the deque.

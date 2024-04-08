@@ -7,7 +7,7 @@
 namespace Otter
 {
     template<typename T, UInt64 Size>
-    struct Span;
+    class Span;
 
     /**
      * @brief A read-only span of a fixed size. All elements are stack allocated.
@@ -16,7 +16,7 @@ namespace Otter
      * @tparam Size The size of the span.
      */
     template<typename T, UInt64 Size>
-    struct ReadOnlySpan final
+    class ReadOnlySpan final
     {
         /// @brief Alias for a const iterator.
         using ConstIterator = LinearIterator<const T>;
@@ -74,7 +74,19 @@ namespace Otter
          *
          * @return True if the spans are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const ReadOnlySpan<T, Size>& other) const { return m_Data == other.m_Data; }
+        bool operator==(const ReadOnlySpan<T, Size>& other) const
+        {
+            if constexpr (Size == 0)
+                return true;
+            else
+            {
+                for (UInt64 i = 0; i < Size; ++i)
+                    if (m_Data[i] != other.m_Data[i])
+                        return false;
+
+                return true;
+            }
+        }
 
         /**
          * @brief Inequality operator.
@@ -83,7 +95,7 @@ namespace Otter
          *
          * @return True if the spans are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const ReadOnlySpan<T, Size>& other) const { return !(*this == other); }
+        bool operator!=(const ReadOnlySpan<T, Size>& other) const { return !(*this == other); }
 
         /**
          * @brief Creates a read-only span from an initialiser list.
@@ -92,7 +104,7 @@ namespace Otter
          */
         ReadOnlySpan(InitialiserList<T> list)
         {
-            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+            OTR_ASSERT(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -133,7 +145,7 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
-            OTR_ASSERT_MSG(index < Size, "ReadOnlySpan index out of bounds")
+            OTR_ASSERT(index < Size, "ReadOnlySpan index out of bounds")
             return m_Data[index];
         }
 

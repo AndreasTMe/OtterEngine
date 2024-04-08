@@ -17,7 +17,7 @@ namespace Otter
      *
      * @note Under the hood, the bitset uses an array of 64-bit unsigned integers.
      */
-    class BitSet
+    class BitSet final
     {
     public:
         /**
@@ -59,6 +59,13 @@ namespace Otter
         BitSet(const BitSet& other)
         {
             m_Size = other.m_Size;
+
+            if (m_Size == 0)
+            {
+                m_Data = nullptr;
+                return;
+            }
+
             m_Data = Buffer::New<UInt64>(m_Size);
 
             for (UInt64 i = 0; i < m_Size; i++)
@@ -95,6 +102,13 @@ namespace Otter
                 Buffer::Delete<UInt64>(m_Data, m_Size);
 
             m_Size = other.m_Size;
+
+            if (m_Size == 0)
+            {
+                m_Data = nullptr;
+                return *this;
+            }
+
             m_Data = Buffer::New<UInt64>(m_Size);
 
             for (UInt64 i = 0; i < m_Size; i++)
@@ -196,6 +210,25 @@ namespace Otter
                 m_Data[i] |= (1ULL << j);
             else
                 m_Data[i] &= ~(1ULL << j);
+        }
+
+        /**
+         * @brief Checks if the bitset includes another bitset.
+         *
+         * @param other The other bitset.
+         *
+         * @return True if the bitset includes the other bitset, false otherwise.
+         */
+        [[nodiscard]] bool Includes(const BitSet& other) const
+        {
+            if (m_Size != other.m_Size)
+                return false;
+
+            for (UInt64 i = 0; i < m_Size; i++)
+                if ((m_Data[i] & other.m_Data[i]) != other.m_Data[i])
+                    return false;
+
+            return true;
         }
 
         /**
@@ -319,6 +352,21 @@ namespace Otter
         [[nodiscard]] OTR_INLINE UInt64 GetBitsSize() const { return m_Size * UINT64_BITS; }
 
         /**
+         * @brief Gets the amount of bits set to true.
+         *
+         * @return The amount of bits set to true.
+         */
+        [[nodiscard]] UInt64 GetTrueCount() const
+        {
+            UInt64 count = 0;
+
+            for (UInt64 i = 0; i < m_Size; i++)
+                count += __builtin_popcountll(m_Data[i]);
+
+            return count;
+        }
+
+        /**
          * @brief Checks whether the bitset has been created. A bitset is created when it has been initialised
          * with a valid size and has not been destroyed.
          *
@@ -342,8 +390,8 @@ namespace Otter
         {
             UInt64 hash = 0;
 
-            for (UInt64 i = 0; i < m_Size * UINT64_BITS; i++)
-                hash ^= std::hash<bool>{ }(m_Data[i]) << i;
+            for (UInt64 i = 0; i < m_Size; i++)
+                hash ^= std::hash<UInt64>{ }(m_Data[i]) << i;
 
             return hash;
         }

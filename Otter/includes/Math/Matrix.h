@@ -131,7 +131,7 @@ namespace Otter::Math
          */
         constexpr Matrix(InitialiserList<TNumber> list)
         {
-            OTR_ASSERT_MSG(list.size() == Tx * Ty, "Initialiser list size does not match Matrix size")
+            OTR_ASSERT(list.size() == Tx * Ty, "Initialiser list size does not match Matrix size")
 
             UInt64 i = 0;
             for (const TNumber& value: list)
@@ -223,7 +223,7 @@ namespace Otter::Math
          */
         TNumber& operator[](UInt8 index)
         {
-            OTR_ASSERT_MSG(index < Tx * Ty, "Index {0} is out of range", index)
+            OTR_ASSERT(index < Tx * Ty, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
@@ -239,8 +239,8 @@ namespace Otter::Math
          */
         TNumber& operator[](UInt8 x, UInt8 y)
         {
-            OTR_ASSERT_MSG(x < Tx, "Row index {0} is out of range", x)
-            OTR_ASSERT_MSG(y < Ty, "Column index {0} is out of range", y)
+            OTR_ASSERT(x < Tx, "Row index {0} is out of range", x)
+            OTR_ASSERT(y < Ty, "Column index {0} is out of range", y)
             return m_Values[y + x * Ty];
         }
 
@@ -255,7 +255,7 @@ namespace Otter::Math
          */
         const TNumber& operator[](UInt8 index) const
         {
-            OTR_ASSERT_MSG(index < Tx * Ty, "Index {0} is out of range", index)
+            OTR_ASSERT(index < Tx * Ty, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
@@ -271,8 +271,8 @@ namespace Otter::Math
          */
         const TNumber& operator[](UInt8 x, UInt8 y) const
         {
-            OTR_ASSERT_MSG(x < Tx, "Row index {0} is out of range", x)
-            OTR_ASSERT_MSG(y < Ty, "Column index {0} is out of range", y)
+            OTR_ASSERT(x < Tx, "Row index {0} is out of range", x)
+            OTR_ASSERT(y < Ty, "Column index {0} is out of range", y)
             return m_Values[y + x * Ty];
         }
 
@@ -437,7 +437,7 @@ namespace Otter::Math
         template<AnyNumber TOtherNumber>
         Matrix<Tx, Ty, TNumber>& operator/=(TOtherNumber scalar) noexcept
         {
-            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
+            OTR_ASSERT(scalar != 0, "Division by zero")
 
             for (UInt8 i = 0; i < Tx * Ty; ++i)
                 m_Values[i] /= scalar;
@@ -521,7 +521,7 @@ namespace Otter::Math
         template<AnyNumber TOtherNumber>
         friend decltype(auto) operator/(Matrix<Tx, Ty, TNumber>& lhs, TOtherNumber rhs)
         {
-            OTR_ASSERT_MSG(rhs != 0, "Division by zero")
+            OTR_ASSERT(rhs != 0, "Division by zero")
 
             lhs /= rhs;
             return lhs;
@@ -602,7 +602,7 @@ namespace Otter::Math
          */
         [[nodiscard]] OTR_INLINE Math::Vector<Ty, TNumber> GetRow(UInt8 index) const noexcept
         {
-            OTR_ASSERT_MSG(index < Ty, "Row index {0} is out of range", index)
+            OTR_ASSERT(index < Ty, "Row index {0} is out of range", index)
 
             auto row = Vector<Ty, TNumber>();
 
@@ -623,7 +623,7 @@ namespace Otter::Math
          */
         OTR_INLINE void SetRow(UInt8 index, const Math::Vector<Ty, TNumber>& row) noexcept
         {
-            OTR_ASSERT_MSG(index < Ty, "Row index {0} is out of range", index)
+            OTR_ASSERT(index < Ty, "Row index {0} is out of range", index)
 
             for (UInt8 i = 0; i < Ty; ++i)
                 m_Values[i + index * Ty] = row[i];
@@ -641,7 +641,7 @@ namespace Otter::Math
          */
         [[nodiscard]] OTR_INLINE Math::Vector<Tx, TNumber> GetColumn(UInt8 index) const noexcept
         {
-            OTR_ASSERT_MSG(index < Tx, "Column index {0} is out of range", index)
+            OTR_ASSERT(index < Tx, "Column index {0} is out of range", index)
 
             auto column = Vector<Tx, TNumber>();
 
@@ -662,7 +662,7 @@ namespace Otter::Math
          */
         OTR_INLINE void SetColumn(UInt8 index, const Math::Vector<Tx, TNumber>& column) noexcept
         {
-            OTR_ASSERT_MSG(index < Tx, "Column index {0} is out of range", index)
+            OTR_ASSERT(index < Tx, "Column index {0} is out of range", index)
 
             for (UInt8 i = 0; i < Tx; ++i)
                 m_Values[index + i * Tx] = column[i];

@@ -74,7 +74,7 @@ namespace Otter::Math
          */
         constexpr Quaternion(InitialiserList<TNumber> list)
         {
-            OTR_ASSERT_MSG(list.size() == 4, "Initialiser list size does not match Quaternion size")
+            OTR_ASSERT(list.size() == 4, "Initialiser list size does not match Quaternion size")
 
             UInt64 i = 0;
             for (const TNumber& value: list)
@@ -162,7 +162,7 @@ namespace Otter::Math
          */
         TNumber& operator[](UInt8 index)
         {
-            OTR_ASSERT_MSG(index < 4, "Index {0} is out of range", index)
+            OTR_ASSERT(index < 4, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
@@ -177,7 +177,7 @@ namespace Otter::Math
          */
         const TNumber& operator[](UInt8 index) const
         {
-            OTR_ASSERT_MSG(index < 4, "Index {0} is out of range", index)
+            OTR_ASSERT(index < 4, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
@@ -269,7 +269,7 @@ namespace Otter::Math
         template<AnyNumber TOtherNumber>
         Quaternion<TNumber>& operator/=(TOtherNumber scalar) noexcept
         {
-            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
+            OTR_ASSERT(scalar != 0, "Division by zero")
 
             for (UInt8 i = 0; i < 4; ++i)
                 m_Values[i] /= scalar;
@@ -327,7 +327,7 @@ namespace Otter::Math
         template<AnyNumber TOtherNumber>
         friend decltype(auto) operator/(Quaternion<TNumber> lhs, TOtherNumber rhs)
         {
-            OTR_ASSERT_MSG(rhs != 0, "Division by zero")
+            OTR_ASSERT(rhs != 0, "Division by zero")
 
             lhs /= rhs;
             return lhs;

@@ -11,7 +11,7 @@
 namespace Otter
 {
     template<typename T, UInt64 Size>
-    struct Array;
+    class Array;
 
     /**
      * @brief A read-only array of a fixed size. All elements are heap allocated.
@@ -20,7 +20,7 @@ namespace Otter
      * @tparam Size The size of the array.
      */
     template<typename T, UInt64 Size>
-    struct ReadOnlyArray final
+    class ReadOnlyArray final
     {
         /// @brief Alias for a const iterator.
         using ConstIterator = LinearIterator<const T>;
@@ -32,7 +32,7 @@ namespace Otter
         ReadOnlyArray()
         {
             if constexpr (Size > 0)
-                m_Data = Buffer::New < T > (Size);
+                m_Data = Buffer::New<T>(Size);
         }
 
         /**
@@ -78,7 +78,19 @@ namespace Otter
          *
          * @return True if the arrays are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const ReadOnlyArray<T, Size>& other) const { return m_Data == other.m_Data; }
+        bool operator==(const ReadOnlyArray<T, Size>& other) const
+        {
+            if constexpr (Size == 0)
+                return true;
+            else
+            {
+                for (UInt64 i = 0; i < Size; ++i)
+                    if (m_Data[i] != other.m_Data[i])
+                        return false;
+
+                return true;
+            }
+        }
 
         /**
          * @brief Inequality operator.
@@ -87,7 +99,7 @@ namespace Otter
          *
          * @return True if the arrays are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const ReadOnlyArray<T, Size>& other) const { return !(*this == other); }
+        bool operator!=(const ReadOnlyArray<T, Size>& other) const { return !(*this == other); }
 
         /**
          * @brief Creates a read-only array from an initialiser list.
@@ -97,7 +109,7 @@ namespace Otter
         ReadOnlyArray(InitialiserList<T> list)
             : ReadOnlyArray()
         {
-            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+            OTR_ASSERT(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -122,10 +134,8 @@ namespace Otter
          * @param other The normal array.
          */
         explicit ReadOnlyArray(Array<T, Size>&& other) noexcept
-            : ReadOnlyArray()
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = std::move(other.m_Data[i]);
+            m_Data = std::move(other.m_Data);
 
             other.m_Data = nullptr;
         }
@@ -139,8 +149,8 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
-            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
-            OTR_ASSERT_MSG(index < Size, "ReadOnlyArray index out of bounds")
+            OTR_ASSERT(IsCreated(), "Array has either not been created or has been destroyed")
+            OTR_ASSERT(index < Size, "ReadOnlyArray index out of bounds")
             return m_Data[index];
         }
 

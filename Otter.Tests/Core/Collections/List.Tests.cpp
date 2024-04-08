@@ -15,6 +15,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -47,7 +48,7 @@ TEST_F(List_Fixture, Initialisation_Copy)
     List<int> list = { 1, 2, 3, 4, 5 };
     List<int> copy = list;
 
-    EXPECT_EQ(copy.GetData(), list.GetData());
+    EXPECT_NE(copy.GetData(), list.GetData());
     EXPECT_EQ(copy.GetCapacity(), list.GetCapacity());
     EXPECT_EQ(copy.GetCount(), list.GetCount());
 
@@ -76,7 +77,7 @@ TEST_F(List_Fixture, Assignment_Copy)
     List<int> copy;
     copy = list;
 
-    EXPECT_EQ(copy.GetData(), list.GetData());
+    EXPECT_NE(copy.GetData(), list.GetData());
     EXPECT_EQ(copy.GetCapacity(), list.GetCapacity());
     EXPECT_EQ(copy.GetCount(), list.GetCount());
 
@@ -98,6 +99,16 @@ TEST_F(List_Fixture, Assignment_Move)
         EXPECT_EQ(move[i], i + 1);
 
     EXPECT_EQ(list.GetData(), nullptr);
+}
+
+TEST_F(List_Fixture, Equality)
+{
+    List<int> list1 = { 1, 2, 3, 4, 5 };
+    List<int> list2 = { 1, 2, 3, 4, 5 };
+    List<int> list3 = { 1, 2, 3, 4, 6 };
+
+    EXPECT_TRUE(list1 == list2);
+    EXPECT_FALSE(list1 == list3);
 }
 
 TEST_F(List_Fixture, Add)

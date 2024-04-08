@@ -92,6 +92,14 @@ template<typename TLeft, typename TRight>
 concept IsSame = std::is_same_v<TLeft, TRight>;
 
 /**
+ * @brief Concept for checking if a type is void.
+ *
+ * @tparam T The type to check.
+ */
+template<typename T>
+concept IsVoid = std::is_void_v<T>;
+
+/**
  * @brief Alias for the `std::underlying_type_t` type.
  *
  * @tparam T The type to get the underlying type of.
@@ -118,6 +126,32 @@ template<bool Condition, typename T = void>
 using EnableIf = std::enable_if_t<Condition, T>;
 
 /**
+ * @brief Helper struct for checking if all the types in a variadic list are unique.
+ *
+ * @tparam TArgs The types to check.
+ */
+template<typename... TArgs>
+struct AreUnique;
+
+/**
+ * @brief Specialization of the `AreUnique` struct for when there are no types.
+ */
+template<>
+struct AreUnique<> : std::true_type { };
+
+/**
+ * @brief Implementation of the `AreUnique` struct for when there are types.
+ *
+ * @tparam T The first type.
+ * @tparam TArgs The rest of the types.
+ */
+template<typename T, typename... TArgs>
+struct AreUnique<T, TArgs...> : std::bool_constant<
+    (!IsSame<T, TArgs> && ...) && AreUnique<TArgs...>::value>
+{
+};
+
+/**
  * @brief A template class for working with a variadic list of arguments. Provides a static constexpr member function
  * to retrieve the number of arguments in the variadic list.
  *
@@ -129,11 +163,49 @@ struct VariadicArgs
     /**
      * @brief Static constexpr member function to retrieve the number of arguments in the variadic list.
      *
-     * @tparam TArgs The types of the arguments in the variadic list.
-     *
      * @return The number of arguments in the variadic list.
      */
     OTR_INLINE static constexpr UInt64 GetSize() { return sizeof...(TArgs); }
+
+    /**
+     * @brief Static constexpr member function to check if the variadic list are all the same as the given types.
+     *
+     * @tparam TOtherArgs The types to check.
+     *
+     * @return True if all the types in the variadic list are the same as the given types, false otherwise.
+     */
+    template<typename... TOtherArgs>
+    OTR_INLINE static constexpr bool AllSame() { return (IsSame<TArgs, TOtherArgs> && ...); }
+
+    /**
+     * @brief Static constexpr member function to check if the variadic list are all the same type.
+     *
+     * @tparam T The type to check.
+     *
+     * @return True if all the types in the variadic list are the same as the given type, false otherwise.
+     */
+    template<typename T>
+    OTR_INLINE static constexpr bool AllSameAs() { return (IsSame<TArgs, T> && ...); }
+
+    /**
+     * @brief Static constexpr member function to check if the variadic list are all the base of the given type.
+     *
+     * @tparam T The type to check.
+     *
+     * @return True if all the types in the variadic list are the base of the given type, false otherwise.
+     */
+    template<typename T>
+    OTR_INLINE static constexpr bool AllBaseOf() { return (IsBaseOf<TArgs, T> && ...); }
+
+    /**
+     * @brief Static constexpr member function to check if the variadic list are all derived from the given type.
+     *
+     * @tparam T The type to check.
+     *
+     * @return True if all the types in the variadic list are derived from the given type, false otherwise.
+     */
+    template<typename T>
+    OTR_INLINE static constexpr bool AllDerivedFrom() { return (IsDerivedFrom<TArgs, T> && ...); }
 };
 
 /**

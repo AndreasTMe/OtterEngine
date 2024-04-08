@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 
 #include "Core/Collections/HashSet.h"
+#include "Core/Collections/BitSet.h"
 
 template<typename T>
 using HashSet = Otter::HashSet<T>;
 
 using HashUtils = Otter::Internal::HashUtils;
+
+using BitSet = Otter::BitSet;
 
 class HashSet_Fixture : public ::testing::Test
 {
@@ -17,6 +20,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -84,6 +88,16 @@ TEST_F(HashSet_Fixture, Assignment_Move)
 
     EXPECT_EQ(move.GetCount(), 5);
     EXPECT_FALSE(move.IsEmpty());
+}
+
+TEST_F(HashSet_Fixture, Equality)
+{
+    HashSet<int> hashSet1 = { 1, 2, 3, 4, 5 };
+    HashSet<int> hashSet2 = { 1, 2, 3, 4, 5 };
+    HashSet<int> hashSet3 = { 1, 2, 3, 4, 5, 6 };
+
+    EXPECT_TRUE(hashSet1 == hashSet2);
+    EXPECT_FALSE(hashSet1 == hashSet3);
 }
 
 TEST_F(HashSet_Fixture, TryAdd_SimpleCases)
@@ -245,16 +259,27 @@ TEST_F(HashSet_Fixture, Clear)
 
 TEST_F(HashSet_Fixture, ClearDestructive)
 {
-    HashSet<int> hashSet = { 1, 2, 3, 4, 5 };
+    HashSet<int> hashSet1 = { 1, 2, 3, 4, 5 };
 
-    EXPECT_EQ(hashSet.GetCount(), 5);
-    EXPECT_FALSE(hashSet.IsEmpty());
+    EXPECT_EQ(hashSet1.GetCount(), 5);
+    EXPECT_FALSE(hashSet1.IsEmpty());
 
-    hashSet.ClearDestructive();
+    hashSet1.ClearDestructive();
 
-    EXPECT_EQ(hashSet.GetCount(), 0);
-    EXPECT_TRUE(hashSet.IsEmpty());
-    EXPECT_FALSE(hashSet.IsCreated());
+    EXPECT_EQ(hashSet1.GetCount(), 0);
+    EXPECT_TRUE(hashSet1.IsEmpty());
+    EXPECT_FALSE(hashSet1.IsCreated());
+
+    HashSet<BitSet> hashSet2 = { BitSet(), BitSet(), BitSet(), BitSet(), BitSet() };
+
+    EXPECT_EQ(hashSet2.GetCount(), 1);
+    EXPECT_FALSE(hashSet2.IsEmpty());
+
+    hashSet2.ClearDestructive();
+
+    EXPECT_EQ(hashSet2.GetCount(), 0);
+    EXPECT_TRUE(hashSet2.IsEmpty());
+    EXPECT_FALSE(hashSet2.IsCreated());
 }
 
 TEST_F(HashSet_Fixture, GetMemoryFootprint)
@@ -329,9 +354,13 @@ TEST_F(HashSet_Fixture, Iterator)
         ++i;
     }
 
+    EXPECT_EQ(i, hashSet.GetCount());
+
     for (auto it = hashSet.rbegin(); it != hashSet.rend(); --it)
     {
-        EXPECT_EQ(*it, temp[i]);
+        EXPECT_EQ(*it, temp[i - 1]);
         --i;
     }
+
+    EXPECT_EQ(i, 0);
 }

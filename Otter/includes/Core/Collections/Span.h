@@ -7,7 +7,7 @@
 namespace Otter
 {
     template<typename T, UInt64 Size>
-    struct ReadOnlySpan;
+    class ReadOnlySpan;
 
     /**
      * @brief A span of a fixed size. All elements are stack allocated.
@@ -16,7 +16,7 @@ namespace Otter
      * @tparam Size The size of the span.
      */
     template<typename T, UInt64 Size>
-    struct Span final
+    class Span final
     {
         /// @brief Alias for an iterator.
         using Iterator = LinearIterator<T>;
@@ -52,7 +52,7 @@ namespace Otter
          */
         Span(InitialiserList<T> list)
         {
-            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+            OTR_ASSERT(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -66,8 +66,13 @@ namespace Otter
          */
         Span(const Span<T, Size>& other)
         {
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = other.m_Data[i];
+            if constexpr (Size == 0)
+                return;
+            else
+            {
+                for (UInt64 i = 0; i < Size; i++)
+                    m_Data[i] = other.m_Data[i];
+            }
         }
 
         /**
@@ -79,8 +84,10 @@ namespace Otter
         {
             for (UInt64 i = 0; i < Size; i++)
             {
-                m_Data[i]       = std::move(other.m_Data[i]);
-                other.m_Data[i] = T();
+                m_Data[i] = std::move(other.m_Data[i]);
+
+                if constexpr (std::is_default_constructible<T>::value)
+                    other.m_Data[i] = T();
             }
         }
 
@@ -96,8 +103,13 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = other.m_Data[i];
+            if constexpr (Size == 0)
+                m_Data = nullptr;
+            else
+            {
+                for (UInt64 i = 0; i < Size; i++)
+                    m_Data[i] = other.m_Data[i];
+            }
 
             return *this;
         }
@@ -116,8 +128,10 @@ namespace Otter
 
             for (UInt64 i = 0; i < Size; i++)
             {
-                m_Data[i]       = std::move(other.m_Data[i]);
-                other.m_Data[i] = T();
+                m_Data[i] = std::move(other.m_Data[i]);
+
+                if constexpr (std::is_default_constructible<T>::value)
+                    other.m_Data[i] = T();
             }
 
             return *this;
@@ -130,7 +144,19 @@ namespace Otter
          *
          * @return True if the spans are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const Span<T, Size>& other) const { return m_Data == other.m_Data; }
+        bool operator==(const Span<T, Size>& other) const
+        {
+            if constexpr (Size == 0)
+                return true;
+            else
+            {
+                for (UInt64 i = 0; i < Size; ++i)
+                    if (m_Data[i] != other.m_Data[i])
+                        return false;
+
+                return true;
+            }
+        }
 
         /**
          * @brief Inequality operator.
@@ -139,7 +165,7 @@ namespace Otter
          *
          * @return True if the spans are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const Span<T, Size>& other) const { return !(*this == other); }
+        bool operator!=(const Span<T, Size>& other) const { return !(*this == other); }
 
         /**
          * @brief Gets the element at the specified index.
@@ -150,7 +176,7 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE T& operator[](UInt64 index)
         {
-            OTR_ASSERT_MSG(index < Size, "Span index out of bounds")
+            OTR_ASSERT(index < Size, "Span index out of bounds")
             return m_Data[index];
         }
 
@@ -163,7 +189,7 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
-            OTR_ASSERT_MSG(index < Size, "Span index out of bounds")
+            OTR_ASSERT(index < Size, "Span index out of bounds")
             return m_Data[index];
         }
 

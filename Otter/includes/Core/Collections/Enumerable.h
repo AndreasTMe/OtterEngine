@@ -23,15 +23,20 @@ namespace Otter
 
     public:
         /**
+         * @brief Constructor.
+         */
+        Enumerable() = default;
+
+        /**
          * @brief Destructor.
          */
         ~Enumerable()
         {
+            if (!OwnsData())
+                return;
+
             if (IsCreated())
                 Buffer::Delete<T>(m_Data, m_Count);
-
-            m_Data  = nullptr;
-            m_Count = 0;
         }
 
         /**
@@ -41,9 +46,16 @@ namespace Otter
          *
          * @return True if the enumerables are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const Enumerable<T>& other) const
+        bool operator==(const Enumerable<T>& other) const
         {
-            return m_Data == other.m_Data && m_Count == other.m_Count;
+            if (m_Count != other.m_Count)
+                return false;
+
+            for (UInt64 i = 0; i < m_Count; ++i)
+                if (m_Data[i] != other.m_Data[i])
+                    return false;
+
+            return true;
         }
 
         /**
@@ -53,7 +65,7 @@ namespace Otter
          *
          * @return True if the enumerables are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const Enumerable<T>& other) const { return !(*this == other); }
+        bool operator!=(const Enumerable<T>& other) const { return !(*this == other); }
 
         /**
          * @brief Factory method for creating an enumerable from a list of items.
@@ -65,11 +77,62 @@ namespace Otter
         [[nodiscard]] static Enumerable Of(InitialiserList<T> list)
         {
             Enumerable enumerable;
-            enumerable.m_Data = Buffer::New < T > (list.size());
 
-            enumerable.m_Count = 0;
+            if (list.size() == 0)
+                return enumerable;
+
+            enumerable.m_Data     = Buffer::New < T > (list.size());
+            enumerable.m_Count    = 0;
+            enumerable.m_OwnsData = true;
+
             for (const T& item: list)
                 enumerable.m_Data[enumerable.m_Count++] = item;
+
+            return enumerable;
+        }
+
+        /**
+         * @brief Factory method for creating an enumerable by copying an array of items.
+         *
+         * @param data The pointer to the array of items.
+         * @param count The number of items in the array.
+         *
+         * @return The created enumerable.
+         */
+        [[nodiscard]] static Enumerable Copy(const T* const data, const UInt64 count)
+        {
+            Enumerable enumerable;
+
+            enumerable.m_Count = count;
+
+            if (enumerable.m_Count == 0)
+                return enumerable;
+
+            enumerable.m_Data = Buffer::New < T > (enumerable.m_Count);
+            MemorySystem::MemoryCopy(enumerable.m_Data, data, enumerable.m_Count * sizeof(T));
+
+            enumerable.m_OwnsData = true;
+
+            return enumerable;
+        }
+
+        /**
+         * @brief Factory method for creating an enumerable that wraps an array of items.
+         *
+         * @param data The pointer to the array of items.
+         * @param count The number of items in the array.
+         *
+         * @return The created enumerable.
+         *
+         * @note The enumerable does not own the data and will not delete it when it is destroyed.
+         */
+        [[nodiscard]] static Enumerable Wrap(T* data, const UInt64 count)
+        {
+            Enumerable enumerable;
+
+            enumerable.m_Data     = data;
+            enumerable.m_Count    = count;
+            enumerable.m_OwnsData = false;
 
             return enumerable;
         }
@@ -79,7 +142,7 @@ namespace Otter
          */
         void ClearDestructive()
         {
-            if (IsCreated())
+            if (IsCreated() && OwnsData())
                 Buffer::Delete<T>(m_Data, m_Count);
 
             m_Data  = nullptr;
@@ -108,6 +171,13 @@ namespace Otter
         [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
 
         /**
+         * @brief Checks whether the enumerable owns the data.
+         *
+         * @return True if the enumerable owns the data, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool OwnsData() const noexcept { return m_OwnsData; }
+
+        /**
          * @brief Checks whether the enumerable has been created. An enumerable is created when it has been initialised
          * with a valid count and has not been destroyed.
          *
@@ -127,28 +197,28 @@ namespace Otter
          *
          * @return An iterator to the first element of the enumerable.
          */
-        OTR_INLINE Iterator begin() noexcept { return Iterator(m_Data); }
+        OTR_INLINE Iterator begin() const noexcept { return Iterator(m_Data); }
 
         /**
          * @brief Gets an iterator to the last element of the enumerable.
          *
          * @return An iterator to the last element of the enumerable.
          */
-        OTR_INLINE Iterator end() noexcept { return Iterator(m_Data + m_Count); }
+        OTR_INLINE Iterator end() const noexcept { return Iterator(m_Data + m_Count); }
 
         /**
          * @brief Gets a reverse iterator to the last element of the enumerable.
          *
          * @return A reverse iterator to the last element of the enumerable.
          */
-        OTR_INLINE Iterator rbegin() noexcept { return Iterator(m_Data + m_Count - 1); }
+        OTR_INLINE Iterator rbegin() const noexcept { return Iterator(m_Data + m_Count - 1); }
 
         /**
          * @brief Gets a reverse iterator to the first element of the enumerable.
          *
          * @return A reverse iterator to the first element of the enumerable.
          */
-        OTR_INLINE Iterator rend() noexcept { return Iterator(m_Data - 1); }
+        OTR_INLINE Iterator rend() const noexcept { return Iterator(m_Data - 1); }
 
         /**
          * @brief Gets a const iterator to the first element of the enumerable.
@@ -179,13 +249,9 @@ namespace Otter
         OTR_INLINE ConstIterator crend() const noexcept { return ConstIterator(m_Data - 1); }
 
     private:
-        /**
-         * @brief Constructor.
-         */
-        Enumerable() = default;
-
         T* m_Data = nullptr;
-        UInt64 m_Count = 0;
+        UInt64 m_Count    = 0;
+        bool   m_OwnsData = false;
     };
 }
 

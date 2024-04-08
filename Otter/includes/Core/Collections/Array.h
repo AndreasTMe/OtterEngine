@@ -11,7 +11,7 @@
 namespace Otter
 {
     template<typename T, UInt64 Size>
-    struct ReadOnlyArray;
+    class ReadOnlyArray;
 
     /**
      * @brief An array of a fixed size. All elements are heap allocated.
@@ -20,7 +20,7 @@ namespace Otter
      * @tparam Size The size of the array.
      */
     template<typename T, UInt64 Size>
-    struct Array final
+    class Array final
     {
         /// @brief Alias for an iterator.
         using Iterator = LinearIterator<T>;
@@ -35,7 +35,7 @@ namespace Otter
         Array()
         {
             if constexpr (Size > 0)
-                m_Data = Buffer::New < T > (Size);
+                m_Data = Buffer::New<T>(Size);
         }
 
         /**
@@ -57,7 +57,7 @@ namespace Otter
         Array(InitialiserList<T> list)
             : Array()
         {
-            OTR_ASSERT_MSG(list.size() == Size, "Initialiser list size does not match span size")
+            OTR_ASSERT(list.size() == Size, "Initialiser list size does not match span size")
 
             UInt64 i = 0;
             for (const T& value: list)
@@ -70,9 +70,14 @@ namespace Otter
          * @param other The other array to copy.
          */
         Array(const Array<T, Size>& other)
-            : Array()
         {
-            m_Data = other.m_Data;
+            if constexpr (Size == 0)
+                return;
+            else
+            {
+                m_Data = Buffer::New<T>(Size);
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
+            }
         }
 
         /**
@@ -81,9 +86,11 @@ namespace Otter
          * @param other The other array to move.
          */
         Array(Array<T, Size>&& other) noexcept
-            : Array()
         {
-            m_Data = std::move(other.m_Data);
+            if constexpr (Size == 0)
+                m_Data = nullptr;
+            else
+                m_Data = std::move(other.m_Data);
 
             other.m_Data = nullptr;
         }
@@ -100,8 +107,16 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = other.m_Data[i];
+            if constexpr (Size == 0)
+                m_Data = nullptr;
+            else
+            {
+                if (IsCreated())
+                    Buffer::Delete<T>(m_Data, Size);
+
+                m_Data = Buffer::New<T>(Size);
+                MemorySystem::MemoryCopy(m_Data, other.m_Data, Size * sizeof(T));
+            }
 
             return *this;
         }
@@ -118,8 +133,15 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            for (UInt64 i = 0; i < Size; i++)
-                m_Data[i] = std::move(other.m_Data[i]);
+            if constexpr (Size == 0)
+                m_Data = nullptr;
+            else
+            {
+                if (IsCreated())
+                    Buffer::Delete<T>(m_Data, Size);
+
+                m_Data = std::move(other.m_Data);
+            }
 
             other.m_Data = nullptr;
 
@@ -133,7 +155,19 @@ namespace Otter
          *
          * @return True if the arrays are equal, false otherwise.
          */
-        [[nodiscard]] bool operator==(const Array<T, Size>& other) const { return m_Data == other.m_Data; }
+        bool operator==(const Array<T, Size>& other) const
+        {
+            if constexpr (Size == 0)
+                return true;
+            else
+            {
+                for (UInt64 i = 0; i < Size; ++i)
+                    if (m_Data[i] != other.m_Data[i])
+                        return false;
+
+                return true;
+            }
+        }
 
         /**
          * @brief Inequality operator.
@@ -142,7 +176,7 @@ namespace Otter
          *
          * @return True if the arrays are not equal, false otherwise.
          */
-        [[nodiscard]] bool operator!=(const Array<T, Size>& other) const { return !(*this == other); }
+        bool operator!=(const Array<T, Size>& other) const { return !(*this == other); }
 
         /**
          * @brief Gets the element at the specified index.
@@ -153,8 +187,8 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE T& operator[](UInt64 index)
         {
-            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
-            OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
+            OTR_ASSERT(IsCreated(), "Array has either not been created or has been destroyed")
+            OTR_ASSERT(index < Size, "Array index out of bounds")
             return m_Data[index];
         }
 
@@ -167,8 +201,8 @@ namespace Otter
          */
         [[nodiscard]] OTR_INLINE const T& operator[](UInt64 index) const
         {
-            OTR_ASSERT_MSG(IsCreated(), "Array has either not been created or has been destroyed")
-            OTR_ASSERT_MSG(index < Size, "Array index out of bounds")
+            OTR_ASSERT(IsCreated(), "Array has either not been created or has been destroyed")
+            OTR_ASSERT(index < Size, "Array index out of bounds")
             return m_Data[index];
         }
 
@@ -234,28 +268,28 @@ namespace Otter
          *
          * @return An iterator to the first element of the array.
          */
-        OTR_INLINE Iterator begin() noexcept { return Iterator(m_Data); }
+        OTR_INLINE Iterator begin() const noexcept { return Iterator(m_Data); }
 
         /**
          * @brief Gets an iterator to the last element of the array.
          *
          * @return An iterator to the last element of the array.
          */
-        OTR_INLINE Iterator end() noexcept { return Iterator(m_Data + Size); }
+        OTR_INLINE Iterator end() const noexcept { return Iterator(m_Data + Size); }
 
         /**
          * @brief Gets a reverse iterator to the last element of the array.
          *
          * @return A reverse iterator to the last element of the array.
          */
-        OTR_INLINE Iterator rbegin() noexcept { return Iterator(m_Data + Size - 1); }
+        OTR_INLINE Iterator rbegin() const noexcept { return Iterator(m_Data + Size - 1); }
 
         /**
          * @brief Gets a reverse iterator to the first element of the array.
          *
          * @return A reverse iterator to the first element of the array.
          */
-        OTR_INLINE Iterator rend() noexcept { return Iterator(m_Data - 1); }
+        OTR_INLINE Iterator rend() const noexcept { return Iterator(m_Data - 1); }
 
         /**
          * @brief Gets a const iterator to the first element of the array.

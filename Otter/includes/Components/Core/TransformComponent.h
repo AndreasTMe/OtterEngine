@@ -13,6 +13,9 @@ namespace Otter
     struct TransformComponent final : public IComponent
     {
     public:
+        /// @brief The Id of the transform component.
+        static constexpr ComponentId Id = 1;
+
         /// @brief The position of the transform.
         Vector3D<Float32>   Position = Vector3D<Float32>::Zero();
         /// @brief The rotation of the transform.
@@ -41,6 +44,20 @@ namespace Otter
                            const Quaternion<Float32>& rotation,
                            const Vector3D<Float32>& scale)
             : Position(position), Rotation(rotation), Scale(scale)
+        {
+        }
+
+        /**
+         * @brief Constructor.
+         *
+         * @param position The position of the transform.
+         * @param rotation The rotation of the transform.
+         * @param scale The scale of the transform.
+         */
+        TransformComponent(Vector3D<Float32>&& position,
+                           Quaternion<Float32>&& rotation,
+                           Vector3D<Float32>&& scale)
+            : Position(std::move(position)), Rotation(std::move(rotation)), Scale(std::move(scale))
         {
         }
 

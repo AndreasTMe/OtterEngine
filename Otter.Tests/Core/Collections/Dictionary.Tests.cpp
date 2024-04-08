@@ -8,6 +8,9 @@ using Dictionary = Otter::Dictionary<TKey, TValue>;
 
 using HashUtils = Otter::Internal::HashUtils;
 
+template<typename T>
+using List = Otter::List<T>;
+
 class Dictionary_Fixture : public ::testing::Test
 {
 protected:
@@ -18,6 +21,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -111,18 +115,41 @@ TEST_F(Dictionary_Fixture, Assignment_Move)
     EXPECT_FALSE(dictionary.IsCreated());
 }
 
+TEST_F(Dictionary_Fixture, Equality)
+{
+    Dictionary<int, int> dictionary1 = {{ 1, 1 },
+                                        { 2, 2 },
+                                        { 3, 3 },
+                                        { 4, 4 }};
+
+    Dictionary<int, int> dictionary2 = {{ 1, 1 },
+                                        { 2, 2 },
+                                        { 3, 3 },
+                                        { 4, 4 }};
+
+    Dictionary<int, int> dictionary3 = {{ 1, 1 },
+                                        { 2, 2 },
+                                        { 3, 3 },
+                                        { 4, 4 },
+                                        { 5, 5 }};
+
+    EXPECT_TRUE(dictionary1 == dictionary2);
+    EXPECT_FALSE(dictionary1 == dictionary3);
+}
+
 TEST_F(Dictionary_Fixture, TryAdd_SimpleCases)
 {
     Dictionary<int, int> dictionary;
 
     EXPECT_TRUE(dictionary.TryAdd(1, 1));
-    EXPECT_FALSE(dictionary.TryAdd(1, 2));
-    EXPECT_TRUE(dictionary.TryAdd(1, 2, true));
+    EXPECT_TRUE(dictionary.TryAdd(1, 2));
+
+    EXPECT_EQ(dictionary.GetCount(), 1);
 
     int value = 2;
     EXPECT_TRUE(dictionary.TryAdd(value, value));
-    EXPECT_FALSE(dictionary.TryAdd(value, value)) << "Value already exists";
-    EXPECT_FALSE(dictionary.TryAdd(value, value + 1)) << "Value already exists";
+    EXPECT_TRUE(dictionary.TryAdd(value, value));
+    EXPECT_TRUE(dictionary.TryAdd(value, value + 1));
     EXPECT_TRUE(dictionary.TryAdd(3, 3));
 
     UInt64 capacity = Dictionary<int, int>::GetDefaultInitialCapacity();
@@ -192,6 +219,11 @@ TEST_F(Dictionary_Fixture, TryGet)
     EXPECT_TRUE(dictionary.TryGet(5, &value));
     EXPECT_EQ(value, 5);
 
+    *dictionary[5] = 6;
+
+    EXPECT_TRUE(dictionary.TryGet(5, &value));
+    EXPECT_EQ(value, 6);
+
     EXPECT_FALSE(dictionary.TryGet(6, &value));
     EXPECT_FALSE(dictionary.TryGet(7, &value));
     EXPECT_FALSE(dictionary.TryGet(8, &value));
@@ -253,16 +285,16 @@ TEST_F(Dictionary_Fixture, Contains)
                                        { 11, 11 }};
 
     int value = 2;
-    EXPECT_TRUE(dictionary.Contains(1));
-    EXPECT_TRUE(dictionary.Contains(value));
-    EXPECT_TRUE(dictionary.Contains(3));
-    EXPECT_TRUE(dictionary.Contains(4));
-    EXPECT_TRUE(dictionary.Contains(5));
-    EXPECT_TRUE(dictionary.Contains(11)); // Collision with previous value
+    EXPECT_TRUE(dictionary.ContainsKey(1));
+    EXPECT_TRUE(dictionary.ContainsKey(value));
+    EXPECT_TRUE(dictionary.ContainsKey(3));
+    EXPECT_TRUE(dictionary.ContainsKey(4));
+    EXPECT_TRUE(dictionary.ContainsKey(5));
+    EXPECT_TRUE(dictionary.ContainsKey(11)); // Collision with previous value
 
     EXPECT_TRUE(dictionary.TryRemove(1));
-    EXPECT_FALSE(dictionary.Contains(1));
-    EXPECT_FALSE(dictionary.Contains(6));
+    EXPECT_FALSE(dictionary.ContainsKey(1));
+    EXPECT_FALSE(dictionary.ContainsKey(6));
 
     EXPECT_EQ(dictionary.GetCount(), 5);
     EXPECT_FALSE(dictionary.IsEmpty());
@@ -306,31 +338,41 @@ TEST_F(Dictionary_Fixture, ForEach)
 
 TEST_F(Dictionary_Fixture, TryForKey)
 {
-    Dictionary<int, Otter::List<int>> dictionary = {{ 1, { 1, 2 }},
-                                                    { 2, { 1, 2 }}};
+    Dictionary<int, List<int>> dictionary = {{ 1, { 1, 2 }},
+                                             { 2, { 1, 2 }}};
 
     EXPECT_EQ(dictionary.GetCount(), 2);
 
-    Otter::List<int> list;
+    List<int> list;
     EXPECT_TRUE(dictionary.TryGet(1, &list));
 
     EXPECT_EQ(list.GetCount(), 2);
+
+    int count = 0;
     for (auto& value: list)
-        EXPECT_EQ(value, 0);
+        EXPECT_EQ(value, ++count);
+
+    EXPECT_EQ(count, list.GetCount());
 
     list.Add(0);
-    EXPECT_EQ(list.GetCount(), 3);
+    EXPECT_EQ(list.GetCount(), count + 1);
 
     EXPECT_TRUE(dictionary.TryGet(1, &list));
     EXPECT_EQ(list.GetCount(), 2);
 
-    EXPECT_TRUE(dictionary.TryForKey(1, [](Otter::List<int>& value)
+    (*dictionary[1]).Add(3);
+    EXPECT_EQ((*dictionary[1]).GetCount(), 3);
+
+    EXPECT_TRUE(dictionary.TryGet(1, &list));
+    EXPECT_EQ(list.GetCount(), 3);
+
+    EXPECT_TRUE(dictionary.TryForKey(1, [](List<int>& value)
     {
         value.Add(3);
     }));
 
     EXPECT_TRUE(dictionary.TryGet(1, &list));
-    EXPECT_EQ(list.GetCount(), 3);
+    EXPECT_EQ(list.GetCount(), 4);
 }
 
 TEST_F(Dictionary_Fixture, ForEachKey)
@@ -398,7 +440,7 @@ TEST_F(Dictionary_Fixture, EnsureCapacity)
     EXPECT_TRUE(dictionary.TryAdd(1, 1));
     dictionary.EnsureCapacity(15);
     EXPECT_GE(dictionary.GetCapacity(), 15);
-    EXPECT_TRUE(dictionary.Contains(1));
+    EXPECT_TRUE(dictionary.ContainsKey(1));
 }
 
 TEST_F(Dictionary_Fixture, Clear)
@@ -421,20 +463,35 @@ TEST_F(Dictionary_Fixture, Clear)
 
 TEST_F(Dictionary_Fixture, ClearDestructive)
 {
-    Dictionary<int, int> dictionary = {{ 1, 1 },
-                                       { 2, 2 },
-                                       { 3, 3 },
-                                       { 4, 4 },
-                                       { 5, 5 }};
+    Dictionary<int, int> dictionary1 = {{ 1, 1 },
+                                        { 2, 2 },
+                                        { 3, 3 },
+                                        { 4, 4 },
+                                        { 5, 5 }};
 
-    EXPECT_EQ(dictionary.GetCount(), 5);
-    EXPECT_FALSE(dictionary.IsEmpty());
+    EXPECT_EQ(dictionary1.GetCount(), 5);
+    EXPECT_FALSE(dictionary1.IsEmpty());
 
-    dictionary.ClearDestructive();
+    dictionary1.ClearDestructive();
 
-    EXPECT_EQ(dictionary.GetCount(), 0);
-    EXPECT_TRUE(dictionary.IsEmpty());
-    EXPECT_FALSE(dictionary.IsCreated());
+    EXPECT_EQ(dictionary1.GetCount(), 0);
+    EXPECT_TRUE(dictionary1.IsEmpty());
+    EXPECT_FALSE(dictionary1.IsCreated());
+
+    Dictionary<int, List<int>> dictionary2 = {{ 1, { 1, 2 }},
+                                              { 2, { 1, 2 }},
+                                              { 3, { 1, 2 }},
+                                              { 4, { 1, 2 }},
+                                              { 5, { 1, 2 }}};
+
+    EXPECT_EQ(dictionary2.GetCount(), 5);
+    EXPECT_FALSE(dictionary2.IsEmpty());
+
+    dictionary2.ClearDestructive();
+
+    EXPECT_EQ(dictionary2.GetCount(), 0);
+    EXPECT_TRUE(dictionary2.IsEmpty());
+    EXPECT_FALSE(dictionary2.IsCreated());
 }
 
 TEST_F(Dictionary_Fixture, GetMemoryFootprint)
@@ -511,17 +568,24 @@ TEST_F(Dictionary_Fixture, Iterator)
                                        { 6, 6 }};
 
     UInt64 i = 0;
-    for (const auto& [key, value]: dictionary)
+    for (auto& [key, value]: dictionary)
     {
         EXPECT_EQ(key, temp[i]);
         EXPECT_EQ(value, temp[i]);
+
+        value++;
+
         ++i;
     }
 
+    EXPECT_EQ(i, dictionary.GetCount());
+
     for (auto it = dictionary.rbegin(); it != dictionary.rend(); --it)
     {
-        EXPECT_EQ((*it).Key, temp[i]);
-        EXPECT_EQ((*it).Value, temp[i]);
+        EXPECT_EQ((*it).Key, temp[i - 1]);
+        EXPECT_EQ((*it).Value, temp[i - 1] + 1);
         --i;
     }
+
+    EXPECT_EQ(i, 0);
 }

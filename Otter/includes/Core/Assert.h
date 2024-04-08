@@ -42,29 +42,12 @@
         }
 
 #else
-#define OTR_INTERNAL_ASSERT(assertion)
+    #define OTR_INTERNAL_ASSERT(assertion)
     #define OTR_INTERNAL_ASSERT_MSG(assertion, ...)
 #endif
 
 #if OTR_ASSERTIONS_ENABLED
-    #define OTR_ASSERT_SCOPE(scope) { scope }
-    #define OTR_ASSERT_VARIABLE_DECLARATION(declaration) declaration;
-    #define OTR_ASSERT_METHOD_DECLARATION(declaration) declaration
-
-    #define OTR_ASSERT(assertion)                                       \
-        {                                                               \
-            if (assertion) { }                                          \
-            else                                                        \
-            {                                                           \
-                Otter::Logger::GetBuilder()                             \
-                    ->PrepareAssertion(#assertion, nullptr)             \
-                    ->CaptureSource(__FILE__, __LINE__)                 \
-                    ->Log();                                            \
-                OTR_DEBUG_BREAK();                                      \
-            }                                                           \
-        }
-
-    #define OTR_ASSERT_MSG(assertion, ...)                              \
+    #define OTR_ASSERT(assertion, ...)                                  \
         {                                                               \
             if (assertion) { }                                          \
             else                                                        \
@@ -76,13 +59,19 @@
                 OTR_DEBUG_BREAK();                                      \
             }                                                           \
         }
-#else
-#define OTR_ASSERT_SCOPE(scope)
-    #define OTR_ASSERT_VARIABLE_DECLARATION(declaration)
-    #define OTR_ASSERT_METHOD_DECLARATION(declaration)
 
-    #define OTR_ASSERT(assertion)
-    #define OTR_ASSERT_MSG(assertion, ...)
+    #define OTR_STATIC_ASSERT(assertion, message) static_assert(assertion, message);
+
+    #define OTR_VALIDATE(callback, ...)             \
+        {                                           \
+            auto result = callback;                 \
+            OTR_ASSERT(result, __VA_ARGS__)         \
+        }
+
+#else
+    #define OTR_ASSERT(assertion, ...)
+    #define OTR_STATIC_ASSERT(assertion, message)
+    #define OTR_VALIDATE(callback, ...) callback;
 #endif
 
 #endif //OTTERENGINE_ASSERT_H

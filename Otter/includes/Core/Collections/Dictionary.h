@@ -6,7 +6,6 @@
 #include "Core/Collections/Utils/HashSlot.h"
 #include "Core/Collections/Utils/HashUtils.h"
 #include "Core/Collections/Utils/KeyValuePair.h"
-#include "Core/Collections/Iterators/SlotIterator.h"
 
 #if !OTR_RUNTIME
 #include "Core/Collections/ReadOnly/ReadOnlySpan.h"
@@ -34,8 +33,8 @@ namespace Otter
         /// @brief Alias for a slot.
         using Slot = Slot<Pair>;
 
-        /// @brief Alias for a slot iterator.
-        using Iterator = SlotIterator<Pair>;
+        /// @brief Iterator for a collection of Slots.
+        class SlotIterator;
 
     public:
         /**
@@ -61,7 +60,7 @@ namespace Otter
             : Dictionary()
         {
             m_Capacity             = k_InitialCapacity;
-            m_Slots                = Buffer::New < Slot > (k_InitialCapacity);
+            m_Slots                = Buffer::New<Slot>(k_InitialCapacity);
             m_Count                = 0;
             m_CurrentMaxCollisions = 0;
 
@@ -75,14 +74,21 @@ namespace Otter
          * @param other The dictionary to copy.
          */
         Dictionary(const Dictionary<TKey, TValue>& other)
-            : Dictionary()
         {
-            m_Slots                = other.m_Slots;
             m_Capacity             = other.m_Capacity;
             m_Count                = other.m_Count;
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
             m_Collisions           = other.m_Collisions;
+
+            if (m_Capacity == 0)
+                return;
+
+            m_Slots = Buffer::New<Slot>(m_Capacity);
+
+            if (m_Count > 0)
+                for (UInt64 i = 0; i < m_Capacity; i++)
+                    m_Slots[i] = other.m_Slots[i];
         }
 
         /**
@@ -91,7 +97,6 @@ namespace Otter
          * @param other The dictionary to move.
          */
         Dictionary(Dictionary<TKey, TValue>&& other) noexcept
-            : Dictionary()
         {
             m_Slots                = std::move(other.m_Slots);
             m_Capacity             = std::move(other.m_Capacity);
@@ -121,12 +126,20 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots                = other.m_Slots;
             m_Capacity             = other.m_Capacity;
             m_Count                = other.m_Count;
             m_CurrentMaxCollisions = other.m_CurrentMaxCollisions;
             m_SlotsInUse           = other.m_SlotsInUse;
             m_Collisions           = other.m_Collisions;
+
+            if (m_Capacity == 0)
+                return *this;
+
+            m_Slots = Buffer::New<Slot>(m_Capacity);
+
+            if (m_Count > 0)
+                for (UInt64 i = 0; i < m_Capacity; i++)
+                    m_Slots[i] = other.m_Slots[i];
 
             return *this;
         }
@@ -162,15 +175,61 @@ namespace Otter
         }
 
         /**
+         * @brief Equality operator.
+         *
+         * @param other The other dictionary.
+         *
+         * @return True if the hashsets are equal, false otherwise.
+         */
+        bool operator==(const Dictionary<TKey, TValue>& other) const noexcept
+        {
+            if (m_Count != other.m_Count)
+                return false;
+
+            for (UInt64 i = 0; i < m_Capacity; ++i)
+                if (m_Slots[i] != other.m_Slots[i])
+                    return false;
+
+            return true;
+        }
+
+        /**
+         * @brief Inequality operator.
+         *
+         * @param other The other dictionary.
+         *
+         * @return True if the hashsets are not equal, false otherwise.
+         */
+        bool operator!=(const Dictionary<TKey, TValue>& other) const noexcept { return !(*this == other); }
+
+        /**
+         * @brief Gets the element for the specified key.
+         *
+         * @param key The key.
+         *
+         * @return The address of the element for the specified key.
+         */
+        [[nodiscard]] TValue* operator[](const TKey key) const
+        {
+            if (IsEmpty())
+                return nullptr;
+
+            UInt64 index;
+            if (!Exists(key, &index))
+                return nullptr;
+
+            return &m_Slots[index].Data.Value;
+        }
+
+        /**
          * @brief Tries to add a key/value pair to the dictionary.
          *
          * @param key The key of the pair.
          * @param value The value of the pair.
-         * @param replaceIfKeyExists Whether to replace the value if the key already exists.
          *
          * @return True if the pair was added, false otherwise.
          */
-        bool TryAdd(const TKey& key, const TValue& value, bool replaceIfKeyExists = false)
+        bool TryAdd(const TKey& key, const TValue& value)
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
@@ -183,10 +242,8 @@ namespace Otter
 
             if (m_Slots[index].MatchesKey(key, hash))
             {
-                if (replaceIfKeyExists)
-                    m_Slots[index].Data.Value = value;
-
-                return replaceIfKeyExists;
+                m_Slots[index].Data.Value = value;
+                return true;
             }
 
             if (HasCollisionStoredAt(index))
@@ -200,11 +257,10 @@ namespace Otter
          *
          * @param key The key of the pair.
          * @param value The value of the pair.
-         * @param replaceIfKeyExists Whether to replace the value if the key already exists.
          *
          * @return True if the pair was added, false otherwise.
          */
-        bool TryAdd(TKey&& key, TValue&& value, bool replaceIfKeyExists = false) noexcept
+        bool TryAdd(TKey&& key, TValue&& value) noexcept
         {
             if (m_Count >= m_Capacity || m_CurrentMaxCollisions >= k_MaxCollisions)
                 Expand();
@@ -213,20 +269,18 @@ namespace Otter
             UInt64 index = hash % m_Capacity;
 
             if (!HasItemStoredAt(index))
-                return TryAddToEmptySlot({ key, value }, hash, index);
+                return TryAddToEmptySlot(Pair(std::move(key), std::move(value)), hash, index);
 
             if (m_Slots[index].MatchesKey(key, hash))
             {
-                if (replaceIfKeyExists)
-                    m_Slots[index].Data.Value = std::move(value);
-
-                return replaceIfKeyExists;
+                m_Slots[index].Data.Value = std::move(value);
+                return true;
             }
 
             if (HasCollisionStoredAt(index))
-                return TryAddToCollisionSlot({ key, value }, hash, index);
+                return TryAddToCollisionSlot(Pair(std::move(key), std::move(value)), hash, index);
 
-            return TryAddNewCollision({ key, value }, index, hash);
+            return TryAddNewCollision(Pair(std::move(key), std::move(value)), index, hash);
         }
 
         /**
@@ -239,7 +293,7 @@ namespace Otter
          */
         bool TryGet(const TKey& key, TValue* outValue) const
         {
-            OTR_ASSERT_MSG(outValue, "outValue cannot be null.")
+            OTR_ASSERT(outValue, "outValue cannot be null.")
 
             if (IsEmpty())
                 return false;
@@ -295,7 +349,7 @@ namespace Otter
          *
          * @return True if the dictionary contains the key, false otherwise.
          */
-        [[nodiscard]] bool Contains(const TKey& key) const
+        [[nodiscard]] bool ContainsKey(const TKey& key) const
         {
             if (IsEmpty())
                 return false;
@@ -313,7 +367,7 @@ namespace Otter
          */
         [[nodiscard]] bool TryGetIndex(const TKey& key, UInt64* outIndex) const
         {
-            OTR_ASSERT_MSG(outIndex, "outIndex cannot be null.")
+            OTR_ASSERT(outIndex, "outIndex cannot be null.")
 
             if (IsEmpty())
                 return false;
@@ -563,9 +617,17 @@ namespace Otter
          *
          * @return A const iterator to the first element of the dictionary.
          */
-        OTR_INLINE Iterator begin() const noexcept
+        SlotIterator begin() const noexcept
         {
-            return Iterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
+            for (UInt64 i = 0; i < m_Capacity; i++)
+            {
+                if (!HasItemStoredAt(i))
+                    continue;
+
+                return SlotIterator(m_Slots, m_Slots + i, m_Capacity, m_SlotsInUse);
+            }
+
+            return SlotIterator(m_Slots, m_Slots + m_Capacity, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -573,9 +635,9 @@ namespace Otter
          *
          * @return A const iterator to the last element of the dictionary.
          */
-        OTR_INLINE Iterator end() const noexcept
+        OTR_INLINE SlotIterator end() const noexcept
         {
-            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
+            return SlotIterator(m_Slots, m_Slots + m_Capacity, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -583,9 +645,17 @@ namespace Otter
          *
          * @return A reverse const iterator to the last element of the dictionary.
          */
-        OTR_INLINE Iterator rbegin() const noexcept
+        SlotIterator rbegin() const noexcept
         {
-            return Iterator(m_Slots, m_Slots + m_Capacity - 1, m_Capacity, m_SlotsInUse);
+            for (UInt64 i = m_Capacity - 1; i > 0; i--)
+            {
+                if (!HasItemStoredAt(i))
+                    continue;
+
+                return SlotIterator(m_Slots, m_Slots + i, m_Capacity, m_SlotsInUse);
+            }
+
+            return SlotIterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
         }
 
         /**
@@ -593,9 +663,9 @@ namespace Otter
          *
          * @return A reverse const iterator to the first element of the dictionary.
          */
-        OTR_INLINE Iterator rend() const noexcept
+        OTR_INLINE SlotIterator rend() const noexcept
         {
-            return Iterator(m_Slots, m_Slots - 1, m_Capacity, m_SlotsInUse);
+            return SlotIterator(m_Slots, m_Slots, m_Capacity, m_SlotsInUse);
         }
 
     private:
@@ -611,6 +681,120 @@ namespace Otter
 
         BitSet m_SlotsInUse{ };
         BitSet m_Collisions{ };
+
+        /**
+         * @brief Iterator for a collection of Slots.
+         */
+        struct SlotIterator final
+        {
+        public:
+            /**
+             * @brief Constructor.
+             *
+             * @param head The head of the Slot array.
+             * @param ptr The current Slot.
+             * @param capacity The capacity of the Slot array.
+             * @param slotsInUse The BitSet of the Slots in use.
+             */
+            SlotIterator(Slot* head,
+                         Slot* ptr,
+                         const UInt64 capacity,
+                         const BitSet& slotsInUse) // NOLINT(*-pass-by-value)
+                : k_Head(head), k_Capacity(capacity), k_SlotsInUse(slotsInUse), m_Ptr(ptr)
+            {
+            }
+
+            /**
+             * @brief Increments the iterator.
+             *
+             * @return The incremented iterator.
+             */
+            OTR_INLINE SlotIterator& operator++()
+            {
+                m_Ptr++;
+
+                if (!k_SlotsInUse.Get(m_Ptr - k_Head))
+                    while (m_Ptr - k_Head < k_Capacity && !k_SlotsInUse.Get(m_Ptr - k_Head))
+                        m_Ptr++;
+
+                return *this;
+            }
+
+            /**
+             * @brief Increments the iterator.
+             *
+             * @return The iterator before incrementation.
+             */
+            OTR_INLINE const SlotIterator operator++(int)
+            {
+                SlotIterator iterator = *this;
+                ++(*this);
+                return iterator;
+            }
+
+            /**
+             * @brief Decrements the iterator.
+             *
+             * @return The decremented iterator.
+             */
+            OTR_INLINE SlotIterator& operator--()
+            {
+                m_Ptr--;
+
+                if (!k_SlotsInUse.Get(m_Ptr - k_Head))
+                    while (m_Ptr != k_Head && !k_SlotsInUse.Get(m_Ptr - k_Head))
+                        m_Ptr--;
+
+                return *this;
+            }
+
+            /**
+             * @brief Decrements the iterator.
+             *
+             * @return The iterator before decrementation.
+             */
+            OTR_INLINE const SlotIterator operator--(int)
+            {
+                SlotIterator iterator = *this;
+                --(*this);
+                return iterator;
+            }
+
+            /**
+             * @brief Dereferences the iterator.
+             *
+             * @return The dereferenced object.
+             */
+            OTR_INLINE KeyValuePair<const TKey, TValue>& operator*() const
+            {
+                return reinterpret_cast<KeyValuePair<const TKey, TValue>&>(m_Ptr->Data);
+            }
+
+            /**
+             * @brief Equality operator.
+             *
+             * @param other The other iterator to compare to.
+             *
+             * @return True if the iterators are equal, false otherwise.
+             */
+            OTR_INLINE bool operator==(const SlotIterator& other) const { return m_Ptr == other.m_Ptr; }
+
+            /**
+             * @brief Inequality operator.
+             *
+             * @param other The other iterator to compare to.
+             *
+             * @return True if the iterators are not equal, false otherwise.
+             */
+            OTR_INLINE bool operator!=(const SlotIterator& other) const { return !(*this == other); }
+
+        private:
+            const Slot* const k_Head;
+            const UInt64 k_Capacity;
+            const BitSet k_SlotsInUse;
+
+            Slot* m_Ptr;
+        };
 
         /**
          * @brief Tries to add a key/value pair to an empty slot in the dictionary.
@@ -797,8 +981,8 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots = Buffer::New < Slot >
-                      (newCapacity);
+            m_Slots = Buffer::New<Slot>
+                (newCapacity);
 
             for (UInt64 i = 0; i < newCapacity; i++)
                 if (newDictionary.HasItemStoredAt(i))
@@ -821,7 +1005,7 @@ namespace Otter
             if (IsCreated())
                 Destroy();
 
-            m_Slots    = capacity > 0 ? Buffer::New < Slot > (capacity) : nullptr;
+            m_Slots    = capacity > 0 ? Buffer::New<Slot>(capacity) : nullptr;
             m_Capacity = capacity;
             m_Count    = 0;
 
@@ -861,6 +1045,7 @@ namespace Otter
         void Destroy()
         {
             Buffer::Delete<Slot>(m_Slots, m_Capacity);
+            m_Slots = nullptr;
 
             m_SlotsInUse.ClearDestructive();
             m_Collisions.ClearDestructive();

@@ -109,7 +109,7 @@ namespace Otter::Math
          */
         constexpr Vector(InitialiserList<TNumber> list)
         {
-            OTR_ASSERT_MSG(list.size() == TDimension, "Initialiser list size does not match Vector size")
+            OTR_ASSERT(list.size() == TDimension, "Initialiser list size does not match Vector size")
 
             UInt64 i = 0;
             for (const TNumber& value: list)
@@ -197,7 +197,7 @@ namespace Otter::Math
          */
         TNumber& operator[](UInt8 index)
         {
-            OTR_ASSERT_MSG(index < TDimension, "Index {0} is out of range", index)
+            OTR_ASSERT(index < TDimension, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
@@ -212,7 +212,7 @@ namespace Otter::Math
          */
         const TNumber& operator[](UInt8 index) const
         {
-            OTR_ASSERT_MSG(index < TDimension, "Index {0} is out of range", index)
+            OTR_ASSERT(index < TDimension, "Index {0} is out of range", index)
             return m_Values[index];
         }
 
@@ -345,7 +345,7 @@ namespace Otter::Math
         template<AnyNumber TOtherNumber>
         Vector<TDimension, TNumber>& operator/=(TOtherNumber scalar) noexcept
         {
-            OTR_ASSERT_MSG(scalar != 0, "Division by zero")
+            OTR_ASSERT(scalar != 0, "Division by zero")
 
             for (UInt8 i = 0; i < TDimension; ++i)
                 m_Values[i] /= scalar;
@@ -427,7 +427,7 @@ namespace Otter::Math
         template<AnyNumber TOtherNumber>
         friend decltype(auto) operator/(Vector<TDimension, TNumber> lhs, TOtherNumber rhs)
         {
-            OTR_ASSERT_MSG(rhs != 0, "Division by zero")
+            OTR_ASSERT(rhs != 0, "Division by zero")
 
             lhs /= rhs;
             return lhs;
@@ -587,12 +587,12 @@ namespace Otter::Math
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Left() requires (TDimension < 4)
         {
             if constexpr (TDimension == 2)
-                return Vector<2, TNumber>(static_cast<TNumber>(-1.0),
-                                          static_cast<TNumber>(0.0));
+                return Vector<2, TNumber>{ static_cast<TNumber>(-1.0),
+                                           static_cast<TNumber>(0.0) };
             else
-                return Vector<3, TNumber>(static_cast<TNumber>(-1.0),
-                                          static_cast<TNumber>(0.0),
-                                          static_cast<TNumber>(0.0));
+                return Vector<3, TNumber>{ static_cast<TNumber>(-1.0),
+                                           static_cast<TNumber>(0.0),
+                                           static_cast<TNumber>(0.0) };
         }
 
         /**
@@ -608,11 +608,12 @@ namespace Otter::Math
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Right() requires (TDimension < 4)
         {
             if constexpr (TDimension == 2)
-                return Vector<2, TNumber>(static_cast<TNumber>(1.0), static_cast<TNumber>(0.0));
+                return Vector<2, TNumber>{ static_cast<TNumber>(1.0),
+                                           static_cast<TNumber>(0.0) };
             else
-                return Vector<3, TNumber>(static_cast<TNumber>(1.0),
-                                          static_cast<TNumber>(0.0),
-                                          static_cast<TNumber>(0.0));
+                return Vector<3, TNumber>{ static_cast<TNumber>(1.0),
+                                           static_cast<TNumber>(0.0),
+                                           static_cast<TNumber>(0.0) };
         }
 
         /**
@@ -628,11 +629,12 @@ namespace Otter::Math
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Down() requires (TDimension < 4)
         {
             if constexpr (TDimension == 2)
-                return Vector<2, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(-1.0));
+                return Vector<2, TNumber>{ static_cast<TNumber>(0.0),
+                                           static_cast<TNumber>(-1.0) };
             else
-                return Vector<3, TNumber>(static_cast<TNumber>(0.0),
-                                          static_cast<TNumber>(-1.0),
-                                          static_cast<TNumber>(0.0));
+                return Vector<3, TNumber>{ static_cast<TNumber>(0.0),
+                                           static_cast<TNumber>(-1.0),
+                                           static_cast<TNumber>(0.0) };
         }
 
         /**
@@ -648,11 +650,12 @@ namespace Otter::Math
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Up() requires (TDimension < 4)
         {
             if constexpr (TDimension == 2)
-                return Vector<2, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(1.0));
+                return Vector<2, TNumber>{ static_cast<TNumber>(0.0),
+                                           static_cast<TNumber>(1.0) };
             else
-                return Vector<3, TNumber>(static_cast<TNumber>(0.0),
-                                          static_cast<TNumber>(1.0),
-                                          static_cast<TNumber>(0.0));
+                return Vector<3, TNumber>{ static_cast<TNumber>(0.0),
+                                           static_cast<TNumber>(1.0),
+                                           static_cast<TNumber>(0.0) };
         }
 
         /**
@@ -667,7 +670,9 @@ namespace Otter::Math
          */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Back() requires (TDimension == 3)
         {
-            return Vector<3, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(0.0), static_cast<TNumber>(-1.0));
+            return Vector<3, TNumber>{ static_cast<TNumber>(0.0),
+                                       static_cast<TNumber>(0.0),
+                                       static_cast<TNumber>(-1.0) };
         }
 
         /**
@@ -682,7 +687,9 @@ namespace Otter::Math
          */
         OTR_INLINE static constexpr Vector<TDimension, TNumber> Forward() requires (TDimension == 3)
         {
-            return Vector<3, TNumber>(static_cast<TNumber>(0.0), static_cast<TNumber>(0.0), static_cast<TNumber>(1.0));
+            return Vector<3, TNumber>{ static_cast<TNumber>(0.0),
+                                       static_cast<TNumber>(0.0),
+                                       static_cast<TNumber>(1.0) };
         }
 
         /**
@@ -993,8 +1000,8 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Max(const Vec2D<Tx>& lhs, const Vec2D<Ty>& rhs)
         {
-            return Vec2D<decltype(Math::Max(lhs[0], rhs[0]))>(Math::Max(lhs[0], rhs[0]),
-                                                              Math::Max(lhs[1], rhs[1]));
+            return Vec2D<decltype(Math::Max(lhs[0], rhs[0]))>{ Math::Max(lhs[0], rhs[0]),
+                                                               Math::Max(lhs[1], rhs[1]) };
         }
 
         /**
@@ -1011,8 +1018,8 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Min(const Vec2D<Tx>& lhs, const Vec2D<Ty>& rhs)
         {
-            return Vec2D<decltype(Math::Min(lhs[0], rhs[0]))>(Math::Min(lhs[0], rhs[0]),
-                                                              Math::Min(lhs[1], rhs[1]));
+            return Vec2D<decltype(Math::Min(lhs[0], rhs[0]))>{ Math::Min(lhs[0], rhs[0]),
+                                                               Math::Min(lhs[1], rhs[1]) };
         }
 
         /**
@@ -1031,8 +1038,8 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto Clamp(const Vec2D<Tx>& value, const Vec2D<Ty>& min, const Vec2D<Tz>& max)
         {
-            return Vec2D<decltype(Math::Clamp(value[0], min[0], max[0]))>(Math::Clamp(value[0], min[0], max[0]),
-                                                                          Math::Clamp(value[1], min[1], max[1]));
+            return Vec2D<decltype(Math::Clamp(value[0], min[0], max[0]))>{ Math::Clamp(value[0], min[0], max[0]),
+                                                                           Math::Clamp(value[1], min[1], max[1]) };
         }
 
         /**
@@ -1575,9 +1582,9 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Max(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
-            return Vec3D<decltype(Math::Max(lhs[0], rhs[0]))>(Math::Max(lhs[0], rhs[0]),
-                                                              Math::Max(lhs[1], rhs[1]),
-                                                              Math::Max(lhs[2], rhs[2]));
+            return Vec3D<decltype(Math::Max(lhs[0], rhs[0]))>{ Math::Max(lhs[0], rhs[0]),
+                                                               Math::Max(lhs[1], rhs[1]),
+                                                               Math::Max(lhs[2], rhs[2]) };
         }
 
         /**
@@ -1594,9 +1601,9 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Min(const Vec3D<Tx>& lhs, const Vec3D<Ty>& rhs)
         {
-            return Vec3D<decltype(Math::Min(lhs[0], rhs[0]))>(Math::Min(lhs[0], rhs[0]),
-                                                              Math::Min(lhs[1], rhs[1]),
-                                                              Math::Min(lhs[2], rhs[2]));
+            return Vec3D<decltype(Math::Min(lhs[0], rhs[0]))>{ Math::Min(lhs[0], rhs[0]),
+                                                               Math::Min(lhs[1], rhs[1]),
+                                                               Math::Min(lhs[2], rhs[2]) };
         }
 
         /**
@@ -1615,9 +1622,9 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto Clamp(const Vec3D<Tx>& value, const Vec3D<Ty>& min, const Vec3D<Tz>& max)
         {
-            return Vec3D<decltype(Math::Clamp(value[0], min[0], max[0]))>(Math::Clamp(value[0], min[0], max[0]),
-                                                                          Math::Clamp(value[1], min[1], max[1]),
-                                                                          Math::Clamp(value[2], min[2], max[2]));
+            return Vec3D<decltype(Math::Clamp(value[0], min[0], max[0]))>{ Math::Clamp(value[0], min[0], max[0]),
+                                                                           Math::Clamp(value[1], min[1], max[1]),
+                                                                           Math::Clamp(value[2], min[2], max[2]) };
         }
 
         /**
@@ -2222,10 +2229,10 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Max(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
         {
-            return Vec4D<decltype(Math::Max(lhs[0], rhs[0]))>(Math::Max(lhs[0], rhs[0]),
-                                                              Math::Max(lhs[1], rhs[1]),
-                                                              Math::Max(lhs[2], rhs[2]),
-                                                              Math::Max(lhs[3], rhs[3]));
+            return Vec4D<decltype(Math::Max(lhs[0], rhs[0]))>{ Math::Max(lhs[0], rhs[0]),
+                                                               Math::Max(lhs[1], rhs[1]),
+                                                               Math::Max(lhs[2], rhs[2]),
+                                                               Math::Max(lhs[3], rhs[3]) };
         }
 
         /**
@@ -2242,10 +2249,10 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty>
         OTR_INLINE static auto Min(const Vec4D<Tx>& lhs, const Vec4D<Ty>& rhs)
         {
-            return Vec4D<decltype(Math::Min(lhs[0], rhs[0]))>(Math::Min(lhs[0], rhs[0]),
-                                                              Math::Min(lhs[1], rhs[1]),
-                                                              Math::Min(lhs[2], rhs[2]),
-                                                              Math::Min(lhs[3], rhs[3]));
+            return Vec4D<decltype(Math::Min(lhs[0], rhs[0]))>{ Math::Min(lhs[0], rhs[0]),
+                                                               Math::Min(lhs[1], rhs[1]),
+                                                               Math::Min(lhs[2], rhs[2]),
+                                                               Math::Min(lhs[3], rhs[3]) };
         }
 
         /**
@@ -2264,10 +2271,10 @@ namespace Otter::Math
         template<AnyNumber Tx, AnyNumber Ty, AnyNumber Tz>
         OTR_INLINE static auto Clamp(const Vec4D<Tx>& value, const Vec4D<Ty>& min, const Vec4D<Tz>& max)
         {
-            return Vec4D<decltype(Math::Clamp(value[0], min[0], max[0]))>(Math::Clamp(value[0], min[0], max[0]),
-                                                                          Math::Clamp(value[1], min[1], max[1]),
-                                                                          Math::Clamp(value[2], min[2], max[2]),
-                                                                          Math::Clamp(value[3], min[3], max[3]));
+            return Vec4D<decltype(Math::Clamp(value[0], min[0], max[0]))>{ Math::Clamp(value[0], min[0], max[0]),
+                                                                           Math::Clamp(value[1], min[1], max[1]),
+                                                                           Math::Clamp(value[2], min[2], max[2]),
+                                                                           Math::Clamp(value[3], min[3], max[3]) };
         }
 
         /**

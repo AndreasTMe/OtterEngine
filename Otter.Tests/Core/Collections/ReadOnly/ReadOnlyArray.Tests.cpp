@@ -16,6 +16,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -66,6 +67,16 @@ TEST_F(ReadOnlyArray_Fixture, Initialisation_MoveArray)
         EXPECT_EQ(readOnlyArray[i], i + 1);
 
     EXPECT_EQ(array.GetData(), nullptr);
+}
+
+TEST_F(ReadOnlyArray_Fixture, Equality)
+{
+    ReadOnlyArray<int, 5> array1 = { 1, 2, 3, 4, 5 };
+    ReadOnlyArray<int, 5> array2 = { 1, 2, 3, 4, 5 };
+    ReadOnlyArray<int, 5> array3 = { 5, 4, 3, 2, 1 };
+
+    EXPECT_TRUE(array1 == array2);
+    EXPECT_FALSE(array1 == array3);
 }
 
 TEST_F(ReadOnlyArray_Fixture, GetMemoryFootprint)

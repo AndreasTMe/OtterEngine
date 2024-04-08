@@ -109,6 +109,22 @@ namespace Otter
         Platform::MemoryCopy(destination, source, size);
     }
 
+    void MemorySystem::MemoryMove(void* destination, const void* source, UInt64 size)
+    {
+        if (!s_HasInitialised)
+        {
+            OTR_LOG_WARNING(
+                "Memory has not been initialised. Make sure to call Memory::Initialise() before using any"
+                " memory functions. Note that there might be some global/static variables that use memory.")
+            return;
+        }
+
+        OTR_INTERNAL_ASSERT_MSG(source != nullptr, "Source to be moved must not be null")
+        OTR_INTERNAL_ASSERT_MSG(size > 0, "Move size must be greater than 0 bytes")
+
+        Platform::MemoryMove(destination, source, size);
+    }
+
     void MemorySystem::MemoryClear(void* block, const UInt64 size)
     {
         if (!s_HasInitialised)

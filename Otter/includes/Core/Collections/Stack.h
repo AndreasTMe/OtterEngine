@@ -29,6 +29,32 @@ namespace Otter
         OTR_COLLECTION_MOVE(Stack)
 
         /**
+         * @brief Gets the element at the specified index.
+         *
+         * @param index The index.
+         *
+         * @return The element at the specified index.
+         */
+        [[nodiscard]] T& operator[](const UInt64 index)
+        {
+            OTR_ASSERT(index < base::m_Count, "Stack index out of bounds")
+            return base::m_Data[index];
+        }
+
+        /**
+         * @brief Gets the element at the specified index.
+         *
+         * @param index The index.
+         *
+         * @return The element at the specified index.
+         */
+        [[nodiscard]] const T& operator[](const UInt64 index) const
+        {
+            OTR_ASSERT(index < base::m_Count, "index index out of bounds")
+            return base::m_Data[index];
+        }
+
+        /**
          * @brief Pushes an item onto the stack.
          *
          * @param item The item to push onto the stack.
@@ -94,28 +120,28 @@ namespace Otter
          *
          * @return An iterator to the first element of the stack.
          */
-        OTR_INLINE Iterator begin() noexcept { return Iterator(base::m_Data); }
+        OTR_INLINE Iterator begin() const noexcept { return Iterator(base::m_Data); }
 
         /**
          * @brief Gets an iterator to the last element of the stack.
          *
          * @return An iterator to the last element of the stack.
          */
-        OTR_INLINE Iterator end() noexcept { return Iterator(base::m_Data + base::m_Count); }
+        OTR_INLINE Iterator end() const noexcept { return Iterator(base::m_Data + base::m_Count); }
 
         /**
          * @brief Gets a reverse iterator to the last element of the stack.
          *
          * @return A reverse iterator to the last element of the stack.
          */
-        OTR_INLINE Iterator rbegin() noexcept { return Iterator(base::m_Data + base::m_Count - 1); }
+        OTR_INLINE Iterator rbegin() const noexcept { return Iterator(base::m_Data + base::m_Count - 1); }
 
         /**
          * @brief Gets a reverse iterator to the first element of the stack.
          *
          * @return A reverse iterator to the first element of the stack.
          */
-        OTR_INLINE Iterator rend() noexcept { return Iterator(base::m_Data - 1); }
+        OTR_INLINE Iterator rend() const noexcept { return Iterator(base::m_Data - 1); }
 
         /**
          * @brief Gets a const iterator to the first element of the stack.

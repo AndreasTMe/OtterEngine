@@ -15,6 +15,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -44,7 +45,7 @@ TEST_F(Deque_Fixture, Initialisation_Copy)
     Deque<int> deque = { 1, 2, 3, 4, 5 };
     Deque<int> copy  = deque;
 
-    EXPECT_EQ(copy.GetData(), deque.GetData());
+    EXPECT_NE(copy.GetData(), deque.GetData());
     EXPECT_EQ(copy.GetCapacity(), deque.GetCapacity());
     EXPECT_EQ(copy.GetCount(), deque.GetCount());
 }
@@ -57,6 +58,18 @@ TEST_F(Deque_Fixture, Initialisation_Move)
     EXPECT_NE(move.GetData(), nullptr);
     EXPECT_EQ(move.GetCapacity(), 5);
     EXPECT_EQ(move.GetCount(), 5);
+}
+
+TEST_F(Deque_Fixture, Equality)
+{
+    Deque<int> deque1 = { 1, 2, 3, 4, 5 };
+    Deque<int> deque2 = { 1, 2, 3, 4, 5 };
+    Deque<int> deque3 = { 1, 2, 3, 4, 6 };
+
+    EXPECT_TRUE(deque1 == deque2);
+    EXPECT_FALSE(deque1 == deque3);
+    EXPECT_TRUE(deque1 != deque3);
+    EXPECT_FALSE(deque1 != deque2);
 }
 
 TEST_F(Deque_Fixture, PushFront)
@@ -241,12 +254,20 @@ TEST_F(Deque_Fixture, Clear)
 
 TEST_F(Deque_Fixture, ClearDestructive)
 {
-    Deque<int> deque = { 1, 2, 3, 4, 5 };
-    deque.ClearDestructive();
+    Deque<int> deque1 = { 1, 2, 3, 4, 5 };
+    deque1.ClearDestructive();
 
-    EXPECT_EQ(deque.GetData(), nullptr);
-    EXPECT_EQ(deque.GetCapacity(), 0);
-    EXPECT_EQ(deque.GetCount(), 0);
+    EXPECT_EQ(deque1.GetData(), nullptr);
+    EXPECT_EQ(deque1.GetCapacity(), 0);
+    EXPECT_EQ(deque1.GetCount(), 0);
+
+    Deque<Deque<int>> deque2 = {{ 1, 2, 3, 4, 5 },
+                                { 6, 7, 8, 9, 10 }};
+    deque2.ClearDestructive();
+
+    EXPECT_FALSE(deque2.IsCreated());
+    EXPECT_TRUE(deque2.IsEmpty());
+    EXPECT_EQ(deque2.GetCount(), 0);
 }
 
 TEST_F(Deque_Fixture, GetMemoryFootprint)

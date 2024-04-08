@@ -35,9 +35,9 @@ namespace Otter
          *
          * @return The element at the specified index.
          */
-        [[nodiscard]] T& operator[](UInt64 index)
+        [[nodiscard]] T& operator[](const UInt64 index)
         {
-            OTR_ASSERT_MSG(index < base::m_Count, "List index out of bounds")
+            OTR_ASSERT(index < base::m_Count, "List index out of bounds")
             return base::m_Data[index];
         }
 
@@ -48,9 +48,9 @@ namespace Otter
          *
          * @return The element at the specified index.
          */
-        [[nodiscard]] const T& operator[](UInt64 index) const
+        [[nodiscard]] const T& operator[](const UInt64 index) const
         {
-            OTR_ASSERT_MSG(index < base::m_Count, "List index out of bounds")
+            OTR_ASSERT(index < base::m_Count, "List index out of bounds")
             return base::m_Data[index];
         }
 
@@ -134,21 +134,20 @@ namespace Otter
          */
         bool TryAddRange(InitialiserList<T> items, bool allOrNothing = false)
         {
-            if (items.size() == 0)
-                return false;
+            return TryAddRangeInternal(items.begin(), items.size(), allOrNothing);
+        }
 
-            if (items.size() > base::m_Capacity - base::m_Count)
-            {
-                if (allOrNothing)
-                    return false;
-
-                base::Expand(items.size() - (base::m_Capacity - base::m_Count));
-            }
-
-            for (const T& item: items)
-                Add(item);
-
-            return true;
+        /**
+         * @brief Tries to add a collection of items to the list.
+         *
+         * @param collection The items to add.
+         * @param allOrNothing Whether or not to add all items or none at all, if there is not enough space.
+         *
+         * @return True if the items were added, false otherwise.
+         */
+        bool TryAddRange(const Collection<T>& collection, bool allOrNothing = false)
+        {
+            return TryAddRangeInternal(collection.GetData(), collection.GetCount(), allOrNothing);
         }
 
         /**
@@ -159,22 +158,6 @@ namespace Otter
          * @return True if the item was removed, false otherwise.
          */
         bool TryRemove(const T& item)
-        {
-            for (UInt64 i = 0; i < base::m_Count; i++)
-                if (base::m_Data[i] == item)
-                    return TryRemoveAt(i);
-
-            return false;
-        }
-
-        /**
-         * @brief Tries to remove an item from the list.
-         *
-         * @param item The item to remove.
-         *
-         * @return True if the item was removed, false otherwise.
-         */
-        bool TryRemove(T&& item) noexcept
         {
             for (UInt64 i = 0; i < base::m_Count; i++)
                 if (base::m_Data[i] == item)
@@ -208,28 +191,28 @@ namespace Otter
          *
          * @return An iterator to the first element of the list.
          */
-        OTR_INLINE Iterator begin() noexcept { return Iterator(base::m_Data); }
+        OTR_INLINE Iterator begin() const noexcept { return Iterator(base::m_Data); }
 
         /**
          * @brief Gets an iterator to the last element of the list.
          *
          * @return An iterator to the last element of the list.
          */
-        OTR_INLINE Iterator end() noexcept { return Iterator(base::m_Data + base::m_Count); }
+        OTR_INLINE Iterator end() const noexcept { return Iterator(base::m_Data + base::m_Count); }
 
         /**
          * @brief Gets a reverse iterator to the last element of the list.
          *
          * @return A reverse iterator to the last element of the list.
          */
-        OTR_INLINE Iterator rbegin() noexcept { return Iterator(base::m_Data + base::m_Count - 1); }
+        OTR_INLINE Iterator rbegin() const noexcept { return Iterator(base::m_Data + base::m_Count - 1); }
 
         /**
          * @brief Gets a reverse iterator to the first element of the list.
          *
          * @return A reverse iterator to the first element of the list.
          */
-        OTR_INLINE Iterator rend() noexcept { return Iterator(base::m_Data - 1); }
+        OTR_INLINE Iterator rend() const noexcept { return Iterator(base::m_Data - 1); }
 
         /**
          * @brief Gets a const iterator to the first element of the list.
@@ -258,6 +241,36 @@ namespace Otter
          * @return A reverse const iterator to the first element of the list.
          */
         OTR_INLINE ConstIterator crend() const noexcept { return ConstIterator(base::m_Data - 1); }
+
+    private:
+        /**
+         * @brief Tries to add data to the list.
+         *
+         * @param data The data to add.
+         * @param size The size of the data to add.
+         * @param allOrNothing Whether or not to add all data or none at all, if there is not enough space.
+         *
+         * @return True if the data were added, false otherwise.
+         */
+        bool TryAddRangeInternal(const void* data, const UInt64 size, bool allOrNothing = false)
+        {
+            if (!data || size == 0)
+                return false;
+
+            if (size > base::m_Capacity - base::m_Count)
+            {
+                if (allOrNothing)
+                    return false;
+
+                base::Expand(size - (base::m_Capacity - base::m_Count));
+            }
+
+            const UInt64 offset = sizeof(T);
+            MemorySystem::MemoryCopy(base::m_Data + (base::m_Count * offset), data, (size * offset));
+            base::m_Count += size;
+
+            return true;
+        }
     };
 }
 

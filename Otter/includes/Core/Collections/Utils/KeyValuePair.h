@@ -26,7 +26,14 @@ namespace Otter
         /**
          * @brief Destructor.
          */
-        ~KeyValuePair() = default;
+        ~KeyValuePair()
+        {
+            if constexpr (!std::is_trivially_destructible_v<TKey>)
+                Key.~TKey();
+
+            if constexpr (!std::is_trivially_destructible_v<TValue>)
+                Value.~TValue();
+        }
 
         /**
          * @brief Constructor.
@@ -38,6 +45,18 @@ namespace Otter
         {
             Key   = key;
             Value = value;
+        }
+
+        /**
+         * @brief Constructor.
+         *
+         * @param key The key.
+         * @param value The value.
+         */
+        KeyValuePair(TKey&& key, TValue&& value)
+        {
+            Key   = std::move(key);
+            Value = std::move(value);
         }
 
         /**

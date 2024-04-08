@@ -15,6 +15,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -44,7 +45,7 @@ TEST_F(Stack_Fixture, Initialisation_Copy)
     Stack<int> stack = { 1, 2, 3, 4, 5 };
     Stack<int> copy  = stack;
 
-    EXPECT_EQ(copy.GetData(), stack.GetData());
+    EXPECT_NE(copy.GetData(), stack.GetData());
     EXPECT_EQ(copy.GetCapacity(), stack.GetCapacity());
     EXPECT_EQ(copy.GetCount(), stack.GetCount());
 }
@@ -67,7 +68,7 @@ TEST_F(Stack_Fixture, Assignment_Copy)
     Stack<int> copy;
     copy = stack;
 
-    EXPECT_EQ(copy.GetData(), stack.GetData());
+    EXPECT_NE(copy.GetData(), stack.GetData());
     EXPECT_EQ(copy.GetCapacity(), stack.GetCapacity());
     EXPECT_EQ(copy.GetCount(), stack.GetCount());
 }
@@ -83,6 +84,16 @@ TEST_F(Stack_Fixture, Assignment_Move)
     EXPECT_EQ(move.GetCount(), 5);
 
     EXPECT_EQ(stack.GetData(), nullptr);
+}
+
+TEST_F(Stack_Fixture, Equality)
+{
+    Stack<int> stack1 = { 1, 2, 3, 4, 5 };
+    Stack<int> stack2 = { 1, 2, 3, 4, 5 };
+    Stack<int> stack3 = { 1, 2, 3, 4, 5, 6 };
+
+    EXPECT_TRUE(stack1 == stack2);
+    EXPECT_FALSE(stack1 == stack3);
 }
 
 TEST_F(Stack_Fixture, Push)

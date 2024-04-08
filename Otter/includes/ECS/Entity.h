@@ -7,8 +7,11 @@ namespace Otter
 {
     class EntityManager;
 
+    /// @brief Type alias for entity Ids.
+    using EntityId = UInt64;
+
     /**
-     * @brief Entity class that is used to identify an entity in the ECS.
+     * @brief Entity class that is used to identify an entity in the entity-component system.
      */
     struct Entity final
     {
@@ -28,14 +31,25 @@ namespace Otter
          *
          * @param other Entity to copy from.
          */
-        Entity(const Entity& other) = default;
+        Entity(const Entity& other)
+        {
+            m_Id      = other.m_Id;
+            m_IsValid = other.m_IsValid;
+        }
 
         /**
          * @brief Move constructor.
          *
          * @param other Entity to move from.
          */
-        Entity(Entity&& other) noexcept = default;
+        Entity(Entity&& other) noexcept
+        {
+            m_Id      = other.m_Id;
+            m_IsValid = other.m_IsValid;
+
+            other.m_Id      = 0;
+            other.m_IsValid = false;
+        }
 
         /**
          * @brief Copy assignment operator.
@@ -53,7 +67,16 @@ namespace Otter
          *
          * @return Reference to this entity.
          */
-        Entity& operator=(Entity&& other) noexcept = default;
+        Entity& operator=(Entity&& other) noexcept
+        {
+            m_Id      = other.m_Id;
+            m_IsValid = other.m_IsValid;
+
+            other.m_Id      = 0;
+            other.m_IsValid = false;
+
+            return *this;
+        }
 
         /**
          * @brief Equality operator.
@@ -78,14 +101,14 @@ namespace Otter
          *
          * @return Id of the entity.
          */
-        [[nodiscard]] OTR_INLINE UInt64 GetId() const noexcept { return m_Id; }
+        [[nodiscard]] OTR_INLINE EntityId GetId() const noexcept { return m_Id; }
 
         /**
          * @brief Checks if the entity is valid.
          *
          * @return True if the entity is valid, false otherwise.
          */
-        [[nodiscard]] OTR_INLINE bool IsValid() const noexcept { return m_Id > 0; }
+        [[nodiscard]] OTR_INLINE bool IsValid() const noexcept { return m_Id > 0 && m_IsValid; }
 
         /**
          * @brief Gets the hash code of the entity.
@@ -98,7 +121,18 @@ namespace Otter
         }
 
     private:
-        UInt64 m_Id;
+        /**
+         * @brief Constructor.
+         *
+         * @param id Id of the entity.
+         */
+        explicit Entity(EntityId id) noexcept
+            : m_Id(id), m_IsValid(true)
+        {
+        }
+
+        EntityId m_Id      = 0;
+        bool     m_IsValid = false;
 
         friend class EntityManager;
     };

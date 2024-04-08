@@ -1,11 +1,15 @@
 #include <gtest/gtest.h>
 
 #include "Core/Collections/Collection.h"
+#include "Core/Collections/List.h"
 
 template<typename T>
 using Collection = Otter::Collection<T>;
 
 using Collections = Otter::Collections;
+
+template<typename T>
+using List = Otter::List<T>;
 
 class Collection_Fixture : public ::testing::Test
 {
@@ -17,6 +21,7 @@ protected:
 
     void TearDown() override
     {
+        EXPECT_EQ(Otter::MemorySystem::GetUsedMemory(), 0);
         Otter::MemorySystem::Shutdown();
     }
 };
@@ -128,20 +133,20 @@ TEST_F(Collection_Fixture, TryGetIndexOf)
     Collection<int> collection = Collections::New<int>({ 1, 2, 3 });
 
     UInt64 index = 0;
-    EXPECT_TRUE(collection.TryGetIndexOf(1, index));
+    EXPECT_TRUE(collection.TryGetIndexOf(1, &index));
     EXPECT_EQ(index, 0);
 
     index = 0;
-    EXPECT_TRUE(collection.TryGetIndexOf(2, index));
+    EXPECT_TRUE(collection.TryGetIndexOf(2, &index));
     EXPECT_EQ(index, 1);
 
     index = 0;
     int value = 3;
-    EXPECT_TRUE(collection.TryGetIndexOf(value, index));
+    EXPECT_TRUE(collection.TryGetIndexOf(value, &index));
     EXPECT_EQ(index, 2);
 
     index = 0;
-    EXPECT_FALSE(collection.TryGetIndexOf(123, index));
+    EXPECT_FALSE(collection.TryGetIndexOf(123, &index));
     EXPECT_EQ(index, 0);
 }
 
@@ -153,15 +158,22 @@ TEST_F(Collection_Fixture, Clear)
     EXPECT_EQ(collection.GetCount(), 0);
 
     UInt64 index = 0;
-    EXPECT_FALSE(collection.TryGetIndexOf(0, index));
+    EXPECT_FALSE(collection.TryGetIndexOf(0, &index));
 }
 
 TEST_F(Collection_Fixture, ClearDestructive)
 {
-    Collection<int> collection = Collections::New<int>({ 1, 2, 3 });
-    collection.ClearDestructive();
+    Collection<int> collection1 = Collections::New<int>({ 1, 2, 3 });
+    collection1.ClearDestructive();
 
-    EXPECT_EQ(collection.GetCount(), 0);
-    EXPECT_EQ(collection.GetCapacity(), 0);
-    EXPECT_EQ(collection.GetData(), nullptr);
+    EXPECT_EQ(collection1.GetCount(), 0);
+    EXPECT_EQ(collection1.GetCapacity(), 0);
+    EXPECT_EQ(collection1.GetData(), nullptr);
+
+    Collection<List<int>> collection2 = Collections::New<List<int>>({ List<int>({ 1, 2, 3 }) });
+    collection2.ClearDestructive();
+
+    EXPECT_EQ(collection2.GetCount(), 0);
+    EXPECT_EQ(collection2.GetCapacity(), 0);
+    EXPECT_EQ(collection2.GetData(), nullptr);
 }
