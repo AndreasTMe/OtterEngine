@@ -151,6 +151,46 @@ namespace Otter
         }
 
         /**
+         * @brief Removes component data from the container.
+         *
+         * @param componentId The component's Id.
+         */
+        void Remove(const ComponentId componentId)
+        {
+            if (m_Count == 0)
+                return;
+
+            for (UInt64 i = 0; i < m_Count; i++)
+            {
+                if (m_ComponentIds[i] != componentId)
+                    continue;
+
+                m_BytesStored -= m_ComponentSizes[i];
+                --m_Count;
+
+                if (i == m_Count)
+                    return;
+
+                UInt64 bytesStoredAfter = 0;
+
+                for (UInt64 j = i; j < m_Count; ++j)
+                    bytesStoredAfter += m_ComponentSizes[j];
+
+                MemorySystem::MemoryCopy(((Byte*) m_ComponentData.Pointer) + m_BytesStored - bytesStoredAfter,
+                                         ((Byte*) m_ComponentData.Pointer) + m_BytesStored,
+                                         bytesStoredAfter);
+                MemorySystem::MemoryCopy(m_ComponentSizes + i,
+                                         m_ComponentSizes + i + 1,
+                                         (m_Count - i) * sizeof(UInt64));
+                MemorySystem::MemoryCopy(m_ComponentIds + i,
+                                         m_ComponentIds + i + 1,
+                                         (m_Count - i) * sizeof(ComponentId));
+
+                return;
+            }
+        }
+
+        /**
          * @brief Gets a pointer to the component ids of the container.
          *
          * @return A pointer to the component ids of the container.
@@ -173,6 +213,13 @@ namespace Otter
         {
             return (Byte*) m_ComponentData.Pointer;
         }
+
+        /**
+         * @brief Gets the component count of the container.
+         *
+         * @return The component count of the container.
+         */
+        [[nodiscard]] OTR_INLINE UInt64 GetCount() const noexcept { return m_Count; }
 
         /**
          * @brief Gets a const iterator to the first component of the container.

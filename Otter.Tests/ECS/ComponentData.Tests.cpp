@@ -74,8 +74,8 @@ TEST_F(ComponentData_Fixture, CopyConstructor)
     ComponentData data1;
     EXPECT_FALSE(data1.IsCreated());
 
-    auto t2 = TestComponent2(3, 4);
     auto t1 = TestComponent1(1, 2);
+    auto t2 = TestComponent2(3, 4);
     auto t3 = TestComponent3(5, 6);
 
     data1.Add(TestComponent1::Id, sizeof(TestComponent1), (Byte*) &t1);
@@ -118,8 +118,8 @@ TEST_F(ComponentData_Fixture, AssignmentCopy)
     ComponentData data1;
     EXPECT_FALSE(data1.IsCreated());
 
-    auto t2 = TestComponent2(3, 4);
     auto t1 = TestComponent1(1, 2);
+    auto t2 = TestComponent2(3, 4);
     auto t3 = TestComponent3(5, 6);
 
     data1.Add(TestComponent1::Id, sizeof(TestComponent1), (Byte*) &t1);
@@ -173,6 +173,7 @@ TEST_F(ComponentData_Fixture, Iterator)
     componentData.Add(TestComponent3::Id, sizeof(TestComponent3), (Byte*) &t3);
 
     EXPECT_TRUE(componentData.IsCreated());
+    EXPECT_EQ(componentData.GetCount(), 3);
 
     UInt64 loopCount = 0;
 
@@ -223,4 +224,54 @@ TEST_F(ComponentData_Fixture, Iterator)
     }
 
     EXPECT_EQ(loopCount, 3);
+
+    loopCount = 0;
+    componentData.Remove(TestComponent2::Id);
+    bool comp2Found = false;
+
+    EXPECT_EQ(componentData.GetCount(), 2);
+
+    for (const auto& [id, size, data]: componentData)
+    {
+        switch (id)
+        {
+            case TestComponent1::Id:
+            {
+                EXPECT_EQ(size, sizeof(TestComponent1));
+
+                auto* component = (TestComponent1*) data;
+                EXPECT_EQ(component->A, 1);
+                EXPECT_EQ(component->B, 2);
+
+                loopCount++;
+
+                break;
+            }
+            case TestComponent2::Id:
+            {
+                comp2Found = true;
+                loopCount++;
+
+                break;
+            }
+            case TestComponent3::Id:
+            {
+                EXPECT_EQ(size, sizeof(TestComponent3));
+
+                auto* component = (TestComponent3*) data;
+                EXPECT_EQ(component->A, 5);
+                EXPECT_EQ(component->B, 6);
+
+                loopCount++;
+
+                break;
+            }
+            default:
+                FAIL();
+                break;
+        }
+    }
+
+    EXPECT_EQ(loopCount, 2);
+    EXPECT_FALSE(comp2Found);
 }

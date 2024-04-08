@@ -3,6 +3,7 @@
 
 #include "Core/Collections/List.h"
 #include "Core/Collections/Stack.h"
+#include "Core/Collections/HashSet.h"
 #include "Core/Collections/Dictionary.h"
 #include "ECS/Entity.h"
 #include "ECS/Archetype.h"
@@ -126,17 +127,19 @@ namespace Otter
          *
          * @param entity The entity.
          * @param args The component arguments.
+         *
+         * @return True if the component was added, false otherwise.
          */
         template<typename TComponent, typename... TArgs>
         requires IsComponent<TComponent>
-        void AddComponent(const Entity& entity, TArgs&& ... args)
+        bool TryAddComponent(const Entity& entity, TArgs&& ... args)
         {
             OTR_STATIC_ASSERT(TComponent::Id > 0, "Component Id must be greater than 0.")
             OTR_ASSERT(entity.IsValid(), "Entity must be valid.")
 
             auto component = TComponent(std::forward<TArgs>(args)...);
 
-            AddComponent(entity.GetId(), TComponent::Id, sizeof(TComponent), (Byte*) &component);
+            return TryAddComponent(entity.GetId(), TComponent::Id, sizeof(TComponent), (Byte*) &component);
         }
 
         /**
@@ -239,26 +242,38 @@ namespace Otter
             }
             else
             {
-                List<ArchetypeFingerprint> fingerprints;
+                UInt64 index;
 
-                for (const auto& fingerprint: *m_ComponentToFingerprints[TComponent::Id])
-                    fingerprints.Add(fingerprint);
+                OTR_VALIDATE(m_ComponentToFingerprintIndex.TryGet(TComponent::Id, &index),
+                             "Component with id {0} not found.",
+                             TComponent::Id)
+
+                ArchetypeFingerprint requestedFingerprint;
+                requestedFingerprint.Set(index, true);
 
                 ([&]
                 {
-                    while (fingerprints.GetCount() < m_FingerprintToArchetype.GetCount())
-                    {
-                        if (!m_ComponentToFingerprints.ContainsKey(TComponents::Id))
-                            return;
+                    OTR_VALIDATE(m_ComponentToFingerprintIndex.TryGet(TComponents::Id, &index),
+                                 "Component with id {0} not found.",
+                                 TComponents::Id)
+                    requestedFingerprint.Set(index, true);
+                }(), ...);
 
-                        for (const auto& fingerprint: *m_ComponentToFingerprints[TComponents::Id])
-                        {
-                            if (fingerprints.Contains(fingerprint))
-                                continue;
+                HashSet<ArchetypeFingerprint> fingerprints;
 
-                            fingerprints.Add(fingerprint);
-                        }
-                    }
+                for (const auto& fingerprint: *m_ComponentToFingerprints[TComponent::Id])
+                    if (fingerprint.Includes(requestedFingerprint))
+                        fingerprints.TryAdd(fingerprint);
+
+                ([&]
+                {
+                    OTR_ASSERT(m_ComponentToFingerprints.ContainsKey(TComponents::Id),
+                               "Component with id {0} not registered.",
+                               TComponents::Id)
+
+                    for (const auto& fingerprint: *m_ComponentToFingerprints[TComponents::Id])
+                        if (fingerprint.Includes(requestedFingerprint))
+                            fingerprints.TryAdd(fingerprint);
                 }(), ...);
 
                 for (const auto& fingerprint: fingerprints)
@@ -479,8 +494,8 @@ namespace Otter
 
         // Archetype Registry
         Dictionary<ArchetypeFingerprint, Archetype>      m_FingerprintToArchetype;
+        Dictionary<ArchetypeFingerprint, Archetype>      m_FingerprintToArchetypeToAdd;
         Dictionary<ArchetypeFingerprint, List<EntityId>> m_FingerprintToEntitiesToRemove;
-        Stack<Archetype>                                 m_ArchetypesToAdd;
 
         /**
          * @brief Creates an entity.
@@ -539,8 +554,10 @@ namespace Otter
          * @param componentId The component id.
          * @param componentSize The component size.
          * @param componentData The component data.
+         *
+         * @return True if the component was added, false otherwise.
          */
-        void AddComponent(EntityId entityId, UInt64 componentId, UInt64 componentSize, const Byte* componentData);
+        bool TryAddComponent(EntityId entityId, UInt64 componentId, UInt64 componentSize, const Byte* componentData);
 
         /**
          * @brief Removes a component from an entity.

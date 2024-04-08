@@ -213,6 +213,25 @@ namespace Otter
         }
 
         /**
+         * @brief Checks if the bitset includes another bitset.
+         *
+         * @param other The other bitset.
+         *
+         * @return True if the bitset includes the other bitset, false otherwise.
+         */
+        [[nodiscard]] bool Includes(const BitSet& other) const
+        {
+            if (m_Size != other.m_Size)
+                return false;
+
+            for (UInt64 i = 0; i < m_Size; i++)
+                if ((m_Data[i] & other.m_Data[i]) != other.m_Data[i])
+                    return false;
+
+            return true;
+        }
+
+        /**
          * @brief Used to reserve memory for the bitset.
          *
          * @param bitsSize The size of the bitset in bits.

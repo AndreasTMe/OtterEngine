@@ -9,7 +9,7 @@ class EntityManager_Fixture : public ::testing::Test
 protected:
     void SetUp() override
     {
-        Otter::MemorySystem::Initialise(8_KiB);
+        Otter::MemorySystem::Initialise(16_KiB);
     }
 
     void TearDown() override
@@ -225,7 +225,7 @@ TEST_F(EntityManager_Fixture, DestroyEntity)
     EXPECT_EQ(manager.GetComponentCount(), 2);
 }
 
-TEST_F(EntityManager_Fixture, AddGetSingleComponent_SingleEntity)
+TEST_F(EntityManager_Fixture, AddGetRemoveSingleComponent_SingleEntity)
 {
     EntityManager manager;
     manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
@@ -253,7 +253,7 @@ TEST_F(EntityManager_Fixture, AddGetSingleComponent_SingleEntity)
     EXPECT_EQ(comp1->A, 1);
     EXPECT_EQ(comp1->B, 2);
 
-    EXPECT_NO_FATAL_FAILURE(manager.AddComponent<TestComponent3>(entity, 5, 6));
+    EXPECT_TRUE(manager.TryAddComponent<TestComponent3>(entity, 5, 6));
 
     manager.RefreshManagerData();
 
@@ -269,102 +269,371 @@ TEST_F(EntityManager_Fixture, AddGetSingleComponent_SingleEntity)
 
     EXPECT_EQ(comp3->E, 5);
     EXPECT_EQ(comp3->F, 6);
+
+    EXPECT_TRUE(manager.TryRemoveComponent<TestComponent2>(entity));
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
+    EXPECT_FALSE(manager.HasComponent<TestComponent2>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 3);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
 }
 
-//TEST_F(EntityManager_Fixture, RemoveSingleComponent_SingleEntity)
-//{
-//    EntityManager manager;
-//    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
-//        .LockComponents();
-//
-//    auto entity = manager.CreateEntity()
-//        .SetComponentData<TestComponent1>(1, 2)
-//        .SetComponentData<TestComponent2>(3, 4)
-//        .SetComponentData<TestComponent3>(5, 6)
-//        .Build();
-//
-//    EXPECT_TRUE(entity.IsValid());
-//
-//    manager.RefreshManagerData();
-//
-//    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
-//    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity));
-//    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
-//
-//    EXPECT_EQ(manager.GetEntityCount(), 1);
-//    EXPECT_EQ(manager.GetArchetypeCount(), 1);
-//    EXPECT_EQ(manager.GetComponentCount(), 3);
-//
-//    EXPECT_TRUE(manager.TryRemoveComponent<TestComponent2>(entity));
-//
-//    manager.RefreshManagerData();
-//
-//    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
-//    EXPECT_FALSE(manager.HasComponent<TestComponent2>(entity));
-//    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
-//
-//    EXPECT_EQ(manager.GetEntityCount(), 1);
-//    EXPECT_EQ(manager.GetArchetypeCount(), 2);
-//    EXPECT_EQ(manager.GetComponentCount(), 3);
-//}
-//
-//TEST_F(EntityManager_Fixture, ForEach_SingleEntity)
-//{
-//    EntityManager manager;
-//    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
-//        .LockComponents();
-//
-//    auto entity = manager.CreateEntity()
-//        .SetComponentData<TestComponent1>(1, 2)
-//        .SetComponentData<TestComponent2>(3, 4)
-//        .SetComponentData<TestComponent3>(5, 6)
-//        .Build();
-//
-//    EXPECT_TRUE(entity.IsValid());
-//
-//    manager.RefreshManagerData();
-//
-//    EXPECT_EQ(manager.GetEntityCount(), 1);
-//    EXPECT_EQ(manager.GetArchetypeCount(), 1);
-//    EXPECT_EQ(manager.GetComponentCount(), 3);
-//
-//    // BUG: ForEach looks like not working correctly but due to an underlying issue with the component data stored.
-//
-//    UInt64 runCount = 0;
-//
-//    manager.ForEach<TestComponent1>(
-//        {
-//            [&](TestComponent1* c1)
-//            {
-//                EXPECT_EQ(c1->A, 1);
-//                EXPECT_EQ(c1->B, 2);
-//
-//                c1->A = 10;
-//                c1->B = 20;
-//
-//                ++runCount;
-//            }
-//        });
-//
-//    EXPECT_EQ(runCount, 1);
-//    runCount = 0;
-//
-//    manager.ForEach<TestComponent1, TestComponent2, TestComponent3>(
-//        {
-//            [&](TestComponent1* c1, TestComponent2* c2, TestComponent3* c3)
-//            {
-//                EXPECT_EQ(c1->A, 10);
-//                EXPECT_EQ(c1->B, 20);
-//
-//                EXPECT_EQ(c2->C, 3);
-//                EXPECT_EQ(c2->D, 4);
-//
-//                EXPECT_EQ(c3->E, 5);
-//                EXPECT_EQ(c3->F, 6);
-//
-//                ++runCount;
-//            }
-//        });
-//
-//    EXPECT_EQ(runCount, 1);
-//}
+TEST_F(EntityManager_Fixture, AddGetRemoveMultipleComponents_SingleEntity)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
+        .LockComponents();
+
+    auto entity = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .Build();
+
+    EXPECT_TRUE(entity.IsValid());
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
+    EXPECT_FALSE(manager.HasComponent<TestComponent2>(entity));
+    EXPECT_FALSE(manager.HasComponent<TestComponent3>(entity));
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    auto* comp1 = manager.GetComponent<TestComponent1>(entity);
+
+    EXPECT_EQ(comp1->A, 1);
+    EXPECT_EQ(comp1->B, 2);
+
+    EXPECT_TRUE(manager.TryAddComponent<TestComponent2>(entity, 3, 4));
+    EXPECT_TRUE(manager.TryAddComponent<TestComponent3>(entity, 5, 6));
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 2);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    auto* comp2 = manager.GetComponent<TestComponent2>(entity);
+
+    EXPECT_EQ(comp2->C, 3);
+    EXPECT_EQ(comp2->D, 4);
+
+    auto* comp3 = manager.GetComponent<TestComponent3>(entity);
+
+    EXPECT_EQ(comp3->E, 5);
+    EXPECT_EQ(comp3->F, 6);
+
+    EXPECT_TRUE(manager.TryRemoveComponent<TestComponent1>(entity));
+    EXPECT_TRUE(manager.TryRemoveComponent<TestComponent2>(entity));
+
+    manager.RefreshManagerData();
+
+    EXPECT_FALSE(manager.HasComponent<TestComponent1>(entity));
+    EXPECT_FALSE(manager.HasComponent<TestComponent2>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 3);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    comp3 = manager.GetComponent<TestComponent3>(entity);
+
+    EXPECT_EQ(comp3->E, 5);
+    EXPECT_EQ(comp3->F, 6);
+}
+
+TEST_F(EntityManager_Fixture, AddGetRemoveSingleAndMultipleComponents_MultipleEntities)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
+        .LockComponents();
+
+    auto entity1 = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .Build();
+
+    auto entity2 = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(7, 8)
+        .SetComponentData<TestComponent2>(9, 10)
+        .Build();
+
+    EXPECT_TRUE(entity1.IsValid());
+    EXPECT_TRUE(entity2.IsValid());
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity1));
+    EXPECT_FALSE(manager.HasComponent<TestComponent2>(entity1));
+    EXPECT_FALSE(manager.HasComponent<TestComponent3>(entity1));
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity2));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity2));
+    EXPECT_FALSE(manager.HasComponent<TestComponent3>(entity2));
+
+    auto* comp1a = manager.GetComponent<TestComponent1>(entity1);
+
+    EXPECT_EQ(comp1a->A, 1);
+    EXPECT_EQ(comp1a->B, 2);
+
+    auto* comp1b = manager.GetComponent<TestComponent1>(entity2);
+
+    EXPECT_EQ(comp1b->A, 7);
+    EXPECT_EQ(comp1b->B, 8);
+
+    auto* comp2b = manager.GetComponent<TestComponent2>(entity2);
+
+    EXPECT_EQ(comp2b->C, 9);
+    EXPECT_EQ(comp2b->D, 10);
+
+    EXPECT_EQ(manager.GetEntityCount(), 2);
+    EXPECT_EQ(manager.GetArchetypeCount(), 2);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    EXPECT_TRUE(manager.TryAddComponent<TestComponent2>(entity1, 3, 4));
+    EXPECT_TRUE(manager.TryAddComponent<TestComponent3>(entity1, 5, 6));
+    EXPECT_TRUE(manager.TryAddComponent<TestComponent3>(entity2, 11, 12));
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity1));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity1));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity1));
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity2));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity2));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity2));
+
+    auto* comp2a = manager.GetComponent<TestComponent2>(entity1);
+
+    EXPECT_EQ(comp2a->C, 3);
+    EXPECT_EQ(comp2a->D, 4);
+
+    auto* comp3a = manager.GetComponent<TestComponent3>(entity1);
+
+    EXPECT_EQ(comp3a->E, 5);
+    EXPECT_EQ(comp3a->F, 6);
+
+    auto* comp3b = manager.GetComponent<TestComponent3>(entity2);
+
+    EXPECT_EQ(comp3b->E, 11);
+    EXPECT_EQ(comp3b->F, 12);
+
+    EXPECT_EQ(manager.GetEntityCount(), 2);
+    EXPECT_EQ(manager.GetArchetypeCount(), 3);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    EXPECT_TRUE(manager.TryRemoveComponent<TestComponent1>(entity1));
+    EXPECT_TRUE(manager.TryRemoveComponent<TestComponent2>(entity1));
+    EXPECT_TRUE(manager.TryRemoveComponent<TestComponent2>(entity2));
+
+    manager.RefreshManagerData();
+
+    EXPECT_FALSE(manager.HasComponent<TestComponent1>(entity1));
+    EXPECT_FALSE(manager.HasComponent<TestComponent2>(entity1));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity1));
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity2));
+    EXPECT_FALSE(manager.HasComponent<TestComponent2>(entity2));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity2));
+
+    EXPECT_EQ(manager.GetEntityCount(), 2);
+    EXPECT_EQ(manager.GetArchetypeCount(), 5);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+}
+
+TEST_F(EntityManager_Fixture, ForEach_SingleEntity)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
+        .LockComponents();
+
+    auto entity = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .SetComponentData<TestComponent3>(5, 6)
+        .Build();
+
+    EXPECT_TRUE(entity.IsValid());
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    UInt64 runCount = 0;
+
+    manager.ForEach<TestComponent1>(
+        {
+            [&](TestComponent1* c1)
+            {
+                EXPECT_EQ(c1->A, 1);
+                EXPECT_EQ(c1->B, 2);
+
+                c1->A = 10;
+                c1->B = 20;
+
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 1);
+    runCount = 0;
+
+    manager.ForEach<TestComponent1, TestComponent2, TestComponent3>(
+        {
+            [&](TestComponent1* c1, TestComponent2* c2, TestComponent3* c3)
+            {
+                EXPECT_EQ(c1->A, 10);
+                EXPECT_EQ(c1->B, 20);
+
+                EXPECT_EQ(c2->C, 3);
+                EXPECT_EQ(c2->D, 4);
+
+                EXPECT_EQ(c3->E, 5);
+                EXPECT_EQ(c3->F, 6);
+
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 1);
+}
+
+TEST_F(EntityManager_Fixture, ForEach_MultipleEntities)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
+        .LockComponents();
+
+    auto entity1 = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .Build();
+
+    auto entity2 = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .SetComponentData<TestComponent3>(5, 6)
+        .Build();
+
+    EXPECT_TRUE(entity1.IsValid());
+    EXPECT_TRUE(entity2.IsValid());
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity1));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity1));
+    EXPECT_FALSE(manager.HasComponent<TestComponent3>(entity1));
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity2));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity2));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity2));
+
+    EXPECT_EQ(manager.GetEntityCount(), 2);
+    EXPECT_EQ(manager.GetArchetypeCount(), 2);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    UInt64 runCount = 0;
+
+    manager.ForEach<TestComponent1>(
+        {
+            [&](TestComponent1* c1)
+            {
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 2);
+    runCount = 0;
+
+    manager.ForEach<TestComponent1, TestComponent2>(
+        {
+            [&](TestComponent1* c1, TestComponent2* c2)
+            {
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 2);
+    runCount = 0;
+
+    manager.ForEach<TestComponent1, TestComponent2, TestComponent3>(
+        {
+            [&](TestComponent1* c1, TestComponent2* c2, TestComponent3* c3)
+            {
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 1);
+}
+
+TEST_F(EntityManager_Fixture, ForEach_MemoryCheck)
+{
+    EntityManager manager;
+    manager.RegisterComponents<TestComponent1, TestComponent2, TestComponent3>()
+        .LockComponents();
+
+    auto entity = manager.CreateEntity()
+        .SetComponentData<TestComponent1>(1, 2)
+        .SetComponentData<TestComponent2>(3, 4)
+        .SetComponentData<TestComponent3>(5, 6)
+        .Build();
+
+    EXPECT_TRUE(entity.IsValid());
+
+    manager.RefreshManagerData();
+
+    EXPECT_TRUE(manager.HasComponent<TestComponent1>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent2>(entity));
+    EXPECT_TRUE(manager.HasComponent<TestComponent3>(entity));
+
+    EXPECT_EQ(manager.GetEntityCount(), 1);
+    EXPECT_EQ(manager.GetArchetypeCount(), 1);
+    EXPECT_EQ(manager.GetComponentCount(), 3);
+
+    UInt64 memoryUsed = Otter::MemorySystem::GetUsedMemory();
+
+    for (UInt64 i = 0; i < 10; ++i)
+    {
+        manager.ForEach<TestComponent1>(
+            {
+                [&](TestComponent1* c1)
+                {
+                    // Do nothing
+                }
+            });
+
+        EXPECT_EQ(memoryUsed, Otter::MemorySystem::GetUsedMemory());
+    }
+
+    for (UInt64 i = 0; i < 10; ++i)
+    {
+        manager.ForEach<TestComponent1, TestComponent2, TestComponent3>(
+            {
+                [&](TestComponent1* c1, TestComponent2* c2, TestComponent3* c3)
+                {
+                    // Do nothing
+                }
+            });
+
+        EXPECT_EQ(memoryUsed, Otter::MemorySystem::GetUsedMemory());
+    }
+
+    EXPECT_EQ(memoryUsed, Otter::MemorySystem::GetUsedMemory());
+}

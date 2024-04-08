@@ -145,6 +145,16 @@ TEST_F(BitSet_Fixture, Set)
     EXPECT_TRUE(bitset.Get(7));
 }
 
+TEST_F(BitSet_Fixture, Includes)
+{
+    BitSet<int> bitset1 = { true, false, true, false, true, false, true, false };
+    BitSet<int> bitset2 = { true, false, true, false, false, false, false, false };
+    BitSet<int> bitset3 = { false, true, false, false, false, false, false, false };
+
+    EXPECT_TRUE(bitset1.Includes(bitset2));
+    EXPECT_FALSE(bitset1.Includes(bitset3));
+}
+
 TEST_F(BitSet_Fixture, Reserve)
 {
     BitSet<int> bitset = { true, false, true, false, true, false, true, false };

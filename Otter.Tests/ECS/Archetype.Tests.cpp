@@ -520,3 +520,73 @@ TEST_F(Archetype_Fixture, ForEach_SingleEntity)
 
     EXPECT_EQ(runCount, 1);
 }
+
+TEST_F(Archetype_Fixture, ForEach_MultipleEntities)
+{
+    ArchetypeFingerprint fingerprint;
+    fingerprint.Set(0, true);
+    fingerprint.Set(1, true);
+    fingerprint.Set(2, true);
+
+    Archetype archetype(fingerprint, { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id });
+
+    Otter::EntityId    entityId1        = 1;
+    Otter::ComponentId componentIds1[3] = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+    TestComponent1     component1a(1, 2);
+    TestComponent2     component2a(3, 4);
+    TestComponent3     component3a(5, 6);
+    Byte               componentData1[sizeof(TestComponent1) + sizeof(TestComponent2) + sizeof(TestComponent3)];
+    Otter::MemorySystem::MemoryCopy(&componentData1[0], (Byte*) &component1a, sizeof(TestComponent1));
+    Otter::MemorySystem::MemoryCopy(&componentData1[sizeof(TestComponent1)],
+                                    (Byte*) &component2a,
+                                    sizeof(TestComponent2));
+    Otter::MemorySystem::MemoryCopy(&componentData1[sizeof(TestComponent1) + sizeof(TestComponent2)],
+                                    (Byte*) &component3a,
+                                    sizeof(TestComponent3));
+    UInt64 componentSizes1[3] = { sizeof(TestComponent1), sizeof(TestComponent2), sizeof(TestComponent3) };
+
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId1, componentIds1, componentSizes1, componentData1));
+
+    Otter::EntityId    entityId2        = 2;
+    Otter::ComponentId componentIds2[3] = { TestComponent1::Id, TestComponent2::Id, TestComponent3::Id };
+    TestComponent1     component1b(7, 8);
+    TestComponent2     component2b(9, 10);
+    TestComponent3     component3b(11, 12);
+    Byte               componentData2[sizeof(TestComponent1) + sizeof(TestComponent2) + sizeof(TestComponent3)];
+    Otter::MemorySystem::MemoryCopy(&componentData2[0], (Byte*) &component1b, sizeof(TestComponent1));
+    Otter::MemorySystem::MemoryCopy(&componentData2[sizeof(TestComponent1)],
+                                    (Byte*) &component2b,
+                                    sizeof(TestComponent2));
+    Otter::MemorySystem::MemoryCopy(&componentData2[sizeof(TestComponent1) + sizeof(TestComponent2)],
+                                    (Byte*) &component3b,
+                                    sizeof(TestComponent3));
+    UInt64 componentSizes2[3] = { sizeof(TestComponent1), sizeof(TestComponent2), sizeof(TestComponent3) };
+
+    EXPECT_TRUE(archetype.TryAddComponentDataUnsafe(entityId2, componentIds2, componentSizes2, componentData2));
+
+    EXPECT_EQ(archetype.GetEntityCount(), 2);
+    EXPECT_EQ(archetype.GetComponentCount(), 3);
+
+    UInt64 runCount = 0;
+
+    archetype.ForEach<TestComponent1>(
+        {
+            [&](auto* t1)
+            {
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 2);
+    runCount = 0;
+
+    archetype.ForEach<TestComponent1, TestComponent2, TestComponent3>(
+        {
+            [&](auto* t1, auto* t2, auto* t3)
+            {
+                ++runCount;
+            }
+        });
+
+    EXPECT_EQ(runCount, 2);
+}
