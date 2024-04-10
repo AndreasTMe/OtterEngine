@@ -19,7 +19,7 @@ namespace Otter
 
     public:
         /// @brief The Id of the sprite component.
-        static constexpr ComponentId Id = 2;
+        static constexpr ComponentId Id = 3;
 
         /// @brief The color of the sprite.
         Vector4D<Float32>  Color  = Vector4D<Float32>::One();

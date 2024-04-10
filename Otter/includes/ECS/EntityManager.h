@@ -358,7 +358,7 @@ namespace Otter
              *
              * @return The archetype.
              */
-            [[nodiscard]] Archetype Build();
+            Archetype Build();
 
         private:
             EntityManager* m_EntityManager;
@@ -419,7 +419,7 @@ namespace Otter
              *
              * @return The entity.
              */
-            [[nodiscard]] Entity Build();
+            Entity Build();
 
         private:
             EntityManager* m_EntityManager;
@@ -480,7 +480,7 @@ namespace Otter
              *
              * @return The entity.
              */
-            [[nodiscard]] Entity Build();
+            Entity Build();
 
         private:
             EntityManager* m_EntityManager;

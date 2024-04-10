@@ -2,6 +2,7 @@
 
 #include "Core/GlobalActions.h"
 #include "Core/Collections/HashSet.h"
+#include "ECS/World.h"
 #include "Graphics/API/Vulkan/VulkanExtensions.h"
 #include "Graphics/API/Vulkan/VulkanSwapchains.h"
 #include "Graphics/API/Vulkan/VulkanShader.h"
@@ -15,6 +16,8 @@
 
 // TODO: Remove later
 #include "2D/Sprite.h"
+#include "Components/Core/CameraComponent.h"
+#include "Components/Core/TransformComponent.h"
 
 #if OTR_GRAPHICS_VULKAN_ENABLED
 
@@ -45,14 +48,6 @@ namespace Otter::Graphics::Vulkan
         { 0.0f, 0.0f },
         { 3.0f, 3.0f },
         { 0.5f, 0.2f, 0.2f, 1.0f }
-    };
-
-    GlobalUniformBufferObject g_GlobalUbo = {
-        Mat4x4::Perspective(static_cast<Float32>(45.0f), 1280.0f / 720.0f, 0.1f, 1000.0f,
-                            Math::AngleType::Degrees),
-        Mat4x4::TRS(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
-                    Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
-                    Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
     };
 
     Matrix4x4<Float32> g_Model = Matrix4x4<Float32>::Identity();
@@ -129,12 +124,38 @@ namespace Otter::Graphics::Vulkan
             CreateDescriptorPool();
             CreateDescriptorSets();
 
-            // TODO: Temporary code, remove later
-            m_UniformBuffer->Overwrite(&g_GlobalUbo, sizeof(GlobalUniformBufferObject), 0);
-            m_UniformBuffer->UpdateAll(m_Descriptor.Sets,
-                                       m_Swapchain.MaxFramesInFlight,
-                                       sizeof(GlobalUniformBufferObject),
-                                       0);
+            // TODO: Temporary code to create Camera, remove later
+            World::GetEntityManager()
+                .CreateEntity()
+                .SetComponentData<TransformComponent>(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
+                                                      Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
+                                                      Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
+                .SetComponentData<CameraComponent>() // Use default values
+                .Build();
+
+            World::GetEntityManager().RefreshManagerData();
+
+            World::GetEntityManager()
+                .ForEach<TransformComponent, CameraComponent>(
+                    {
+                        [&](TransformComponent* transform, CameraComponent* camera)
+                        {
+                            GlobalUniformBufferObject globalUbo = { Mat4x4::Perspective(camera->FieldOfView,
+                                                                                        camera->AspectRatio,
+                                                                                        camera->NearPlane,
+                                                                                        camera->FarPlane,
+                                                                                        Math::AngleType::Degrees),
+                                                                    Mat4x4::TRS(transform->Position,
+                                                                                transform->Rotation,
+                                                                                transform->Scale) };
+
+                            m_UniformBuffer->Overwrite(&globalUbo, sizeof(GlobalUniformBufferObject), 0);
+                            m_UniformBuffer->UpdateAll(m_Descriptor.Sets,
+                                                       m_Swapchain.MaxFramesInFlight,
+                                                       sizeof(GlobalUniformBufferObject),
+                                                       0);
+                        }
+                    });
             // TODO: Temporary code end
         }
 

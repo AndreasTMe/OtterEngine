@@ -28,7 +28,6 @@ namespace Otter
                              });
 
         s_Renderer->Initialise(platformContext, shaders, textures);
-        // TODO: Initialise Global Uniform Buffer/Camera
 
         OTR_LOG_DEBUG("Graphics system initialised...")
 
