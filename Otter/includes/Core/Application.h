@@ -40,7 +40,7 @@ namespace Otter
         /**
          * @brief Destructor.
          */
-        virtual ~Application();
+        virtual ~Application() = default;
 
         /**
          * @brief Runs the application.
@@ -68,8 +68,26 @@ namespace Otter
     private:
         const ApplicationConfiguration k_Configuration;
 
-        Time* m_Time = nullptr;
+        Platform* m_Platform = nullptr;
+        Time    * m_Time     = nullptr;
         List<Layer*> m_Layers{ };
+
+        /**
+         * @brief Runs the necessary actions before the main loop.
+         *
+         * @return True if all actions were completed successfully, false otherwise.
+         */
+        [[nodiscard]] bool OnBeforeMainLoop();
+
+        /**
+         * @brief Runs the necessary actions inside the main loop.
+         */
+        void OnMainLoop();
+
+        /**
+         * @brief Runs the necessary actions after the main loop.
+         */
+        void OnAfterMainLoop();
     };
 
     /**

@@ -2,22 +2,6 @@
 
 namespace Otter
 {
-    EntityManager::~EntityManager()
-    {
-        m_Entities.ClearDestructive();
-        m_EntityToIndex.ClearDestructive();
-        m_EntitiesToAdd.ClearDestructive();
-        m_EntityToFingerprint.ClearDestructive();
-        m_EntityToComponentDataToAdd.ClearDestructive();
-
-        m_ComponentToFingerprintIndex.ClearDestructive();
-        m_ComponentToFingerprints.ClearDestructive();
-
-        m_FingerprintToArchetype.ClearDestructive();
-        m_FingerprintToArchetypeToAdd.ClearDestructive();
-        m_FingerprintToEntitiesToRemove.ClearDestructive();
-    }
-
     EntityManager::EntityBuilder EntityManager::CreateEntity()
     {
         OTR_ASSERT(m_ComponentsLock, "Component mask must be locked before creating entities.")
@@ -60,6 +44,22 @@ namespace Otter
 
         RefreshArchetypes();
         RefreshEntities();
+    }
+
+    void EntityManager::Destroy()
+    {
+        m_Entities.ClearDestructive();
+        m_EntityToIndex.ClearDestructive();
+        m_EntitiesToAdd.ClearDestructive();
+        m_EntityToFingerprint.ClearDestructive();
+        m_EntityToComponentDataToAdd.ClearDestructive();
+
+        m_ComponentToFingerprintIndex.ClearDestructive();
+        m_ComponentToFingerprints.ClearDestructive();
+
+        m_FingerprintToArchetype.ClearDestructive();
+        m_FingerprintToArchetypeToAdd.ClearDestructive();
+        m_FingerprintToEntitiesToRemove.ClearDestructive();
     }
 
     Entity EntityManager::CreateEntityInternal()

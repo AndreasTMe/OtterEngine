@@ -59,9 +59,12 @@ namespace Otter
 
     private:
         static EntityManager s_EntityManager;
-    };
 
-    EntityManager World::s_EntityManager{ };
+        /**
+         * @brief Registers the components for this world.
+         */
+        static void RegisterWorldComponents();
+    };
 }
 
 #endif //OTTERENGINE_WORLD_H

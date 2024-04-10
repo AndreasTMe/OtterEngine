@@ -11,6 +11,8 @@
 
 namespace Otter
 {
+    class World;
+
     /**
      * @brief The entity manager is responsible for creating, destroying and managing entities, registering components
      * and creating archetypes.
@@ -23,6 +25,8 @@ namespace Otter
 
         class EntityBuilderFromArchetype;
 
+        friend class World;
+
     public:
         /**
          * @brief Constructor.
@@ -32,7 +36,10 @@ namespace Otter
         /**
          * @brief Destructor.
          */
-        ~EntityManager();
+        ~EntityManager()
+        {
+            Destroy();
+        }
 
         /**
          * @brief Deleted copy constructor.
@@ -78,6 +85,13 @@ namespace Otter
          * @brief Locks the entity manager's ability to register components.
          */
         OTR_INLINE void LockComponents() { m_ComponentsLock = true; }
+
+        /**
+         * @brief Checks if the entity manager is locked.
+         *
+         * @return True if the entity manager is locked, false otherwise.
+         */
+        [[nodiscard]] OTR_INLINE bool IsLocked() const { return m_ComponentsLock; }
 
         /**
          * @brief Creates a new archetype by calling a builder.
@@ -496,6 +510,11 @@ namespace Otter
         Dictionary<ArchetypeFingerprint, Archetype>      m_FingerprintToArchetype;
         Dictionary<ArchetypeFingerprint, Archetype>      m_FingerprintToArchetypeToAdd;
         Dictionary<ArchetypeFingerprint, List<EntityId>> m_FingerprintToEntitiesToRemove;
+
+        /**
+         * @brief Destroys the entity manager.
+         */
+        void Destroy();
 
         /**
          * @brief Creates an entity.

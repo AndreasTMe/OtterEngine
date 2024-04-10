@@ -46,11 +46,7 @@ namespace Otter
          *
          * @return The instance of the global actions.
          */
-        [[nodiscard]] OTR_INLINE static GlobalActions& GetInstance()
-        {
-            static GlobalActions instance;
-            return instance;
-        }
+        [[nodiscard]] OTR_INLINE static GlobalActions& GetInstance() { return s_GlobalActions; }
 
         /// @brief Action for when the window is closed.
         Func<bool, const WindowCloseEvent&> OnWindowClose;
@@ -98,6 +94,8 @@ namespace Otter
          * @brief Destructor.
          */
         ~GlobalActions() = default;
+
+        static GlobalActions s_GlobalActions;
     };
 }
 
