@@ -124,39 +124,22 @@ namespace Otter::Graphics::Vulkan
             CreateDescriptorPool();
             CreateDescriptorSets();
 
-            // TODO: Temporary code to create Camera, remove later
+            // TEMP: Temporary code to create Camera, remove later
             World::GetEntityManager()
                 .CreateEntity()
                 .SetComponentData<TransformComponent>(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
                                                       Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
                                                       Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
-                .SetComponentData<CameraComponent>() // Use default values
+                .SetComponentData<CameraComponent>(Vector4D<Float32>{ 0.0f, 0.0f, 0.0f, 1.0f },
+                                                   0.1f,
+                                                   1000.0f,
+                                                   16.0f / 9.0f,
+                                                   45.0f,
+                                                   false)
                 .Build();
 
             World::GetEntityManager().RefreshManagerData();
-
-            World::GetEntityManager()
-                .ForEach<TransformComponent, CameraComponent>(
-                    {
-                        [&](TransformComponent* transform, CameraComponent* camera)
-                        {
-                            GlobalUniformBufferObject globalUbo = { Mat4x4::Perspective(camera->FieldOfView,
-                                                                                        camera->AspectRatio,
-                                                                                        camera->NearPlane,
-                                                                                        camera->FarPlane,
-                                                                                        Math::AngleType::Degrees),
-                                                                    Mat4x4::TRS(transform->Position,
-                                                                                transform->Rotation,
-                                                                                transform->Scale) };
-
-                            m_UniformBuffer->Overwrite(&globalUbo, sizeof(GlobalUniformBufferObject), 0);
-                            m_UniformBuffer->UpdateAll(m_Descriptor.Sets,
-                                                       m_Swapchain.MaxFramesInFlight,
-                                                       sizeof(GlobalUniformBufferObject),
-                                                       0);
-                        }
-                    });
-            // TODO: Temporary code end
+            // TEMP: Temporary code end
         }
 
         OTR_GLOBAL_ACTIONS.OnWindowMinimized <= [&](const WindowMinimizedEvent& event)
@@ -281,7 +264,35 @@ namespace Otter::Graphics::Vulkan
         scissor.extent = m_Swapchain.Extent;
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+        // TEMP: Temporary code to update Camera, remove later
+        VkClearValue clearColor;
+
+        World::GetEntityManager()
+            .ForEach<TransformComponent, CameraComponent>(
+                {
+                    [&](TransformComponent* transform, CameraComponent* camera)
+                    {
+                        GlobalUniformBufferObject globalUbo = { Mat4x4::Perspective(camera->FieldOfView,
+                                                                                    camera->AspectRatio,
+                                                                                    camera->NearPlane,
+                                                                                    camera->FarPlane,
+                                                                                    Math::AngleType::Degrees),
+                                                                Mat4x4::TRS(transform->Position,
+                                                                            transform->Rotation,
+                                                                            transform->Scale) };
+
+                        m_UniformBuffer->Overwrite(&globalUbo, sizeof(GlobalUniformBufferObject), 0);
+                        m_UniformBuffer->Update(m_Descriptor.Sets[currentFrame],
+                                                sizeof(GlobalUniformBufferObject),
+                                                0);
+
+                        clearColor = {{{ camera->BackgroundColor.GetX(),
+                                         camera->BackgroundColor.GetY(),
+                                         camera->BackgroundColor.GetZ(),
+                                         camera->BackgroundColor.GetW() }}};
+                    }
+                });
+        // TEMP: Temporary code end
 
         VkRenderPassBeginInfo renderPassInfo{ };
         renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
