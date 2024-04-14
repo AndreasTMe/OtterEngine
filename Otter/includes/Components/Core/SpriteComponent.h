@@ -3,7 +3,6 @@
 
 #include "Components/IComponent.h"
 #include "Math/Vector.h"
-#include "Math/Geometry/Rectangle.h"
 
 namespace Otter
 {
@@ -13,18 +12,12 @@ namespace Otter
     struct SpriteComponent final : public IComponent
     {
     private:
-        /// @brief An alias for a rectangle.
-        template<AnyNumber TNumber>
-        using Rectangle = Math::Rectangle<TNumber>;
-
     public:
         /// @brief The Id of the sprite component.
         static constexpr ComponentId Id = 3;
 
         /// @brief The color of the sprite.
-        Vector4D<Float32>  Color  = Vector4D<Float32>::One();
-        /// @brief The bounds of the sprite.
-        Rectangle<Float32> Bounds = { Vector2D<Float32>::Zero(), Vector2D<Float32>::One() };
+        Vector4D<Float32> Color = Vector4D<Float32>::One();
 
         /**
          * @brief Constructor.
@@ -40,10 +33,9 @@ namespace Otter
          * @brief Constructor.
          *
          * @param color The color of the sprite.
-         * @param bounds The bounds of the sprite.
          */
-        SpriteComponent(const Vector4D<Float32>& color, const Rectangle<Float32>& bounds)
-            : Color(color), Bounds(bounds)
+        SpriteComponent(const Vector4D<Float32>& color)
+            : Color(color)
         {
         }
 
@@ -54,8 +46,7 @@ namespace Otter
          */
         SpriteComponent(const SpriteComponent& other)
         {
-            Color  = other.Color;
-            Bounds = other.Bounds;
+            Color = other.Color;
         }
 
         /**
@@ -65,8 +56,7 @@ namespace Otter
          */
         SpriteComponent(SpriteComponent&& other) noexcept
         {
-            Color  = std::move(other.Color);
-            Bounds = std::move(other.Bounds);
+            Color = std::move(other.Color);
         }
 
         /**
@@ -81,8 +71,7 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            Color  = other.Color;
-            Bounds = other.Bounds;
+            Color = other.Color;
 
             return *this;
         }
@@ -99,8 +88,7 @@ namespace Otter
             if (this == &other)
                 return *this;
 
-            Color  = std::move(other.Color);
-            Bounds = std::move(other.Bounds);
+            Color = std::move(other.Color);
 
             return *this;
         }

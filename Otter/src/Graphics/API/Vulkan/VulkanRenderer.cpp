@@ -15,9 +15,9 @@
 #include "Math/Matrix.h"
 
 // TODO: Remove later
-#include "2D/Sprite.h"
 #include "Components/Core/CameraComponent.h"
 #include "Components/Core/TransformComponent.h"
+#include "Components/Core/SpriteComponent.h"
 
 #if OTR_GRAPHICS_VULKAN_ENABLED
 
@@ -44,12 +44,6 @@ namespace Otter::Graphics::Vulkan
     static List<VulkanShader*>  gs_Shaders;
     static List<VulkanTexture*> gs_Textures;
 
-    static Sprite gs_Sprite = {
-        { 0.0f, 0.0f },
-        { 3.0f, 3.0f },
-        { 0.5f, 0.2f, 0.2f, 1.0f }
-    };
-
     Matrix4x4<Float32> g_Model = Matrix4x4<Float32>::Identity();
 
     enum class WindowState : UInt8
@@ -65,6 +59,26 @@ namespace Otter::Graphics::Vulkan
                                     const Collection<Shader*>& shaders,
                                     const Collection<Texture*>& textures)
     {
+        // TEMP: Temporary code to create Camera, remove later
+        World::GetEntityManager()
+            .CreateEntity()
+            .SetComponentData<TransformComponent>(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
+                                                  Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
+                                                  Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
+            .SetComponentData<CameraComponent>()
+            .Build();
+
+        World::GetEntityManager()
+            .CreateEntity()
+            .SetComponentData<TransformComponent>(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
+                                                  Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
+                                                  Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
+            .SetComponentData<SpriteComponent>(Vector4D<Float32>({ 0.5f, 0.2f, 0.2f, 1.0f }))
+            .Build();
+
+        World::GetEntityManager().RefreshManagerData();
+        // TEMP: Temporary code end
+
         CreateVulkanInstance(m_Allocator, &m_Instance);
 #if !OTR_RUNTIME
         CreateVulkanDebugMessenger(m_Instance, m_Allocator, &m_DebugMessenger);
@@ -123,23 +137,6 @@ namespace Otter::Graphics::Vulkan
             CreateUniformBuffer();
             CreateDescriptorPool();
             CreateDescriptorSets();
-
-            // TEMP: Temporary code to create Camera, remove later
-            World::GetEntityManager()
-                .CreateEntity()
-                .SetComponentData<TransformComponent>(Vector3D<Float32>{ 0.0f, 0.0f, -5.0f },
-                                                      Quaternion<Float32>{ 0.0f, 0.1f, 0.1f, 1.0f },
-                                                      Vector3D<Float32>{ 1.0f, 1.0f, 1.0f })
-                .SetComponentData<CameraComponent>(Vector4D<Float32>{ 0.0f, 0.0f, 0.0f, 1.0f },
-                                                   0.1f,
-                                                   1000.0f,
-                                                   16.0f / 9.0f,
-                                                   45.0f,
-                                                   false)
-                .Build();
-
-            World::GetEntityManager().RefreshManagerData();
-            // TEMP: Temporary code end
         }
 
         OTR_GLOBAL_ACTIONS.OnWindowMinimized <= [&](const WindowMinimizedEvent& event)
@@ -264,35 +261,7 @@ namespace Otter::Graphics::Vulkan
         scissor.extent = m_Swapchain.Extent;
         vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-        // TEMP: Temporary code to update Camera, remove later
-        VkClearValue clearColor;
-
-        World::GetEntityManager()
-            .ForEach<TransformComponent, CameraComponent>(
-                {
-                    [&](TransformComponent* transform, CameraComponent* camera)
-                    {
-                        GlobalUniformBufferObject globalUbo = { Mat4x4::Perspective(camera->FieldOfView,
-                                                                                    camera->AspectRatio,
-                                                                                    camera->NearPlane,
-                                                                                    camera->FarPlane,
-                                                                                    Math::AngleType::Degrees),
-                                                                Mat4x4::TRS(transform->Position,
-                                                                            transform->Rotation,
-                                                                            transform->Scale) };
-
-                        m_UniformBuffer->Overwrite(&globalUbo, sizeof(GlobalUniformBufferObject), 0);
-                        m_UniformBuffer->Update(m_Descriptor.Sets[currentFrame],
-                                                sizeof(GlobalUniformBufferObject),
-                                                0);
-
-                        clearColor = {{{ camera->BackgroundColor.GetX(),
-                                         camera->BackgroundColor.GetY(),
-                                         camera->BackgroundColor.GetZ(),
-                                         camera->BackgroundColor.GetW() }}};
-                    }
-                });
-        // TEMP: Temporary code end
+        VkClearValue clearColor = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
 
         VkRenderPassBeginInfo renderPassInfo{ };
         renderPassInfo.sType             = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -306,6 +275,73 @@ namespace Otter::Graphics::Vulkan
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         return true;
+    }
+
+    void VulkanRenderer::DrawIndexed()
+    {
+        if (gs_Shaders.GetCount() == 0)
+            return;
+
+        // TODO: Step 1: Bind Pipelines
+        // TODO: Step 2a: Update Uniform Buffer
+        // TODO: Step 2b: Update Push Constants
+        // TODO: Step 3a: Bind Vertex Buffer
+        // TODO: Step 3b: Bind Index Buffer
+        // TODO: Step 4: Draw Indexed
+
+        const auto currentFrame = m_Swapchain.CurrentFrame;
+        vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
+
+        // TEMP: Update uniform buffer
+        World::GetEntityManager()
+            .ForEach<TransformComponent, CameraComponent>(
+                {
+                    [&](TransformComponent* transform, CameraComponent* camera)
+                    {
+                        GlobalUniformBufferObject globalUbo = { Mat4x4::Perspective(camera->FieldOfView,
+                                                                                    camera->AspectRatio,
+                                                                                    camera->Planes.Near,
+                                                                                    camera->Planes.Far,
+                                                                                    Math::AngleType::Degrees),
+                                                                Mat4x4::TRS(transform->Position,
+                                                                            transform->Rotation,
+                                                                            transform->Scale) };
+
+                        m_UniformBuffer->Overwrite(&globalUbo, sizeof(GlobalUniformBufferObject), 0);
+                        m_UniformBuffer->Update(m_Descriptor.Sets[currentFrame],
+                                                sizeof(GlobalUniformBufferObject),
+                                                0);
+                    }
+                });
+        // TEMP: End temp code
+
+        // TEMP: Update push constants
+        vkCmdPushConstants(m_DevicePair.CommandBuffers[currentFrame],
+                           m_PipelineLayout,
+                           VK_SHADER_STAGE_VERTEX_BIT,
+                           0,
+                           sizeof(Matrix4x4<Float32>) * 2,
+                           &g_Model);
+        // TEMP: End temp code
+
+        VkBuffer     vertexBuffers[] = { m_VertexBuffer->GetHandle() };
+        VkDeviceSize offsets[]       = { 0 };
+
+        vkCmdBindVertexBuffers(m_DevicePair.CommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(m_DevicePair.CommandBuffers[currentFrame],
+                             m_IndexBuffer->GetHandle(),
+                             0,
+                             VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(m_DevicePair.CommandBuffers[currentFrame],
+                                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                m_PipelineLayout,
+                                0,
+                                1,
+                                &m_Descriptor.Sets[currentFrame],
+                                0,
+                                nullptr);
+
+        vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame], m_IndexBuffer->GetCount(), 1, 0, 0, 0);
     }
 
     void VulkanRenderer::EndFrame()
@@ -357,43 +393,6 @@ namespace Otter::Graphics::Vulkan
         }
 
         m_Swapchain.CurrentFrame = (currentFrame + 1) % m_Swapchain.MaxFramesInFlight;
-    }
-
-    void VulkanRenderer::DrawIndexed()
-    {
-        if (gs_Shaders.GetCount() == 0)
-            return;
-
-        const auto currentFrame = m_Swapchain.CurrentFrame;
-        vkCmdBindPipeline(m_DevicePair.CommandBuffers[currentFrame], VK_PIPELINE_BIND_POINT_GRAPHICS, m_Pipeline);
-
-        // TODO: Update push constants (temp)
-        vkCmdPushConstants(m_DevicePair.CommandBuffers[currentFrame],
-                           m_PipelineLayout,
-                           VK_SHADER_STAGE_VERTEX_BIT,
-                           0,
-                           sizeof(Matrix4x4<Float32>) * 2,
-                           &g_Model);
-        // TODO: End temp code
-
-        VkBuffer     vertexBuffers[] = { m_VertexBuffer->GetHandle() };
-        VkDeviceSize offsets[]       = { 0 };
-
-        vkCmdBindVertexBuffers(m_DevicePair.CommandBuffers[currentFrame], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(m_DevicePair.CommandBuffers[currentFrame],
-                             m_IndexBuffer->GetHandle(),
-                             0,
-                             VK_INDEX_TYPE_UINT16);
-        vkCmdBindDescriptorSets(m_DevicePair.CommandBuffers[currentFrame],
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                m_PipelineLayout,
-                                0,
-                                1,
-                                &m_Descriptor.Sets[currentFrame],
-                                0,
-                                nullptr);
-
-        vkCmdDrawIndexed(m_DevicePair.CommandBuffers[currentFrame], m_IndexBuffer->GetCount(), 1, 0, 0, 0);
     }
 
     void VulkanRenderer::CreateVulkanInstance(const VkAllocationCallbacks* const allocator, VkInstance* outInstance)
@@ -895,20 +894,38 @@ namespace Otter::Graphics::Vulkan
 
     void VulkanRenderer::CreateVertexBuffer()
     {
-        const auto spriteVertices  = gs_Sprite.GetVertices();
-        const auto spriteTexCoords = gs_Sprite.GetTexCoords();
-
         List<Vertex> vertices;
-        vertices.Reserve(spriteVertices.GetSize());
+        vertices.Reserve(4);
 
-        for (UInt64 i = 0; i < spriteVertices.GetSize(); i++)
-        {
-            vertices.Add({
-                             { spriteVertices[i][0], spriteVertices[i][1], 0.0f },
-                             gs_Sprite.GetColor(),
-                             spriteTexCoords[i]
-                         });
-        }
+        // TEMP: Update vertices
+        World::GetEntityManager()
+            .ForEach<TransformComponent, SpriteComponent>(
+                {
+                    [&](TransformComponent* transform, SpriteComponent* sprite)
+                    {
+                        vertices.Add({
+                                         { -1.5f, 1.5f, 0.0f },
+                                         sprite->Color,
+                                         { 0.0f, 1.0f }
+                                     });
+                        vertices.Add({
+                                         { 1.5f, 1.5f, 0.0f },
+                                         sprite->Color,
+                                         { 1.0f, 1.0f }
+                                     });
+                        vertices.Add({
+                                         { 1.5f, -1.5f, 0.0f },
+                                         sprite->Color,
+                                         { 1.0f, 0.0f }
+                                     });
+                        vertices.Add({
+                                         { -1.5f, -1.5f, 0.0f },
+                                         sprite->Color,
+                                         { 0.0f, 0.0f }
+                                     });
+                    }
+                });
+        // TEMP: End temp code
 
         VkDeviceSize bufferSize = sizeof(Vertex) * vertices.GetCount();
 

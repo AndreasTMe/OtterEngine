@@ -1,6 +1,8 @@
 #include "ECS/World.h"
+
 #include "Components/Core/TransformComponent.h"
 #include "Components/Core/CameraComponent.h"
+#include "Components/Core/SpriteComponent.h"
 
 namespace Otter
 {
@@ -28,6 +30,7 @@ namespace Otter
         s_EntityManager
             .RegisterComponents<TransformComponent>()
             .RegisterComponents<CameraComponent>()
+            .RegisterComponents<SpriteComponent>()
             .LockComponents();
 
         OTR_VALIDATE(s_EntityManager.IsLocked(), "The entity manager has not been locked.")
